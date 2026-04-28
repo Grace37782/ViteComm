@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Preuve Photographique - Flux ViteComm</title>
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --text: #0f172a;
+        --text-muted: #475569;
+        --primary: #2563eb;
+        --primary-light: #dbeafe;
+        --border: #e2e8f0;
+        --code-bg: #1e293b;
+        --code-text: #e2e8f0;
+        --accent: #0ea5e9;
+        --radius: 10px;
+        --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+          Arial, sans-serif;
+        line-height: 1.65;
+        color: var(--text);
+        background-color: var(--bg);
+        margin: 0;
+        padding: 2rem;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: var(--surface);
+        padding: 2.5rem;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+
+      h3 {
+        color: var(--primary);
+        font-size: 1.5rem;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--border);
+      }
+
+      h4 {
+        color: var(--text);
+        font-size: 1.25rem;
+        margin-top: 2rem;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+      }
+
+      p {
+        margin: 0.75rem 0;
+        color: var(--text-muted);
+      }
+
+      hr {
+        border: none;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--border),
+          transparent
+        );
+        margin: 2rem 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        background: var(--surface);
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+      }
+
+      th {
+        background: var(--primary);
+        color: #ffffff;
+        font-weight: 600;
+        text-align: left;
+        padding: 14px 16px;
+      }
+
+      td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:nth-child(even) {
+        background-color: #f8fafc;
+      }
+
+      pre {
+        background: var(--code-bg);
+        color: var(--code-text);
+        padding: 1.25rem;
+        border-radius: var(--radius);
+        overflow-x: auto;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 0.88rem;
+        line-height: 1.45;
+        margin: 1.25rem 0;
+        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+
+      @media print {
+        pre {
+          overflow-x: visible;
+          white-space: pre-wrap;
+        }
+      }
+
+      blockquote {
+        margin: 1.5rem 0;
+        padding: 1rem 1.5rem;
+        background: var(--primary-light);
+        border-left: 5px solid var(--primary);
+        border-radius: 0 var(--radius) var(--radius) 0;
+        color: var(--text);
+        font-style: italic;
+      }
+
+      ul {
+        padding-left: 1.5rem;
+        margin: 1rem 0;
+      }
+
+      li {
+        margin-bottom: 0.6rem;
+      }
+
+      strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+      em {
+        color: var(--text-muted);
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 1rem;
+        }
+        .container {
+          padding: 1.5rem;
+        }
+        table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h3>
+        🔐 Mécanisme concret : Preuve photographique pour validation d'identité
+        du livreur
+      </h3>
+
+      <h4>1. Phase de pré-enrôlement du livreur (One-time setup)</h4>
+      <p>
+        Avant toute activité, le livreur doit fournir des éléments d'identité
+        visuels stockés dans son profil système :
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Élément</th>
+            <th>Description</th>
+            <th>Usage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>📸 Photo de profil</td>
+            <td>Portrait clair du visage</td>
+            <td>
+              Affiché dans l'app client/vendeur pour reconnaissance visuelle
+            </td>
+          </tr>
+          <tr>
+            <td>🛵 Photo du véhicule</td>
+            <td>Véhicule + plaque d'immatriculation visible</td>
+            <td>Vérification physique sur le terrain</td>
+          </tr>
+          <tr>
+            <td>🪪 Photo pièce d'identité / badge professionnel</td>
+            <td>Document officiel ou badge ViteComm</td>
+            <td>Validation administrative par l'admin</td>
+          </tr>
+          <tr>
+            <td>📍 Géolocalisation initiale</td>
+            <td>Coordonnées GPS du lieu d'enrôlement</td>
+            <td>Ancrage de confiance pour les futures courses</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <blockquote>
+        Ces éléments sont consultables en temps réel par le client et le vendeur
+        via l'application lors de la mise en relation.
+      </blockquote>
+
+      <hr />
+
+      <h4>2. Flux opérationnel : Collection chez le vendeur</h4>
+
+      <pre><code>[Arrivée du livreur chez le vendeur]
+        ↓
+1. Le livreur ouvre sa course dans l'app → affiche le code de vérification (ex: VC-7821)
+        ↓
+2. Le vendeur saisit/scanne ce code dans son interface → le système confirme :
+   • Que le livreur est bien affecté à cette commande
+   • Que le vendeur correspond à l'étal attendu
+        ↓
+3. [Étape preuve photographique OBLIGATOIRE]
+   → Le livreur (ou le vendeur) prend une photo via l'app montrant :
+      • Le visage du livreur (selfie guidé ou mode double caméra)
+      • Le code de vérification affiché sur l'écran du livreur
+      • Les produits prêts à être collectés
+      • (Optionnel) L'enseigne/repère visuel de l'étal
+        ↓
+4. L'app ajoute automatiquement en métadonnées :
+   • Horodatage précis (timestamp)
+   • Coordonnées GPS (géolocalisation)
+   • ID de la course + ID livreur + ID vendeur
+        ↓
+5. La photo est uploadée (ou mise en file d'attente si hors-ligne) et liée à l'entité PREUVE_COLLECTE
+        ↓
+6. Le vendeur confirme la remise → statut de la collecte passe à "validée"</code></pre>
+
+      <hr />
+
+      <h4>3. Flux opérationnel : Livraison au client</h4>
+
+      <pre><code>[Arrivée du livreur chez le client]
+        ↓
+1. Le client reçoit une notification : "Votre livreur [Nom] arrive avec [Nb] articles"
+   → L'app affiche la photo de profil du livreur + photo de son véhicule
+        ↓
+2. À l'arrivée, le livreur présente à nouveau le code de vérification
+        ↓
+3. [Preuve photographique de livraison]
+   → Photo obligatoire montrant :
+      • Le livreur remettant les articles au client (ou les articles devant le client)
+      • Le code de vérification visible
+      • (Optionnel) Le client signant/acquiesçant dans l'app
+        ↓
+4. Métadonnées automatiques : timestamp + GPS + ID course
+        ↓
+5. Si le client accepte : paiement déclenché → répartition des fonds
+   Si litige : la photo sert de pièce à conviction pour l'arbitrage admin</code></pre>
+
+      <hr />
+
+      <h4>4. En cas de litige : rôle de la preuve photographique</h4>
+
+      <blockquote>
+        Extrait du CDC (Section 4.4) :<br />
+        <em
+          >"En cas de conflit, l'administrateur arbitre les litiges en
+          confrontant <strong>les preuves photographiques</strong>, les
+          historiques de commande et les feedbacks…"</em
+        >
+      </blockquote>
+
+      <p>Concrètement, l'admin accède à un dossier de litige contenant :</p>
+
+      <pre><code>📁 Litige #LIT-2026-042
+├── 📄 Résumé : "Client refuse 2 articles – prétend ne pas les avoir reçus"
+├── 📸 Preuve collection vendeur A : [photo + GPS + timestamp]
+├── 📸 Preuve collection vendeur B : [photo + GPS + timestamp]
+├── 📸 Preuve livraison client : [photo + GPS + timestamp]
+├── 👤 Profil livreur : [photo profil + véhicule + note réputation]
+├── 💬 Feedback client : "Livreur sympathique mais articles manquants"
+└── ⚖️ Décision admin : [à compléter]</code></pre>
+
+      <p>La photo permet de trancher :</p>
+      <ul>
+        <li>✅ Le livreur était bien sur place (GPS + visage)</li>
+        <li>✅ Les produits ont bien été remis (visuels des articles)</li>
+        <li>
+          ✅ Le code de vérification a été utilisé (preuve d'authentification)
+        </li>
+      </ul>
+
+      <hr />
+
+      <h4>5. Implémentation technique (résumé pour le MLD)</h4>
+
+      <p>
+        Dans le <strong>Modèle Logique des Données</strong>, cela se traduit par
+        l'entité :
+      </p>
+
+      <pre><code>PREUVE_COLLECTE(
+  id_preuve PK,
+  date_heure,
+  url_photo,          -- lien vers le stockage cloud (ex: AlwaysData)
+  statut_validation,  -- "en_attente", "validée", "litige"
+  #id_commande FK,
+  #id_vendeur FK,     -- qui a validé la remise
+  #id_livreur FK,     -- qui a effectué la collecte
+  gps_latitude,
+  gps_longitude,
+  device_id           -- pour tracer l'appareil ayant pris la photo
+)</code></pre>
+
+      <hr />
+
+      <h3>
+        ✅ En résumé : ce que la preuve photographique apporte concrètement
+      </h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Objectif</th>
+            <th>Mécanisme</th>
+            <th>Bénéfice</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>🔍 Confirmer l'identité du livreur</td>
+            <td>Photo de profil + photo en temps réel avec code</td>
+            <td>
+              Le client/vendeur reconnaît visuellement la personne attendue
+            </td>
+          </tr>
+          <tr>
+            <td>📍 Prouver la présence sur site</td>
+            <td>Géolocalisation + timestamp dans les métadonnées</td>
+            <td>Impossible de falsifier le lieu/heure de collecte</td>
+          </tr>
+          <tr>
+            <td>🤝 Sécuriser la remise physique</td>
+            <td>Photo montrant produits + code + acteur</td>
+            <td>Preuve tangible en cas de désaccord</td>
+          </tr>
+          <tr>
+            <td>⚖️ Faciliter l'arbitrage</td>
+            <td>Dossier photo centralisé pour l'admin</td>
+            <td>Décision rapide, factuelle, équitable</td>
+          </tr>
+          <tr>
+            <td>📈 Alimenter la réputation</td>
+            <td>Photos validées → score livreur/vendeur</td>
+            <td>Incitation à la rigueur, dissuasion des fraudes</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
