@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAHIER DES CHARGES – PROJET ViteComm</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 850px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background-color: #fff;
+    }
+
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 15px;
+      margin-bottom: 10px;
+    }
+
+    .meta {
+      text-align: center;
+      font-style: italic;
+      color: #555;
+      margin-bottom: 40px;
+      font-size: 0.95em;
+    }
+
+    h2 {
+      color: #2980b9;
+      margin-top: 35px;
+      border-left: 5px solid #3498db;
+      padding-left: 12px;
+      page-break-after: avoid;
+    }
+
+    h3 {
+      color: #34495e;
+      margin-top: 20px;
+      page-break-after: avoid;
+    }
+
+    p {
+      margin-bottom: 12px;
+      text-align: justify;
+    }
+
+    ul {
+      margin-bottom: 15px;
+      padding-left: 25px;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 0.95em;
+    }
+
+    th,
+    td {
+      border: 1px solid #bdc3c7;
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background-color: #ecf0f1;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .highlight {
+      background-color: #fff3cd;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+      }
+
+      h2,
+      h3,
+      table {
+        page-break-inside: avoid;
+      }
+
+      .meta {
+        margin-bottom: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>CAHIER DES CHARGES – PROJET ViteComm</h1>
+  <div class="meta">
+    Porteurs du Projet : Lionel Sisso Timileyin & Immaculée Odjo<br>
+    Durée de Réalisation : 8 semaines (Projet de Fin de Cycle)<br>
+    Support d'Hébergement Backend : AlwaysData
+  </div>
+
+  <h2>1. CONTEXTE</h2>
+  <p>La digitalisation des échanges commerciaux au Bénin constitue un levier stratégique incontournable pour moderniser
+    l'économie locale. Cependant, cette transition doit impérativement intégrer la réalité des marchés informels, qui
+    concentrent l'essentiel de l'activité économique quotidienne des populations urbaines. ViteComm s'inscrit dans cette
+    dynamique en créant un pont numérique entre les habitudes d'achat traditionnelles et les standards modernes de
+    traçabilité, de transparence et de service à la clientèle.</p>
+  <p>La plateforme s'articule autour des flux existants : vendeurs de marchés, transporteurs informels (zémidjans et
+    tricycles), et clients urbains. Elle s'insère dans l'écosystème sans imposer de rupture technologique majeure, en
+    s'adaptant aux contraintes de connectivité intermittente et aux pratiques de paiement locales. Les motivations
+    derrière ce projet sont multiples : réduire la pénibilité des déplacements physiques, pallier la fragmentation des
+    stocks entre étals, sécuriser la qualité des produits périssables, et offrir un suivi transparent des livraisons.
+  </p>
+  <p>La problématique ciblée se formule ainsi : comment concevoir et déployer en huit semaines un système capable
+    d'agréger des achats multi-vendeurs, de garantir la conformité et la fraîcheur des marchandises lors de la
+    cueillette, de fournir une visibilité de suivi au client, et de gérer les litiges de manière équitable, tout en
+    respectant les contraintes académiques et techniques d'un développement en binôme ? La réponse à cette question
+    repose sur une architecture modulaire, une logique de vérification obligatoire et une orchestration fine des acteurs
+    locaux.</p>
+
+  <h2>2. OBJECTIFS</h2>
+  <h3>2.1 Objectif Général</h3>
+  <p>Concevoir, développer, tester et déployer un produit minimum viable (MVP) fonctionnel de ViteComm en huit semaines.
+    La plateforme devra offrir une gestion multi-rôles, une agrégation de commandes multi-étals, une vérification
+    qualité systématique, un suivi de livraison en temps réel et un module de résolution de litiges, le tout prêt à être
+    validé dans un cadre académique et techniquement opérationnel pour un pilote ciblé.</p>
+
+  <h3>2.2 Objectifs Spécifiques (Critères SMART)</h3>
+  <ul>
+    <li><strong>Spécifique :</strong> Mettre en place un espace client permettant la commande simultanée chez plusieurs
+      vendeurs, un flux de cueillette intégrant une preuve visuelle obligatoire par point de collecte, un suivi
+      progressif des étapes de livraison, et un tableau de bord administratif doté d'un système de réputation et
+      d'arbitrage.</li>
+    <li><strong>Mesurable :</strong> Livrer le MVP dans un délai maximal de huit semaines, valider au moins 90% des
+      parcours critiques lors des tests d'intégration, et maintenir un temps de réponse inférieur à deux secondes sous
+      charge nominale.</li>
+    <li><strong>Atteignable et Ambitieux :</strong> S'appuyer sur une méthodologie de modélisation structurée
+      (Merise/UML) et une stack technique modulaire pour garantir la faisabilité, tout en intégrant des mécanismes de
+      confiance innovants (code de vérification, preuves photographiques, scoring de réputation).</li>
+    <li><strong>Réaliste :</strong> Limiter le périmètre aux fonctionnalités cœur identifiées, avec une équipe de deux
+      développeurs dont les responsabilités sont clairement définies (backend/déploiement vs frontend/UX mobile).</li>
+    <li><strong>Temporellement défini :</strong> Jalons hebdomadaires formalisés, avec une mise en production effective
+      et une soutenance académique fixées à l'issue de la huitième semaine.</li>
+  </ul>
+
+  <h2>3. PÉRIMÈTRE</h2>
+  <p><strong>Cibles identifiées :</strong> Le projet s'adresse à quatre profils d'utilisateurs. Les clients sont des
+    résidents urbains souhaitant éviter les déplacements et la recherche fragmentée de produits. Les vendeurs
+    (étals/marchandes) sont des commerçants cherchant à élargir leur zone de vente sans gérer la logistique. Les
+    livreurs (zémidjans/tricycles) assurent la cueillette étal par étal et la livraison finale.
+    L'administrateur/dispatcheur supervise les commandes, attribue les transporteurs, arbitre les litiges et configure
+    les frais de plateforme.</p>
+  <p><strong>Étendue géographique et linguistique :</strong> Le déploiement initial cible une zone marchande précise de
+    Cotonou. L'interface principale est rédigée en français, avec une architecture prête à l'internationalisation vers
+    les langues locales. L'accès se fait via une <span class="highlight">application mobile native développée avec React
+      Native</span> (iOS/Android), garantissant une compatibilité optimale avec les terminaux mobiles courants et un
+    accès hors-ligne partiel.</p>
+  <p><strong>Dimensionnement et évolutivité :</strong> L'architecture est optimisée pour un MVP académique, dimensionné
+    pour environ cinq à dix vendeurs pilotes, deux à cinq livreurs et cinquante utilisateurs simultanés. Les données
+    sont isolées logiquement par rôle, garantissant la confidentialité des informations de chaque acteur. La conception
+    prévoit une montée en charge progressive pour les phases post-académiques.</p>
+
+  <h2>4. DESCRIPTION FONCTIONNELLE</h2>
+  <p>Cette section détaille les interactions entre les entités du système, en décrivant les besoins métiers et les
+    workflows attendus sans imposer de solutions techniques prématurées.</p>
+
+  <h3>4.1 Parcours Client et Agrégation Multi-Vendeurs</h3>
+  <p>Le client accède à l'application depuis son domicile et localise le marché le plus proche grâce à un moteur de
+    recherche géolocalisé. Une fois dans l'interface du marché, il consulte les catalogues des différents étals, filtre
+    les produits souhaités et les ajoute à un panier unique. Le système permet explicitement la commande simultanée
+    auprès de plusieurs vendeurs, consolidant automatiquement le total et regroupant les instructions de livraison.
+    Avant validation, le client peut faire appel au service de transport intégré, sélectionner le livreur disponible le
+    plus proche et confirmer la commande.</p>
+  <p>À la réception, le client inspecte physiquement les articles. S'il accepte la marchandise, il procède au paiement
+    intégré via l'application, ce qui déclenche automatiquement la répartition des fonds vers le vendeur et le livreur.
+    En cas de non-conformité, le système calcule le montant correspondant aux frais de déplacement pour le retour des
+    produits au vendeur. Le client ne s'acquitte alors que de ce coût logistique. Dans les deux cas, le client laisse un
+    feedback sur la qualité des produits et sur le service de transport, lequel alimente directement les scores de
+    réputation des vendeurs et des livreurs.</p>
+
+  <h3>4.2 Gestion des Commandes et Vérification Côté Vendeur</h3>
+  <p>Chaque vendeur dispose d'un espace dédié lui permettant de gérer son étal virtuel : ajout, modification et
+    organisation de ses produits, ainsi que gestion des stocks disponibles. Lorsqu'une commande est émise, le vendeur en
+    reçoit la notification, vérifie la disponibilité des articles et les prépare pour la cueillette. Il ne procède à la
+    remise des produits qu'après qu'un livreur lui ait présenté un identifiant unique de transaction, généré
+    dynamiquement entre le client et le livreur lors de la validation. Ce mécanisme garantit l'intégrité de la chaîne et
+    évite les erreurs de livraison ou les fraudes.</p>
+
+  <h3>4.3 Orchestration et Suivi Côté Livreur</h3>
+  <p>Le livreur reçoit sur son interface la liste des stands concernés par la commande du client, ainsi que l'itinéraire
+    optimisé. Il utilise la cartographie intégrée (GPS) pour se déplacer efficacement entre les points de collecte. À
+    chaque arrêt, il présente le code de vérification au vendeur, récupère les articles et valide visuellement leur
+    état. Une fois l'ensemble des produits collectés, il les achemine vers l'adresse du client. En cas de litige lors de
+    la livraison, il prend en charge le retour des articles refusés vers le vendeur concerné, conformément aux
+    instructions système. Ses performances (ponctualité, intégrité des livraisons, respect des itinéraires) sont
+    évaluées via les retours clients et les indicateurs de suivi.</p>
+
+  <h3>4.4 Supervision, Analytics et Gestion Administrative</h3>
+  <p>L'administrateur dispose d'un tableau de bord centralisé lui permettant de piloter l'écosystème ViteComm. Il
+    consulte en temps réel les statistiques de vente, les indicateurs de satisfaction clients, et identifie les produits
+    les plus commercialisés, les vendeurs les plus recherchés ainsi que les livreurs les plus sollicités.
+    L'administration permet également de configurer les frais d'utilisation de la plateforme (par exemple, une
+    commission de 0,6% par commande) et de suivre les bilans financiers (bénéfices, pertes, répartition des
+    commissions). En cas de conflit, l'administrateur arbitre les litiges en confrontant les preuves photographiques,
+    les historiques de commande et les feedbacks, avant d'appliquer les ajustements de réputation ou les remboursements
+    nécessaires.</p>
+
+  <h2>5. BUDGET</h2>
+  <p>Le budget prévisionnel couvre l'ensemble des dépenses nécessaires au développement, au déploiement et au maintien
+    du MVP pendant la période académique. Il repose sur une stratégie d'optimisation des coûts, privilégiant les outils
+    open-source et les hébergements étudiants.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Poste de Dépense</th>
+        <th>Description</th>
+        <th>Estimation (FCFA / €)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Hébergement & Infrastructure</td>
+        <td>Plan étudiant/entrée de gamme AlwaysData (serveur Node.js, base de données, SSL)</td>
+        <td>0 à 10 €/mois</td>
+      </tr>
+      <tr>
+        <td>Services Tiers & Communication</td>
+        <td>Notifications SMS/WhatsApp (phase pilote), API cartographique open-source</td>
+        <td>~5 000 FCFA</td>
+      </tr>
+      <tr>
+        <td>Stack Logicielle & Outils</td>
+        <td><span class="highlight">Node.js (Express/NestJS), React Native, Git, VS Code, React Native Maps,
+            Mysql</span> (licences gratuites)</td>
+        <td>0 FCFA</td>
+      </tr>
+      <tr>
+        <td>Matériel & Connexion</td>
+        <td>Ordinateurs, accès internet (pris en charge par les porteurs du projet)</td>
+        <td>Inclus</td>
+      </tr>
+      <tr>
+        <td>Enveloppe Globale MVP</td>
+        <td>Upgrades ponctuels, nom de domaine, frais administratifs imprévus</td>
+        <td>~0 à 15 000 FCFA</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Le modèle économique prévoit une commission de 0,6% par transaction validée, couvrant progressivement les coûts
+    opérationnels post-pilote. Les paiements restent principalement en espèces à la livraison (COD), avec un
+    enregistrement numérique pour réconciliation.</p>
+
+  <h2>6. DÉLAIS ET JALONS DE RÉALISATION</h2>
+  <p>Le projet s'étale sur huit semaines, découpé en phases itératives permettant des validations intermédiaires et une
+    répartition équilibrée des tâches entre les deux développeurs.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Phase</th>
+        <th>Livrable Attendu</th>
+        <th>Durée</th>
+        <th>Responsables</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Semaine 1</td>
+        <td>Cadrage & Modélisation : CDC validé, Merise (MLD), UML, validation des parcours multi-étals</td>
+        <td>7 jours</td>
+        <td>Immaculée & Lionel</td>
+      </tr>
+      <tr>
+        <td>Semaines 2-3</td>
+        <td>Backend & Cloisonnement : Structure DB, authentification multi-rôles, isolation des espaces, catalogues
+          vendeurs, API Node.js</td>
+        <td>14 jours</td>
+        <td>Lionel</td>
+      </tr>
+      <tr>
+        <td>Semaine 4</td>
+        <td>Frontend & UI Mobile : Intégration React Native, panneaux par rôle, personnalisation admin, maquettes
+          validées</td>
+        <td>7 jours</td>
+        <td>Immaculée</td>
+      </tr>
+      <tr>
+        <td>Semaine 5</td>
+        <td>Flux Cœur & Vérification : Panier multi-étal, checkout COD, upload photo obligatoire, synchronisation
+          front-back</td>
+        <td>7 jours</td>
+        <td>Lionel & Immaculée</td>
+      </tr>
+      <tr>
+        <td>Semaine 6</td>
+        <td>Suivi & Déploiement : Logique de suivi progressif, migration AlwaysData, configuration SSL, builds APK/IPA
+          test</td>
+        <td>7 jours</td>
+        <td>Lionel</td>
+      </tr>
+      <tr>
+        <td>Semaine 7</td>
+        <td>Tests & Litiges : Simulation complète des scénarios (succès, retour, conflit), correction de bugs,
+          optimisation des performances</td>
+        <td>7 jours</td>
+        <td>Immaculée & Lionel</td>
+      </tr>
+      <tr>
+        <td>Semaine 8</td>
+        <td>Production & Clôture : Mise en production finale, documentation technique, rapport académique, préparation
+          soutenance</td>
+        <td>7 jours</td>
+        <td>Immaculée & Lionel</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Une marge de sécurité de 10% est implicitement intégrée au planning pour anticiper les imprévus techniques
+    (validation d'API, corrections de last-minute, retours du jury). Des revues de code croisées et des points
+    hebdomadaires garantissent le respect des jalons.</p>
+
+</body>
+
+</html>
