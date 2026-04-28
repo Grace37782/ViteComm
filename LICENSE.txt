@@ -1,0 +1,42 @@
+VITECOMM LICENCE - CLOSED SOURCE
+
+Copyright (c) 2026 ViteComm. All rights reserved.
+
+TERMS AND CONDITIONS
+
+1. OWNERSHIP
+   ViteComm is the exclusive property of its author(s). This software is closed source.
+
+2. USAGE
+   This software is provided free of charge for personal and commercial use.
+
+3. DISTRIBUTION
+   You may distribute this software as-is, provided that:
+   - No modification to the source code or any component is permitted
+   - The original package is distributed in its entirety
+   - This licence file is included with the distribution
+
+4. RESTRICTIONS
+   MODIFICATION IS STRICTLY PROHIBITED. You are not permitted to:
+   - Decompile, reverse engineer, or disassemble this software
+   - Modify, alter, or adapt any part of the codebase
+   - Create derivative works based on this software
+   - Remove or alter any proprietary notices
+
+5. NO WARRANTIES
+   This software is provided "as is" without warranty of any kind, express or implied.
+
+6. LIABILITY
+   The author(s) shall not be held liable for any damages arising from the use or
+   distribution of this software.
+
+7. ENFORCEMENT
+   Any violation of this licence constitutes copyright infringement and may result in:
+   - Immediate termination of usage rights
+   - Legal action
+   - Claims for damages
+   - Criminal prosecution where applicable
+
+By using, distributing, or possessing this software, you agree to be bound by these terms.
+
+For permissions or inquiries, contact the author(s) directly.
