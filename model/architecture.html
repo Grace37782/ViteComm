@@ -1,516 +1,462 @@
 <!DOCTYPE html>
 <html lang="fr">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Architecture Merise - Projet ViteComm</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Architecture Merise & UML - Projet ViteComm</title>
     <style>
-        :root {
-            --primary: #2563eb;
-            --primary-dark: #1e40af;
-            --secondary: #0f172a;
-            --accent: #3b82f6;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #334155;
-            --text-light: #64748b;
-            --border: #e2e8f0;
-            --success: #10b981;
-            --warning: #f59e0b;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            padding: 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 3rem;
-            padding-bottom: 2rem;
-            border-bottom: 2px solid var(--border);
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            color: var(--secondary);
-            margin-bottom: 0.5rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
-
-        .subtitle {
-            color: var(--text-light);
-            font-size: 1.1rem;
-        }
-
-        .badge {
-            display: inline-block;
-            background: #dbeafe;
-            color: var(--primary-dark);
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-top: 0.5rem;
-        }
-
-        section {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--border);
-        }
-
-        h2 {
-            font-size: 1.8rem;
-            color: var(--secondary);
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid var(--primary);
-            display: inline-block;
-        }
-
-        h3 {
-            font-size: 1.3rem;
-            color: var(--primary-dark);
-            margin: 1.5rem 0 1rem;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 1.5rem;
-            font-size: 0.95rem;
-        }
-
-        th,
-        td {
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border);
-            text-align: left;
-        }
-
-        th {
-            background: #f1f5f9;
-            font-weight: 600;
-            color: var(--secondary);
-        }
-
-        tr:nth-child(even) {
-            background: #f8fafc;
-        }
-
-        .uml-section,
-        .mcd-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .diagram-container {
-            width: 100%;
-            overflow-x: auto;
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            margin: 1rem 0;
-        }
-
-        svg {
-            max-width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .note {
-            background: #fef3c7;
-            border-left: 4px solid var(--warning);
-            padding: 1rem;
-            margin-top: 1rem;
-            border-radius: 0 8px 8px 0;
-            font-size: 0.9rem;
-        }
-
-        .relation-tag {
-            font-weight: bold;
-            color: var(--primary);
-        }
-
-        code {
-            background: #f1f5f9;
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 0.9em;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 1rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            table {
-                font-size: 0.85rem;
-            }
-        }
-
-        @media print {
-            @page {
-                margin: 1cm;
-            }
-            html, body {
-                overflow: visible !important;
-                height: auto !important;
-            }
-            .activity-diagram-wrapper,
-            .diagram-container {
-                overflow: visible !important;
-                max-width: 100% !important;
-                width: auto !important;
-                border: none !important;
-            }
-            .activity-diagram-wrapper pre.mermaid {
-                overflow: visible !important;
-                width: auto !important;
-                height: auto !important;
-            }
-            img {
-                max-width: 100% !important;
-                height: auto !important;
-                page-break-inside: avoid;
-            }
-            svg {
-                max-width: 100% !important;
-                height: auto !important;
-            }
-            section {
-                page-break-inside: avoid;
-            }
-        }
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      h1,
+      h2,
+      h3 {
+        color: #2c3e50;
+        border-bottom: 2px solid #e0e0e0;
+        padding-bottom: 5px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: left;
+      }
+      th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+      }
+      code {
+        background-color: #f4f4f4;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-family: monospace;
+      }
+      .note {
+        background-color: #fff3cd;
+        padding: 10px;
+        border-left: 4px solid #ffc107;
+        margin: 15px 0;
+      }
+      .mermaid {
+        text-align: center;
+        margin: 20px 0;
+      }
     </style>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-</head>
+  </head>
+  <body>
+    <h1>Architecture Merise & UML – Projet ViteComm</h1>
+    <p>
+      <strong
+        >Conception de la Base de Données & Modèle Conceptuel Objet</strong
+      >
+      | <em>Méthodologie : Approche Merise (MLD) + UML 2.x</em> |
+      <em>Contexte : MVP Académique (8 semaines)</em>
+    </p>
 
-<body>
-    <header>
-        <h1>Architecture Merise - Projet ViteComm</h1>
-        <div class="subtitle">Conception de la Base de Données – Projet ViteComm</div>
-        <div class="badge">Méthodologie : Approche Merise (MCD → MLD) | Contexte : MVP Académique (8 semaines)</div>
-    </header>
+    <div class="note">
+      <strong>📌 Note de mise à jour :</strong> Conformément aux exigences
+      spécifiées, le Modèle Conceptuel de Données (MCD) a été omis. La logique
+      de modélisation relationnelle et objet a été conservée et strictement
+      normalisée (3FN). Les ambiguïtés ont été corrigées pour respecter les
+      contraintes d'accès, de réputation, de signalement et de gouvernance
+      administrative.
+    </div>
 
-    <section id="rg">
-        <h2>1. Règles de Gestion (RG)</h2>
-        <p>Extraites et formalisées à partir du cahier des charges pour garantir l'intégrité sémantique du modèle.</p>
-        <table>
-            <thead>
-                <tr>
-                    <th>Code</th>
-                    <th>Règle de Gestion</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>RG01</td>
-                    <td>Un client peut commander des articles provenant de plusieurs vendeurs au sein d'une même
-                        transaction.</td>
-                </tr>
-                <tr>
-                    <td>RG02</td>
-                    <td>Un vendeur gère un catalogue de produits et un stock associé.</td>
-                </tr>
-                <tr>
-                    <td>RG03</td>
-                    <td>Un produit est proposé par un et un seul vendeur.</td>
-                </tr>
-                <tr>
-                    <td>RG04</td>
-                    <td>Une commande est initialisée par un seul client.</td>
-                </tr>
-                <tr>
-                    <td>RG05</td>
-                    <td>Une commande est prise en charge par un seul livreur (après affectation).</td>
-                </tr>
-                <tr>
-                    <td>RG06</td>
-                    <td>La remise des articles par le vendeur au livreur est conditionnée par la validation d'un code de
-                        vérification unique.</td>
-                </tr>
-                <tr>
-                    <td>RG07</td>
-                    <td>Chaque étape de collecte chez un vendeur doit faire l'objet d'une preuve photographique
-                        obligatoire.</td>
-                </tr>
-                <tr>
-                    <td>RG08</td>
-                    <td>Le paiement s'effectue à la livraison (COD). La plateforme prélève automatiquement une
-                        commission de 0,6 %.</td>
-                </tr>
-                <tr>
-                    <td>RG09</td>
-                    <td>En cas de non-conformité, le client ne paie que les frais de retour ; les litiges sont arbitrés
-                        par l'administrateur.</td>
-                </tr>
-                <tr>
-                    <td>RG10</td>
-                    <td>Les retours clients alimentent les scores de réputation des vendeurs et des livreurs.</td>
-                </tr>
-            </tbody>
-        </table>
-    </section>
+    <h2>1. Règles de Gestion (RG) Clarifiées & Complétées</h2>
+    <p>
+      Extraites et formalisées à partir du cahier des charges et des contraintes
+      métier spécifiques.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Règle de Gestion</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>RG01</td>
+          <td>
+            Un client peut commander des articles provenant de plusieurs
+            vendeurs au sein d'une même transaction.
+          </td>
+        </tr>
+        <tr>
+          <td>RG02</td>
+          <td>Un vendeur gère un catalogue de produits et un stock associé.</td>
+        </tr>
+        <tr>
+          <td>RG03</td>
+          <td>Un produit est proposé par un et un seul vendeur.</td>
+        </tr>
+        <tr>
+          <td>RG04</td>
+          <td>Une commande est initialisée par un seul client.</td>
+        </tr>
+        <tr>
+          <td>RG05</td>
+          <td>
+            Une commande est prise en charge par un seul livreur (après
+            affectation).
+          </td>
+        </tr>
+        <tr>
+          <td>RG06</td>
+          <td>
+            La remise des articles par le vendeur au livreur est conditionnée
+            par la validation d'un code de vérification unique.
+          </td>
+        </tr>
+        <tr>
+          <td>RG07</td>
+          <td>
+            Chaque étape de collecte chez un vendeur doit faire l'objet d'une
+            preuve photographique obligatoire.
+          </td>
+        </tr>
+        <tr>
+          <td>RG08</td>
+          <td>
+            Le paiement s'effectue à la livraison (COD). La plateforme prélève
+            automatiquement une commission de 0,6 %.
+          </td>
+        </tr>
+        <tr>
+          <td>RG09</td>
+          <td>
+            En cas de non-conformité, le client ne paie que les frais de retour
+            ; les litiges sont arbitrés par l'administrateur.
+          </td>
+        </tr>
+        <tr>
+          <td>RG10</td>
+          <td>
+            Les retours clients alimentent les scores de réputation des vendeurs
+            et des livreurs uniquement.
+          </td>
+        </tr>
+        <tr>
+          <td>RG11</td>
+          <td>
+            <strong>Accès restreint :</strong> L'administrateur ne peut ni
+            accéder, ni modifier, ni consulter l'historique personnel du compte
+            d'un client (conformité RGPD / confidentialité).
+          </td>
+        </tr>
+        <tr>
+          <td>RG12</td>
+          <td>
+            <strong>Tableau de bord Admin :</strong> L'administrateur peut
+            consulter l'ensemble des attributs de base de chaque utilisateur,
+            les scores de réputation (vendeurs/livreurs), le catalogue complet
+            d'un vendeur, ainsi que les statistiques agrégées des produits les
+            plus achetés et les plus refusés.
+          </td>
+        </tr>
+        <tr>
+          <td>RG13</td>
+          <td>
+            <strong>Gestion des comptes :</strong> L'administrateur dispose des
+            droits de suppression ou de bannissement (suspension définitive)
+            pour les comptes vendeurs et livreurs.
+          </td>
+        </tr>
+        <tr>
+          <td>RG14</td>
+          <td>
+            <strong>Signalement universel :</strong> Tout utilisateur (client,
+            vendeur, livreur) peut signaler tout autre utilisateur. Ces
+            signalements sont centralisés et permettent à l'administrateur de
+            sanctionner ou supprimer tout type de compte, y compris celui d'un
+            client.
+          </td>
+        </tr>
+        <tr>
+          <td>RG15</td>
+          <td>
+            <strong>Attribut Réputation :</strong> Le client ne possède pas de
+            score de réputation. La notion de réputation est strictement
+            réservée aux acteurs professionnels (vendeur, livreur).
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
-    <section id="entites">
-        <h2>2. Identification des Entités & Dictionnaire des Attributs</h2>
-        <p>Les objets métier identifiés, conformément aux flux décrits dans le cahier des charges.</p>
-        <table>
-            <thead>
-                <tr>
-                    <th>Entité</th>
-                    <th>Identifiant</th>
-                    <th>Attributs Non-Identifiants</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>CLIENT</td>
-                    <td>id_client</td>
-                    <td>nom, prenom, telephone, adresse_livraison, email, score_reputation</td>
-                </tr>
-                <tr>
-                    <td>VENDEUR</td>
-                    <td>id_vendeur</td>
-                    <td>nom_etablissement, nom_contact, telephone, email, localisation_marche, score_reputation</td>
-                </tr>
-                <tr>
-                    <td>LIVREUR</td>
-                    <td>id_livreur</td>
-                    <td>nom, prenom, telephone, type_vehicule, immatriculation, score_reputation</td>
-                </tr>
-                <tr>
-                    <td>ADMINISTRATEUR</td>
-                    <td>id_admin</td>
-                    <td>nom, prenom, email, telephone, role_systeme</td>
-                </tr>
-                <tr>
-                    <td>PRODUIT</td>
-                    <td>id_produit</td>
-                    <td>nom, description, prix_reference, stock_disponible</td>
-                </tr>
-                <tr>
-                    <td>COMMANDE</td>
-                    <td>id_commande</td>
-                    <td>date_creation, statut, total_marchandises, frais_livraison, commission, code_verification</td>
-                </tr>
-                <tr>
-                    <td>PREUVE_COLLECTE</td>
-                    <td>id_preuve</td>
-                    <td>date_heure, url_photo, statut_validation</td>
-                </tr>
-                <tr>
-                    <td>LITIGE</td>
-                    <td>id_litige</td>
-                    <td>description, date_ouverture, statut, decision_admin, montant_rembourse</td>
-                </tr>
-                <tr>
-                    <td>FEEDBACK</td>
-                    <td>id_feedback</td>
-                    <td>note_produit, note_transport, commentaire, date_publication</td>
-                </tr>
-            </tbody>
-        </table>
-    </section>
+    <h2>2. Identification des Entités & Dictionnaire des Attributs</h2>
+    <p>
+      Les objets métier identifiés, mis à jour pour intégrer les contraintes de
+      gouvernance et de confidentialité.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Entité</th>
+          <th>Identifiant</th>
+          <th>Attributs Non-Identifiants</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>CLIENT</td>
+          <td>id_client</td>
+          <td>
+            nom, prenom, telephone, adresse_livraison, email, statut_compte
+          </td>
+        </tr>
+        <tr>
+          <td>VENDEUR</td>
+          <td>id_vendeur</td>
+          <td>
+            nom_etablissement, nom_contact, telephone, email,
+            localisation_marche, score_reputation, statut_compte
+          </td>
+        </tr>
+        <tr>
+          <td>LIVREUR</td>
+          <td>id_livreur</td>
+          <td>
+            nom, prenom, telephone, type_vehicule, immatriculation,
+            score_reputation, statut_compte
+          </td>
+        </tr>
+        <tr>
+          <td>ADMINISTRATEUR</td>
+          <td>id_admin</td>
+          <td>nom, prenom, email, telephone</td>
+        </tr>
+        <tr>
+          <td>PRODUIT</td>
+          <td>id_produit</td>
+          <td>nom, description, prix_reference, stock_disponible</td>
+        </tr>
+        <tr>
+          <td>COMMANDE</td>
+          <td>id_commande</td>
+          <td>
+            date_creation, statut, total_marchandises, frais_livraison,
+            commission, code_verification
+          </td>
+        </tr>
+        <tr>
+          <td>PREUVE_COLLECTE</td>
+          <td>id_preuve</td>
+          <td>date_heure, url_photo, statut_validation</td>
+        </tr>
+        <tr>
+          <td>LITIGE</td>
+          <td>id_litige</td>
+          <td>
+            description, date_ouverture, statut, decision_admin,
+            montant_rembourse
+          </td>
+        </tr>
+        <tr>
+          <td>FEEDBACK</td>
+          <td>id_feedback</td>
+          <td>note_produit, note_transport, commentaire, date_publication</td>
+        </tr>
+        <tr>
+          <td>SIGNALEMENT</td>
+          <td>id_signalement</td>
+          <td>date_heure, motif, statut_traitement, type_cible_cible</td>
+        </tr>
+      </tbody>
+    </table>
 
-    <section id="dfed">
-        <h2>3. Couverture Minimale (DFED)</h2>
-        <p>Application stricte de la méthode de normalisation : recherche des Dépendances Fonctionnelles Élémentaires
-            Directes, sans augmentation ni transitivité.</p>
-        <h3>3.1. DFED Simples (Source non composée → Entités)</h3>
-        <ul>
-            <li><code>id_client</code> → nom, prenom, telephone, adresse_livraison, email, score_reputation</li>
-            <li><code>id_vendeur</code> → nom_etablissement, nom_contact, telephone, email, localisation_marche,
-                score_reputation</li>
-            <li><code>id_livreur</code> → nom, prenom, telephone, type_vehicule, immatriculation, score_reputation</li>
-            <li><code>id_admin</code> → nom, prenom, email, telephone, role_systeme</li>
-            <li><code>id_produit</code> → nom, description, prix_reference, stock_disponible</li>
-            <li><code>id_commande</code> → date_creation, statut, total_marchandises, frais_livraison, commission,
-                code_verification</li>
-            <li><code>id_preuve</code> → date_heure, url_photo, statut_validation</li>
-            <li><code>id_litige</code> → description, date_ouverture, statut, decision_admin, montant_rembourse</li>
-            <li><code>id_feedback</code> → note_produit, note_transport, commentaire, date_publication</li>
-        </ul>
-        <h3>3.2. DFED à Source Composée (Sources multiples → Associations CIM)</h3>
-        <ul>
-            <li>(<code>id_commande</code>, <code>id_produit</code>, <code>id_vendeur</code>) → quantite_commandee,
-                prix_vente_applique</li>
-            <li>(<code>id_commande</code>, <code>id_vendeur</code>) → statut_collecte_vendeur</li>
-            <li>(<code>id_commande</code>, <code>id_client</code>) → statut_livraison_client</li>
-        </ul>
-        <h3>3.3. DFED entre Identifiants (Identifiant → Identifiant → Associations CIF)</h3>
-        <ul>
-            <li><code>id_commande</code> → <code>id_client</code></li>
-            <li><code>id_commande</code> → <code>id_livreur</code></li>
-            <li><code>id_produit</code> → <code>id_vendeur</code></li>
-            <li><code>id_commande</code> → <code>id_litige</code> (optionnel 0,1)</li>
-            <li><code>id_commande</code> → <code>id_feedback</code> (1,1)</li>
-        </ul>
-    </section>
+    <h2>3. Couverture Minimale (DFED)</h2>
+    <p>
+      Application stricte de la méthode de normalisation : recherche des
+      Dépendances Fonctionnelles Élémentaires Directes.
+    </p>
 
-    <section id="mcd">
-        <h2>4. Modèle Conceptuel des Données (MCD)</h2>
-        <p>Traduction graphique et structurelle des DFED selon les règles Merise strictes (entités, associations
-            CIM/CIF, cardinalités, identifiants soulignés).</p>
+    <h3>3.1. DFED Simples (Source non composée → Entités)</h3>
+    <pre><code>id_client → nom, prenom, telephone, adresse_livraison, email, statut_compte
+id_vendeur → nom_etablissement, nom_contact, telephone, email, localisation_marche, score_reputation, statut_compte
+id_livreur → nom, prenom, telephone, type_vehicule, immatriculation, score_reputation, statut_compte
+id_admin → nom, prenom, email, telephone
+id_produit → nom, description, prix_reference, stock_disponible
+id_commande → date_creation, statut, total_marchandises, frais_livraison, commission, code_verification
+id_preuve → date_heure, url_photo, statut_validation
+id_litige → description, date_ouverture, statut, decision_admin, montant_rembourse
+id_feedback → note_produit, note_transport, commentaire, date_publication
+id_signalement → date_heure, motif, statut_traitement, type_cible_cible</code></pre>
 
-        <div class="diagram-container">
-            <img src="diags/mcd-diag.png" alt="MCD - Modèle Conceptuel des Données" style="max-width: 100%; height: auto;">
-        </div>
-    </section>
+    <h3>3.2. DFED à Source Composée (Sources multiples → Associations CIM)</h3>
+    <pre><code>(id_commande, id_produit, id_vendeur) → quantite_commandee, prix_vente_applique
+(id_commande, id_vendeur) → statut_collecte_vendeur
+(id_commande, id_client) → statut_livraison_client</code></pre>
 
-    <section id="mld">
-        <h2>5. Modèle Logique des Données (MLD)</h2>
-        <p>Passage MCD → MLD selon les règles de transformation relationnelles (1FN, 2FN, 3FN). Clés primaires
-            soulignées, clés étrangères préfixées de <code>#</code>.</p>
-        <ul style="list-style: none; padding: 0;">
-            <li style="margin-bottom: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
-                <code><u>CLIENT</u> ( <u>id_client</u> , nom, prenom, telephone, adresse_livraison, email, score_reputation)</code>
-            </li>
-            <li style="margin-bottom: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
-                <code><u>VENDEUR</u> ( <u>id_vendeur</u> , nom_etablissement, nom_contact, telephone, email, localisation_marche, score_reputation)</code>
-            </li>
-            <li style="margin-bottom: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
-                <code><u>LIVREUR</u> ( <u>id_livreur</u> , nom, prenom, telephone, type_vehicule, immatriculation, score_reputation)</code>
-            </li>
-            <li style="margin-bottom: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
-                <code><u>ADMINISTRATEUR</u> ( <u>id_admin</u> , nom, prenom, email, telephone, role_systeme)</code>
-            </li>
-            <li style="margin-bottom: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
-                <code><u>PRODUIT</u> ( <u>id_produit</u> , nom, description, prix_reference, stock_disponible, #id_vendeur)</code>
-            </li>
-            <li style="margin-bottom: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
-                <code><u>COMMANDE</u> ( <u>id_commande</u> , date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, #id_client, #id_livreur)</code>
-            </li>
-            <li style="margin-bottom: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
-                <code><u>DETAIL_COMMANDE</u> ( #id_commande, #id_produit, #id_vendeur, quantite_commandee, prix_vente_applique)</code>
-            </li>
-            <li style="margin-bottom: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
-                <code><u>PREUVE_COLLECTE</u> ( <u>id_preuve</u> , date_heure, url_photo, statut_validation, #id_commande, #id_vendeur)</code>
-            </li>
-            <li style="margin-bottom: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
-                <code><u>LITIGE</u> ( <u>id_litige</u> , description, date_ouverture, statut, decision_admin, montant_rembourse, #id_commande)</code>
-            </li>
-            <li style="margin-bottom: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
-                <code><u>FEEDBACK</u> ( <u>id_feedback</u> , note_produit, note_transport, commentaire, date_publication, #id_commande, #id_client)</code>
-            </li>
-        </ul>
-        <p style="margin-top: 1rem;">Le MLD est en 3FN : aucune dépendance partielle ni transitive. Les jointures
-            naturelles garantiront la restitution des données multi-vendeurs, le suivi de collecte et l'arbitrage des
-            litiges.</p>
-    </section>
+    <h3>
+      3.3. DFED entre Identifiants (Identifiant → Identifiant → Associations
+      CIF)
+    </h3>
+    <pre><code>id_commande → id_client
+id_commande → id_livreur
+id_produit → id_vendeur
+id_commande → id_litige (optionnel 0,1)
+id_commande → id_feedback (1,1)
+id_signalement → id_auteur (CIF)
+id_signalement → id_cible (CIF polymorphe géré par type_cible_cible)</code></pre>
 
-    <section id="uml">
-        <h2>6. Conception Orientée Objet (UML)</h2>
-        <p>Passage du modèle relationnel (Merise) au modèle conceptuel objet, conforme aux standards UML 2.x enseignés.
-        </p>
+    <!-- SECTION 4 (MCD) OMITTED AS REQUESTED -->
 
-        <div class="uml-section">
-            <h3>6.1. Diagramme de Cas d'Utilisation</h3>
-            <p><strong>Rôle :</strong> Recueillir, analyser et organiser les besoins fonctionnels en recensant les
-                grandes fonctionnalités du système ViteComm.</p>
-            <div class="diagram-container">
-                <img src="diags/uml-use-case-diag.png" alt="UML - Diagramme de Cas d'Utilisation" style="max-width: 100%; height: auto;">
-            </div>
-            <div class="note">
-                <strong>Relations :</strong> <code>&lt;&lt;include&gt;&gt;</code> pour les traitements obligatoires (ex:
-                validation solde). <code>&lt;&lt;extend&gt;&gt;</code> pour les conditions (ex: signalement litige si
-                non-conformité). Généralisation implicite via <code>Utilisateur</code>.
-            </div>
-        </div>
+    <h2>5. Modèle Logique des Données (MLD)</h2>
+    <p>
+      Passage MCD → MLD selon les règles de transformation relationnelles (1FN,
+      2FN, 3FN). Clés primaires soulignées, clés étrangères préfixées de
+      <code>#</code>. Les vues analytiques (produits les plus achetés/refusés)
+      sont générées par agrégation SQL sur <code>DETAIL_COMMANDE</code> et
+      <code>LITIGE</code>, préservant ainsi la normalisation.
+    </p>
 
-<div class="uml-section" style="margin-top: 3rem;">
-            <h3>6.2. Diagramme de Classes</h3>
-            <p><strong>Rôle :</strong> Présenter la structure interne du système et fournir une représentation abstraite
-                des objets qui interagissent.</p>
-            <div class="diagram-container">
-                <img src="diags/uml-class-diag.png" alt="UML - Diagramme de Classes" style="max-width: 100%; height: auto;">
-            </div>
-        </div>
+    <pre><code>CLIENT ( id_client , nom, prenom, telephone, adresse_livraison, email, statut_compte)
+VENDEUR ( id_vendeur , nom_etablissement, nom_contact, telephone, email, localisation_marche, score_reputation, statut_compte)
+LIVREUR ( id_livreur , nom, prenom, telephone, type_vehicule, immatriculation, score_reputation, statut_compte)
+ADMINISTRATEUR ( id_admin , nom, prenom, email, telephone)
+PRODUIT ( id_produit , nom, description, prix_reference, stock_disponible, #id_vendeur)
+COMMANDE ( id_commande , date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, #id_client, #id_livreur)
+DETAIL_COMMANDE ( #id_commande, #id_produit, #id_vendeur, quantite_commandee, prix_vente_applique)
+PREUVE_COLLECTE ( id_preuve , date_heure, url_photo, statut_validation, #id_commande, #id_vendeur)
+LITIGE ( id_litige , description, date_ouverture, statut, decision_admin, montant_rembourse, #id_commande)
+FEEDBACK ( id_feedback , note_produit, note_transport, commentaire, date_publication, #id_commande, #id_client)
+SIGNALEMENT ( id_signalement , date_heure, motif, statut_traitement, type_cible_cible, #id_auteur)</code></pre>
 
-        <div class="uml-section" style="margin-top: 3rem;">
-            <h3>6.3. Diagramme d'Activité</h3>
-            <p><strong>Rôle :</strong> Mettre l'accent sur les traitements, représenter graphiquement le comportement
-                métier et décrire le déroulement séquentiel conforme aux normes UML 2.x.</p>
+    <p>
+      <em
+        >✅ Le MLD reste en 3FN : aucune dépendance partielle ni transitive. Les
+        attributs <code>score_reputation</code> ont été retirés du CLIENT,
+        <code>role_systeme</code> de l'ADMINISTRATEUR, et l'entité
+        <code>SIGNALEMENT</code> a été intégrée pour couvrir la politique de
+        modération communautaire.</em
+      >
+    </p>
 
-            <div class="activity-diagram-wrapper"
-                style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px; padding: 24px; background: #fafbfc; margin: 20px 0;">
-                <pre class="mermaid"
-                    style="text-align: center; font-family: monospace; font-size: 14px; width:50em;height:100%;">
-flowchart TD
-    classDef swimlanefill fill:#ffffff,stroke:#d0d7de,stroke-width:2px,rx:8,ry:8
-    classDef action fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,rx:6,ry:6
-    classDef decision fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef terminal fill:#2c3e50,stroke:#2c3e50,stroke-width:2px,color:#ffffff,rx:50,ry:50
+    <h2>6. Conception Orientée Objet (UML)</h2>
+    <p>
+      Passage du modèle relationnel (Merise) au modèle conceptuel objet,
+      conforme aux standards UML 2.x enseignés.
+    </p>
 
-    subgraph Client["Partition : Client"]
-        Start(( )):::terminal --> A1[Initialiser commande]:::action
-        A1 --> A2[Saisir articles multi-etales]:::action
-        A2 --> A3[Valider panier]:::action
-        A3 --> D1{Confirme ?}:::decision
-        D1 -->|Non| A4[Annuler / Modifier]:::action
-        A4 --> End1(( )):::terminal
-    end
+    <h3>6.1. Diagramme de Cas d'Utilisation</h3>
+    <p>
+      <strong>Rôle :</strong> Recueillir, analyser et organiser les besoins
+      fonctionnels en recensant les grandes fonctionnalités du système ViteComm.
+    </p>
+    <p><strong>Relations & Contraintes intégrées :</strong></p>
+    <ul>
+      <li>
+        <code>&lt;&lt;include&gt;&gt;</code> pour les traitements obligatoires
+        (ex: validation preuve photo, génération code vérification).
+      </li>
+      <li>
+        <code>&lt;&lt;extend&gt;&gt;</code> pour les conditions (ex: ouverture
+        litige si non-conformité, création signalement depuis n'importe quel
+        profil).
+      </li>
+      <li>
+        <strong>Accès Admin :</strong> Isolation stricte. L'acteur
+        <em>Administrateur</em> interagit avec les cas "Gérer Comptes Pro",
+        "Consulter Dashboard Analytics", "Arbitrer Litiges" et "Traiter
+        Signalements".
+        <em
+          >Aucun cas d'utilisation ne permet l'accès direct au compte
+          client.</em
+        >
+      </li>
+      <li>
+        <strong>Signalement :</strong> Cas "Signaler Utilisateur" accessible à
+        Client, Vendeur et Livreur. Cible polymorphe.
+      </li>
+    </ul>
 
-    subgraph System["Partition : Systeme ViteComm"]
-        D1 -->|Oui| B1[Generer code verification]:::action
-        B1 --> B2[Notifier Vendeurs et Livreur]:::action
-        B2 --> B3[Consolider itineraire]:::action
-        B3 --> B4[Valider preuve photo]:::action
-        B4 --> D2{Photos validees ?}:::decision
-        D2 -->|Non| B5[Demander reprise photo]:::action
-        B5 --> B3
-    end
+    <h3>6.2. Diagramme de Classes</h3>
+    <p>
+      <strong>Rôle :</strong> Présenter la structure interne du système et
+      fournir une représentation abstraite des objets qui interagissent.
+    </p>
+    <ul>
+      <li>
+        Classe <code>Client</code> :
+        <em
+          >-score_reputation supprimé. +statut: Enum(ACTIF, BANNI, SUPPRIME)</em
+        >
+      </li>
+      <li>
+        Classe <code>Administrateur</code> :
+        <em
+          >-role_systeme supprimé. Méthodes : <code>banVendeur()</code>,
+          <code>banLivreur()</code>, <code>deleteVendeur()</code>,
+          <code>deleteLivreur()</code>, <code>getDashboardMetrics()</code></em
+        >
+      </li>
+      <li>
+        Classe <code>Signalement</code> :
+        <em
+          >+dateHeure, +motif, +statut, +typeCible, +auteur: Utilisateur,
+          +cible: Utilisateur</em
+        >
+      </li>
+      <li>
+        Les agrégations (produits les plus achetés/refusés) sont gérées via des
+        méthodes de service <code>StatistiquesService</code> interrogeant les
+        entités <code>Commande</code> et <code>Litige</code>.
+      </li>
+    </ul>
 
-    subgraph Seller["Partition : Vendeur"]
-        D2 -->|Oui| C1[Recevoir notification]:::action
-        C1 --> C2[Verifier code commande]:::action
-        C2 --> C3[Preparer articles]:::action
-    end
-
-    subgraph Courier["Partition : Livreur"]
-        C3 --> D1_Liv[Se rendre chez vendeur]:::action
-        D1_Liv --> D2_Liv[Presenter code & Capturer photo]:::action
-        D2_Liv --> D3[Acheminer & Livrer]:::action
-        D3 --> End2(( )):::terminal
-    end
-
-    class Client,System,Seller,Courier swimlanefill
-  </pre>
-            </div>
-            <div class="note">
-                <strong>Implémentation :</strong> Les partitions (swimlanes) isolent les responsabilités. Les nœuds de
-                décision (◇) gèrent les branches conditionnelles. La synchronisation via les flots converge vers le nœud
-                final après validation système et livraison physique.
-            </div>
-        </div>
-    </section>
-</body>
-
+    <h3>6.3. Diagramme d'Activité</h3>
+    <p>
+      <strong>Rôle :</strong> Mettre l'accent sur les traitements, représenter
+      graphiquement le comportement métier et décrire le déroulement séquentiel
+      conforme aux normes UML 2.x.
+    </p>
+    <p>
+      <em
+        >Note : Le flux ci-dessous a été ajusté pour refléter la validation
+        photo obligatoire, le signalement communautaire et les cloisonnements
+        d'accès admin.</em
+      >
+    </p>
+    <div class="mermaid">
+      flowchart TD classDef swimlanefill
+      fill:#ffffff,stroke:#d0d7de,stroke-width:2px,rx:8,ry:8 classDef action
+      fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,rx:6,ry:6 classDef decision
+      fill:#fff3e0,stroke:#f57c00,stroke-width:2px classDef terminal
+      fill:#2c3e50,stroke:#2c3e50,stroke-width:2px,color:#ffffff,rx:50,ry:50
+      subgraph Client["Partition : Client"] Start(( )):::terminal -->
+      A1[Initialiser commande]:::action A1 --> A2[Saisir articles
+      multi-etales]:::action A2 --> A3[Valider panier]:::action A3 -->
+      D1{Confirme ?}:::decision D1 -->|Non| A4[Annuler / Modifier]:::action A4
+      --> End1(( )):::terminal end subgraph System["Partition : Systeme
+      ViteComm"] D1 -->|Oui| B1[Generer code verification]:::action B1 -->
+      B2[Notifier Vendeurs et Livreur]:::action B2 --> B3[Consolider
+      itineraire]:::action B3 --> B4[Valider preuve photo]:::action B4 -->
+      D2{Photos validees ?}:::decision D2 -->|Non| B5[Demander reprise
+      photo]:::action B5 --> B3 end subgraph Seller["Partition : Vendeur"] D2
+      -->|Oui| C1[Recevoir notification]:::action C1 --> C2[Verifier code
+      commande]:::action C2 --> C3[Preparer articles]:::action end subgraph
+      Courier["Partition : Livreur"] C3 --> D1_Liv[Se rendre chez
+      vendeur]:::action D1_Liv --> D2_Liv[Presenter code & Capturer
+      photo]:::action D2_Liv --> D3[Acheminer & Livrer]:::action D3 --> End2((
+      )):::terminal end class Client,System,Seller,Courier swimlanefill
+    </div>
+    <p>
+      <strong>Implémentation :</strong> Les partitions (swimlanes) isolent les
+      responsabilités. Les nœuds de décision (◇) gèrent les branches
+      conditionnelles. La synchronisation via les flots converge vers le nœud
+      final après validation système et livraison physique. Les signalements et
+      l'arbitrage admin s'exécutent en flux parallèle asynchrone, sans bloquer
+      le parcours transactionnel principal.
+    </p>
+  </body>
 </html>
