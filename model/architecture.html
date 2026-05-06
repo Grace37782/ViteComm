@@ -140,6 +140,8 @@
         overflow-x: auto;
         border: 1px solid var(--border);
         margin: 20px 0;
+        white-space: pre-wrap;       /* Added for PDF conversion */
+        word-wrap: break-word;       /* Added for PDF conversion */
       }
 
       pre code {
@@ -228,6 +230,21 @@
         white-space: nowrap;
       }
 
+      @media print {
+        .nav-links {
+          display: none;
+        }
+        .container {
+          box-shadow: none;
+          margin: 0;
+          padding: 0;
+          max-width: 100%;
+        }
+        body {
+          background-color: white;
+        }
+      }
+
       .nav-links a {
         text-decoration: none;
         color: var(--secondary);
@@ -248,7 +265,6 @@
         <a href="#rg">Règles de Gestion</a>
         <a href="#entites">Entités</a>
         <a href="#dfed">DFED</a>
-        <a href="#mcd">MCD</a>
         <a href="#mld">MLD</a>
         <a href="#uml">UML</a>
       </nav>
@@ -261,15 +277,6 @@
           <span>MVP Académique</span>
         </div>
       </header>
-
-      <div class="note">
-        <strong>📌 Note de mise à jour :</strong> Conformément aux exigences
-        spécifiées, le Modèle Conceptuel de Données (MCD) a été initialement omis. La logique
-        de modélisation relationnelle et objet a été conservée et strictement
-        normalisée (3FN). Les ambiguïtés ont été corrigées pour respecter les
-        contraintes d'accès, de réputation, de signalement et de gouvernance
-        administrative.
-      </div>
 
       <h2 id="rg">1. Règles de Gestion (RG) Clarifiées & Complétées</h2>
       <p>
@@ -446,21 +453,9 @@ id_commande → id_feedback (1,1)
 id_signalement → id_auteur (CIF)
 id_signalement → id_cible (CIF polymorphe géré par type_cible_cible)</code></pre>
 
-      <h2 id="mcd">4. Modèle Conceptuel de Données (MCD)</h2>
-      <p>
-        Représentation graphique de la structure de données avant sa transformation en modèle relationnel.
-      </p>
-      <div class="diagram-container">
-        <img src="diags/mcd-diag.png" alt="Modèle Conceptuel de Données (MCD) ViteComm">
-        <div class="diagram-caption">Figure 1 : Modèle Conceptuel de Données (MCD) normalisé.</div>
-      </div>
+      <!-- MCD SECTION REMOVED -->
 
-      <h2 id="mld">5. Modèle Logique des Données (MLD)</h2>
-      <p>
-        Passage MCD → MLD selon les règles de transformation relationnelles (1FN,
-        2FN, 3FN). Clés primaires soulignées, clés étrangères préfixées de
-        <code>#</code>.
-      </p>
+      <h2 id="mld">4. Modèle Logique des Données (MLD)</h2>
 
       <pre><code>CLIENT ( <u>id_client</u>, nom, prenom, telephone, adresse_livraison, email, statut_compte)
 VENDEUR ( <u>id_vendeur</u>, nom_etablissement, nom_contact, telephone, email, localisation_marche, score_reputation, statut_compte)
@@ -474,30 +469,20 @@ LITIGE ( <u>id_litige</u>, description, date_ouverture, statut, decision_admin, 
 FEEDBACK ( <u>id_feedback</u>, note_produit, note_transport, commentaire, date_publication, #id_commande, #id_client)
 SIGNALEMENT ( <u>id_signalement</u>, date_heure, motif, statut_traitement, type_cible_cible, #id_auteur)</code></pre>
 
-      <p>
-        <em
-          >✅ Le MLD reste en 3FN : aucune dépendance partielle ni transitive. Les
-          attributs <code>score_reputation</code> ont été retirés du CLIENT,
-          <code>role_systeme</code> de l'ADMINISTRATEUR, et l'entité
-          <code>SIGNALEMENT</code> a été intégrée pour couvrir la politique de
-          modération communautaire.</em
-        >
-      </p>
-
-      <h2 id="uml">6. Conception Orientée Objet (UML)</h2>
+      <h2 id="uml">5. Conception Orientée Objet (UML)</h2>
       <p>
         Passage du modèle relationnel (Merise) au modèle conceptuel objet,
         conforme aux standards UML 2.x.
       </p>
 
-      <h3>6.1. Diagramme de Cas d'Utilisation</h3>
+      <h3>5.1. Diagramme de Cas d'Utilisation</h3>
       <p>
         <strong>Rôle :</strong> Recueillir, analyser et organiser les besoins
         fonctionnels en recensant les grandes fonctionnalités du système ViteComm.
       </p>
       <div class="diagram-container">
         <img src="diags/uml-use-case-diag.png" alt="Diagramme de Cas d'Utilisation UML ViteComm">
-        <div class="diagram-caption">Figure 2 : Diagramme de Cas d'Utilisation.</div>
+        <div class="diagram-caption">Figure 1 : Diagramme de Cas d'Utilisation.</div>
       </div>
       <p><strong>Relations & Contraintes intégrées :</strong></p>
       <ul>
@@ -506,14 +491,14 @@ SIGNALEMENT ( <u>id_signalement</u>, date_heure, motif, statut_traitement, type_
         <li><strong>Accès Admin :</strong> Isolation stricte. L'acteur <em>Administrateur</em> interagit avec les cas "Gérer Comptes Pro", "Consulter Dashboard Analytics", etc.</li>
       </ul>
 
-      <h3>6.2. Diagramme de Classes</h3>
+      <h3>5.2. Diagramme de Classes</h3>
       <p>
         <strong>Rôle :</strong> Présenter la structure interne du système et
         fournir une représentation abstraite des objets qui interagissent.
       </p>
       <div class="diagram-container">
         <img src="diags/uml-class-diag.png" alt="Diagramme de Classes UML ViteComm">
-        <div class="diagram-caption">Figure 3 : Diagramme de Classes.</div>
+        <div class="diagram-caption">Figure 2 : Diagramme de Classes.</div>
       </div>
       <ul>
         <li>Classe <code>Client</code> : <em>-score_reputation supprimé. +statut: Enum(ACTIF, BANNI, SUPPRIME)</em></li>
@@ -521,59 +506,14 @@ SIGNALEMENT ( <u>id_signalement</u>, date_heure, motif, statut_traitement, type_
         <li>Classe <code>Signalement</code> : <em>Couvre la politique de modération.</em></li>
       </ul>
 
-      <h3>6.3. Diagramme d'Activité</h3>
+      <h3>5.3. Diagramme d'Activité</h3>
       <p>
         <strong>Rôle :</strong> Mettre l'accent sur les traitements et représenter graphiquement le comportement métier séquentiel.
       </p>
-      <div class="mermaid">
-        flowchart TD 
-        classDef swimlanefill fill:#ffffff,stroke:#d0d7de,stroke-width:2px,rx:8,ry:8 
-        classDef action fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,rx:6,ry:6 
-        classDef decision fill:#fff3e0,stroke:#f57c00,stroke-width:2px 
-        classDef terminal fill:#2c3e50,stroke:#2c3e50,stroke-width:2px,color:#ffffff,rx:50,ry:50
-        
-        subgraph Client["Partition : Client"] 
-          Start(( )):::terminal --> A1[Initialiser commande]:::action 
-          A1 --> A2[Saisir articles multi-etales]:::action 
-          A2 --> A3[Valider panier]:::action 
-          A3 --> D1{Confirme ?}:::decision 
-          D1 -->|Non| A4[Annuler / Modifier]:::action 
-          A4 --> End1(( )):::terminal 
-        end 
-        
-        subgraph System["Partition : Systeme ViteComm"] 
-          D1 -->|Oui| B1[Generer code verification]:::action 
-          B1 --> B2[Notifier Vendeurs et Livreur]:::action 
-          B2 --> B3[Consolider itineraire]:::action 
-          B3 --> B4[Valider preuve photo]:::action 
-          B4 --> D2{Photos validees ?}:::decision 
-          D2 -->|Non| B5[Demander reprise photo]:::action 
-          B5 --> B3 
-        end 
-        
-        subgraph Seller["Partition : Vendeur"] 
-          D2 -->|Oui| C1[Recevoir notification]:::action 
-          C1 --> C2[Verifier code commande]:::action 
-          C2 --> C3[Preparer articles]:::action 
-        end 
-        
-        subgraph Courier["Partition : Livreur"] 
-          C3 --> D1_Liv[Se rendre chez vendeur]:::action 
-          D1_Liv --> D2_Liv[Presenter code & Capturer photo]:::action 
-          D2_Liv --> D3[Acheminer & Livrer]:::action 
-          D3 --> End2(( )):::terminal 
-        end 
-        
-        class Client,System,Seller,Courier swimlanefill
+      <div class="diagram-container">
+        <img src="diags/uml-activity-diag.png" alt="Diagramme d'Activité UML ViteComm">
+        <div class="diagram-caption">Figure 3 : Diagramme d'Activité.</div>
       </div>
-      <p>
-        <strong>Implémentation :</strong> Les partitions (swimlanes) isolent les responsabilités. Les nœuds de décision (◇) gèrent les branches conditionnelles.
-      </p>
     </div>
-  </body>
-</html>l après validation système et livraison physique. Les signalements et
-      l'arbitrage admin s'exécutent en flux parallèle asynchrone, sans bloquer
-      le parcours transactionnel principal.
-    </p>
   </body>
 </html>
