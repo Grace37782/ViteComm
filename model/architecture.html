@@ -301,7 +301,7 @@
           </tr>
           <tr>
             <td><strong>RG03</strong></td>
-            <td>Un produit est proposé par un et un seul vendeur.</td>
+            <td>Chaque article appartient exclusivement au catalogue d'un seul vendeur. Si deux vendeurs proposent un article identique, ils sont traités comme deux produits distincts avec des identifiants uniques (distinction architecturale de l'offre).</td>
           </tr>
           <tr>
             <td><strong>RG04</strong></td>
@@ -452,6 +452,24 @@ id_commande → id_litige (optionnel 0,1)
 id_commande → id_feedback (1,1)
 id_signalement → id_auteur (CIF)
 id_signalement → id_cible (CIF polymorphe géré par type_cible_cible)</code></pre>
+
+      <h3>3.4. Fusion des Dépendances Fonctionnelles (Couverture Minimale Totale)</h3>
+      <p>
+        Synthèse globale de toutes les dépendances permettant de valider la 3NF (Troisième Forme Normale) et de déduire le schéma relationnel.
+      </p>
+      <pre><code>id_client → nom, prenom, telephone, adresse_livraison, email, statut_compte
+id_vendeur → nom_etablissement, nom_contact, telephone, email, localisation_marche, score_reputation, statut_compte
+id_livreur → nom, prenom, telephone, type_vehicule, immatriculation, score_reputation, statut_compte
+id_admin → nom, prenom, email, telephone
+id_produit → nom, description, prix_reference, stock_disponible, id_vendeur
+id_commande → date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, id_client, id_livreur
+id_preuve → date_heure, url_photo, statut_validation, id_commande, id_vendeur
+id_litige → description, date_ouverture, statut, decision_admin, montant_rembourse, id_commande
+id_feedback → note_produit, note_transport, commentaire, date_publication, id_commande, id_client
+id_signalement → date_heure, motif, statut_traitement, type_cible_cible, id_auteur, id_cible
+(id_commande, id_produit, id_vendeur) → quantite_commandee, prix_vente_applique
+(id_commande, id_vendeur) → statut_collecte_vendeur
+(id_commande, id_client) → statut_livraison_client</code></pre>
 
       <!-- MCD SECTION REMOVED -->
 
