@@ -325,7 +325,11 @@
           </tr>
           <tr>
             <td><strong>RG09</strong></td>
-            <td>En cas de non-conformité, le client ne paie que les frais de retour ; les litiges sont arbitrés par l'administrateur.</td>
+            <td>En cas de non-conformité, le client peut rejeter individuellement un ou plusieurs produits d'un catalogue, sans annuler l'ensemble de la commande. Il ne paie que les frais de retour pour les articles refusés ; les litiges sont arbitrés par l'administrateur.</td>
+          </tr>
+          <tr>
+            <td><strong>RG16</strong></td>
+            <td>Les vendeurs dont les produits sont rejetés doivent les récupérer. Le système recalcule automatiquement le montant total de la transaction, la commission de la plateforme et le versement final au vendeur en tenant compte uniquement des articles acceptés.</td>
           </tr>
           <tr>
             <td><strong>RG10</strong></td>
@@ -409,6 +413,11 @@
             <td>description, date_ouverture, statut, decision_admin, montant_rembourse</td>
           </tr>
           <tr>
+            <td><strong>LIVRAISON</strong></td>
+            <td><code>id_livraison</code></td>
+            <td>date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules</td>
+          </tr>
+          <tr>
             <td><strong>FEEDBACK</strong></td>
             <td><code>id_feedback</code></td>
             <td>note_produit, note_transport, commentaire, date_publication</td>
@@ -437,16 +446,18 @@ id_commande → date_creation, statut, total_marchandises, frais_livraison, comm
 id_preuve → date_heure, url_photo, statut_validation
 id_litige → description, date_ouverture, statut, decision_admin, montant_rembourse
 id_feedback → note_produit, note_transport, commentaire, date_publication
-id_signalement → date_heure, motif, statut_traitement, type_cible_cible</code></pre>
+id_signalement → date_heure, motif, statut_traitement, type_cible_cible
+id_livraison → date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules</code></pre>
 
       <h3>3.2. DFED à Source Composée (Sources multiples → Associations CIM)</h3>
-      <pre><code>(id_commande, id_produit, id_vendeur) → quantite_commandee, prix_vente_applique
+      <pre><code>(id_commande, id_produit, id_vendeur) → quantite_commandee, prix_vente_applique, statut_acceptation
 (id_commande, id_vendeur) → statut_collecte_vendeur
 (id_commande, id_client) → statut_livraison_client</code></pre>
 
       <h3>3.3. DFED entre Identifiants (Identifiant → Identifiant → Associations CIF)</h3>
       <pre><code>id_commande → id_client
-id_commande → id_livreur
+id_livraison → id_commande
+id_livraison → id_livreur
 id_produit → id_vendeur
 id_commande → id_litige (optionnel 0,1)
 id_commande → id_feedback (1,1)
@@ -467,7 +478,8 @@ id_preuve → date_heure, url_photo, statut_validation, id_commande, id_vendeur
 id_litige → description, date_ouverture, statut, decision_admin, montant_rembourse, id_commande
 id_feedback → note_produit, note_transport, commentaire, date_publication, id_commande, id_client
 id_signalement → date_heure, motif, statut_traitement, type_cible_cible, id_auteur, id_cible
-(id_commande, id_produit, id_vendeur) → quantite_commandee, prix_vente_applique
+id_livraison → date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules, id_commande, id_livreur
+(id_commande, id_produit, id_vendeur) → quantite_commandee, prix_vente_applique, statut_acceptation
 (id_commande, id_vendeur) → statut_collecte_vendeur
 (id_commande, id_client) → statut_livraison_client</code></pre>
 
@@ -480,8 +492,9 @@ VENDEUR ( <u>id_vendeur</u>, nom_etablissement, nom_contact, telephone, email, l
 LIVREUR ( <u>id_livreur</u>, nom, prenom, telephone, type_vehicule, immatriculation, score_reputation, statut_compte)
 ADMINISTRATEUR ( <u>id_admin</u>, nom, prenom, email, telephone)
 PRODUIT ( <u>id_produit</u>, nom, description, prix_reference, stock_disponible, #id_vendeur)
-COMMANDE ( <u>id_commande</u>, date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, #id_client, #id_livreur)
-DETAIL_COMMANDE ( <u>#id_commande, #id_produit, #id_vendeur</u>, quantite_commandee, prix_vente_applique)
+COMMANDE ( <u>id_commande</u>, date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, #id_client)
+LIVRAISON ( <u>id_livraison</u>, date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules, #id_commande, #id_livreur)
+DETAIL_COMMANDE ( <u>#id_commande, #id_produit, #id_vendeur</u>, quantite_commandee, prix_vente_applique, statut_acceptation)
 PREUVE_COLLECTE ( <u>id_preuve</u>, date_heure, url_photo, statut_validation, #id_commande, #id_vendeur)
 LITIGE ( <u>id_litige</u>, description, date_ouverture, statut, decision_admin, montant_rembourse, #id_commande)
 FEEDBACK ( <u>id_feedback</u>, note_produit, note_transport, commentaire, date_publication, #id_commande, #id_client)
