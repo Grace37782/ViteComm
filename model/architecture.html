@@ -355,6 +355,10 @@
             <td><strong>RG15</strong></td>
             <td><strong>Attribut Réputation :</strong> Le client ne possède pas de score de réputation. La notion de réputation est strictement réservée aux acteurs professionnels (vendeur, livreur).</td>
           </tr>
+          <tr>
+            <td><strong>RG17</strong></td>
+            <td><strong>Spécialisation des Utilisateurs :</strong> Le système utilise une table parente <code>UTILISATEUR (USER/ADMIN)</code> regroupant les attributs communs. Si un utilisateur n'appartient à aucune spécialisation (Client, Vendeur, Livreur), il possède par défaut le rôle d'Administrateur.</td>
+          </tr>
         </tbody>
       </table>
 
@@ -373,24 +377,24 @@
         </thead>
         <tbody>
           <tr>
+            <td><strong>UTILISATEUR (USER/ADMIN)</strong></td>
+            <td><code>id_user</code></td>
+            <td>nom, prenom, telephone, email, statut_compte</td>
+          </tr>
+          <tr>
             <td><strong>CLIENT</strong></td>
-            <td><code>id_client</code></td>
-            <td>nom, prenom, telephone, adresse_livraison, email, statut_compte</td>
+            <td><code>#id_user</code></td>
+            <td>adresse_livraison</td>
           </tr>
           <tr>
             <td><strong>VENDEUR</strong></td>
-            <td><code>id_vendeur</code></td>
-            <td>nom_etablissement, nom_contact, telephone, email, localisation_marche, score_reputation, statut_compte</td>
+            <td><code>#id_user</code></td>
+            <td>nom_etablissement, localisation_marche, score_reputation</td>
           </tr>
           <tr>
             <td><strong>LIVREUR</strong></td>
-            <td><code>id_livreur</code></td>
-            <td>nom, prenom, telephone, type_vehicule, immatriculation, score_reputation, statut_compte</td>
-          </tr>
-          <tr>
-            <td><strong>ADMINISTRATEUR</strong></td>
-            <td><code>id_admin</code></td>
-            <td>nom, prenom, email, telephone</td>
+            <td><code>#id_user</code></td>
+            <td>type_vehicule, immatriculation, score_reputation</td>
           </tr>
           <tr>
             <td><strong>PRODUIT</strong></td>
@@ -437,10 +441,10 @@
       </p>
 
       <h3>3.1. DFED Simples (Source non composée → Entités)</h3>
-      <pre><code>id_client → nom, prenom, telephone, adresse_livraison, email, statut_compte
-id_vendeur → nom_etablissement, nom_contact, telephone, email, localisation_marche, score_reputation, statut_compte
-id_livreur → nom, prenom, telephone, type_vehicule, immatriculation, score_reputation, statut_compte
-id_admin → nom, prenom, email, telephone
+      <pre><code>id_user → nom, prenom, telephone, email, statut_compte
+id_user (CLIENT) → adresse_livraison
+id_user (VENDEUR) → nom_etablissement, localisation_marche, score_reputation
+id_user (LIVREUR) → type_vehicule, immatriculation, score_reputation
 id_produit → nom, description, prix_reference, stock_disponible
 id_commande → date_creation, statut, total_marchandises, frais_livraison, commission, code_verification
 id_preuve → date_heure, url_photo, statut_validation
@@ -468,36 +472,36 @@ id_signalement → id_cible (CIF polymorphe géré par type_cible_cible)</code><
       <p>
         Synthèse globale de toutes les dépendances permettant de valider la 3NF (Troisième Forme Normale) et de déduire le schéma relationnel.
       </p>
-      <pre><code>id_client → nom, prenom, telephone, adresse_livraison, email, statut_compte
-id_vendeur → nom_etablissement, nom_contact, telephone, email, localisation_marche, score_reputation, statut_compte
-id_livreur → nom, prenom, telephone, type_vehicule, immatriculation, score_reputation, statut_compte
-id_admin → nom, prenom, email, telephone
-id_produit → nom, description, prix_reference, stock_disponible, id_vendeur
-id_commande → date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, id_client, id_livreur
-id_preuve → date_heure, url_photo, statut_validation, id_commande, id_vendeur
+      <pre><code>id_user → nom, prenom, telephone, email, statut_compte
+id_user (CLIENT) → adresse_livraison
+id_user (VENDEUR) → nom_etablissement, localisation_marche, score_reputation
+id_user (LIVREUR) → type_vehicule, immatriculation, score_reputation
+id_produit → nom, description, prix_reference, stock_disponible, #id_user_vendeur
+id_commande → date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, #id_user_client
+id_preuve → date_heure, url_photo, statut_validation, id_commande, #id_user_vendeur
 id_litige → description, date_ouverture, statut, decision_admin, montant_rembourse, id_commande
-id_feedback → note_produit, note_transport, commentaire, date_publication, id_commande, id_client
+id_feedback → note_produit, note_transport, commentaire, date_publication, id_commande, #id_user_client
 id_signalement → date_heure, motif, statut_traitement, type_cible_cible, id_auteur, id_cible
-id_livraison → date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules, id_commande, id_livreur
-(id_commande, id_produit, id_vendeur) → quantite_commandee, prix_vente_applique, statut_acceptation
-(id_commande, id_vendeur) → statut_collecte_vendeur
-(id_commande, id_client) → statut_livraison_client</code></pre>
+id_livraison → date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules, id_commande, #id_user_livreur
+(id_commande, id_produit, #id_user_vendeur) → quantite_commandee, prix_vente_applique, statut_acceptation
+(id_commande, #id_user_vendeur) → statut_collecte_vendeur
+(id_commande, #id_user_client) → statut_livraison_client</code></pre>
 
       <!-- MCD SECTION REMOVED -->
 
       <h2 id="mld">4. Modèle Logique des Données (MLD)</h2>
 
-      <pre><code>CLIENT ( <u>id_client</u>, nom, prenom, telephone, adresse_livraison, email, statut_compte)
-VENDEUR ( <u>id_vendeur</u>, nom_etablissement, nom_contact, telephone, email, localisation_marche, score_reputation, statut_compte)
-LIVREUR ( <u>id_livreur</u>, nom, prenom, telephone, type_vehicule, immatriculation, score_reputation, statut_compte)
-ADMINISTRATEUR ( <u>id_admin</u>, nom, prenom, email, telephone)
-PRODUIT ( <u>id_produit</u>, nom, description, prix_reference, stock_disponible, #id_vendeur)
-COMMANDE ( <u>id_commande</u>, date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, #id_client)
-LIVRAISON ( <u>id_livraison</u>, date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules, #id_commande, #id_livreur)
-DETAIL_COMMANDE ( <u>#id_commande, #id_produit, #id_vendeur</u>, quantite_commandee, prix_vente_applique, statut_acceptation)
-PREUVE_COLLECTE ( <u>id_preuve</u>, date_heure, url_photo, statut_validation, #id_commande, #id_vendeur)
+      <pre><code>UTILISATEUR_USER_ADMIN ( <u>id_user</u>, nom, prenom, telephone, email, statut_compte)
+CLIENT ( <u>#id_user</u>, adresse_livraison)
+VENDEUR ( <u>#id_user</u>, nom_etablissement, localisation_marche, score_reputation)
+LIVREUR ( <u>#id_user</u>, type_vehicule, immatriculation, score_reputation)
+PRODUIT ( <u>id_produit</u>, nom, description, prix_reference, stock_disponible, #id_user_vendeur)
+COMMANDE ( <u>id_commande</u>, date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, #id_user_client)
+LIVRAISON ( <u>id_livraison</u>, date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules, #id_commande, #id_user_livreur)
+DETAIL_COMMANDE ( <u>#id_commande, #id_produit, #id_user_vendeur</u>, quantite_commandee, prix_vente_applique, statut_acceptation)
+PREUVE_COLLECTE ( <u>id_preuve</u>, date_heure, url_photo, statut_validation, #id_commande, #id_user_vendeur)
 LITIGE ( <u>id_litige</u>, description, date_ouverture, statut, decision_admin, montant_rembourse, #id_commande)
-FEEDBACK ( <u>id_feedback</u>, note_produit, note_transport, commentaire, date_publication, #id_commande, #id_client)
+FEEDBACK ( <u>id_feedback</u>, note_produit, note_transport, commentaire, date_publication, #id_commande, #id_user_client)
 SIGNALEMENT ( <u>id_signalement</u>, date_heure, motif, statut_traitement, type_cible_cible, #id_auteur)</code></pre>
 
       <h2 id="uml">5. Conception Orientée Objet (UML)</h2>
@@ -532,8 +536,8 @@ SIGNALEMENT ( <u>id_signalement</u>, date_heure, motif, statut_traitement, type_
         <div class="diagram-caption">Figure 2 : Diagramme de Classes.</div>
       </div>
       <ul>
-        <li>Classe <code>Client</code> : <em>-score_reputation supprimé. +statut: Enum(ACTIF, BANNI, SUPPRIME)</em></li>
-        <li>Classe <code>Administrateur</code> : <em>Méthodes de gestion de bannissement et dashboard metrics.</em></li>
+        <li>Classe <code>Utilisateur</code> : <em>Table parente regroupant les attributs communs. L'absence de spécialisation (Client/Vendeur/Livreur) définit l'Administrateur.</em></li>
+        <li>Spécialisations : <em>Héritage vers <code>Client</code>, <code>Vendeur</code> et <code>Livreur</code> avec leurs attributs spécifiques respectifs.</em></li>
         <li>Classe <code>Signalement</code> : <em>Couvre la politique de modération.</em></li>
       </ul>
 
