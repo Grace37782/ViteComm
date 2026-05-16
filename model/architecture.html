@@ -243,6 +243,21 @@
         body {
           background-color: white;
         }
+        .diagram-container {
+          page-break-inside: avoid;
+          break-inside: avoid;
+          margin: 15px 0;
+          padding: 10px;
+        }
+        .diagram-container img {
+          max-height: 22cm; /* Fit within an A4 page height */
+          width: auto;
+          max-width: 100%;
+        }
+        h2, h3 {
+          page-break-after: avoid;
+          break-after: avoid;
+        }
       }
 
       .nav-links a {
@@ -359,6 +374,10 @@
             <td><strong>RG17</strong></td>
             <td><strong>Spécialisation des Utilisateurs :</strong> Le système utilise une table parente <code>UTILISATEUR (USER/ADMIN)</code> regroupant les attributs communs. Si un utilisateur n'appartient à aucune spécialisation (Client, Vendeur, Livreur), il possède par défaut le rôle d'Administrateur.</td>
           </tr>
+          <tr>
+            <td><strong>RG18</strong></td>
+            <td><strong>Atomicité du Détail :</strong> Le détail d'une commande (<code>DETAIL_COMMANDE</code>) n'est pas une simple extension de la commande, mais une entité de liaison ternaire fusionnant les informations de la <code>COMMANDE</code>, du <code>PRODUIT</code> et du <code>VENDEUR</code>. Cette structure permet la gestion granulaire des rejets par produit et par vendeur au sein d'une même commande client.</td>
+          </tr>
         </tbody>
       </table>
 
@@ -431,6 +450,11 @@
             <td><code>id_signalement</code></td>
             <td>date_heure, motif, statut_traitement, type_cible_cible</td>
           </tr>
+          <tr>
+            <td><strong>DETAIL_COMMANDE</strong></td>
+            <td><code>#id_commande, #id_produit, #id_user_vendeur</code></td>
+            <td>quantite_commandee, prix_vente_applique, statut_acceptation</td>
+          </tr>
         </tbody>
       </table>
 
@@ -454,15 +478,15 @@ id_signalement → date_heure, motif, statut_traitement, type_cible_cible
 id_livraison → date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules</code></pre>
 
       <h3>3.2. DFED à Source Composée (Sources multiples → Associations CIM)</h3>
-      <pre><code>(id_commande, id_produit, id_vendeur) → quantite_commandee, prix_vente_applique, statut_acceptation
-(id_commande, id_vendeur) → statut_collecte_vendeur
-(id_commande, id_client) → statut_livraison_client</code></pre>
+      <pre><code>(id_commande, id_produit, #id_user_vendeur) → quantite_commandee, prix_vente_applique, statut_acceptation
+(id_commande, #id_user_vendeur) → statut_collecte_vendeur
+(id_commande, #id_user_client) → statut_livraison_client</code></pre>
 
       <h3>3.3. DFED entre Identifiants (Identifiant → Identifiant → Associations CIF)</h3>
       <pre><code>id_commande → id_client
 id_livraison → id_commande
 id_livraison → id_livreur
-id_produit → id_vendeur
+id_produit → #id_user_vendeur
 id_commande → id_litige (optionnel 0,1)
 id_commande → id_feedback (1,1)
 id_signalement → id_auteur (CIF)
@@ -516,7 +540,7 @@ SIGNALEMENT ( <u>id_signalement</u>, date_heure, motif, statut_traitement, type_
         fonctionnels en recensant les grandes fonctionnalités du système ViteComm.
       </p>
       <div class="diagram-container">
-        <img src="diags/uml-use-case-diag.png" alt="Diagramme de Cas d'Utilisation UML ViteComm">
+        <img src="diags/uml-use-case-diag.jpg" alt="Diagramme de Cas d'Utilisation UML ViteComm">
         <div class="diagram-caption">Figure 1 : Diagramme de Cas d'Utilisation.</div>
       </div>
       <p><strong>Relations & Contraintes intégrées :</strong></p>
@@ -539,6 +563,7 @@ SIGNALEMENT ( <u>id_signalement</u>, date_heure, motif, statut_traitement, type_
         <li>Classe <code>Utilisateur</code> : <em>Table parente regroupant les attributs communs. L'absence de spécialisation (Client/Vendeur/Livreur) définit l'Administrateur.</em></li>
         <li>Spécialisations : <em>Héritage vers <code>Client</code>, <code>Vendeur</code> et <code>Livreur</code> avec leurs attributs spécifiques respectifs.</em></li>
         <li>Classe <code>Signalement</code> : <em>Couvre la politique de modération.</em></li>
+        <li>Classe d'Association <code>Detail_Commande</code> : <em>Représente la relation ternaire entre Commande, Produit et Vendeur, portant les attributs de quantité et de prix spécifique.</em></li>
       </ul>
 
       <h3>5.3. Diagramme d'Activité</h3>
