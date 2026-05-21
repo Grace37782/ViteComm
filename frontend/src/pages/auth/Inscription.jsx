@@ -31,6 +31,7 @@ export default function Inscription() {
   const [showMdp, setShowMdp] = useState(false)
 
   return (
+
     <div
       className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden"
       style={{
@@ -41,7 +42,23 @@ export default function Inscription() {
 
       {/* Décor */}
       <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
+
       <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-[#A8EDCA]/20 blur-3xl" />
+
+      {/* Retour accueil */}
+      <button
+        onClick={() => navigate('/accueil')}
+        className="absolute top-6 left-6 z-50
+                   px-4 py-2 rounded-full
+                   text-sm font-semibold text-white
+                   backdrop-blur-xl border"
+        style={{
+          background: 'rgba(255,255,255,0.08)',
+          borderColor: 'rgba(255,255,255,0.12)',
+        }}
+      >
+        ← Accueil
+      </button>
 
       {/* Carte */}
       <div
@@ -77,6 +94,54 @@ export default function Inscription() {
 
         </div>
 
+          {/* Choix profil */}
+          <div>
+
+              <label className="text-sm font-semibold text-white/80 mb-3 block">
+                Je veux :
+              </label>
+
+            <div className="grid grid-cols-3 gap-3">
+
+              {profils.map((p) => {
+
+                const actif = profil === p.id
+
+                return (
+
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setProfil(p.id)}
+                    className="rounded-2xl py-4 border transition-all"
+                    style={{
+                      background: actif
+                        ? p.color
+                        : 'rgba(255,255,255,0.08)',
+
+                      borderColor: actif
+                        ? p.color
+                        : 'rgba(255,255,255,0.12)',
+                    }}
+                  >
+
+                    <div className="text-2xl mb-2">
+                      {p.emoji}
+                    </div>
+
+                    <div className="text-xs font-bold text-white">
+                      {p.label}
+                    </div>
+
+                  </button>
+
+                )
+              })}
+
+            </div>
+
+          </div>
+
         {/* Formulaire */}
         <form className="flex flex-col gap-5">
 
@@ -84,12 +149,52 @@ export default function Inscription() {
           <div className="flex flex-col gap-2">
 
             <label className="text-sm font-semibold text-white/80">
-              Nom complet
+              Nom
             </label>
 
             <input
               type="text"
               placeholder="Votre nom"
+              className="rounded-2xl px-4 py-4 text-sm text-white
+                         placeholder:text-white/40 outline-none border"
+              style={{
+                background: 'rgba(255,255,255,0.08)',
+                borderColor: 'rgba(255,255,255,0.12)',
+              }}
+            />
+
+          </div>
+
+           {/* Prenom */}
+          <div className="flex flex-col gap-2">
+
+            <label className="text-sm font-semibold text-white/80">
+              Prenom
+            </label>
+
+            <input
+              type="text"
+              placeholder="Votre prenom"
+              className="rounded-2xl px-4 py-4 text-sm text-white
+                         placeholder:text-white/40 outline-none border"
+              style={{
+                background: 'rgba(255,255,255,0.08)',
+                borderColor: 'rgba(255,255,255,0.12)',
+              }}
+            />
+
+          </div>
+
+          {/* Email */}
+          <div className="flex flex-col gap-2">
+
+            <label className="text-sm font-semibold text-white/80">
+              Adresse email
+            </label>
+
+            <input
+              type="email"
+              placeholder="exemple@gmail.com"
               className="rounded-2xl px-4 py-4 text-sm text-white
                          placeholder:text-white/40 outline-none border"
               style={{
@@ -130,26 +235,6 @@ export default function Inscription() {
 
           </div>
 
-          {/* Quartier */}
-          <div className="flex flex-col gap-2">
-
-            <label className="text-sm font-semibold text-white/80">
-              Quartier
-            </label>
-
-            <input
-              type="text"
-              placeholder="Ex: Akpakpa"
-              className="rounded-2xl px-4 py-4 text-sm text-white
-                         placeholder:text-white/40 outline-none border"
-              style={{
-                background: 'rgba(255,255,255,0.08)',
-                borderColor: 'rgba(255,255,255,0.12)',
-              }}
-            />
-
-          </div>
-
           {/* Mot de passe */}
           <div className="flex flex-col gap-2">
 
@@ -184,51 +269,124 @@ export default function Inscription() {
 
           </div>
 
-          {/* Choix profil */}
-          <div>
+        
 
-            <p className="text-sm font-semibold text-white/80 mb-3">
-              Je veux :
-            </p>
+          {/* Champs dynamiques */}
 
-            <div className="grid grid-cols-3 gap-3">
+          {profil === 'client' && (
 
-              {profils.map((p) => {
+            <div className="flex flex-col gap-2">
 
-                const actif = profil === p.id
+              <label className="text-sm font-semibold text-white/80">
+                Adresse de livraison
+              </label>
 
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setProfil(p.id)}
-                    className="rounded-2xl py-4 border transition-all"
-                    style={{
-                      background: actif
-                        ? p.color
-                        : 'rgba(255,255,255,0.08)',
-
-                      borderColor: actif
-                        ? p.color
-                        : 'rgba(255,255,255,0.12)',
-                    }}
-                  >
-
-                    <div className="text-2xl mb-2">
-                      {p.emoji}
-                    </div>
-
-                    <div className="text-xs font-bold text-white">
-                      {p.label}
-                    </div>
-
-                  </button>
-                )
-              })}
+              <input
+                type="text"
+                placeholder="Ex: Akpakpa"
+                className="rounded-2xl px-4 py-4 text-sm text-white
+                           placeholder:text-white/40 outline-none border"
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  borderColor: 'rgba(255,255,255,0.12)',
+                }}
+              />
 
             </div>
 
-          </div>
+          )}
+
+          {profil === 'vendeur' && (
+
+            <>
+
+              <div className="flex flex-col gap-2">
+
+                <label className="text-sm font-semibold text-white/80">
+                  Nom boutique
+                </label>
+
+                <input
+                  type="text"
+                  placeholder="Ex: Grâce Boutique"
+                  className="rounded-2xl px-4 py-4 text-sm text-white
+                             placeholder:text-white/40 outline-none border"
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    borderColor: 'rgba(255,255,255,0.12)',
+                  }}
+                />
+
+              </div>
+
+              <div className="flex flex-col gap-2">
+
+                <label className="text-sm font-semibold text-white/80">
+                  Marché
+                </label>
+
+                <input
+                  type="text"
+                  placeholder="Ex: Dantokpa"
+                  className="rounded-2xl px-4 py-4 text-sm text-white
+                             placeholder:text-white/40 outline-none border"
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    borderColor: 'rgba(255,255,255,0.12)',
+                  }}
+                />
+
+              </div>
+
+            </>
+
+          )}
+
+          {profil === 'livreur' && (
+
+            <>
+
+              <div className="flex flex-col gap-2">
+
+                <label className="text-sm font-semibold text-white/80">
+                  Type véhicule
+                </label>
+
+                <input
+                  type="text"
+                  placeholder="Ex: Zemidjan"
+                  className="rounded-2xl px-4 py-4 text-sm text-white
+                             placeholder:text-white/40 outline-none border"
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    borderColor: 'rgba(255,255,255,0.12)',
+                  }}
+                />
+
+              </div>
+
+              <div className="flex flex-col gap-2">
+
+                <label className="text-sm font-semibold text-white/80">
+                  Immatriculation
+                </label>
+
+                <input
+                  type="text"
+                  placeholder="RB-1234"
+                  className="rounded-2xl px-4 py-4 text-sm text-white
+                             placeholder:text-white/40 outline-none border"
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    borderColor: 'rgba(255,255,255,0.12)',
+                  }}
+                />
+
+              </div>
+
+            </>
+
+          )}
 
           {/* Bouton */}
           <button
