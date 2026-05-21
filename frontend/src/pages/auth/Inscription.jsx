@@ -96,11 +96,6 @@ export default function Inscription() {
 
           {/* Choix profil */}
           <div>
-
-              <label className="text-sm font-semibold text-white/80 mb-3 block">
-                Je veux :
-              </label>
-
             <div className="grid grid-cols-3 gap-3">
 
               {profils.map((p) => {
