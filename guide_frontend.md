@@ -145,22 +145,49 @@ Espace dédié à la recherche, à l'achat de produits et au suivi des commandes
 
 ## 3. Espace Vendeur (Commerçant)
 
-Espace dédié à la gestion des produits, du stock et des ventes.
+Espace dédié à la gestion des produits, du stock et des ventes de l'établissement.
 
-- **Tableau de Bord Vendeur (Dashboard)** :
-  - Vue d'ensemble des ventes, des revenus réels (déduction faite de la commission de 0,6 % et des produits rejetés).
-  - Affichage du score de réputation du vendeur.
-- **Gestion du Catalogue de Produits (Product Management / CRUD)** :
-  - Écran d'ajout d'un produit.
-  - Écran de modification d'un produit existant.
-  - Liste et statut du stock disponible.
-- **Gestion des Commandes Vendeur (Order Collection)** :
-  - Liste des commandes clients contenant des produits du vendeur.
-  - Suivi du statut de collecte (statut_collecte_vendeur).
-  - Écran de validation de la remise des articles (saisie du code de vérification unique fourni par le livreur).
-  - Module d'enregistrement et d'envoi de la preuve photographique obligatoire.
-- **Gestion des Retours (Returned Products)** : Liste des articles retournés/rejetés par les clients à récupérer.
-- **Formulaire de Signalement (Report Form)** : Possibilité de signaler un client ou un livreur.
+### 3.1. Tableau de Bord Vendeur (Dashboard)
+* **Éléments à afficher :**
+  - **Statut Financier Global :** 
+    - Revenu brut cumulé.
+    - Commission prélevée par la plateforme (automatiquement calculée à **0,6 %** de la valeur des marchandises, voir **RG08**).
+    - Pertes liées aux articles rejetés par les clients (exclus automatiquement des gains, voir **RG16**).
+    - Gains nets réels à recevoir.
+  - **Indicateur de Réputation (Règles RG10 & RG15) :** Affichage très visible du score de réputation (`score_reputation` issu de l'entité `VENDEUR`), mis à jour selon les retours des clients.
+  - **Alertes de stock :** Liste des articles dont le `stock_disponible` est proche de zéro.
+
+### 3.2. Gestion du Catalogue de Produits (Product CRUD)
+* **Éléments à afficher :**
+  - Tableau de bord des produits proposés par le vendeur (Nom, description, prix de référence `prix_reference`, quantité en stock `stock_disponible`).
+  - Modale ou page dédiée pour : **[Ajouter un produit]**, **[Modifier]** et **[Supprimer]**.
+* **Comportement et logique frontend (Règle RG03) :**
+  - **Propriété exclusive de l'offre :** Chaque article créé appartient exclusivement au catalogue de ce vendeur (avec un identifiant unique `id_produit` et la clé étrangère `#id_user_vendeur` liée automatiquement en arrière-plan).
+  - **Validation du formulaire :**
+    - `prix_reference` et `stock_disponible` doivent obligatoirement être des valeurs numériques positives.
+    - Les champs nom et description sont requis.
+
+### 3.3. Gestion des Commandes Vendeur (Order Pick-ups)
+* **Éléments à afficher :**
+  - Liste des commandes contenant des produits du vendeur, triées par statut de collecte (`statut_collecte_vendeur` : En attente du livreur, Prêt à être collecté, Collecté).
+  - Pour chaque commande : ID de commande, heure de validation, liste des articles concernés (quantité commandée et prix appliqué).
+* **Comportement frontend de validation de collecte (Règles RG06 & RG07) :**
+  - **Preuve photographique obligatoire (RG07) :** L'UI doit forcer le vendeur à prendre ou uploader une photo (qui remplira l'attribut `url_photo` de `PREUVE_COLLECTE`). **Le bouton de validation finale doit rester désactivé (grisé) tant qu'aucune photo n'est fournie.**
+  - **Saisie du Code de vérification :** Le vendeur doit saisir à l'écran le code de vérification unique fourni par le livreur lors du retrait physique pour signer numériquement la collecte.
+  - **Validation :** Après soumission de la photo et du code corrects, le statut passe à "Collecté".
+
+### 3.4. Gestion des Retours (Returned Products)
+* **Éléments à afficher :**
+  - Liste des articles de l'établissement rejetés par les clients lors de la livraison (voir **RG16**).
+  - Pour chaque retour : ID du produit, Nom, quantité rejetée, Motif du rejet écrit par le client, et statut de récupération (À récupérer au point relais/marché, Récupéré).
+* **Comportement et logique frontend :**
+  - Cette interface permet de suivre physiquement le retour du stock refusé et de voir l'impact négatif associé sur le score de réputation.
+
+### 3.5. Formulaire de Signalement (Règle RG14)
+* **Éléments à afficher :**
+  - Formulaire accessible pour signaler un client ou un livreur en cas de comportement abusif.
+  - Saisie du motif du signalement (`motif`).
+
 
 ---
 
