@@ -193,22 +193,54 @@ Espace dédié à la gestion des produits, du stock et des ventes de l'établiss
 
 ## 4. Espace Livreur (Logistique)
 
-Espace mobile-first dédié à la prise en charge et à la livraison physique des marchandises.
+Espace mobile-first dédié à la prise en charge, au retrait chez les vendeurs et à la livraison physique chez les clients.
 
-- **Tableau de Bord Livreur (Driver Dashboard)** :
-  - Résumé des courses effectuées et des gains associés.
-  - Affichage du score de réputation du livreur.
-- **Gestion des Courses Disponibles (Delivery Marketplace)** : Liste des commandes en attente d'affectation à un livreur.
-- **Étape de Collecte (Pick-up Flow)** :
-  - Liste des vendeurs chez qui récupérer les articles pour la commande en cours.
-  - Écran de validation de la preuve photographique obligatoire pour chaque vendeur.
-  - Saisie du code de validation vendeur pour confirmer la prise en charge.
-- **Étape de Livraison (Delivery Flow & Cash on Delivery)** :
-  - Adresse et informations de contact du client.
-  - Interface d'encaissement du paiement à la livraison (COD).
-  - Interface de gestion en direct des rejets de produits par le client (mise à jour dynamique des montants et frais de retour).
-  - Validation de fin de livraison.
-- **Formulaire de Signalement (Report Form)** : Possibilité de signaler un client ou un vendeur.
+### 4.1. Tableau de Bord Livreur (Driver Dashboard)
+* **Éléments à afficher :**
+  - **Indicateurs de gains :** Total des gains accumulés (somme des frais de livraison perçus).
+  - **Nombre de courses :** Volume de livraisons clôturées.
+  - **Indicateur de Réputation (Règles RG10 & RG15) :** Affichage très visible du score de réputation (`score_reputation` issu de l'entité `LIVREUR`), influencé par la note de transport reçue lors des évaluations clients.
+  - **Véhicule actif :** Rappel du `type_vehicule` et de la plaque d'`immatriculation` renseignés lors de l'inscription.
+
+### 4.2. Gestion des Courses Disponibles (Delivery Marketplace)
+* **Éléments à afficher :**
+  - Liste de toutes les commandes validées par des clients en attente d'attribution de livreur.
+  - Pour chaque course disponible : 
+    - Liste des établissements vendeurs et leurs adresses de collecte.
+    - Quartier ou secteur géographique de livraison finale.
+    - Rémunération de la livraison (`frais_livraison`).
+* **Comportement et logique frontend (Règle RG05) :**
+  - **Attribution exclusive :** Un clic sur le bouton "Accepter la course" attribue instantanément la commande à ce livreur de façon unique (création de l'entité `LIVRAISON` avec clé étrangère `#id_user_livreur` et passage de l'état global de la commande à "En cours de collecte").
+
+### 4.3. Étape de Collecte (Pick-up Flow - Étape par Étape)
+* **Éléments à afficher :**
+  - Liste ordonnée de tous les vendeurs distincts associés à la commande.
+  - Pour chaque vendeur : Nom de l'établissement, localisation précise dans le marché, liste des articles à retirer, et statut de collecte du vendeur (`statut_collecte_vendeur`).
+* **Comportement et logique frontend de collecte (Règles RG06 & RG07) :**
+  - **Suivi de la photo de preuve (RG07) :** L'interface doit afficher un indicateur visuel dynamique confirmant si le vendeur a bien complété le téléversement de sa photo obligatoire de preuve de collecte (`url_photo` de `PREUVE_COLLECTE`).
+  - **Remise et validation :** Le livreur communique au vendeur son code de collecte unique et confirme sur l'UI que tous les articles prévus ont été reçus. Une fois tous les points de collecte vendeurs validés, l'application bascule automatiquement le statut général en "En transit" (En cours de livraison).
+
+### 4.4. Étape de Livraison (Delivery Flow & Cash on Delivery)
+* **Éléments à afficher :**
+  - Adresse physique complète du client et bouton d'appel téléphonique rapide.
+  - **Formulaire de livraison interactive (Face-à-face) :**
+    - Liste des articles de la commande (`DETAIL_COMMANDE`).
+    - Cases à cocher en direct pour chaque produit : **[Accepté]** / **[Rejeté]** (selon le choix physique du client en direct, voir **RG09**).
+    - **Calculateur de caisse dynamique (COD - Règle RG08 & RG16) :**
+      - Total marchandises (exclut les articles rejetés).
+      - Frais de livraison.
+      - Frais de retour additionnels (`frais_retour_calcules`) ajoutés si des articles sont rejetés.
+      - **Montant net final à collecter** en espèces (calculé automatiquement à l'écran).
+    - **Saisie du code client (RG06) :** Champ de saisie obligatoire pour entrer le code de vérification unique (`code_verification`) que le client doit lui dicter lors de la remise.
+* **Comportement et logique frontend :**
+  - Le livreur valide la transaction sur l'UI uniquement après réception du montant net en espèces et après avoir saisi le code de vérification correct fourni par le client.
+  - Un clic sur "Finaliser la livraison" enregistre l'heure de fin réelle (`date_fin_reelle` dans `LIVRAISON`) et libère le livreur pour de nouvelles courses.
+
+### 4.5. Formulaire de Signalement (Règle RG14)
+* **Éléments à afficher :**
+  - Formulaire accessible pour signaler un client conflictuel ou un vendeur.
+  - Saisie du motif du signalement (`motif`).
+
 
 ---
 
