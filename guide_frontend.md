@@ -73,27 +73,73 @@ Ces écrans constituent la porte d'entrée de l'application et sont partagés pa
 
 Espace dédié à la recherche, à l'achat de produits et au suivi des commandes.
 
-- **Tableau de Bord Client (Accueil Client)** :
-  - Barre de recherche de produits et catégories.
-  - Liste des marchés locaux.
-  - Consultation des catalogues de produits des différents vendeurs.
-- **Gestion du Panier (Shopping Cart)** :
-  - Liste des articles ajoutés (possibilité de commander chez plusieurs vendeurs simultanément).
-  - Gestion des quantités par article.
-- **Tunnel de Commande (Checkout)** :
-  - Formulaire de saisie/validation de l'adresse de livraison.
-  - Écran de sélection du livreur (affichage des réputations et types de véhicules).
-  - Résumé financier de la commande (marchandises, frais de livraison, commission).
-- **Suivi des Commandes en Cours (Order Tracking)** :
-  - Suivi de l'état de la livraison.
-  - Affichage du code de vérification unique (à communiquer au livreur).
-- **Gestion des Rejets et Retours (Product Rejects)** :
-  - Interface de rejet individuel ou partiel d'un produit lors de la livraison (calcul des frais de retour).
-- **Historique des Commandes terminées** : Liste de tous les achats passés.
-- **Évaluation et Feedback (Reviews)** :
-  - Écran d'évaluation du produit et du vendeur.
-  - Écran d'évaluation du transport (note du livreur).
-- **Formulaire de Signalement (Report Form)** : Possibilité de signaler un autre utilisateur (vendeur ou livreur).
+### 2.1. Tableau de Bord Client (Accueil Client)
+* **Éléments à afficher :**
+  - Barre de recherche textuelle globale (filtre sur le `nom` et la `description` des produits).
+  - Sélecteur/Filtre par marché local (`localisation_marche` des vendeurs).
+  - Grille de produits sous forme de cartes (Cards) contenant : photo, nom du produit, prix de référence (`prix_reference`), nom de l'établissement du vendeur (`nom_etablissement`), et un indicateur visuel de la disponibilité du stock (`stock_disponible`).
+* **Comportement et logique frontend :**
+  - **Mise à jour en temps réel :** Le filtrage par marché ou par mot-clé doit rafraîchir dynamiquement la liste sans rechargement de page.
+  - **Sélection de produit :** Un clic sur un produit ouvre une vue détaillée (modale ou page produit) permettant de choisir la quantité souhaitée (limitée par le `stock_disponible` de l'entité `PRODUIT`).
+
+### 2.2. Gestion du Panier (Shopping Cart)
+* **Éléments à afficher :**
+  - Liste des articles ajoutés, **regroupés par vendeur** (`nom_etablissement`).
+  - Pour chaque article : Nom, prix unitaire (`prix_vente_applique`), quantité choisie, sous-total de la ligne, bouton de suppression.
+  - Affichage dynamique du total provisoire des marchandises.
+* **Comportement et logique frontend (Règle RG01) :**
+  - **Panier Multi-Vendeurs :** L'interface utilisateur doit permettre d'ajouter et de commander simultanément des produits provenant de différents vendeurs au sein d'une seule transaction.
+  - **Contrôle des stocks :** Bloquer l'incrémentation de la quantité si elle dépasse le `stock_disponible`.
+
+### 2.3. Tunnel de Commande (Checkout)
+* **Éléments à afficher :**
+  - **Adresse de livraison :** Saisie pré-remplie avec l'`adresse_livraison` issue de l'entité `CLIENT`, avec possibilité de la modifier ponctuellement pour cette commande.
+  - **Sélection du Livreur (Règle RG05) :** Liste des livreurs actifs. Afficher pour chacun :
+    - Nom et Prénom.
+    - Véhicule (`type_vehicule` et plaque d'`immatriculation`).
+    - Score de réputation (`score_reputation` sous forme d'étoiles ou d'indicateur coloré).
+  - **Résumé Financier Dynamique :**
+    - Total marchandises (`total_marchandises`).
+    - Frais de livraison (`frais_livraison` calculés par le backend).
+    - Montant total final de la commande.
+* **Comportement et logique frontend :**
+  - Le choix d'un unique livreur est requis pour finaliser la commande.
+  - Affichage obligatoire de la mention **"Paiement à la livraison (COD)"** pour éviter toute ambiguïté (RG08).
+  - Un clic sur "Valider la commande" génère l'entité `COMMANDE` et les liaisons correspondantes dans `DETAIL_COMMANDE`.
+
+### 2.4. Suivi des Commandes en Cours (Order Tracking)
+* **Éléments à afficher :**
+  - Suivi d'avancement sous forme de ligne de temps (Timeline) : En attente -> Validée -> En collecte -> En livraison -> Livrée.
+  - **Code de vérification unique (`code_verification`) :** Affiché de manière très visible (gros caractères ou QR Code) avec la consigne stricte : *"Ne transmettez ce code au livreur qu'une fois les marchandises physiques reçues."* (RG06).
+  - Liste détaillée des articles commandés avec le statut individuel de collecte chez chaque vendeur (`statut_collecte_vendeur`).
+
+### 2.5. Gestion des Rejets de Produits (Product Rejects Interface)
+* **Éléments à afficher :**
+  - Écran interactif activé en présence du livreur lors du face-à-face de livraison.
+  - Liste des articles de la commande (`DETAIL_COMMANDE`) avec deux options pour chacun : **[Accepter]** ou **[Rejeter]**.
+  - Si l'option **Rejeter** est choisie : Un champ de texte obligatoire pour saisir le motif du rejet.
+* **Comportement et logique frontend (Règles RG09 & RG16) :**
+  - **Rejet Granulaire :** Le client doit pouvoir rejeter un ou plusieurs articles individuellement sans avoir à annuler la totalité de sa commande.
+  - **Recalcul dynamique à l'écran :**
+    - Le total de la commande est mis à jour instantanément pour exclure les produits rejetés.
+    - Calcul et affichage immédiats des `frais_retour_calcules` applicables aux articles retournés.
+
+### 2.6. Historique des Commandes & Évaluation
+* **Éléments à afficher :**
+  - Liste chronologique des commandes passées (statuts : Entièrement acceptée, Partiellement acceptée, Rejetée).
+  - Bouton "Laisser un avis" disponible uniquement sur les commandes finalisées.
+  - **Formulaire d'Évaluation (`FEEDBACK`) :**
+    - Saisie de la note du produit/vendeur (`note_produit` sur 5 étoiles).
+    - Saisie de la note de la livraison (`note_transport` sur 5 étoiles).
+    - Zone de texte libre pour le commentaire.
+
+### 2.7. Formulaire de Signalement (Règle RG14)
+* **Éléments à afficher :**
+  - Formulaire accessible depuis l'historique d'une commande ou le profil d'un vendeur/livreur.
+  - Saisie du motif du signalement (`motif`).
+* **Comportement et logique frontend :**
+  - Soumission sécurisée au backend pour traitement par l'administrateur dans son espace de modération.
+
 
 ---
 
