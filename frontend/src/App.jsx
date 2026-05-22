@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Accueil from './pages/Accueil/Accueil'
 import Connexion from './pages/auth/Connexion'
-import Client from './pages/client/Client'
+import AccueilClient from './pages/client/AccueilClient'
+import Catalogue from './pages/client/Catalogue'
+import Panier from './pages/client/Panier'
 import Vendeur from './pages/vendeur/Vendeur'
 import Livreur from './pages/livreur/Livreur'
 import Admin from './pages/admin/Admin'
@@ -22,10 +24,12 @@ export default function App() {
         <Route path="/admin-connect" element={<Connexion />} />
 
         {/* Pages temporaires */}
-        <Route path="/client/dashboard" element={<h1>Client</h1>} />
-        <Route path="/vendeur/dashboard" element={<h1>Vendeur</h1>} />
-        <Route path="/livreur/dashboard" element={<h1>Livreur</h1>} />
-        <Route path="/admin/dashboard" element={<h1>Admin</h1>} />
+        <Route path="/client/accueil" element={<AccueilClient />} />
+        <Route path="/client/catalogue/marche:Id" element={<Catalogue />} />
+        <Route path="/client/panier" element={<Panier />} />
+        <Route path="/vendeur/dashboard" element={<Vendeur />} />
+        <Route path="/livreur/dashboard" element={<Livreur />} />
+        <Route path="/admin/dashboard" element={<Admin />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/accueil" />} />

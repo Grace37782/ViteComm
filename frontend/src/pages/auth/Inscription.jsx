@@ -95,11 +95,7 @@ export default function Inscription() {
         </div>
 
           {/* Choix profil */}
-          <div>
-
-              <label className="text-sm font-semibold text-white/80 mb-3 block">
-                Je veux :
-              </label>
+            <div className="mb-6">
 
             <div className="grid grid-cols-3 gap-3">
 
