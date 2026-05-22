@@ -246,18 +246,41 @@ Espace mobile-first dédié à la prise en charge, au retrait chez les vendeurs 
 
 ## 5. Espace Administrateur (Modération & Analytics)
 
-Espace de contrôle global de la plateforme, avec respect de la confidentialité des clients (RGPD).
+Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbitrer les litiges et modérer le système, tout en assurant une confidentialité absolue aux acheteurs.
 
-- **Tableau de Bord Administrateur (Admin Dashboard)** :
-  - Statistiques globales de vente et commissions prélevées.
-  - Liste des produits les plus vendus / les plus rejetés.
-- **Gestion des Comptes Utilisateurs (User Administration)** :
-  - Liste et recherche globale des utilisateurs (Vendeurs, Livreurs, Administrateurs, et infos de base des Clients).
-  - *Note : Conformément au RGPD, aucun accès à l'historique d'achat ou de navigation privé des clients n'est visible ici.*
-  - Module de bannissement et suspension définitive des vendeurs ou livreurs.
-- **Centre de Gestion des Signalements (Universal Moderation)** :
-  - Liste centralisée de tous les signalements émis sur la plateforme.
-  - Outils d'action corrective (sanctions, suspensions de comptes de tous types).
-- **Gestion et Arbitrage des Litiges (Dispute Center)** :
-  - Liste des litiges ouverts suite à des non-conformités ou rejets.
-  - Interface de décision administrative (arbitrage, validation de remboursement).
+### 5.1. Tableau de Bord Administrateur (Admin Dashboard)
+* **Éléments à afficher :**
+  - **Mesures Financières de la Plateforme (Règle RG08) :**
+    - Volume total brut des ventes réalisées.
+    - Cumul de la **commission de 0,6 %** perçue par la plateforme sur les marchandises acceptées.
+  - **Analyses Produits & Tendances (Règle RG12) :**
+    - Liste triée des produits les plus achetés.
+    - Liste triée des produits les plus refusés/rejetés par les clients lors de la livraison (indicateur clé de qualité).
+  - Statut en temps réel des litiges ouverts et des signalements en attente de traitement.
+
+### 5.2. Gestion des Comptes Utilisateurs (User Administration)
+* **Éléments à afficher :**
+  - Tableau de bord listant tous les utilisateurs inscrits.
+  - Recherche et filtrage par rôle (`Client`, `Vendeur`, `Livreur`, `Admin`) ou par `statut_compte`.
+  - Pour chaque compte : Nom, prénom, téléphone, email, et statut actuel.
+  - Pour les **Vendeurs** et **Livreurs** uniquement : affichage direct de leur `score_reputation` et bouton d'accès pour consulter le catalogue complet d'un vendeur (RG12).
+  - **Actions de Modération (Règle RG13) :** Boutons d'action pour suspendre définitivement (bannir) ou supprimer un compte vendeur ou livreur.
+* **Comportement frontend & Confidentialité stricte (Règles RG11 & RG15) :**
+  - **Sécurité RGPD :** L'interface administrateur ne doit comporter **aucun lien, bouton ou écran permettant d'accéder à l'historique d'achat ou de navigation privé d'un Client**. L'administrateur n'a accès qu'à ses informations d'identité de base (`nom`, `prenom`, `telephone`, `email`).
+
+### 5.3. Centre de Gestion des Signalements (Universal Moderation)
+* **Éléments à afficher :**
+  - Liste de tous les signalements de la plateforme (`SIGNALEMENT`) contenant : Heure, motif du signalement (`motif`), auteur (`id_auteur`), et cible identifiée (`id_cible` / `type_cible_cible`).
+  - Indicateur visuel du statut de traitement (En attente / Sanctionné / Classé sans suite).
+* **Comportement et logique frontend (Règle RG14) :**
+  - **Droit de sanction universel :** Bien que l'historique d'un client soit confidentiel, les signalements reçus permettent à l'administrateur de suspendre ou supprimer tout type de compte s'il y a un abus avéré, **y compris le compte d'un Client**.
+
+### 5.4. Centre de Gestion et d'Arbitrage des Litiges (Dispute Center)
+* **Éléments à afficher :**
+  - Liste des litiges en cours (`LITIGE`) initiés par les clients suite à des rejets d'articles.
+  - Détail par litige : ID de commande, description de l'incident, montant total concerné par les articles rejetés.
+* **Comportement et logique frontend d'arbitrage (Règles RG09 & RG16) :**
+  - Zone de texte pour rédiger la décision officielle de l'administrateur (`decision_admin`).
+  - Saisie du montant final validé pour remboursement au client (`montant_rembourse`).
+  - Bouton "Clôturer le litige" qui enregistre la décision, applique le remboursement et actualise la réputation des acteurs professionnels concernés.
+
