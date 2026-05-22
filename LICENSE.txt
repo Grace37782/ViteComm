@@ -1,42 +1,41 @@
-VITECOMM LICENCE - CLOSED SOURCE
+LICENCE VITECOMM - SOURCE FERMÉE (CLOSED SOURCE)
 
-Copyright (c) 2026 ViteComm. All rights reserved.
+Copyright (c) 2026 ViteComm. Tous droits réservés.
 
-TERMS AND CONDITIONS
+TERMES ET CONDITIONS
 
-1. OWNERSHIP
-   ViteComm is the exclusive property of its author(s). This software is closed source.
+1. PROPRIÉTÉ
+   ViteComm est la propriété exclusive de ses auteurs. Ce logiciel est sous licence source fermée (closed source).
 
-2. USAGE
-   This software is provided free of charge for personal and commercial use.
+2. UTILISATION
+   Ce logiciel est fourni gratuitement pour un usage personnel et commercial.
 
 3. DISTRIBUTION
-   You may distribute this software as-is, provided that:
-   - No modification to the source code or any component is permitted
-   - The original package is distributed in its entirety
-   - This licence file is included with the distribution
+   Vous pouvez distribuer ce logiciel en l'état, à condition que :
+   - Aucune modification du code source ou de ses composants ne soit effectuée.
+   - Le package d'origine soit distribué dans son intégralité.
+   - Ce fichier de licence soit inclus avec la distribution.
 
 4. RESTRICTIONS
-   MODIFICATION IS STRICTLY PROHIBITED. You are not permitted to:
-   - Decompile, reverse engineer, or disassemble this software
-   - Modify, alter, or adapt any part of the codebase
-   - Create derivative works based on this software
-   - Remove or alter any proprietary notices
+   TOUTE MODIFICATION EST STRICTEMENT INTERDITE. Vous n'êtes pas autorisé à :
+   - Décompiler, faire de l'ingénierie inverse ou désassembler ce logiciel.
+   - Modifier, altérer ou adapter toute partie de la base de code.
+   - Créer des œuvres dérivées basées sur ce logiciel.
+   - Supprimer ou altérer les mentions de propriété ou droits d'auteur.
 
-5. NO WARRANTIES
-   This software is provided "as is" without warranty of any kind, express or implied.
+5. ABSENCE DE GARANTIE
+   Ce logiciel est fourni "en l'état" sans aucune garantie, expresse ou implicite.
 
-6. LIABILITY
-   The author(s) shall not be held liable for any damages arising from the use or
-   distribution of this software.
+6. LIMITATION DE RESPONSABILITÉ
+   Les auteurs ne pourront en aucun cas être tenus responsables de tout dommage découlant de l'utilisation ou de la distribution de ce logiciel.
 
-7. ENFORCEMENT
-   Any violation of this licence constitutes copyright infringement and may result in:
-   - Immediate termination of usage rights
-   - Legal action
-   - Claims for damages
-   - Criminal prosecution where applicable
+7. APPLICATION DE LA LICENCE
+   Toute violation de cette licence constitue une contrefaçon de droits d'auteur et peut entraîner :
+   - La résiliation immédiate de vos droits d'utilisation.
+   - Des poursuites judiciaires.
+   - Des demandes d'indemnisation pour dommages et intérêts.
+   - Des poursuites pénales, le cas échéant.
 
-By using, distributing, or possessing this software, you agree to be bound by these terms.
+En utilisant, distribuant ou possédant ce logiciel, vous acceptez d'être lié par les présents termes.
 
-For permissions or inquiries, contact the author(s) directly.
+Pour toute demande d'autorisation ou information, veuillez contacter directement les auteurs.
