@@ -95,7 +95,8 @@ export default function Inscription() {
         </div>
 
           {/* Choix profil */}
-          <div>
+            <div className="mb-6">
+
             <div className="grid grid-cols-3 gap-3">
 
               {profils.map((p) => {
