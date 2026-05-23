@@ -32,3 +32,9 @@ dist-ssr/
 
 # OS files
 Thumbs.db
+
+# Databases
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
