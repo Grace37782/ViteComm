@@ -85,7 +85,7 @@ Espace dédié à la recherche, à l'achat de produits et au suivi des commandes
 ### 2.2. Gestion du Panier (Shopping Cart)
 * **Éléments à afficher :**
   - Liste des articles ajoutés, **regroupés par vendeur** (`nom_etablissement`).
-  - Pour chaque article : Nom, prix unitaire (`prix_vente_applique`), quantité choisie, sous-total de la ligne, bouton de suppression.
+  - Pour chaque article : Nom, prix unitaire (`prix_reference` issu de l'entité `PRODUIT`), quantité choisie, sous-total de la ligne, bouton de suppression.
   - Affichage dynamique du total provisoire des marchandises.
 * **Comportement et logique frontend (Règle RG01) :**
   - **Panier Multi-Vendeurs :** L'interface utilisateur doit permettre d'ajouter et de commander simultanément des produits provenant de différents vendeurs au sein d'une seule transaction.
@@ -129,9 +129,12 @@ Espace dédié à la recherche, à l'achat de produits et au suivi des commandes
   - Liste chronologique des commandes passées (statuts : Entièrement acceptée, Partiellement acceptée, Rejetée).
   - Bouton "Laisser un avis" disponible uniquement sur les commandes finalisées.
   - **Formulaire d'Évaluation (`FEEDBACK`) :**
-    - Saisie de la note du produit/vendeur (`note_produit` sur 5 étoiles).
-    - Saisie de la note de la livraison (`note_transport` sur 5 étoiles).
-    - Zone de texte libre pour le commentaire.
+    - Sélection du type d'évaluation (`type_feedback`) : **Livreur** (évalue la livraison) ou **Vendeur** (évalue les produits).
+    - Le client peut évaluer le livreur (affecte sa réputation) et/ou évaluer un ou plusieurs vendeurs séparément (RG23).
+    - Pour chaque évaluation : note (`note` sur 5 étoiles) et commentaire texte libre (`commentaire`).
+    - Si `type_feedback = LIVREUR` : la note est liée à la livraison via `#id_livraison`.
+    - Si `type_feedback = VENDEUR` : la note est liée au vendeur via `#id_user_vendeur` (ou affecte globalement tous les vendeurs de la commande).
+    - Les lignes de `DETAIL_COMMANDE` pointent vers leur feedback respectif via la FK `#id_feedback`.
 
 ### 2.7. Formulaire de Signalement (Règle RG14)
 * **Éléments à afficher :**
@@ -172,9 +175,9 @@ Espace dédié à la gestion des produits, du stock et des ventes de l'établiss
   - Liste des commandes contenant des produits du vendeur, triées par statut de collecte (`statut_collecte_vendeur` : En attente du livreur, Prêt à être collecté, Collecté).
   - Pour chaque commande : ID de commande, heure de validation, liste des articles concernés (quantité commandée et prix appliqué).
 * **Comportement frontend de validation de collecte (Règles RG06 & RG07) :**
-  - **Preuve photographique obligatoire (RG07) :** L'UI doit forcer le vendeur à prendre ou uploader une photo (qui remplira l'attribut `url_photo` de `PREUVE_COLLECTE`). **Le bouton de validation finale doit rester désactivé (grisé) tant qu'aucune photo n'est fournie.**
-  - **Saisie du Code de vérification :** Le vendeur doit saisir à l'écran le code de vérification unique fourni par le livreur lors du retrait physique pour signer numériquement la collecte.
-  - **Validation :** Après soumission de la photo et du code corrects, le statut passe à "Collecté".
+  - **Vérification du code de collecte (RG06) :** Le vendeur doit saisir à l'écran le code de vérification unique (`code_verification` de l'entité `COMMANDE`) fourni par le livreur lors du retrait physique pour signer numériquement la remise des marchandises. **Le bouton de validation finale reste désactivé (grisé) tant que le code n'est pas saisi.**
+  - **Suivi de la preuve de collecte (RG07) :** L'interface affiche un indicateur visuel confirmant si le livreur a bien complété sa preuve photographique de collecte (`PREUVE_COLLECTE`). Le vendeur n'a pas à uploader la photo ; cette responsabilité incombe au livreur (cf. section 4.3).
+  - **Validation :** Après la saisie du code correct et confirmation de la preuve photo par le livreur, le statut passe à "Collecté".
 
 ### 3.4. Gestion des Retours (Returned Products)
 * **Éléments à afficher :**
@@ -217,8 +220,9 @@ Espace mobile-first dédié à la prise en charge, au retrait chez les vendeurs 
   - Liste ordonnée de tous les vendeurs distincts associés à la commande.
   - Pour chaque vendeur : Nom de l'établissement, localisation précise dans le marché, liste des articles à retirer, et statut de collecte du vendeur (`statut_collecte_vendeur`).
 * **Comportement et logique frontend de collecte (Règles RG06 & RG07) :**
-  - **Suivi de la photo de preuve (RG07) :** L'interface doit afficher un indicateur visuel dynamique confirmant si le vendeur a bien complété le téléversement de sa photo obligatoire de preuve de collecte (`url_photo` de `PREUVE_COLLECTE`).
-  - **Remise et validation :** Le livreur communique au vendeur son code de collecte unique et confirme sur l'UI que tous les articles prévus ont été reçus. Une fois tous les points de collecte vendeurs validés, l'application bascule automatiquement le statut général en "En transit" (En cours de livraison).
+  - **Preuve photographique obligatoire (RG07) :** Le livreur est responsable de la réalisation de la preuve de collecte. L'UI doit fournir un mécanisme de prise de photo ou de téléversement qui alimentera l'attribut `url_photo` de l'entité `PREUVE_COLLECTE`, liée à la commande (`#id_commande`), au vendeur (`#id_user_vendeur`) et au livreur (`#id_user_livreur`).
+  - **Indicateur de validation vendeur :** L'interface affiche un indicateur visuel dynamique confirmant si le vendeur a bien saisi le code de vérification (`code_verification`) dans son interface pour valider la remise (cf. section 3.3).
+  - **Confirmation de collecte :** Une fois que la preuve photo est prise par le livreur ET que le vendeur a saisi le code de vérification, l'application bascule automatiquement le statut de collecte de ce vendeur à "Collecté". Après validation de tous les points de collecte, le statut général passe en "En transit" (En cours de livraison).
 
 ### 4.4. Étape de Livraison (Delivery Flow & Cash on Delivery)
 * **Éléments à afficher :**
@@ -231,9 +235,9 @@ Espace mobile-first dédié à la prise en charge, au retrait chez les vendeurs 
       - Frais de livraison.
       - Frais de retour additionnels (`frais_retour_calcules`) ajoutés si des articles sont rejetés.
       - **Montant net final à collecter** en espèces (calculé automatiquement à l'écran).
-    - **Saisie du code client (RG06) :** Champ de saisie obligatoire pour entrer le code de vérification unique (`code_verification`) que le client doit lui dicter lors de la remise.
+    - **Validation de la remise :** Le livreur coche les articles acceptés/rejetés en direct avec le client. Les lignes de `DETAIL_COMMANDE` sont mises à jour avec le `statut_acceptation` correspondant.
 * **Comportement et logique frontend :**
-  - Le livreur valide la transaction sur l'UI uniquement après réception du montant net en espèces et après avoir saisi le code de vérification correct fourni par le client.
+  - Le livreur valide la transaction sur l'UI uniquement après réception du montant net en espèces et confirmation visuelle de la remise avec le client.
   - Un clic sur "Finaliser la livraison" enregistre l'heure de fin réelle (`date_fin_reelle` dans `LIVRAISON`) et libère le livreur pour de nouvelles courses.
 
 ### 4.5. Formulaire de Signalement (Règle RG14)
@@ -270,7 +274,7 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
 
 ### 5.3. Centre de Gestion des Signalements (Universal Moderation)
 * **Éléments à afficher :**
-  - Liste de tous les signalements de la plateforme (`SIGNALEMENT`) contenant : Heure, motif du signalement (`motif`), auteur (`id_auteur`), et cible identifiée (`id_cible` / `type_cible_cible`).
+  - Liste de tous les signalements de la plateforme (`SIGNALEMENT`) contenant : Heure, motif (`motif`), auteur (`#id_auteur`), type de cible (`type_cible_cible` : Client, Vendeur, Livreur) et identifiant de la cible (`#id_cible`).
   - Indicateur visuel du statut de traitement (En attente / Sanctionné / Classé sans suite).
 * **Comportement et logique frontend (Règle RG14) :**
   - **Droit de sanction universel :** Bien que l'historique d'un client soit confidentiel, les signalements reçus permettent à l'administrateur de suspendre ou supprimer tout type de compte s'il y a un abus avéré, **y compris le compte d'un Client**.
