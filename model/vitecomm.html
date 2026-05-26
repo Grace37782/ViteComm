@@ -140,35 +140,45 @@
   <h2>2. OBJECTIFS</h2>
   <h3>2.1 Objectif Général</h3>
   <p>Concevoir, développer, tester et déployer un produit minimum viable (MVP) fonctionnel de ViteComm en huit semaines.
-    La plateforme devra offrir une gestion multi-rôles, une agrégation de commandes multi-étals, une vérification
-    qualité systématique, un suivi de livraison en temps réel et un module de résolution de litiges, le tout prêt à être
+    La plateforme devra offrir une gestion multi-rôles basée sur une spécialisation d'utilisateurs, une agrégation de
+    commandes multi-étals, une vérification
+    qualité systématique via une double preuve de collecte, un suivi de livraison en temps réel et un module de
+    résolution de litiges granulaire, le tout prêt à être
     validé dans un cadre académique et techniquement opérationnel pour un pilote ciblé.</p>
 
   <h3>2.2 Objectifs Spécifiques (Critères SMART)</h3>
   <ul>
     <li><strong>Spécifique :</strong> Mettre en place un espace client permettant la commande simultanée chez plusieurs
-      vendeurs, un flux de cueillette intégrant une preuve visuelle obligatoire par point de collecte, un suivi
-      progressif des étapes de livraison, et un tableau de bord administratif doté d'un système de réputation et
-      d'arbitrage.</li>
+      vendeurs via un panier mémorisé, un flux de cueillette intégrant une preuve visuelle obligatoire par point de
+      collecte (livreur) et une preuve client optionnelle en cas de litige, un suivi
+      progressif des étapes de livraison, et un tableau de bord administratif doté d'un système de réputation,
+      d'arbitrage et de signalement polymorphe.</li>
     <li><strong>Mesurable :</strong> Livrer le MVP dans un délai maximal de huit semaines, valider au moins 90% des
       parcours critiques lors des tests d'intégration, et maintenir un temps de réponse inférieur à deux secondes sous
       charge nominale.</li>
     <li><strong>Atteignable et Ambitieux :</strong> S'appuyer sur une méthodologie de modélisation structurée
       (Merise/UML) et une stack technique modulaire pour garantir la faisabilité, tout en intégrant des mécanismes de
-      confiance innovants (code de vérification, preuves photographiques, scoring de réputation).</li>
+      confiance innovants (code de vérification, preuves photographiques, scoring de réputation, entité de liaison
+      ternaire pour le détail de commande).</li>
     <li><strong>Réaliste :</strong> Limiter le périmètre aux fonctionnalités cœur identifiées, avec une équipe de deux
-      développeurs dont les responsabilités sont clairement définies (backend/déploiement vs frontend/UX mobile).</li>
+      développeurs dont les responsabilités sont clairement définies (backend/déploiement vs frontend/UX mobile), et une
+      architecture de données normalisée (3NF).</li>
     <li><strong>Temporellement défini :</strong> Jalons hebdomadaires formalisés, avec une mise en production effective
       et une soutenance académique fixées à l'issue de la huitième semaine.</li>
   </ul>
 
   <h2>3. PÉRIMÈTRE</h2>
-  <p><strong>Cibles identifiées :</strong> Le projet s'adresse à quatre profils d'utilisateurs. Les clients sont des
-    résidents urbains souhaitant éviter les déplacements et la recherche fragmentée de produits. Les vendeurs
-    (étals/marchandes) sont des commerçants cherchant à élargir leur zone de vente sans gérer la logistique. Les
-    livreurs (zémidjans/tricycles) assurent la cueillette étal par étal et la livraison finale.
-    L'administrateur/dispatcheur supervise les commandes, attribue les transporteurs, arbitre les litiges et configure
-    les frais de plateforme.</p>
+  <p><strong>Cibles identifiées :</strong> Le projet s'adresse à quatre profils d'utilisateurs gérés via une table
+    parente <span class="highlight">UTILISATEUR</span> avec spécialisations :
+    Les <strong>clients</strong> sont des résidents urbains souhaitant éviter les déplacements et la recherche
+    fragmentée de produits.
+    Les <strong>vendeurs</strong> (étals/marchandes) sont des commerçants cherchant à élargir leur zone de vente sans
+    gérer la logistique.
+    Les <strong>livreurs</strong> (zémidjans/tricycles) assurent la cueillette étal par étal et la livraison finale,
+    avec une disponibilité calculée selon distance, statut d'acceptation et plage horaire.
+    L'<strong>administrateur/dispatcheur</strong> supervise les commandes, attribue les transporteurs, arbitre les
+    litiges, configure les frais de plateforme et gère les signalements polymorphes. Un utilisateur sans spécialisation
+    hérite par défaut du rôle administrateur.</p>
   <p><strong>Étendue géographique et linguistique :</strong> Le déploiement initial cible une zone marchande précise de
     Cotonou. L'interface principale est rédigée en français, avec une architecture prête à l'internationalisation vers
     les langues locales. L'accès se fait via une <span class="highlight">application mobile native développée avec React
@@ -176,26 +186,34 @@
     accès hors-ligne partiel.</p>
   <p><strong>Dimensionnement et évolutivité :</strong> L'architecture est optimisée pour un MVP académique, dimensionné
     pour environ cinq à dix vendeurs pilotes, deux à cinq livreurs et cinquante utilisateurs simultanés. Les données
-    sont isolées logiquement par rôle, garantissant la confidentialité des informations de chaque acteur. La conception
+    sont isolées logiquement par rôle, garantissant la confidentialité des informations de chaque acteur (RG11 : l'admin
+    ne consulte pas l'historique personnel des clients). La conception
     prévoit une montée en charge progressive pour les phases post-académiques.</p>
 
   <h2>4. DESCRIPTION FONCTIONNELLE</h2>
   <p>Cette section détaille les interactions entre les entités du système, en décrivant les besoins métiers et les
     workflows attendus sans imposer de solutions techniques prématurées.</p>
 
-  <h3>4.1 Parcours Client et Agrégation Multi-Vendeurs</h3>
+  <h3>4.1 Parcours Client, Panier et Agrégation Multi-Vendeurs</h3>
   <p>Le client accède à l'application depuis son domicile et localise le marché le plus proche grâce à un moteur de
     recherche géolocalisé. Une fois dans l'interface du marché, il consulte les catalogues des différents étals, filtre
-    les produits souhaités et les ajoute à un panier unique. Le système permet explicitement la commande simultanée
+    les produits souhaités et les ajoute à un <span class="highlight">panier unique mémorisé (RG22)</span>. Le système
+    permet explicitement la commande simultanée
     auprès de plusieurs vendeurs, consolidant automatiquement le total et regroupant les instructions de livraison.
     Avant validation, le client peut faire appel au service de transport intégré, sélectionner le livreur disponible le
     plus proche et confirmer la commande.</p>
   <p>À la réception, le client inspecte physiquement les articles. S'il accepte la marchandise, il procède au paiement
     intégré via l'application, ce qui déclenche automatiquement la répartition des fonds vers le vendeur et le livreur.
-    En cas de non-conformité, le système calcule le montant correspondant aux frais de déplacement pour le retour des
-    produits au vendeur. Le client ne s'acquitte alors que de ce coût logistique. Dans les deux cas, le client laisse un
+    En cas de non-conformité, <span class="highlight">le client peut rejeter individuellement un ou plusieurs produits
+      sans annuler l'ensemble de la commande (RG09)</span>.
+    Le système calcule alors le montant correspondant aux frais de déplacement pour le retour des produits refusés au
+    vendeur concerné.
+    <span class="highlight">Le vendeur doit récupérer les articles rejetés et le système recalcule automatiquement le
+      montant total, la commission et le versement final en ne tenant compte que des articles acceptés (RG16)</span>.
+    Le client ne s'acquitte alors que du coût logistique des retours. Dans les deux cas, le client laisse un
     feedback sur la qualité des produits et sur le service de transport, lequel alimente directement les scores de
-    réputation des vendeurs et des livreurs.</p>
+    réputation des vendeurs et des livreurs.
+  </p>
 
   <h3>4.2 Gestion des Commandes et Vérification Côté Vendeur</h3>
   <p>Chaque vendeur dispose d'un espace dédié lui permettant de gérer son étal virtuel : ajout, modification et
@@ -205,24 +223,45 @@
     dynamiquement entre le client et le livreur lors de la validation. Ce mécanisme garantit l'intégrité de la chaîne et
     évite les erreurs de livraison ou les fraudes.</p>
 
-  <h3>4.3 Orchestration et Suivi Côté Livreur</h3>
+  <h3>4.3 Orchestration, Disponibilité et Suivi Côté Livreur</h3>
   <p>Le livreur reçoit sur son interface la liste des stands concernés par la commande du client, ainsi que l'itinéraire
-    optimisé. Il utilise la cartographie intégrée (GPS) pour se déplacer efficacement entre les points de collecte. À
-    chaque arrêt, il présente le code de vérification au vendeur, récupère les articles et valide visuellement leur
-    état. Une fois l'ensemble des produits collectés, il les achemine vers l'adresse du client. En cas de litige lors de
-    la livraison, il prend en charge le retour des articles refusés vers le vendeur concerné, conformément aux
+    optimisé. <span class="highlight">Sa disponibilité est déterminée par sa distance au marché, son statut
+      d'acceptation des demandes, et sa plage horaire déclarée (RG19)</span>.
+    Il utilise la cartographie intégrée (GPS) pour se déplacer efficacement entre les points de collecte. À
+    chaque arrêt, il présente le code de vérification au vendeur, récupère les articles et <span
+      class="highlight">valide visuellement leur état via une preuve photographique obligatoire (RG07 - preuve
+      livreur)</span>.
+    Une fois l'ensemble des produits collectés, il les achemine vers l'adresse du client.
+    <span class="highlight">Si le client n'est pas d'accord avec le/les produit(s) à la livraison, il peut réaliser sa
+      propre preuve photographique pour initier un litige (RG07 - preuve client)</span>.
+    En cas de litige, le livreur prend en charge le retour des articles refusés vers le vendeur concerné, conformément
+    aux
     instructions système. Ses performances (ponctualité, intégrité des livraisons, respect des itinéraires) sont
-    évaluées via les retours clients et les indicateurs de suivi.</p>
+    évaluées via les retours clients et les indicateurs de suivi.
+  </p>
 
-  <h3>4.4 Supervision, Analytics et Gestion Administrative</h3>
+  <h3>4.4 Supervision, Analytics, Litiges et Gestion Administrative</h3>
   <p>L'administrateur dispose d'un tableau de bord centralisé lui permettant de piloter l'écosystème ViteComm. Il
     consulte en temps réel les statistiques de vente, les indicateurs de satisfaction clients, et identifie les produits
     les plus commercialisés, les vendeurs les plus recherchés ainsi que les livreurs les plus sollicités.
     L'administration permet également de configurer les frais d'utilisation de la plateforme (par exemple, une
     commission de 0,6% par commande) et de suivre les bilans financiers (bénéfices, pertes, répartition des
-    commissions). En cas de conflit, l'administrateur arbitre les litiges en confrontant les preuves photographiques,
+    commissions). <span class="highlight">En cas de conflit, le litige est initié lors de la livraison et peut concerner
+      un produit spécifique, une liste de produits ou la commande entière (RG21)</span>.
+    L'administrateur arbitre les litiges en confrontant les preuves photographiques (livreur et/ou client),
     les historiques de commande et les feedbacks, avant d'appliquer les ajustements de réputation ou les remboursements
-    nécessaires.</p>
+    nécessaires. <span class="highlight">Tout utilisateur peut signaler tout autre utilisateur via un système de
+      signalement polymorphe centralisé (RG14)</span>, permettant à l'administrateur de sanctionner ou supprimer tout
+    type de compte.</p>
+
+  <h3>4.5 Mécanismes de Feedback et de Réputation</h3>
+  <p><span class="highlight">Le feedback est optionnel et flexible (RG23)</span>. Le client peut évaluer le livreur (ce
+    qui affecte sa réputation) et/ou évaluer les vendeurs.
+    Pour les vendeurs, le client a le choix de donner un feedback sur l'ensemble de la commande (affectant tous les
+    vendeurs concernés) ou des feedbacks distincts
+    sur des sous-ensembles/groupes de produits (n'affectant que les vendeurs de ces produits). <span
+      class="highlight">Les retours clients alimentent exclusivement les scores de réputation des acteurs professionnels
+      (vendeurs/livreurs) ; le client ne possède pas de score de réputation (RG15)</span>.</p>
 
   <h2>5. BUDGET</h2>
   <p>Le budget prévisionnel couvre l'ensemble des dépenses nécessaires au développement, au déploiement et au maintien
@@ -239,7 +278,7 @@
     <tbody>
       <tr>
         <td>Hébergement & Infrastructure</td>
-        <td>Plan étudiant/entrée de gamme AlwaysData (serveur Node.js, base de données, SSL)</td>
+        <td>Plan étudiant/entrée de gamme AlwaysData (serveur Node.js, base de données MySQL, SSL)</td>
         <td>0 à 10 €/mois</td>
       </tr>
       <tr>
@@ -249,8 +288,8 @@
       </tr>
       <tr>
         <td>Stack Logicielle & Outils</td>
-        <td><span class="highlight">Node.js (Express/NestJS), React JS, Git, VS Code,
-            Mysql</span> (licences gratuites)</td>
+        <td><span class="highlight">Node.js (Express/NestJS), React Native, Git, VS Code, MySQL</span> (licences
+          gratuites)</td>
         <td>0 FCFA</td>
       </tr>
       <tr>
@@ -284,48 +323,53 @@
     <tbody>
       <tr>
         <td>Semaine 1</td>
-        <td>Cadrage & Modélisation : CDC validé, Merise (MLD), UML, validation des parcours multi-étals</td>
+        <td>Cadrage & Modélisation : CDC validé, Merise (MLD 3NF), UML, validation des parcours multi-étals et des
+          règles de gestion (RG01-RG23)</td>
         <td>7 jours</td>
         <td>Immaculée & Lionel</td>
       </tr>
       <tr>
         <td>Semaines 2-3</td>
-        <td>Backend & Cloisonnement : Structure DB, authentification multi-rôles, isolation des espaces, catalogues
-          vendeurs, API Node.js</td>
+        <td>Backend & Cloisonnement : Structure DB avec spécialisation UTILISATEUR, authentification multi-rôles,
+          isolation des espaces, catalogues
+          vendeurs, API Node.js, entité ternaire DETAIL_COMMANDE</td>
         <td>14 jours</td>
         <td>Lionel</td>
       </tr>
       <tr>
         <td>Semaine 4</td>
         <td>Frontend & UI Mobile : Intégration React Native, panneaux par rôle, personnalisation admin, maquettes
-          validées</td>
+          validées, gestion du panier client</td>
         <td>7 jours</td>
         <td>Immaculée</td>
       </tr>
       <tr>
         <td>Semaine 5</td>
-        <td>Flux Cœur & Vérification : Panier multi-étal, checkout COD, upload photo obligatoire, synchronisation
-          front-back</td>
+        <td>Flux Cœur & Vérification : Panier multi-étal, checkout COD, double preuve photographique obligatoire
+          (livreur + client optionnel), synchronisation
+          front-back, logique de rejet granulaire</td>
         <td>7 jours</td>
         <td>Lionel & Immaculée</td>
       </tr>
       <tr>
         <td>Semaine 6</td>
         <td>Suivi & Déploiement : Logique de suivi progressif, migration AlwaysData, configuration SSL, builds APK/IPA
-          test</td>
+          test, module de litige et feedback flexible</td>
         <td>7 jours</td>
         <td>Lionel</td>
       </tr>
       <tr>
         <td>Semaine 7</td>
-        <td>Tests & Litiges : Simulation complète des scénarios (succès, retour, conflit), correction de bugs,
-          optimisation des performances</td>
+        <td>Tests & Litiges : Simulation complète des scénarios (succès, retour partiel, conflit, signalement),
+          correction de bugs,
+          optimisation des performances, validation des règles de réputation</td>
         <td>7 jours</td>
         <td>Immaculée & Lionel</td>
       </tr>
       <tr>
         <td>Semaine 8</td>
-        <td>Production & Clôture : Mise en production finale, documentation technique, rapport académique, préparation
+        <td>Production & Clôture : Mise en production finale, documentation technique (MLD, UML, RG), rapport
+          académique, préparation
           soutenance</td>
         <td>7 jours</td>
         <td>Immaculée & Lionel</td>
