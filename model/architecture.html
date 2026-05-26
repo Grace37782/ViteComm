@@ -133,6 +133,15 @@
       color: #6b7280;
       margin-bottom: 1.5rem;
     }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 1.5rem auto;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
   </style>
 </head>
 
@@ -388,38 +397,63 @@
   <h3>3.1. DFED Simples (Source non composée → Entités)</h3>
   <pre>
 id_user → nom, prenom, telephone, email, statut_compte, est_admin
+
 id_user (CLIENT) → adresse_livraison
+
 id_user (VENDEUR) → nom_etablissement, localisation_marche, score_reputation
+
 id_user (LIVREUR) → type_vehicule, immatriculation, score_reputation, est_disponible, distance_marche, heure_debut_dispo, heure_fin_dispo
+
 id_produit → nom, description, prix_reference, stock_disponible
+
 id_panier → date_creation, date_mise_a_jour, #id_user_client
+
 id_commande → date_creation, statut, total_marchandises, frais_livraison, commission, code_verification
+
 id_preuve → date_heure, url_photo, statut_validation
+
 id_litige → description, date_ouverture, statut, decision_admin, montant_rembourse, url_photos, #id_livraison
+
 id_feedback → note, commentaire, date_publication, type_feedback
-id_signalement → date_heure, motif, statut_traitement, type_cible_cible
+
+id_signalement → date_heure, motif, statut_traitement
+
 id_livraison → date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules</pre>
 
   <h3>3.2. DFED à Source Composée (Sources multiples → Associations CIM)</h3>
   <pre>
 (id_commande, id_produit, #id_user_vendeur) → quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige, #id_feedback
+
 (id_panier, id_produit) → quantite
+
 (id_commande, #id_user_vendeur) → statut_collecte_vendeur
+
 (id_commande, #id_user_client) → statut_livraison_client</pre>
 
   <h3>3.3. DFED entre Identifiants (Identifiant → Identifiant → Associations CIF)</h3>
   <pre>
 id_commande → #id_user_client
+
 id_panier → #id_user_client
+
 id_livraison → #id_commande
+
 id_livraison → #id_user_livreur
+
 id_produit → #id_user_vendeur
+
 id_litige → #id_livraison
+
 id_feedback → #id_user_client
+
 id_feedback → #id_livraison (si type_feedback = 'LIVREUR')
+
 id_feedback → #id_user_vendeur (si type_feedback = 'VENDEUR', optionnel)
+
 id_signalement → #id_auteur (CIF)
+
 id_signalement → #id_cible (CIF polymorphe géré par type_cible_cible)
+
 id_preuve → #id_user_livreur</pre>
 
   <h3>3.4. Fusion des Dépendances Fonctionnelles (Couverture Minimale Totale)</h3>
@@ -427,39 +461,67 @@ id_preuve → #id_user_livreur</pre>
     schéma relationnel.</p>
   <pre>
 id_user → nom, prenom, telephone, email, statut_compte, est_admin
+
 id_user (CLIENT) → adresse_livraison
+
 id_user (VENDEUR) → nom_etablissement, localisation_marche, score_reputation
+
 id_user (LIVREUR) → type_vehicule, immatriculation, score_reputation, est_disponible, distance_marche, heure_debut_dispo, heure_fin_dispo
+
 id_produit → nom, description, prix_reference, stock_disponible, #id_user_vendeur
+
 id_panier → date_creation, date_mise_a_jour, #id_user_client
+
 id_commande → date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, #id_user_client
+
 id_preuve → date_heure, url_photo, statut_validation, #id_commande, #id_user_vendeur, #id_user_livreur
+
 id_litige → description, date_ouverture, statut, decision_admin, montant_rembourse, url_photos, #id_livraison
+
 id_feedback → note, commentaire, date_publication, type_feedback, #id_user_client, #id_livraison (si type=LIVREUR), #id_user_vendeur (si type=VENDEUR)
+
 id_signalement → date_heure, motif, statut_traitement, type_cible_cible, #id_auteur, #id_cible
+
 id_livraison → date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules, #id_commande, #id_user_livreur
+
 (id_commande, id_produit, #id_user_vendeur) → quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige, #id_feedback
+
 (id_panier, id_produit) → quantite
+
 (id_commande, #id_user_vendeur) → statut_collecte_vendeur
+
 (id_commande, #id_user_client) → statut_livraison_client</pre>
 
   <h2 id="mld">4. Modèle Logique des Données (MLD)</h2>
 
   <pre>
-UTILISATEUR ( id_user , nom, prenom, telephone, email, statut_compte, est_admin)
-CLIENT ( #id_user , adresse_livraison)
-VENDEUR ( #id_user , nom_etablissement, localisation_marche, score_reputation)
-LIVREUR ( #id_user , type_vehicule, immatriculation, score_reputation, est_disponible, distance_marche, heure_debut_dispo, heure_fin_dispo)
-PRODUIT ( id_produit , nom, description, prix_reference, stock_disponible, #id_user_vendeur)
-PANIER ( id_panier , date_creation, date_mise_a_jour, #id_user_client)
-DETAIL_PANIER ( #id_panier, #id_produit , quantite)
-COMMANDE ( id_commande , date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, #id_user_client)
-LIVRAISON ( id_livraison , date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules, #id_commande, #id_user_livreur)
-DETAIL_COMMANDE ( #id_commande, #id_produit, #id_user_vendeur , quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige [FK nullable], #id_feedback [FK nullable])
-PREUVE_COLLECTE ( id_preuve , date_heure, url_photo, statut_validation, #id_commande, #id_user_vendeur, #id_user_livreur)
-LITIGE ( id_litige , description, date_ouverture, statut, decision_admin, montant_rembourse, url_photos, #id_livraison)
-FEEDBACK ( id_feedback , note, commentaire, date_publication, type_feedback, #id_user_client, #id_livraison [FK nullable si type=LIVREUR], #id_user_vendeur [FK nullable si type=VENDEUR])
-SIGNALEMENT ( id_signalement , date_heure, motif, statut_traitement, type_cible_cible, #id_auteur, #id_cible)</pre>
+UTILISATEUR ( <u>id_user</u>, nom, prenom, telephone, email, statut_compte, est_admin)
+
+CLIENT ( <u>#id_user</u>, adresse_livraison)
+
+VENDEUR ( <u>#id_user</u>, nom_etablissement, localisation_marche, score_reputation)
+
+LIVREUR ( <u>#id_user</u>, type_vehicule, immatriculation, score_reputation, est_disponible, distance_marche, heure_debut_dispo, heure_fin_dispo)
+
+PRODUIT ( <u>id_produit</u>, nom, description, prix_reference, stock_disponible, #id_user_vendeur)
+
+PANIER ( <u>id_panier</u>, date_creation, date_mise_a_jour, #id_user_client)
+
+DETAIL_PANIER ( <u>#id_panier, #id_produit</u>, quantite)
+
+COMMANDE ( <u>id_commande</u>, date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, #id_user_client)
+
+LIVRAISON ( <u>id_livraison</u>, date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules, #id_commande, #id_user_livreur)
+
+DETAIL_COMMANDE ( <u>#id_commande, #id_produit, #id_user_vendeur</u>, quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige [FK nullable], #id_feedback [FK nullable])
+
+PREUVE_COLLECTE ( <u>id_preuve</u>, date_heure, url_photo, statut_validation, #id_commande, #id_user_vendeur, #id_user_livreur)
+
+LITIGE ( <u>id_litige</u>, description, date_ouverture, statut, decision_admin, montant_rembourse, url_photos, #id_livraison)
+
+FEEDBACK ( <u>id_feedback</u>, note, commentaire, date_publication, type_feedback, #id_user_client, #id_livraison [FK nullable si type=LIVREUR], #id_user_vendeur [FK nullable si type=VENDEUR])
+
+SIGNALEMENT ( <u>id_signalement</u>, date_heure, motif, statut_traitement, type_cible_cible, #id_auteur, #id_cible)</pre>
 
   <h2 id="uml">5. Conception Orientée Objet (UML)</h2>
   <p>Passage du modèle relationnel (Merise) au modèle conceptuel objet, conforme aux standards UML 2.x.</p>
@@ -467,6 +529,7 @@ SIGNALEMENT ( id_signalement , date_heure, motif, statut_traitement, type_cible_
   <h3>5.1. Diagramme de Cas d'Utilisation</h3>
   <p><strong>Rôle :</strong> Recueillir, analyser et organiser les besoins fonctionnels en recensant les grandes
     fonctionnalités du système ViteComm.</p>
+  <img src="diags/uml-use-case-diag.jpg" alt="Diagramme de Cas d'Utilisation UML ViteComm">
   <p><em>Figure 1 : Diagramme de Cas d'Utilisation.</em></p>
   <p>Relations &amp; Contraintes intégrées :</p>
   <ul>
@@ -479,6 +542,7 @@ SIGNALEMENT ( id_signalement , date_heure, motif, statut_traitement, type_cible_
   <h3>5.2. Diagramme de Classes</h3>
   <p><strong>Rôle :</strong> Présenter la structure interne du système et fournir une représentation abstraite des
     objets qui interagissent.</p>
+  <img src="diags/uml-class-diag.svg" alt="Diagramme de Classes UML ViteComm">
   <p><em>Figure 2 : Diagramme de Classes.</em></p>
   <ul>
     <li>Classe <code>Utilisateur</code> : Table parente regroupant les attributs communs. L'absence de spécialisation
@@ -500,6 +564,7 @@ SIGNALEMENT ( id_signalement , date_heure, motif, statut_traitement, type_cible_
   <h3>5.3. Diagramme d'Activité</h3>
   <p><strong>Rôle :</strong> Mettre l'accent sur les traitements et représenter graphiquement le comportement métier
     séquentiel.</p>
+  <img src="diags/uml-activity-diag.png" alt="Diagramme d'Activité UML ViteComm">
   <p><em>Figure 3 : Diagramme d'Activité.</em></p>
 
 </body>
