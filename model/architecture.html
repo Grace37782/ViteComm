@@ -110,6 +110,8 @@
       line-height: 1.5;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 0.9rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
     }
 
     .nav {
@@ -131,7 +133,6 @@
       color: #6b7280;
       margin-bottom: 1.5rem;
     }
-
   </style>
 </head>
 
@@ -287,7 +288,8 @@
           réputation) et/ou évaluer les vendeurs. Pour les vendeurs, le client a le choix de donner un feedback sur
           l'ensemble de la commande (affectant tous les vendeurs concernés) ou des feedbacks distincts sur des
           sous-ensembles/groupes de produits (n'affectant que les vendeurs de ces produits). Les lignes de
-          <code>DETAIL_COMMANDE</code> pointent vers leur feedback respectif.</td>
+          <code>DETAIL_COMMANDE</code> pointent vers leur feedback respectif.
+        </td>
       </tr>
     </tbody>
   </table>
@@ -486,12 +488,13 @@ SIGNALEMENT ( id_signalement , date_heure, motif, statut_traitement, type_cible_
     <li>Classe <code>Signalement</code> : Couvre la politique de modération avec relations vers auteur ET cible (RG14).
     </li>
     <li>Classe <code>Feedback</code> : Supporte l'évaluation du livreur OU du vendeur via attribut
-      <code>type_feedback</code> et FK conditionnelles (RG23).</li>
+      <code>type_feedback</code> et FK conditionnelles (RG23).
+    </li>
     <li>Classe d'Association <code>Detail_Commande</code> : Représente la relation ternaire entre Commande, Produit et
       Vendeur, portant les attributs de quantité et de prix spécifique. Les références à Litige/Feedback sont
       optionnelles.</li>
     <li>Classe <code>PreuveCollecte</code> : Liée au Livreur (qui la crée) et au Vendeur (lieu de collecte)
-        ainsi qu'à la Commande concernée (RG07).</li>
+      ainsi qu'à la Commande concernée (RG07).</li>
   </ul>
 
   <h3>5.3. Diagramme d'Activité</h3>
