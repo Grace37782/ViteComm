@@ -105,7 +105,7 @@ Espace dédié à la recherche, à l'achat de produits et au suivi des commandes
 * **Comportement et logique frontend :**
   - Le choix d'un unique livreur est requis pour finaliser la commande.
   - Affichage obligatoire de la mention **"Paiement à la livraison (COD)"** pour éviter toute ambiguïté (RG08).
-  - Un clic sur "Valider la commande" génère l'entité `COMMANDE` et les liaisons correspondantes dans `DETAIL_COMMANDE`.
+  - **Transition Panier → Commande (RG22) :** À la validation, le contenu du `PANIER` / `DETAIL_PANIER` est verrouillé et transformé en entités `COMMANDE` et `DETAIL_COMMANDE`. Le panier frontend est vidé immédiatement après la confirmation. La persistance intermédiaire du panier est gérée côté backend via le token de session.
 
 ### 2.4. Suivi des Commandes en Cours (Order Tracking)
 * **Éléments à afficher :**
@@ -118,8 +118,9 @@ Espace dédié à la recherche, à l'achat de produits et au suivi des commandes
   - Écran interactif activé en présence du livreur lors du face-à-face de livraison.
   - Liste des articles de la commande (`DETAIL_COMMANDE`) avec deux options pour chacun : **[Accepter]** ou **[Rejeter]**.
   - Si l'option **Rejeter** est choisie : Un champ de texte obligatoire pour saisir le motif du rejet.
-* **Comportement et logique frontend (Règles RG09 & RG16) :**
+* **Comportement et logique frontend (Règles RG07, RG09 & RG16) :**
   - **Rejet Granulaire :** Le client doit pouvoir rejeter un ou plusieurs articles individuellement sans avoir à annuler la totalité de sa commande.
+  - **Preuve photo client (RG07) :** Bouton **"Ajouter une preuve photo"** (optionnel mais recommandé) permettant au client d'uploader des images de non-conformité en cas de désaccord. Ces photos alimenteront directement l'entité `LITIGE` (`url_photos`) si le client décide d'initier un litige.
   - **Recalcul dynamique à l'écran :**
     - Le total de la commande est mis à jour instantanément pour exclure les produits rejetés.
     - Calcul et affichage immédiats des `frais_retour_calcules` applicables aux articles retournés.
@@ -204,6 +205,7 @@ Espace mobile-first dédié à la prise en charge, au retrait chez les vendeurs 
   - **Nombre de courses :** Volume de livraisons clôturées.
   - **Indicateur de Réputation (Règles RG10 & RG15) :** Affichage très visible du score de réputation (`score_reputation` issu de l'entité `LIVREUR`), influencé par la note de transport reçue lors des évaluations clients.
   - **Véhicule actif :** Rappel du `type_vehicule` et de la plaque d'`immatriculation` renseignés lors de l'inscription.
+  - **Paramètres de Disponibilité (RG19) :** Section dédiée permettant au livreur de définir ses `heure_debut_dispo` et `heure_fin_dispo`, d'activer/désactiver son statut `est_disponible`, et de configurer un rayon d'action maximal (`distance_marche`) pour le filtrage des courses proposées.
 
 ### 4.2. Gestion des Courses Disponibles (Delivery Marketplace)
 * **Éléments à afficher :**
