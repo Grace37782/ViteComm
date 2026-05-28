@@ -204,7 +204,7 @@
         <td>Double Preuve de Collecte (Livreur / Client) : Une preuve de collecte est obligatoirement réalisée par le
           livreur au niveau vendeur-livreur pour attester du retrait des marchandises. Au moment de la livraison, si le
           client n'est pas d'accord avec le/les produit(s) ou l'ensemble de la commande, il peut décider de réaliser sa
-          propre preuve de collecte client (preuve photographique) pour initier un litige.</td>
+          propre preuve de collecte client (comprenant une ou plusieurs photos de preuve) pour initier un litige.</td>
       </tr>
       <tr>
         <td>RG08</td>
@@ -283,8 +283,8 @@
         <td>RG21</td>
         <td>Portée et Moment du Litige : Le litige n'est pas lié directement à la commande à sa création. Il est initié
           lors de la livraison et peut concerner un produit spécifique, une liste de produits ou la commande elle-même
-          de façon générale (en y associant des photos). Les lignes concernées dans <code>DETAIL_COMMANDE</code> sont
-          directement rattachées au litige, évitant toute table intermédiaire inutile.</td>
+          de façon générale (en y associant une preuve de collecte #id_preuve qui peut contenir plusieurs photos). Les lignes
+          concernées dans <code>DETAIL_COMMANDE</code> sont directement rattachées au litige, évitant toute table intermédiaire inutile.</td>
       </tr>
       <tr>
         <td>RG22</td>
@@ -358,12 +358,17 @@
       <tr>
         <td>PREUVE_COLLECTE</td>
         <td>id_preuve</td>
-        <td>date_heure, url_photo, statut_validation, #id_commande, #id_user_vendeur, #id_user_livreur</td>
+        <td>date_heure, statut_validation, #id_commande, #id_user_vendeur, #id_user_livreur</td>
+      </tr>
+      <tr>
+        <td>PHOTO_PREUVE</td>
+        <td>id_photo</td>
+        <td>url_photo, #id_preuve</td>
       </tr>
       <tr>
         <td>LITIGE</td>
         <td>id_litige</td>
-        <td>description, date_ouverture, statut, decision_admin, montant_rembourse, url_photos, #id_livraison</td>
+        <td>description, date_ouverture, statut, decision_admin, montant_rembourse, #id_preuve (FK nullable), #id_livraison</td>
       </tr>
       <tr>
         <td>LIVRAISON</td>
@@ -410,9 +415,11 @@ id_panier → date_creation, date_mise_a_jour, #id_user_client
 
 id_commande → date_creation, statut, total_marchandises, frais_livraison, commission, code_verification
 
-id_preuve → date_heure, url_photo, statut_validation
+id_preuve → date_heure, statut_validation
 
-id_litige → description, date_ouverture, statut, decision_admin, montant_rembourse, url_photos, #id_livraison
+id_photo → url_photo, #id_preuve
+
+id_litige → description, date_ouverture, statut, decision_admin, montant_rembourse, #id_preuve, #id_livraison
 
 id_feedback → note, commentaire, date_publication, type_feedback
 
@@ -444,6 +451,8 @@ id_produit → #id_user_vendeur
 
 id_litige → #id_livraison
 
+id_litige → #id_preuve (optionnel)
+
 id_feedback → #id_user_client
 
 id_feedback → #id_livraison (si type_feedback = 'LIVREUR')
@@ -454,7 +463,9 @@ id_signalement → #id_auteur (CIF)
 
 id_signalement → #id_cible (CIF polymorphe géré par type_cible_cible)
 
-id_preuve → #id_user_livreur</pre>
+id_preuve → #id_user_livreur
+
+id_photo → #id_preuve</pre>
 
   <h3>3.4. Fusion des Dépendances Fonctionnelles (Couverture Minimale Totale)</h3>
   <p>Synthèse globale de toutes les dépendances permettant de valider la 3NF (Troisième Forme Normale) et de déduire le
@@ -474,9 +485,11 @@ id_panier → date_creation, date_mise_a_jour, #id_user_client
 
 id_commande → date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, #id_user_client
 
-id_preuve → date_heure, url_photo, statut_validation, #id_commande, #id_user_vendeur, #id_user_livreur
+id_preuve → date_heure, statut_validation, #id_commande, #id_user_vendeur, #id_user_livreur
 
-id_litige → description, date_ouverture, statut, decision_admin, montant_rembourse, url_photos, #id_livraison
+id_photo → url_photo, #id_preuve
+
+id_litige → description, date_ouverture, statut, decision_admin, montant_rembourse, #id_preuve, #id_livraison
 
 id_feedback → note, commentaire, date_publication, type_feedback, #id_user_client, #id_livraison (si type=LIVREUR), #id_user_vendeur (si type=VENDEUR)
 
@@ -515,9 +528,11 @@ LIVRAISON ( <u>id_livraison</u>, date_prise_en_charge, date_fin_reelle, statut_l
 
 DETAIL_COMMANDE ( <u>#id_commande, #id_produit, #id_user_vendeur</u>, quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige [FK nullable], #id_feedback [FK nullable])
 
-PREUVE_COLLECTE ( <u>id_preuve</u>, date_heure, url_photo, statut_validation, #id_commande, #id_user_vendeur, #id_user_livreur)
+PREUVE_COLLECTE ( <u>id_preuve</u>, date_heure, statut_validation, #id_commande, #id_user_vendeur, #id_user_livreur)
 
-LITIGE ( <u>id_litige</u>, description, date_ouverture, statut, decision_admin, montant_rembourse, url_photos, #id_livraison)
+PHOTO_PREUVE ( <u>id_photo</u>, url_photo, #id_preuve)
+
+LITIGE ( <u>id_litige</u>, description, date_ouverture, statut, decision_admin, montant_rembourse, #id_preuve [FK nullable], #id_livraison)
 
 FEEDBACK ( <u>id_feedback</u>, note, commentaire, date_publication, type_feedback, #id_user_client, #id_livraison [FK nullable si type=LIVREUR], #id_user_vendeur [FK nullable si type=VENDEUR])
 
@@ -554,11 +569,13 @@ SIGNALEMENT ( <u>id_signalement</u>, date_heure, motif, statut_traitement, type_
     <li>Classe <code>Feedback</code> : Supporte l'évaluation du livreur OU du vendeur via attribut
       <code>type_feedback</code> et FK conditionnelles (RG23).
     </li>
+    <li>Classe <code>Litige</code> : Modélise les contestations clients lors de la livraison. Conformément à la conception basée sur les références, elle ne contient plus directement d'attribut d'image (<code>url_photos</code>), mais fait référence à <code>PreuveCollecte</code> via une clé étrangère nullable (<code>#id_preuve</code>) pour exploiter les photos associées.</li>
     <li>Classe d'Association <code>Detail_Commande</code> : Représente la relation ternaire entre Commande, Produit et
       Vendeur, portant les attributs de quantité et de prix spécifique. Les références à Litige/Feedback sont
       optionnelles.</li>
     <li>Classe <code>PreuveCollecte</code> : Liée au Livreur (qui la crée) et au Vendeur (lieu de collecte)
-      ainsi qu'à la Commande concernée (RG07).</li>
+      ainsi qu'à la Commande concernée (RG07). Elle sert de support de preuve pour un <code>Litige</code> et possède une relation 1-to-many avec la classe <code>PhotoPreuve</code>.</li>
+    <li>Classe <code>PhotoPreuve</code> : Permet d'attacher une ou plusieurs photographies à une preuve de collecte, assurant ainsi la possibilité de fournir des visuels détaillés pour le dossier de litige.</li>
   </ul>
 
   <h3>5.3. Diagramme d'Activité</h3>
