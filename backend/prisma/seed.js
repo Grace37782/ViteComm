@@ -44,7 +44,8 @@ async function main() {
       telephone: '+237600000001',
       mot_de_passe: hashedPassword,
       statut_compte: 'Actif',
-      est_admin: true
+      est_admin: true,
+      photo_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80'
     }
   });
 
@@ -58,6 +59,7 @@ async function main() {
       mot_de_passe: commonPassword,
       statut_compte: 'Actif',
       est_admin: false,
+      photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&h=150&q=80',
       client: {
         create: {
           adresse_livraison: 'Logbessou, Douala'
@@ -77,6 +79,7 @@ async function main() {
       mot_de_passe: commonPassword,
       statut_compte: 'Actif',
       est_admin: false,
+      photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&h=150&q=80',
       client: {
         create: {
           adresse_livraison: 'Bastos, Yaoundé'
@@ -97,6 +100,7 @@ async function main() {
       mot_de_passe: commonPassword,
       statut_compte: 'Actif',
       est_admin: false,
+      photo_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&h=150&q=80',
       vendeur: {
         create: {
           nom_etablissement: 'Frais de l\'Ouest',
@@ -116,6 +120,7 @@ async function main() {
       mot_de_passe: commonPassword,
       statut_compte: 'Actif',
       est_admin: false,
+      photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80',
       vendeur: {
         create: {
           nom_etablissement: 'Épices de Sandaga',
@@ -136,6 +141,7 @@ async function main() {
       mot_de_passe: commonPassword,
       statut_compte: 'Actif',
       est_admin: false,
+      photo_url: 'https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&w=150&h=150&q=80',
       livreur: {
         create: {
           type_vehicule: 'Moto',
@@ -159,6 +165,7 @@ async function main() {
       mot_de_passe: commonPassword,
       statut_compte: 'Actif',
       est_admin: false,
+      photo_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&h=150&q=80',
       livreur: {
         create: {
           type_vehicule: 'Tricycle',
@@ -184,6 +191,7 @@ async function main() {
       description: 'Panier de tomates de Foumban sélectionnées.',
       prix_reference: 2500,
       stock_disponible: 15,
+      photo_url: 'https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=300&h=200&q=80',
       historiques: {
         createMany: {
           data: [
@@ -202,6 +210,7 @@ async function main() {
       description: 'Piment de qualité supérieure bien sec.',
       prix_reference: 500,
       stock_disponible: 50,
+      photo_url: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=300&h=200&q=80',
       historiques: {
         createMany: {
           data: [
@@ -220,6 +229,7 @@ async function main() {
       description: 'Mélange traditionnel complet pour réussir votre Ndolè.',
       prix_reference: 1200,
       stock_disponible: 30,
+      photo_url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=300&h=200&q=80',
       historiques: {
         createMany: {
           data: [
@@ -237,6 +247,7 @@ async function main() {
       description: 'Huile de palme raffinée et clarifiée.',
       prix_reference: 1500,
       stock_disponible: 25,
+      photo_url: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=300&h=200&q=80',
       historiques: {
         createMany: {
           data: [
@@ -246,6 +257,7 @@ async function main() {
       }
     }
   });
+
 
   // 3. Create Orders (COMMANDE) + Order Details (DETAIL_COMMANDE) (RG24: frozen price)
   console.log('Création des commandes de démonstration...');
