@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import Navbar from './components/Navbar';
+import Alerts from './components/Alerts';
+import LoginForm from './components/auth/LoginForm';
+import RegisterForm from './components/auth/RegisterForm';
+import ProfileDetails from './components/profile/ProfileDetails';
+import AdminDashboard from './components/admin/AdminDashboard';
 
 const API_BASE = 'http://localhost:5000/api';
 
 export default function App() {
   // Navigation & Authentication states
-  const [screen, setScreen] = useState('landing'); // 'landing', 'login', 'register', 'profile'
+  const [screen, setScreen] = useState('landing'); // 'landing', 'login', 'register', 'profile', 'admin'
   const [token, setToken] = useState(localStorage.getItem('vitecomm_token') || '');
   const [user, setUser] = useState(null);
-
-  // Form password toggles
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-  const [showRegPassword, setShowRegPassword] = useState(false);
-  const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
 
   // Banners / Alerts state
   const [alerts, setAlerts] = useState([]);
@@ -88,6 +89,7 @@ export default function App() {
       const data = await res.json();
       if (res.ok) {
         setUser(data);
+        
         // Pre-fill profile editing fields
         setProfileForm({
           nom: data.nom,
@@ -103,7 +105,7 @@ export default function App() {
           mot_de_passe_confirmation: ''
         });
 
-        // Pre-fill availability if driver
+        // Pre-fill availability if driver (RG19)
         if (data.role === 'livreur') {
           setAvailability({
             est_disponible: data.profil.est_disponible ?? true,
@@ -112,7 +114,13 @@ export default function App() {
             heure_fin_dispo: data.profil.heure_fin_dispo || '18:00'
           });
         }
-        setScreen('profile');
+
+        // If user is admin and was heading to admin dashboard, preserve that screen, else go to profile
+        if (data.est_admin && screen === 'admin') {
+          setScreen('admin');
+        } else if (screen === 'login' || screen === 'register' || screen === 'landing') {
+          setScreen(data.est_admin ? 'admin' : 'profile');
+        }
       } else {
         addAlert('danger', data.error || 'Session expirée.');
         setToken('');
@@ -123,7 +131,6 @@ export default function App() {
     }
   };
 
-  // Dynamic Dynamic Role Registrations
   const handleRegFieldChange = (e) => {
     const { name, value } = e.target;
     setRegForm(prev => ({ ...prev, [name]: value }));
@@ -143,7 +150,7 @@ export default function App() {
     }
 
     try {
-      // Determine if email or telephone
+      // Determine if email or telephone login
       const isEmail = loginIdentifier.includes('@');
       const body = {
         [isEmail ? 'email' : 'telephone']: loginIdentifier,
@@ -161,7 +168,7 @@ export default function App() {
         addAlert('success', `Ravi de vous revoir, ${data.user.prenom} !`);
         setToken(data.token);
         setUser(data.user);
-        setScreen('profile');
+        setScreen(data.user.est_admin ? 'admin' : 'profile');
       } else {
         addAlert('danger', data.error || 'Identifiants incorrects.');
       }
@@ -174,7 +181,6 @@ export default function App() {
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
 
-    // Validations
     if (!regForm.nom || !regForm.prenom || !regForm.email || !regForm.telephone || !regForm.mot_de_passe) {
       addAlert('danger', 'Veuillez remplir tous les champs obligatoires.');
       return;
@@ -230,7 +236,6 @@ export default function App() {
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
 
-    // Check password confirm if filled
     if (profileForm.mot_de_passe && profileForm.mot_de_passe !== profileForm.mot_de_passe_confirmation) {
       addAlert('danger', 'Les mots de passe ne correspondent pas.');
       return;
@@ -297,7 +302,6 @@ export default function App() {
 
       if (res.ok) {
         addAlert('success', 'Paramètres de disponibilité actualisés en temps réel !');
-        // Fetch fresh profile state
         fetchProfile();
       } else {
         addAlert('danger', data.error || 'Erreur lors de l\'actualisation.');
@@ -315,16 +319,12 @@ export default function App() {
         headers: { Authorization: `Bearer ${token}` }
       });
     } catch (err) {
-      // Ignore network errors on logout since we clear client-side token anyway
+      // Clear token client-side regardless of network response
     }
     setToken('');
     setUser(null);
     setScreen('landing');
     addAlert('success', 'Déconnexion réussie. À bientôt !');
-  };
-
-  const selectRegisterRole = (role) => {
-    setRegRole(role);
   };
 
   const handleRoleLandingClick = (role) => {
@@ -341,47 +341,21 @@ export default function App() {
         <div className="bubble bubble-3"></div>
       </div>
 
-      {/* Header / Navbar */}
-      <header className="navbar fade-in">
-        <div className="logo" onClick={() => setScreen('landing')}>
-          <i className="fa-solid fa-bolt logo-icon"></i>
-          <span>Vite<span class="logo-accent">Comm</span></span>
-        </div>
+      {/* Header/Navbar */}
+      <Navbar 
+        user={user} 
+        screen={screen} 
+        setScreen={setScreen} 
+        handleLogout={handleLogout} 
+      />
 
-        {!user ? (
-          <div className="nav-links">
-            <button className="btn btn-secondary nav-btn" onClick={() => setScreen('landing')}>Accueil</button>
-            <button className="btn btn-secondary nav-btn" onClick={() => setScreen('login')}>Connexion</button>
-            <button className="btn btn-primary nav-btn" onClick={() => setScreen('register')}>S'inscrire</button>
-          </div>
-        ) : (
-          <div className="nav-links">
-            <div className="user-pill">
-              <i className="fa-solid fa-circle-user"></i>
-              <span>{user.prenom} {user.nom}</span>
-              <span className="role-badge">{user.role}</span>
-            </div>
-            <button className="btn btn-danger nav-btn" onClick={handleLogout}>
-              <i className="fa-solid fa-power-off"></i>
-            </button>
-          </div>
-        )}
-      </header>
-
-      {/* Alert banner toasts */}
-      <div className="alert-container">
-        {alerts.map(a => (
-          <div key={a.id} className={`alert alert-${a.type}`}>
-            <i className={a.type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-triangle-exclamation'}></i>
-            <span>{a.message}</span>
-          </div>
-        ))}
-      </div>
+      {/* Toast Alert messages */}
+      <Alerts alerts={alerts} />
 
       {/* Core card wrapper */}
       <main className="main-card glassmorphism fade-in">
         
-        {/* SCREEN 1: LANDING PAGE */}
+        {/* SCREEN 1: LANDING */}
         {screen === 'landing' && (
           <section className="screen-section">
             <div className="hero-section">
@@ -419,592 +393,50 @@ export default function App() {
 
         {/* SCREEN 2: LOGIN */}
         {screen === 'login' && (
-          <section className="screen-section">
-            <div className="form-header">
-              <h2>Ravi de vous revoir !</h2>
-              <p>Connectez-vous pour accéder à votre tableau de bord sur-mesure</p>
-            </div>
-
-            <form className="auth-form" onSubmit={handleLoginSubmit}>
-              <div className="form-group">
-                <label><i className="fa-solid fa-envelope-open"></i> Email ou Téléphone</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="nom@exemple.com ou +237..."
-                  className="form-input"
-                  value={loginIdentifier}
-                  onChange={e => setLoginIdentifier(e.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label><i className="fa-solid fa-lock"></i> Mot de passe</label>
-                <div className="password-wrapper">
-                  <input
-                    type={showLoginPassword ? 'text' : 'password'}
-                    required
-                    placeholder="••••••••"
-                    className="form-input"
-                    value={loginPassword}
-                    onChange={e => setLoginPassword(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="btn-toggle-password"
-                    onClick={() => setShowLoginPassword(!showLoginPassword)}
-                  >
-                    <i className={showLoginPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'}></i>
-                  </button>
-                </div>
-              </div>
-
-              <button type="submit" className="btn btn-primary btn-block">
-                Se connecter <i className="fa-solid fa-circle-chevron-right"></i>
-              </button>
-              
-              <p className="form-footer">
-                Vous n'avez pas encore de compte ?{' '}
-                <button type="button" onClick={() => setScreen('register')}>Créez-en un ici</button>
-              </p>
-            </form>
-          </section>
+          <LoginForm
+            loginIdentifier={loginIdentifier}
+            setLoginIdentifier={setLoginIdentifier}
+            loginPassword={loginPassword}
+            setLoginPassword={setLoginPassword}
+            handleLoginSubmit={handleLoginSubmit}
+            setScreen={setScreen}
+          />
         )}
 
         {/* SCREEN 3: REGISTER */}
         {screen === 'register' && (
-          <section className="screen-section">
-            <div className="form-header">
-              <h2>Rejoignez l'aventure ViteComm</h2>
-              <p>Choisissez votre profil pour continuer l'inscription</p>
-            </div>
-
-            {/* Role Select switch pills */}
-            <div className="role-selector-pills">
-              <button
-                type="button"
-                className={`pill-btn ${regRole === 'client' ? 'active' : ''}`}
-                onClick={() => selectRegisterRole('client')}
-              >
-                <i className="fa-solid fa-basket-shopping"></i> Client
-              </button>
-              <button
-                type="button"
-                className={`pill-btn ${regRole === 'vendeur' ? 'active' : ''}`}
-                onClick={() => selectRegisterRole('vendeur')}
-              >
-                <i className="fa-solid fa-shop"></i> Vendeur
-              </button>
-              <button
-                type="button"
-                className={`pill-btn ${regRole === 'livreur' ? 'active' : ''}`}
-                onClick={() => selectRegisterRole('livreur')}
-              >
-                <i className="fa-solid fa-motorcycle"></i> Livreur
-              </button>
-            </div>
-
-            <form className="auth-form" onSubmit={handleRegisterSubmit}>
-              {/* Common Fields */}
-              <div className="form-row-2">
-                <div className="form-group">
-                  <label>Nom</label>
-                  <input
-                    type="text"
-                    name="nom"
-                    required
-                    placeholder="Dupont"
-                    className="form-input"
-                    value={regForm.nom}
-                    onChange={handleRegFieldChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Prénom</label>
-                  <input
-                    type="text"
-                    name="prenom"
-                    required
-                    placeholder="Jean"
-                    className="form-input"
-                    value={regForm.prenom}
-                    onChange={handleRegFieldChange}
-                  />
-                </div>
-              </div>
-
-              <div className="form-row-2">
-                <div className="form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    required
-                    placeholder="jean.dupont@exemple.com"
-                    className="form-input"
-                    value={regForm.email}
-                    onChange={handleRegFieldChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Téléphone</label>
-                  <input
-                    type="tel"
-                    name="telephone"
-                    required
-                    placeholder="+237699999999"
-                    className="form-input"
-                    value={regForm.telephone}
-                    onChange={handleRegFieldChange}
-                  />
-                </div>
-              </div>
-
-              <div className="form-row-2">
-                <div className="form-group">
-                  <label>Mot de passe</label>
-                  <div className="password-wrapper">
-                    <input
-                      type={showRegPassword ? 'text' : 'password'}
-                      name="mot_de_passe"
-                      required
-                      placeholder="••••••••"
-                      className="form-input"
-                      value={regForm.mot_de_passe}
-                      onChange={handleRegFieldChange}
-                    />
-                    <button
-                      type="button"
-                      className="btn-toggle-password"
-                      onClick={() => setShowRegPassword(!showRegPassword)}
-                    >
-                      <i className={showRegPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'}></i>
-                    </button>
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Confirmation</label>
-                  <div className="password-wrapper">
-                    <input
-                      type={showRegConfirmPassword ? 'text' : 'password'}
-                      name="mot_de_passe_confirmation"
-                      required
-                      placeholder="••••••••"
-                      className="form-input"
-                      value={regForm.mot_de_passe_confirmation}
-                      onChange={handleRegFieldChange}
-                    />
-                    <button
-                      type="button"
-                      className="btn-toggle-password"
-                      onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)}
-                    >
-                      <i className={showRegConfirmPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'}></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dynamic Client Fields */}
-              {regRole === 'client' && (
-                <div className="dynamic-role-fields">
-                  <div className="form-group">
-                    <label><i className="fa-solid fa-map-location-dot"></i> Adresse de livraison complète</label>
-                    <input
-                      type="text"
-                      name="adresse_livraison"
-                      required
-                      placeholder="Rue de la Liberté, Douala, Cameroun"
-                      className="form-input"
-                      value={regForm.adresse_livraison}
-                      onChange={handleRegFieldChange}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Dynamic Vendeur Fields */}
-              {regRole === 'vendeur' && (
-                <div className="dynamic-role-fields">
-                  <div className="form-row-2">
-                    <div className="form-group">
-                      <label><i className="fa-solid fa-store"></i> Nom de l'établissement</label>
-                      <input
-                        type="text"
-                        name="nom_etablissement"
-                        required
-                        placeholder="Frais de l'Ouest"
-                        className="form-input"
-                        value={regForm.nom_etablissement}
-                        onChange={handleRegFieldChange}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label><i className="fa-solid fa-map-pin"></i> Localisation Marché</label>
-                      <select
-                        name="localisation_marche"
-                        className="form-input"
-                        value={regForm.localisation_marche}
-                        onChange={handleRegFieldChange}
-                      >
-                        <option value="Marché Central">Marché Central</option>
-                        <option value="Marché Sandaga">Marché Sandaga</option>
-                        <option value="Marché Mokolo">Marché Mokolo</option>
-                        <option value="Marché Mboppi">Marché Mboppi</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Dynamic Livreur Fields */}
-              {regRole === 'livreur' && (
-                <div className="dynamic-role-fields">
-                  <div className="form-row-2">
-                    <div className="form-group">
-                      <label><i className="fa-solid fa-truck-pickup"></i> Type de véhicule</label>
-                      <select
-                        name="type_vehicule"
-                        className="form-input"
-                        value={regForm.type_vehicule}
-                        onChange={handleRegFieldChange}
-                      >
-                        <option value="Moto">Moto / Scooter</option>
-                        <option value="Tricycle">Tricycle Cargo</option>
-                        <option value="Voiture">Voiture Compacte</option>
-                        <option value="Velo">Vélo / À pied</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label><i className="fa-solid fa-rectangle-ad"></i> Plaque d'immatriculation</label>
-                      <input
-                        type="text"
-                        name="immatriculation"
-                        required
-                        placeholder="LT-123-AB"
-                        className="form-input"
-                        value={regForm.immatriculation}
-                        onChange={handleRegFieldChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <button type="submit" className="btn btn-primary btn-block">
-                S'enregistrer et s'authentifier <i className="fa-solid fa-circle-check"></i>
-              </button>
-              
-              <p class="form-footer">
-                Vous avez déjà un compte ?{' '}
-                <button type="button" onClick={() => setScreen('login')}>Connectez-vous</button>
-              </p>
-            </form>
-          </section>
+          <RegisterForm
+            regRole={regRole}
+            setRegRole={setRegRole}
+            regForm={regForm}
+            handleRegFieldChange={handleRegFieldChange}
+            handleRegisterSubmit={handleRegisterSubmit}
+            setScreen={setScreen}
+          />
         )}
 
         {/* SCREEN 4: USER PROFILE & DASHBOARD */}
         {screen === 'profile' && user && (
-          <section className="screen-section">
-            <div className="profile-header">
-              <div className="profile-avatar">
-                <i className="fa-solid fa-user-tie"></i>
-              </div>
-              <div className="profile-meta">
-                <h2>{user.prenom} {user.nom}</h2>
-                <span className="role-badge-premium">{user.role}</span>
-              </div>
-            </div>
+          <ProfileDetails
+            user={user}
+            isEditMode={isEditMode}
+            setIsEditMode={setIsEditMode}
+            profileForm={profileForm}
+            handleProfileFieldChange={handleProfileFieldChange}
+            handleProfileUpdate={handleProfileUpdate}
+            availability={availability}
+            setAvailability={setAvailability}
+            handleDriverAvailabilityUpdate={handleDriverAvailabilityUpdate}
+            fetchProfile={fetchProfile}
+          />
+        )}
 
-            <div className="profile-layout">
-              {/* Profile details form card */}
-              <div className="profile-edit-card">
-                <h3>Informations Personnelles</h3>
-                <form onSubmit={handleProfileUpdate}>
-                  <div className="form-row-2">
-                    <div className="form-group">
-                      <label>Nom</label>
-                      <input
-                        type="text"
-                        name="nom"
-                        required
-                        className="form-input"
-                        disabled={!isEditMode}
-                        value={profileForm.nom}
-                        onChange={handleProfileFieldChange}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Prénom</label>
-                      <input
-                        type="text"
-                        name="prenom"
-                        required
-                        className="form-input"
-                        disabled={!isEditMode}
-                        value={profileForm.prenom}
-                        onChange={handleProfileFieldChange}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row-2">
-                    <div className="form-group">
-                      <label>Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        required
-                        className="form-input"
-                        disabled={!isEditMode}
-                        value={profileForm.email}
-                        onChange={handleProfileFieldChange}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Téléphone</label>
-                      <input
-                        type="tel"
-                        name="telephone"
-                        required
-                        className="form-input"
-                        disabled={!isEditMode}
-                        value={profileForm.telephone}
-                        onChange={handleProfileFieldChange}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Client Specific Fields */}
-                  {user.role === 'client' && (
-                    <div className="role-specific-details">
-                      <div className="form-group">
-                        <label>Adresse de livraison</label>
-                        <input
-                          type="text"
-                          name="adresse_livraison"
-                          className="form-input"
-                          disabled={!isEditMode}
-                          value={profileForm.adresse_livraison}
-                          onChange={handleProfileFieldChange}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Vendeur Specific Fields */}
-                  {user.role === 'vendeur' && (
-                    <div className="role-specific-details">
-                      <div className="form-row-2">
-                        <div className="form-group">
-                          <label>Établissement</label>
-                          <input
-                            type="text"
-                            name="nom_etablissement"
-                            className="form-input"
-                            disabled={!isEditMode}
-                            value={profileForm.nom_etablissement}
-                            onChange={handleProfileFieldChange}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Marché</label>
-                          <input
-                            type="text"
-                            name="localisation_marche"
-                            className="form-input"
-                            disabled={!isEditMode}
-                            value={profileForm.localisation_marche}
-                            onChange={handleProfileFieldChange}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Livreur Specific Fields */}
-                  {user.role === 'livreur' && (
-                    <div className="role-specific-details">
-                      <div className="form-row-2">
-                        <div className="form-group">
-                          <label>Type de véhicule</label>
-                          <input
-                            type="text"
-                            name="type_vehicule"
-                            className="form-input"
-                            disabled={!isEditMode}
-                            value={profileForm.type_vehicule}
-                            onChange={handleProfileFieldChange}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Plaque d'immatriculation</label>
-                          <input
-                            type="text"
-                            name="immatriculation"
-                            className="form-input"
-                            disabled={!isEditMode}
-                            value={profileForm.immatriculation}
-                            onChange={handleProfileFieldChange}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Optional Password Update section shown only in Edit Mode */}
-                  {isEditMode && (
-                    <div className="password-change-section">
-                      <h4 className="section-divider">Modifier le mot de passe (optionnel)</h4>
-                      <div className="form-row-2">
-                        <div className="form-group">
-                          <label>Nouveau mot de passe</label>
-                          <input
-                            type="password"
-                            name="mot_de_passe"
-                            placeholder="Laisser vide pour conserver"
-                            className="form-input"
-                            value={profileForm.mot_de_passe}
-                            onChange={handleProfileFieldChange}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Confirmer le mot de passe</label>
-                          <input
-                            type="password"
-                            name="mot_de_passe_confirmation"
-                            placeholder="Laisser vide"
-                            className="form-input"
-                            value={profileForm.mot_de_passe_confirmation}
-                            onChange={handleProfileFieldChange}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="form-actions">
-                    {!isEditMode ? (
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => setIsEditMode(true)}
-                      >
-                        <i className="fa-solid fa-pen-to-square"></i> Modifier le profil
-                      </button>
-                    ) : (
-                      <>
-                        <button type="submit" className="btn btn-success">
-                          <i className="fa-solid fa-save"></i> Enregistrer
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={() => {
-                            setIsEditMode(false);
-                            fetchProfile(); // Reset fields to loaded profile data
-                          }}
-                        >
-                          Annuler
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </form>
-              </div>
-
-              {/* Status and dynamic panels display (RG15 compliance badge & RG19 availability) */}
-              <div className="profile-stats-card">
-                {user.role === 'client' && (
-                  <div className="reputation-badge-card empty-rep">
-                    <div className="rep-icon"><i className="fa-solid fa-shield-halved"></i></div>
-                    <h4>Compte Client Sécurisé</h4>
-                    <p>Vos achats et vos données personnelles sont strictement encadrés par la confidentialité RGPD (règle <strong>RG15</strong>).</p>
-                  </div>
-                )}
-
-                {user.role === 'vendeur' && (
-                  <div className="reputation-badge-card highlight-rep">
-                    <div className="rep-score-value">{user.profil?.score_reputation?.toFixed(1) || '0.0'}</div>
-                    <h4>Score de Réputation Vendeur</h4>
-                    <span className="badge-ro"><i className="fa-solid fa-lock"></i> LECTURE SEULE (RG15)</span>
-                    <p>Ce score dynamique reflète la moyenne pondérée de toutes les évaluations clients récoltées.</p>
-                  </div>
-                )}
-
-                {user.role === 'livreur' && (
-                  <>
-                    <div className="reputation-badge-card highlight-rep">
-                      <div className="rep-score-value">{user.profil?.score_reputation?.toFixed(1) || '0.0'}</div>
-                      <h4>Score de Réputation Livreur</h4>
-                      <span className="badge-ro"><i className="fa-solid fa-lock"></i> LECTURE SEULE (RG15)</span>
-                      <p>Votre note dépend exclusivement des retours de livraison validés par les clients.</p>
-                    </div>
-
-                    {/* Driver Availability Widget (RG19) */}
-                    <div className="availability-card glassmorphism-inset">
-                      <h3><i className="fa-solid fa-clock"></i> Plages de Disponibilité (RG19)</h3>
-                      <form onSubmit={handleDriverAvailabilityUpdate}>
-                        <div className="form-group flex-row">
-                          <label>Statut opérationnel :</label>
-                          <div className="switch-wrapper">
-                            <input
-                              type="checkbox"
-                              id="driver-dispo-switch"
-                              className="switch-checkbox"
-                              checked={availability.est_disponible}
-                              onChange={e => setAvailability(prev => ({ ...prev, est_disponible: e.target.checked }))}
-                            />
-                            <label htmlFor="driver-dispo-switch" className="switch-label"></label>
-                          </div>
-                        </div>
-
-                        <div className="form-group">
-                          <label>Distance max d'activité (km) :</label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.5"
-                            className="form-input"
-                            required
-                            value={availability.distance_marche}
-                            onChange={e => setAvailability(prev => ({ ...prev, distance_marche: parseFloat(e.target.value) || 0 }))}
-                          />
-                        </div>
-
-                        <div className="form-row-2">
-                          <div className="form-group">
-                            <label>Début horaire :</label>
-                            <input
-                              type="time"
-                              className="form-input"
-                              required
-                              value={availability.heure_debut_dispo}
-                              onChange={e => setAvailability(prev => ({ ...prev, heure_debut_dispo: e.target.value }))}
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Fin horaire :</label>
-                            <input
-                              type="time"
-                              className="form-input"
-                              required
-                              value={availability.heure_fin_dispo}
-                              onChange={e => setAvailability(prev => ({ ...prev, heure_fin_dispo: e.target.value }))}
-                            />
-                          </div>
-                        </div>
-
-                        <button type="submit" className="btn btn-primary btn-block btn-sm">
-                          <i className="fa-solid fa-check"></i> Actualiser ma dispo
-                        </button>
-                      </form>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </section>
+        {/* SCREEN 5: ADMIN CONSOLE dashboard */}
+        {screen === 'admin' && user && user.est_admin && (
+          <AdminDashboard
+            token={token}
+            addAlert={addAlert}
+          />
         )}
 
       </main>
