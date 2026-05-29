@@ -98,7 +98,7 @@ export const getAdminDashboard = async (req, res) => {
       const deliveries = await prisma.livraison.findMany({
         where: {
           id_user_livreur: d.id_user,
-          statut: 'Livree'
+          statut_livraison: 'Livree'
         },
         include: {
           commande: {
