@@ -27,8 +27,12 @@ export default function Navbar({ user, screen, setScreen, handleLogout }) {
             </button>
           )}
           
-          <div className="user-pill" style={{ cursor: 'pointer' }} onClick={() => setScreen('profile')}>
-            <i className="fa-solid fa-circle-user"></i>
+          <div className="user-pill" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setScreen('profile')}>
+            {user.photo_url ? (
+              <img src={user.photo_url} alt="avatar" style={{ width: '26px', height: '26px', borderRadius: '50px', objectFit: 'cover', border: '1px solid var(--accent)' }} />
+            ) : (
+              <i className="fa-solid fa-circle-user"></i>
+            )}
             <span>{user.prenom} {user.nom}</span>
             <span className="role-badge">{user.role}</span>
           </div>
