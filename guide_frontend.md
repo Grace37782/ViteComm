@@ -258,19 +258,32 @@ Espace mobile-first dédié à la prise en charge, au retrait chez les vendeurs 
 
 Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbitrer les litiges et modérer le système, tout en assurant une confidentialité absolue aux acheteurs.
 
+### 5.0. Attributs visuels enrichis (Photos de Profil & Produits)
+* **Photos des Utilisateurs (`photo_url` dans `Utilisateur`) :**
+  - Permet d'injecter des portraits réels et professionnels (ex. avatars Unsplash) pour humaniser l'interface dans la navbar, les profils et les tables d'administration.
+* **Photos des Produits (`photo_url` dans `Produit`) :**
+  - Permet d'associer des images réelles d'articles (légumes, épices, objets) affichées dans les listes de produits les plus achetés ou refusés.
+
 ### 5.1. Tableau de Bord Administrateur (Admin Dashboard)
-* **Éléments à afficher :**
-  - **Mesures Financières de la Plateforme (Règle RG08) :**
-    - Volume total brut des ventes réalisées.
-    - Cumul de la **commission de 0,6 %** perçue par la plateforme sur les marchandises acceptées.
-  - **Analyses Produits & Tendances (Règle RG12) :**
-    - Liste triée des produits les plus achetés.
-    - Liste triée des produits les plus refusés/rejetés par les clients lors de la livraison (indicateur clé de qualité).
-  - Statut en temps réel des litiges ouverts et des signalements en attente de traitement.
+* **Barre de Recherche Globale et Filtrage Dynamique :**
+  - Un champ de recherche textuel dynamique (`input[type="text"]`) permettant de filtrer instantanément les widgets, les listes, les tableaux d'utilisateurs, de produits et de litiges en temps réel.
+* **Cartes de Synthèse de la Plateforme (Counters) :**
+  - Des widgets affichant le nombre total de comptes par type : **Vendeurs actifs**, **Clients inscrits**, et **Livreurs certifiés**.
+* **Mesures Financières de la Plateforme (Règle RG08) :**
+  - **Volume total des ventes (brut) :** ex. `11,200 FCFA` (uniquement sur les articles livrés et acceptés).
+  - **Commission plateforme cumulée (0,6 %) :** ex. `67.2 FCFA` (Règle **RG08** prélevée sur la valeur des marchandises).
+* **Leaderboards et Classements Financiers :**
+  - **Classement des Vendeurs par Chiffre d'Affaires (CA) :** Liste triée des vendeurs avec leur volume de vente généré (ex. Vendeur A, CA : 2000 FCFA).
+  - **Classement des Livreurs par Activité :** Liste triée des livreurs avec la valeur cumulée de leurs courses ou livraisons.
+  - **Classement des Clients par Volume d'Achat :** Liste triée des clients selon la valeur totale de leurs commandes validées (RGPD-compliant : n'affiche pas le détail de leurs achats).
+* **Analyses Produits & Qualité (Règle RG12) :**
+  - **Produits les plus populaires :** Tableau enrichi avec la photo de l'article, son nom, le volume vendu, et le nom de l'établissement du vendeur.
+  - **Produits les plus refusés (Rejets Qualité) :** Tableau enrichi avec la photo de l'article, son nom, le volume rejeté lors des livraisons, et le nom de l'établissement du vendeur.
+  - Indicateurs de statut des alertes (litiges ouverts et signalements en attente).
 
 ### 5.2. Gestion des Comptes Utilisateurs (User Administration)
 * **Éléments à afficher :**
-  - Tableau de bord listant tous les utilisateurs inscrits.
+  - Tableau de bord listant tous les utilisateurs inscrits avec leur portrait (`photo_url`).
   - Recherche et filtrage par rôle (`Client`, `Vendeur`, `Livreur`, `Admin`) ou par `statut_compte`.
   - Pour chaque compte : Nom, prénom, téléphone, email, et statut actuel.
   - Pour les **Vendeurs** et **Livreurs** uniquement : affichage direct de leur `score_reputation` et bouton d'accès pour consulter le catalogue complet d'un vendeur (RG12).
@@ -295,4 +308,5 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
   - Zone de texte pour rédiger la décision officielle de l'administrateur (`decision_admin`).
   - Saisie du montant final validé pour remboursement au client (`montant_rembourse`).
   - Bouton "Clôturer le litige" qui enregistre la décision, applique le remboursement et actualise la réputation des acteurs professionnels concernés.
+
 
