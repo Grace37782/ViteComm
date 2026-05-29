@@ -28,7 +28,17 @@ export const getAdminDashboard = async (req, res) => {
     });
 
     const enrichProduct = async (stat) => {
-      const prod = await prisma.produit.findUnique({ where: { id_produit: stat.id_produit } });
+      const prod = await prisma.produit.findUnique({
+        where: { id_produit: stat.id_produit },
+        include: {
+          vendeur: {
+            select: {
+              nom_etablissement: true,
+              localisation_marche: true
+            }
+          }
+        }
+      });
       return { ...prod, quantite: stat._sum.quantite_commandee };
     };
 
@@ -41,6 +51,103 @@ export const getAdminDashboard = async (req, res) => {
     const openLitiges = await prisma.litige.count({ where: { statut: 'Ouvert' } });
     const pendingSignalements = await prisma.signalement.count({ where: { statut_traitement: 'En attente' } });
 
+    // --- LEADERBOARDS & CLASSEMENTS FINANCIERS ---
+    
+    // 1. Vendors ranked by Chiffre d'Affaires (CA)
+    const vendors = await prisma.vendeur.findMany({
+      include: {
+        utilisateur: {
+          select: { nom: true, prenom: true, photo_url: true }
+        }
+      }
+    });
+
+    const vendorsLeaderboard = await Promise.all(vendors.map(async (v) => {
+      // Find all accepted DetailCommande items for this vendor in delivered orders
+      const acceptedItems = await prisma.detailCommande.findMany({
+        where: {
+          statut_acceptation: 'Accepte',
+          produit: { id_user_vendeur: v.id_user },
+          commande: { statut: 'Livree' }
+        }
+      });
+
+      const ca = acceptedItems.reduce((acc, item) => acc + (item.quantite_commandee * item.prix_vente_applique), 0);
+      return {
+        id_user: v.id_user,
+        nom_etablissement: v.nom_etablissement,
+        nom: v.utilisateur.nom,
+        prenom: v.utilisateur.prenom,
+        photo_url: v.utilisateur.photo_url,
+        chiffre_affaires: ca
+      };
+    }));
+    vendorsLeaderboard.sort((a, b) => b.chiffre_affaires - a.chiffre_affaires);
+
+    // 2. Drivers ranked by Delivered Volume
+    const drivers = await prisma.livreur.findMany({
+      include: {
+        utilisateur: {
+          select: { nom: true, prenom: true, photo_url: true }
+        }
+      }
+    });
+
+    const driversLeaderboard = await Promise.all(drivers.map(async (d) => {
+      // Find all delivered Livraisons
+      const deliveries = await prisma.livraison.findMany({
+        where: {
+          id_user_livreur: d.id_user,
+          statut: 'Livree'
+        },
+        include: {
+          commande: {
+            select: { total_marchandises: true }
+          }
+        }
+      });
+
+      const vol = deliveries.reduce((acc, del) => acc + del.commande.total_marchandises, 0);
+      return {
+        id_user: d.id_user,
+        nom: d.utilisateur.nom,
+        prenom: d.utilisateur.prenom,
+        photo_url: d.utilisateur.photo_url,
+        volume_livre: vol,
+        courses_count: deliveries.length
+      };
+    }));
+    driversLeaderboard.sort((a, b) => b.volume_livre - a.volume_livre);
+
+    // 3. Clients ranked by Processed Orders Volume
+    const clients = await prisma.client.findMany({
+      include: {
+        utilisateur: {
+          select: { nom: true, prenom: true, photo_url: true }
+        }
+      }
+    });
+
+    const clientsLeaderboard = await Promise.all(clients.map(async (c) => {
+      const deliveredOrders = await prisma.commande.findMany({
+        where: {
+          id_user_client: c.id_user,
+          statut: 'Livree'
+        }
+      });
+
+      const totalAchat = deliveredOrders.reduce((acc, o) => acc + o.total_marchandises, 0);
+      return {
+        id_user: c.id_user,
+        nom: c.utilisateur.nom,
+        prenom: c.utilisateur.prenom,
+        photo_url: c.utilisateur.photo_url,
+        volume_achat: totalAchat,
+        commandes_count: deliveredOrders.length
+      };
+    }));
+    clientsLeaderboard.sort((a, b) => b.volume_achat - a.volume_achat);
+
     return res.json({
       financier: {
         total_ventes: totalVentes,
@@ -51,10 +158,15 @@ export const getAdminDashboard = async (req, res) => {
       alertes: {
         litiges_ouverts: openLitiges,
         signalements_en_attente: pendingSignalements
+      },
+      classements: {
+        vendeurs: vendorsLeaderboard,
+        livreurs: driversLeaderboard,
+        clients: clientsLeaderboard
       }
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du calcul du dashboard.' });
+    return res.status(500).json({ error: 'Erreur lors du calcul du dashboard: ' + error.message });
   }
 };
 
