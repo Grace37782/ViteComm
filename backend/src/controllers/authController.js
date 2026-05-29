@@ -25,6 +25,7 @@ const buildUserPayload = (user) => {
     email: user.email,
     statut_compte: user.statut_compte,
     est_admin: user.est_admin,
+    photo_url: user.photo_url,
     role
   };
 
