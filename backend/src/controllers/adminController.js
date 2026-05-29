@@ -341,6 +341,30 @@ export const updateUserStatus = async (req, res) => {
   }
 };
 
+// Admin update their own profile
+export const updateAdminProfile = async (req, res) => {
+  const { nom, prenom, telephone, email, photo_url } = req.body;
+  const adminId = req.user.id_user;
+
+  if (!nom || !prenom || !telephone || !email) {
+    return res.status(400).json({ error: 'Les champs nom, prenom, telephone et email sont requis.' });
+  }
+
+  try {
+    const updated = await prisma.utilisateur.update({
+      where: { id_user: adminId },
+      data: { nom, prenom, telephone, email, photo_url: photo_url || null },
+      select: {
+        id_user: true, nom: true, prenom: true, telephone: true,
+        email: true, photo_url: true, est_admin: true, statut_compte: true
+      }
+    });
+    return res.json(updated);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors de la mise à jour du profil: ' + error.message });
+  }
+};
+
 export const deleteUser = async (req, res) => {
   const { id_user } = req.params;
 

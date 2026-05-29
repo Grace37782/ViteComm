@@ -4,6 +4,7 @@ import {
   getUsers,
   getUserDetails,
   updateUserStatus,
+  updateAdminProfile,
   deleteUser,
   getVendorCatalogue,
   getPriceHistory,
@@ -20,6 +21,7 @@ router.use(requireAuth);
 router.use(requireRole(['admin']));
 
 router.get('/dashboard', getAdminDashboard);
+router.put('/profile', updateAdminProfile);
 
 // User management (RG12, RG13)
 router.get('/users', getUsers);

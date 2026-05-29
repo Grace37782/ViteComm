@@ -896,6 +896,44 @@ body {
   margin-bottom: 5px;
 }
 
+/* Admin profile icon in header */
+.btn-admin-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: 50px;
+  padding: 6px 16px 6px 6px;
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+.btn-admin-profile:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--glass-border-focus);
+}
+.admin-profile-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50px;
+  object-fit: cover;
+  border: 2px solid var(--primary);
+}
+.admin-profile-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary);
+  color: #fff;
+  font-size: 16px;
+}
+.admin-profile-name {
+  font-weight: 600;
+}
+
 /* Dynamic Search Bar */
 .search-bar-container {
   width: 100%;

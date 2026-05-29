@@ -24,11 +24,23 @@ export default function AdminDashboard({ token, addAlert }) {
   const [loadingUserDetail, setLoadingUserDetail] = useState(false);
   const [userDetailError, setUserDetailError] = useState(null);
 
+  // Admin own profile
+  const [adminUser, setAdminUser] = useState(null);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({ nom: '', prenom: '', telephone: '', email: '', photo_url: '' });
+  const [savingProfile, setSavingProfile] = useState(false);
+
   // On mount or token change
   useEffect(() => {
     loadAnalytics();
     loadUsers(); // load users initially to compute global counts
   }, [token]);
+
+  // Extract admin user from users list
+  useEffect(() => {
+    const admin = users.find(u => u.est_admin);
+    if (admin) setAdminUser(admin);
+  }, [users]);
 
   // Loaders
   const loadAnalytics = async () => {
@@ -189,6 +201,65 @@ export default function AdminDashboard({ token, addAlert }) {
   const closeUserDetails = () => {
     setSelectedUser(null);
     setUserDetail(null);
+    setEditingProfile(false);
+    setProfileForm({ nom: '', prenom: '', telephone: '', email: '', photo_url: '' });
+  };
+
+  // Admin own profile
+  const openAdminProfile = () => {
+    if (adminUser) {
+      viewUserDetails(adminUser);
+    } else {
+      addAlert('danger', 'Profil administrateur non trouvé.');
+    }
+  };
+
+  const startEditingProfile = () => {
+    if (!userDetail) return;
+    setProfileForm({
+      nom: userDetail.user.nom || '',
+      prenom: userDetail.user.prenom || '',
+      telephone: userDetail.user.telephone || '',
+      email: userDetail.user.email || '',
+      photo_url: userDetail.user.photo_url || ''
+    });
+    setEditingProfile(true);
+  };
+
+  const cancelEditingProfile = () => {
+    setEditingProfile(false);
+    setProfileForm({ nom: '', prenom: '', telephone: '', email: '', photo_url: '' });
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(profileForm)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        addAlert('success', 'Profil mis à jour avec succès.');
+        setEditingProfile(false);
+        setProfileForm({ nom: '', prenom: '', telephone: '', email: '', photo_url: '' });
+        // Re-fetch users to update the admin in the list
+        loadUsers();
+        // Update the detail view with new data
+        if (selectedUser) viewUserDetails(selectedUser);
+      } else {
+        addAlert('danger', data.error || 'Erreur de mise à jour.');
+      }
+    } catch (e) {
+      addAlert('danger', 'Erreur réseau.');
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   // Signalement Actions
@@ -280,6 +351,7 @@ export default function AdminDashboard({ token, addAlert }) {
   ) || [];
 
   const filteredUsers = users.filter(u => {
+    if (u.est_admin) return false; // Hide admin from user list
     const roleString = u.client ? 'client' : u.vendeur ? 'vendeur' : u.livreur ? 'livreur' : 'admin';
     return u.nom.toLowerCase().includes(q) || 
            u.prenom.toLowerCase().includes(q) || 
@@ -309,9 +381,21 @@ export default function AdminDashboard({ token, addAlert }) {
   return (
     <div className="admin-container">
       {/* Admin Panel Header */}
-      <div className="admin-header fade-in">
-        <h2><i className="fa-solid fa-screwdriver-wrench"></i> Console de Supervision Globale</h2>
-        <p className="subtitle">Auditez les transactions, arbitrez les litiges et gérez les utilisateurs.</p>
+      <div className="admin-header fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <h2><i className="fa-solid fa-screwdriver-wrench"></i> Console de Supervision Globale</h2>
+          <p className="subtitle">Auditez les transactions, arbitrez les litiges et gérez les utilisateurs.</p>
+        </div>
+        <button className="btn-admin-profile" onClick={openAdminProfile} title="Voir mon profil">
+          {adminUser?.photo_url ? (
+            <img src={adminUser.photo_url} alt="admin" className="admin-profile-avatar" />
+          ) : (
+            <div className="admin-profile-avatar admin-profile-avatar-placeholder">
+              <i className="fa-solid fa-user-shield"></i>
+            </div>
+          )}
+          <span className="admin-profile-name">{adminUser ? `${adminUser.prenom} ${adminUser.nom}` : 'Admin'}</span>
+        </button>
       </div>
 
       {/* Global Dynamic Filter Search Bar */}
@@ -1239,10 +1323,54 @@ export default function AdminDashboard({ token, addAlert }) {
                   )}
 
                   {!userDetail.roleData.type && (
-                    <div className="panel-helper">
-                      <i className="fa-solid fa-shield-halved"></i>
-                      <span>Compte administrateur système. Aucune donnée métier associée.</span>
-                    </div>
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px' }}>
+                        {!editingProfile ? (
+                          <button className="btn btn-primary btn-sm" onClick={startEditingProfile}>
+                            <i className="fa-solid fa-pen-to-square"></i> Modifier mon profil
+                          </button>
+                        ) : (
+                          <button className="btn btn-secondary btn-sm" onClick={cancelEditingProfile}>
+                            <i className="fa-solid fa-xmark"></i> Annuler
+                          </button>
+                        )}
+                      </div>
+
+                      {editingProfile ? (
+                        <form onSubmit={handleSaveProfile}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+                            <div className="form-group">
+                              <label>Prénom</label>
+                              <input className="form-input" required value={profileForm.prenom} onChange={e => setProfileForm(f => ({ ...f, prenom: e.target.value }))} />
+                            </div>
+                            <div className="form-group">
+                              <label>Nom</label>
+                              <input className="form-input" required value={profileForm.nom} onChange={e => setProfileForm(f => ({ ...f, nom: e.target.value }))} />
+                            </div>
+                            <div className="form-group">
+                              <label>Email</label>
+                              <input className="form-input" type="email" required value={profileForm.email} onChange={e => setProfileForm(f => ({ ...f, email: e.target.value }))} />
+                            </div>
+                            <div className="form-group">
+                              <label>Téléphone</label>
+                              <input className="form-input" required value={profileForm.telephone} onChange={e => setProfileForm(f => ({ ...f, telephone: e.target.value }))} />
+                            </div>
+                            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                              <label>Photo URL</label>
+                              <input className="form-input" placeholder="https://..." value={profileForm.photo_url} onChange={e => setProfileForm(f => ({ ...f, photo_url: e.target.value }))} />
+                            </div>
+                          </div>
+                          <button type="submit" className="btn btn-success" disabled={savingProfile}>
+                            {savingProfile ? <><i className="fa-solid fa-spinner fa-spin"></i> Enregistrement...</> : <><i className="fa-solid fa-floppy-disk"></i> Enregistrer</>}
+                          </button>
+                        </form>
+                      ) : (
+                        <div className="panel-helper">
+                          <i className="fa-solid fa-shield-halved"></i>
+                          <span>Compte administrateur système. Aucune donnée métier associée.</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               ) : null}

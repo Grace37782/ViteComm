@@ -297,6 +297,12 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
     - **Livreur :** Tableau des livraisons effectuées incluant l'ID commande, le nom du client, le montant, le statut de livraison, et la date. Résumé du nombre total de livraisons, volume total transporté, type de véhicule et immatriculation.
     - **Client :** Tableau des commandes passées incluant l'ID commande, le montant total, les frais de livraison, le statut et la date. Résumé du nombre total de commandes, dépense cumulée et adresse de livraison. **Aucun détail privé de navigation n'est exposé (RG11).**
   - **Comportement :** Les lignes du tableau des utilisateurs (`Utilisateurs (RG11)`) sont cliquables (`cursor: pointer`). Les items des classements (vendeurs, livreurs, clients) dans l'onglet Analytics & Finance sont également cliquables et ouvrent le même panneau de détails. Un clic ouvre une modale large (max 800px) avec scroll vertical. Le fond de la modale est opaque (`hsl(250, 25%, 10%)`) pour une lisibilité maximale. Le chargement est asynchrone avec indicateur de spinner. La modale se ferme au clic sur la croix ou en cliquant sur l'overlay.
+* **Profil Administrateur dédié :**
+  - L'administrateur **n'apparaît pas** dans la liste des utilisateurs (filtré via `est_admin`).
+  - Un bouton de profil est affiché en haut à droite de l'en-tête du tableau de bord, avec la photo (ou une icône de bouclier par défaut) et le nom de l'admin.
+  - Clic sur le bouton → ouvre le panneau de détails avec les informations du profil admin.
+  - **Modification du profil :** Un bouton "Modifier mon profil" apparaît dans le panneau de détails admin. Il transforme les champs en formulaire éditable (prénom, nom, email, téléphone, photo URL). La soumission appelle `PUT /api/admin/profile` et met à jour la base de données.
+  - **Confidentialité :** L'admin ne peut pas modifier son propre statut ou se supprimer via les actions de modération (protection côté backend).
 * **Comportement frontend & Confidentialité stricte (Règles RG11 & RG15) :**
   - **Sécurité RGPD :** L'interface administrateur ne doit comporter **aucun lien, bouton ou écran permettant d'accéder à l'historique d'achat ou de navigation privé d'un Client**. L'administrateur n'a accès qu'à ses informations d'identité de base (`nom`, `prenom`, `telephone`, `email`).
 
