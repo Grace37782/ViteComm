@@ -15,9 +15,13 @@ export default function ProfileDetails({
   return (
     <section className="screen-section">
       <div className="profile-header">
-        <div className="profile-avatar">
-          <i className="fa-solid fa-user-tie"></i>
-        </div>
+        {user.photo_url ? (
+          <img src={user.photo_url} alt="profile" style={{ width: '80px', height: '80px', borderRadius: '50px', objectFit: 'cover', border: '3px solid var(--accent)', boxShadow: '0 0 20px rgba(255, 46, 115, 0.3)' }} />
+        ) : (
+          <div className="profile-avatar">
+            <i className="fa-solid fa-user-tie"></i>
+          </div>
+        )}
         <div className="profile-meta">
           <h2>{user.prenom} {user.nom}</h2>
           <span className="role-badge-premium">{user.role}</span>
