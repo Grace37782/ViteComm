@@ -127,9 +127,9 @@ body {
 
 /* App container */
 .app-container {
-  max-width: 1200px;
+  max-width: 1300px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -146,7 +146,7 @@ body {
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  margin-bottom: 30px;
+  margin-bottom: 15px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
@@ -886,14 +886,14 @@ body {
 .admin-container {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 18px;
   text-align: left;
 }
 
 .admin-header {
   border-bottom: 1px solid var(--glass-border);
-  padding-bottom: 15px;
-  margin-bottom: 5px;
+  padding-bottom: 10px;
+  margin-bottom: 0;
 }
 
 /* Admin profile icon in header */
@@ -1090,7 +1090,7 @@ body {
 }
 
 .admin-tab-body {
-  padding: 30px;
+  padding: 20px;
   min-height: 350px;
   flex-grow: 1;
   width: 100%;

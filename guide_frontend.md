@@ -313,7 +313,7 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
   - **Confidentialité :** L'admin ne peut pas modifier son propre statut ou se supprimer via les actions de modération (protection côté backend).
 * **Comportement frontend & Confidentialité stricte (Règles RG11 & RG15) :**
   - **Sécurité RGPD :** L'interface administrateur ne doit comporter **aucun lien, bouton ou écran permettant d'accéder à l'historique d'achat ou de navigation privé d'un Client**. L'administrateur n'a accès qu'à ses informations d'identité de base (`nom`, `prenom`, `telephone`, `email`).
-  - **Note :** L'administrateur courant est exclu de la liste des utilisateurs du tableau (filtré via `est_admin`). Son profil est accessible depuis le bouton dédié dans l'en-tête.
+  - **Note :** L'administrateur courant est exclu de la liste des utilisateurs du tableau (filtré via `est_admin`). Son profil est accessible depuis le bouton dédié dans l'en-tête, qui ouvre un panneau de profil **inline** (pas de modale) dans la zone de contenu. Le panneau affiche les informations personnelles et un formulaire d'édition (nom, prénom, email, téléphone, photo URL).
 
 ### 5.3. Centre de Gestion des Signalements (Universal Moderation)
 * **Éléments à afficher :**
@@ -321,6 +321,17 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
   - Indicateur visuel du statut de traitement (En attente / Sanctionné / Classé sans suite).
 * **Comportement et logique frontend (Règle RG14) :**
   - **Droit de sanction universel :** Bien que l'historique d'un client soit confidentiel, les signalements reçus permettent à l'administrateur de suspendre ou supprimer tout type de compte s'il y a un abus avéré, **y compris le compte d'un Client**.
+
+### 5.5. Gestion des Produits (Product Inventory)
+* **Nouvel onglet dédié "Produits"** dans la barre latérale : liste exhaustive et filtrable de tous les produits de la plateforme.
+* **Éléments à afficher :**
+  - Photo, nom, description, prix actuel, stock disponible.
+  - Vendeur (`nom_etablissement`), marché (`localisation_marche`), et score de réputation du vendeur.
+  - Dernier prix enregistré (pour suivre les évolutions).
+* **Comportement :**
+  - Les lignes du tableau sont cliquables → ouvre la modale d'historique des prix (RG24) du produit.
+  - Barre de recherche globale filtre dynamiquement par nom, description, établissement ou marché.
+  - Données chargées depuis `GET /api/admin/products`.
 
 ### 5.4. Centre de Gestion et d'Arbitrage des Litiges (Dispute Center)
 * **Éléments à afficher :**

@@ -170,6 +170,32 @@ export const getAdminDashboard = async (req, res) => {
   }
 };
 
+// --- 5.2. Gestion des Produits (list all) ---
+
+export const getAllProducts = async (req, res) => {
+  try {
+    const products = await prisma.produit.findMany({
+      include: {
+        vendeur: {
+          select: {
+            nom_etablissement: true,
+            localisation_marche: true,
+            score_reputation: true
+          }
+        },
+        historiques: {
+          orderBy: { date_modification: 'desc' },
+          take: 1
+        }
+      },
+      orderBy: { nom: 'asc' }
+    });
+    return res.json(products);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement des produits.' });
+  }
+};
+
 // --- 5.2. Gestion des Comptes Utilisateurs (RG11, RG12, RG13, RG15) ---
 
 // Get full user details for admin (info, reputation, role-specific data)
