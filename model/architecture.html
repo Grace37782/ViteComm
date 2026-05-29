@@ -263,9 +263,9 @@
       <tr>
         <td>RG18</td>
         <td>Atomicité du Détail : Le détail d'une commande (<code>DETAIL_COMMANDE</code>) n'est pas une simple extension
-          de la commande, mais une entité de liaison ternaire fusionnant les informations de la <code>COMMANDE</code>,
-          du <code>PRODUIT</code> et du <code>VENDEUR</code>. Cette structure permet la gestion granulaire des rejets
-          par produit et par vendeur au sein d'une même commande client.</td>
+          de la commande, mais une entité de liaison associant la <code>COMMANDE</code> et le <code>PRODUIT</code>.
+          Cette structure permet la gestion granulaire des rejets par produit et, par transitivité, par vendeur au
+          sein d'une même commande client.</td>
       </tr>
       <tr>
         <td>RG19</td>
@@ -298,6 +298,15 @@
           l'ensemble de la commande (affectant tous les vendeurs concernés) ou des feedbacks distincts sur des
           sous-ensembles/groupes de produits (n'affectant que les vendeurs de ces produits). Les lignes de
           <code>DETAIL_COMMANDE</code> pointent vers leur feedback respectif.
+        </td>
+      </tr>
+      <tr>
+        <td>RG24</td>
+        <td>Historique des Prix &amp; Protection des Commandes : Toute modification de prix d'un produit par un vendeur doit être
+          enregistrée avec sa date d'effet dans l'historique des prix (<code>HISTORIQUE_PRIX</code>). Lors de la création d'une commande,
+          le prix de vente appliqué (<code>prix_vente_applique</code> dans <code>DETAIL_COMMANDE</code>) est figé pour protéger la commande
+          contre toute modification ultérieure. L'historique complet des prix d'un produit est public pour permettre l'affichage de
+          graphiques d'évolution de prix et d'auditer toute modification suspecte de tarif par rapport à la date de validation d'une commande.
         </td>
       </tr>
     </tbody>
@@ -358,7 +367,7 @@
       <tr>
         <td>PREUVE_COLLECTE</td>
         <td>id_preuve</td>
-        <td>date_heure, statut_validation, #id_commande, #id_user_vendeur, #id_user_livreur</td>
+        <td>date_heure, statut_validation, #id_commande</td>
       </tr>
       <tr>
         <td>PHOTO_PREUVE</td>
@@ -388,9 +397,14 @@
       </tr>
       <tr>
         <td>DETAIL_COMMANDE</td>
-        <td>#id_commande, #id_produit, #id_user_vendeur</td>
+        <td>#id_commande, #id_produit</td>
         <td>quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige (FK nullable), #id_feedback (FK
           nullable)</td>
+      </tr>
+      <tr>
+        <td>HISTORIQUE_PRIX</td>
+        <td>id_historique</td>
+        <td>prix, date_modification, #id_produit</td>
       </tr>
     </tbody>
   </table>
@@ -425,11 +439,13 @@ id_feedback → note, commentaire, date_publication, type_feedback
 
 id_signalement → date_heure, motif, statut_traitement
 
-id_livraison → date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules</pre>
+id_livraison → date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules
+
+id_historique → prix, date_modification</pre>
 
   <h3>3.2. DFED à Source Composée (Sources multiples → Associations CIM)</h3>
   <pre>
-(id_commande, id_produit, #id_user_vendeur) → quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige, #id_feedback
+(id_commande, id_produit) → quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige, #id_feedback
 
 (id_panier, id_produit) → quantite
 
@@ -463,9 +479,11 @@ id_signalement → #id_auteur (CIF)
 
 id_signalement → #id_cible (CIF polymorphe géré par type_cible_cible)
 
-id_preuve → #id_user_livreur
+id_preuve → #id_commande
 
-id_photo → #id_preuve</pre>
+id_photo → #id_preuve
+
+id_historique → #id_produit</pre>
 
   <h3>3.4. Fusion des Dépendances Fonctionnelles (Couverture Minimale Totale)</h3>
   <p>Synthèse globale de toutes les dépendances permettant de valider la 3NF (Troisième Forme Normale) et de déduire le
@@ -485,7 +503,7 @@ id_panier → date_creation, date_mise_a_jour, #id_user_client
 
 id_commande → date_creation, statut, total_marchandises, frais_livraison, commission, code_verification, #id_user_client
 
-id_preuve → date_heure, statut_validation, #id_commande, #id_user_vendeur, #id_user_livreur
+id_preuve → date_heure, statut_validation, #id_commande
 
 id_photo → url_photo, #id_preuve
 
@@ -497,13 +515,15 @@ id_signalement → date_heure, motif, statut_traitement, type_cible_cible, #id_a
 
 id_livraison → date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules, #id_commande, #id_user_livreur
 
-(id_commande, id_produit, #id_user_vendeur) → quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige, #id_feedback
+(id_commande, id_produit) → quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige, #id_feedback
 
 (id_panier, id_produit) → quantite
 
 (id_commande, #id_user_vendeur) → statut_collecte_vendeur
 
-(id_commande, #id_user_client) → statut_livraison_client</pre>
+(id_commande, #id_user_client) → statut_livraison_client
+
+id_historique → prix, date_modification, #id_produit</pre>
 
   <h2 id="mld">4. Modèle Logique des Données (MLD)</h2>
 
@@ -526,9 +546,9 @@ COMMANDE ( <u>id_commande</u>, date_creation, statut, total_marchandises, frais_
 
 LIVRAISON ( <u>id_livraison</u>, date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules, #id_commande, #id_user_livreur)
 
-DETAIL_COMMANDE ( <u>#id_commande, #id_produit, #id_user_vendeur</u>, quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige [FK nullable], #id_feedback [FK nullable])
+DETAIL_COMMANDE ( <u>#id_commande, #id_produit</u>, quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige [FK nullable], #id_feedback [FK nullable])
 
-PREUVE_COLLECTE ( <u>id_preuve</u>, date_heure, statut_validation, #id_commande, #id_user_vendeur, #id_user_livreur)
+PREUVE_COLLECTE ( <u>id_preuve</u>, date_heure, statut_validation, #id_commande)
 
 PHOTO_PREUVE ( <u>id_photo</u>, url_photo, #id_preuve)
 
@@ -536,7 +556,9 @@ LITIGE ( <u>id_litige</u>, description, date_ouverture, statut, decision_admin, 
 
 FEEDBACK ( <u>id_feedback</u>, note, commentaire, date_publication, type_feedback, #id_user_client, #id_livraison [FK nullable si type=LIVREUR], #id_user_vendeur [FK nullable si type=VENDEUR])
 
-SIGNALEMENT ( <u>id_signalement</u>, date_heure, motif, statut_traitement, type_cible_cible, #id_auteur, #id_cible)</pre>
+SIGNALEMENT ( <u>id_signalement</u>, date_heure, motif, statut_traitement, type_cible_cible, #id_auteur, #id_cible)
+
+HISTORIQUE_PRIX ( <u>id_historique</u>, prix, date_modification, #id_produit)</pre>
 
   <h2 id="uml">5. Conception Orientée Objet (UML)</h2>
   <p>Passage du modèle relationnel (Merise) au modèle conceptuel objet, conforme aux standards UML 2.x.</p>
@@ -570,12 +592,12 @@ SIGNALEMENT ( <u>id_signalement</u>, date_heure, motif, statut_traitement, type_
       <code>type_feedback</code> et FK conditionnelles (RG23).
     </li>
     <li>Classe <code>Litige</code> : Modélise les contestations clients lors de la livraison. Conformément à la conception basée sur les références, elle ne contient plus directement d'attribut d'image (<code>url_photos</code>), mais fait référence à <code>PreuveCollecte</code> via une clé étrangère nullable (<code>#id_preuve</code>) pour exploiter les photos associées.</li>
-    <li>Classe d'Association <code>Detail_Commande</code> : Représente la relation ternaire entre Commande, Produit et
-      Vendeur, portant les attributs de quantité et de prix spécifique. Les références à Litige/Feedback sont
-      optionnelles.</li>
-    <li>Classe <code>PreuveCollecte</code> : Liée au Livreur (qui la crée) et au Vendeur (lieu de collecte)
-      ainsi qu'à la Commande concernée (RG07). Elle sert de support de preuve pour un <code>Litige</code> et possède une relation 1-to-many avec la classe <code>PhotoPreuve</code>.</li>
+    <li>Classe d'Association <code>Detail_Commande</code> : Représente la relation entre Commande et Produit, portant
+      les attributs de quantité et de prix spécifique. Les références à Litige/Feedback sont optionnelles.</li>
+    <li>Classe <code>PreuveCollecte</code> : Liée à la Commande concernée (RG07).
+      Elle sert de support de preuve pour un <code>Litige</code> et possède une relation 1-to-many avec la classe <code>PhotoPreuve</code>.</li>
     <li>Classe <code>PhotoPreuve</code> : Permet d'attacher une ou plusieurs photographies à une preuve de collecte, assurant ainsi la possibilité de fournir des visuels détaillés pour le dossier de litige.</li>
+    <li>Classe <code>HistoriquePrix</code> : Enregistre l'historique des changements de tarifs pour chaque produit. Elle possède une relation many-to-one avec la classe <code>Produit</code> (un produit a plusieurs prix historiques).</li>
   </ul>
 
   <h3>5.3. Diagramme d'Activité</h3>
