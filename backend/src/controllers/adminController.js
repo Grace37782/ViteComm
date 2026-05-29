@@ -341,6 +341,23 @@ export const updateUserStatus = async (req, res) => {
   }
 };
 
+// Admin get their own profile
+export const getAdminMe = async (req, res) => {
+  try {
+    const user = await prisma.utilisateur.findUnique({
+      where: { id_user: req.user.id_user },
+      select: {
+        id_user: true, nom: true, prenom: true, telephone: true,
+        email: true, photo_url: true, est_admin: true, statut_compte: true
+      }
+    });
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
+    return res.json(user);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement du profil.' });
+  }
+};
+
 // Admin update their own profile
 export const updateAdminProfile = async (req, res) => {
   const { nom, prenom, telephone, email, photo_url } = req.body;

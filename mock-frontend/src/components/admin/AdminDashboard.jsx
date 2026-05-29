@@ -36,11 +36,21 @@ export default function AdminDashboard({ token, addAlert }) {
     loadUsers(); // load users initially to compute global counts
   }, [token]);
 
-  // Extract admin user from users list
+  // Load admin own profile from API (fixes duplicate admin issue)
   useEffect(() => {
-    const admin = users.find(u => u.est_admin);
-    if (admin) setAdminUser(admin);
-  }, [users]);
+    const loadAdminMe = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/admin/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAdminUser(data);
+        }
+      } catch (e) { /* silent */ }
+    };
+    loadAdminMe();
+  }, [token]);
 
   // Loaders
   const loadAnalytics = async () => {
@@ -417,39 +427,44 @@ export default function AdminDashboard({ token, addAlert }) {
         </div>
       </div>
 
-      {/* Admin navigation tabs */}
-      <div className="admin-tabs-nav">
-        <button
-          className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`}
-          onClick={() => handleTabChange('analytics')}
-        >
-          <i className="fa-solid fa-chart-line"></i> Analytics & Finance
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
-          onClick={() => handleTabChange('users')}
-        >
-          <i className="fa-solid fa-users-gear"></i> Utilisateurs (RG11)
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'reports' ? 'active' : ''}`}
-          onClick={() => handleTabChange('reports')}
-        >
-          <i className="fa-solid fa-bullhorn"></i> Signalements{' '}
-          {stats?.alertes?.signalements_en_attente > 0 && (
-            <span className="badge-alert-dot">{stats.alertes.signalements_en_attente}</span>
-          )}
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'disputes' ? 'active' : ''}`}
-          onClick={() => handleTabChange('disputes')}
-        >
-          <i className="fa-solid fa-scale-balanced"></i> Centre des Litiges{' '}
-          {stats?.alertes?.litiges_ouverts > 0 && (
-            <span className="badge-alert-dot">{stats.alertes.litiges_ouverts}</span>
-          )}
-        </button>
-      </div>
+      {/* Admin sidebar layout */}
+      <div className="admin-layout">
+        <nav className="admin-sidebar">
+          <button
+            className={`sidebar-btn ${activeTab === 'analytics' ? 'active' : ''}`}
+            onClick={() => handleTabChange('analytics')}
+          >
+            <i className="fa-solid fa-chart-line"></i>
+            <span className="sidebar-label">Analytics & Finance</span>
+          </button>
+          <button
+            className={`sidebar-btn ${activeTab === 'users' ? 'active' : ''}`}
+            onClick={() => handleTabChange('users')}
+          >
+            <i className="fa-solid fa-users-gear"></i>
+            <span className="sidebar-label">Utilisateurs (RG11)</span>
+          </button>
+          <button
+            className={`sidebar-btn ${activeTab === 'reports' ? 'active' : ''}`}
+            onClick={() => handleTabChange('reports')}
+          >
+            <i className="fa-solid fa-bullhorn"></i>
+            <span className="sidebar-label">Signalements</span>
+            {stats?.alertes?.signalements_en_attente > 0 && (
+              <span className="badge-alert-dot sidebar-badge">{stats.alertes.signalements_en_attente}</span>
+            )}
+          </button>
+          <button
+            className={`sidebar-btn ${activeTab === 'disputes' ? 'active' : ''}`}
+            onClick={() => handleTabChange('disputes')}
+          >
+            <i className="fa-solid fa-scale-balanced"></i>
+            <span className="sidebar-label">Centre des Litiges</span>
+            {stats?.alertes?.litiges_ouverts > 0 && (
+              <span className="badge-alert-dot sidebar-badge">{stats.alertes.litiges_ouverts}</span>
+            )}
+          </button>
+        </nav>
 
       <div className="admin-tab-body glassmorphism-inset fade-in">
 
@@ -952,6 +967,8 @@ export default function AdminDashboard({ token, addAlert }) {
         )}
 
       </div>
+
+      </div>{/* end admin-layout */}
 
       {/* POPUP MODAL 1: VENDOR CATALOGUE & HISTORIQUE DES PRIX (RG12 & RG24) */}
       {selectedCatalogue && (

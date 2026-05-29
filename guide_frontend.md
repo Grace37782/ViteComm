@@ -267,15 +267,23 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
 ### 5.1. Tableau de Bord Administrateur (Admin Dashboard)
 * **Barre de Recherche Globale et Filtrage Dynamique :**
   - Un champ de recherche textuel dynamique (`input[type="text"]`) permettant de filtrer instantanément les widgets, les listes, les tableaux d'utilisateurs, de produits et de litiges en temps réel.
+* **Navigation par Sidebar :**
+  - Les onglets (Analytics, Utilisateurs, Signalements, Centre des Litiges) sont présentés dans une **barre latérale verticale** (sticky) sur desktop.
+  - Sur mobile (largeur < 900px), la sidebar se transforme en **barre de navigation horizontale scrollable** en haut de la zone de contenu.
+  - Chaque bouton de la sidebar est accompagné d'une icône et les alertes (signalements en attente, litiges ouverts) sont affichées sous forme de badge numérique avec animation pulsée.
+* **Profil Administrateur :**
+  - Bouton dédié en haut à droite de l'en-tête avec la photo et le nom de l'admin (ou icône de bouclier par défaut).
+  - Le profil est chargé depuis l'API (`GET /api/admin/me`) en utilisant l'ID de l'utilisateur authentifié, ce qui évite les doublons même si plusieurs admins existent en base.
+  - Clic → ouvre le panneau de détails avec les informations personnelles et un bouton "Modifier mon profil" pour éditer les champs (nom, prénom, email, téléphone, photo URL).
 * **Cartes de Synthèse de la Plateforme (Counters) :**
   - Des widgets affichant le nombre total de comptes par type : **Vendeurs actifs**, **Clients inscrits**, et **Livreurs certifiés**.
 * **Mesures Financières de la Plateforme (Règle RG08) :**
   - **Volume total des ventes (brut) :** ex. `11,200 FCFA` (uniquement sur les articles livrés et acceptés).
   - **Commission plateforme cumulée (0,6 %) :** ex. `67.2 FCFA` (Règle **RG08** prélevée sur la valeur des marchandises).
 * **Leaderboards et Classements Financiers :**
-  - **Classement des Vendeurs par Chiffre d'Affaires (CA) :** Liste triée des vendeurs avec leur volume de vente généré (ex. Vendeur A, CA : 2000 FCFA).
-  - **Classement des Livreurs par Activité :** Liste triée des livreurs avec la valeur cumulée de leurs courses ou livraisons.
-  - **Classement des Clients par Volume d'Achat :** Liste triée des clients selon la valeur totale de leurs commandes validées (RGPD-compliant : n'affiche pas le détail de leurs achats).
+  - **Classement des Vendeurs par Chiffre d'Affaires (CA) :** Liste triée des vendeurs avec leur volume de vente généré (ex. Vendeur A, CA : 2000 FCFA). Items cliquables → ouvre le panneau de détails.
+  - **Classement des Livreurs par Activité :** Liste triée des livreurs avec la valeur cumulée de leurs courses ou livraisons. Items cliquables.
+  - **Classement des Clients par Volume d'Achat :** Liste triée des clients selon la valeur totale de leurs commandes validées (RGPD-compliant : n'affiche pas le détail de leurs achats). Items cliquables.
 * **Analyses Produits & Qualité (Règle RG12) :**
   - **Produits les plus populaires :** Tableau enrichi avec la photo de l'article, son nom, le volume vendu, et le nom de l'établissement du vendeur.
   - **Produits les plus refusés (Rejets Qualité) :** Tableau enrichi avec la photo de l'article, son nom, le volume rejeté lors des livraisons, et le nom de l'établissement du vendeur.
@@ -305,6 +313,7 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
   - **Confidentialité :** L'admin ne peut pas modifier son propre statut ou se supprimer via les actions de modération (protection côté backend).
 * **Comportement frontend & Confidentialité stricte (Règles RG11 & RG15) :**
   - **Sécurité RGPD :** L'interface administrateur ne doit comporter **aucun lien, bouton ou écran permettant d'accéder à l'historique d'achat ou de navigation privé d'un Client**. L'administrateur n'a accès qu'à ses informations d'identité de base (`nom`, `prenom`, `telephone`, `email`).
+  - **Note :** L'administrateur courant est exclu de la liste des utilisateurs du tableau (filtré via `est_admin`). Son profil est accessible depuis le bouton dédié dans l'en-tête.
 
 ### 5.3. Centre de Gestion des Signalements (Universal Moderation)
 * **Éléments à afficher :**
