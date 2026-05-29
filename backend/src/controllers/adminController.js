@@ -1,11 +1,10 @@
 import prisma from '../config/db.js';
 
-// 5.1. Tableau de bord Administrateur - Statistiques globales
+// --- 5.1. Tableau de bord Administrateur (RG08, RG12) ---
+
 export const getAdminDashboard = async (req, res) => {
   try {
-    const orders = await prisma.commande.findMany({
-      where: { statut: 'Livree' }
-    });
+    const orders = await prisma.commande.findMany({ where: { statut: 'Livree' } });
 
     const totalVentes = orders.reduce((acc, curr) => acc + curr.total_marchandises, 0);
     const totalCommissions = orders.reduce((acc, curr) => acc + curr.commission, 0);
@@ -28,24 +27,19 @@ export const getAdminDashboard = async (req, res) => {
       take: 5
     });
 
-    // Fetch product details
-    const popularProducts = await Promise.all(
-      productStats.map(async (stat) => {
-        const prod = await prisma.produit.findUnique({
-          where: { id_produit: stat.id_produit }
-        });
-        return { ...prod, total_vendu: stat._sum.quantite_commandee };
-      })
-    );
+    const enrichProduct = async (stat) => {
+      const prod = await prisma.produit.findUnique({ where: { id_produit: stat.id_produit } });
+      return { ...prod, quantite: stat._sum.quantite_commandee };
+    };
 
-    const avoidedProducts = await Promise.all(
-      rejectedProductStats.map(async (stat) => {
-        const prod = await prisma.produit.findUnique({
-          where: { id_produit: stat.id_produit }
-        });
-        return { ...prod, total_rejete: stat._sum.quantite_commandee };
-      })
-    );
+    const [popularProducts, avoidedProducts] = await Promise.all([
+      Promise.all(productStats.map(enrichProduct)),
+      Promise.all(rejectedProductStats.map(enrichProduct))
+    ]);
+
+    // Open litiges and pending signalements counts
+    const openLitiges = await prisma.litige.count({ where: { statut: 'Ouvert' } });
+    const pendingSignalements = await prisma.signalement.count({ where: { statut_traitement: 'En attente' } });
 
     return res.json({
       financier: {
@@ -53,14 +47,19 @@ export const getAdminDashboard = async (req, res) => {
         total_commissions_plateforme: totalCommissions
       },
       produits_populaires: popularProducts,
-      produits_refuses: avoidedProducts
+      produits_refuses: avoidedProducts,
+      alertes: {
+        litiges_ouverts: openLitiges,
+        signalements_en_attente: pendingSignalements
+      }
     });
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors du calcul du dashboard.' });
   }
 };
 
-// 5.2. Gestion des Comptes Utilisateurs (Respect RG11 & RG15)
+// --- 5.2. Gestion des Comptes Utilisateurs (RG11, RG12, RG13, RG15) ---
+
 export const getUsers = async (req, res) => {
   try {
     const users = await prisma.utilisateur.findMany({
@@ -71,13 +70,8 @@ export const getUsers = async (req, res) => {
       }
     });
 
-    // Strip out private data if needed, but MLD basic properties are allowed (RG12).
-    // Ensure that for clients, we do NOT join any private order history (RG11).
-    const parsedUsers = users.map((user) => {
-      const { mot_de_passe, ...safeUser } = user;
-      return safeUser;
-    });
-
+    // Strip passwords; strip client order history (RG11)
+    const parsedUsers = users.map(({ mot_de_passe, ...safeUser }) => safeUser);
     return res.json(parsedUsers);
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors du chargement des utilisateurs.' });
@@ -86,7 +80,7 @@ export const getUsers = async (req, res) => {
 
 export const updateUserStatus = async (req, res) => {
   const { id_user } = req.params;
-  const { statut_compte } = req.body; // "Actif" or "Suspendu" / "Banni"
+  const { statut_compte } = req.body;
 
   if (!statut_compte || !['Actif', 'Suspendu', 'Banni'].includes(statut_compte)) {
     return res.status(400).json({ error: 'Statut de compte invalide.' });
@@ -96,37 +90,76 @@ export const updateUserStatus = async (req, res) => {
     const userId = parseInt(id_user, 10);
     const user = await prisma.utilisateur.findUnique({ where: { id_user: userId } });
 
-    if (!user) {
-      return res.status(404).json({ error: 'Utilisateur introuvable.' });
-    }
-
-    // Protect against banning self
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
     if (user.id_user === req.user.id_user) {
-      return res.status(400).json({ error: 'Vous ne pouvez pas suspendre votre propre compte administrateur.' });
+      return res.status(400).json({ error: 'Vous ne pouvez pas modifier votre propre statut.' });
     }
 
-    await prisma.utilisateur.update({
-      where: { id_user: userId },
-      data: { statut_compte }
-    });
-
-    return res.json({ message: `Le statut du compte a été mis à jour avec succès à : ${statut_compte}` });
+    await prisma.utilisateur.update({ where: { id_user: userId }, data: { statut_compte } });
+    return res.json({ message: `Statut mis à jour : ${statut_compte}` });
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors de la mise à jour.' });
   }
 };
 
-// 5.3. Centre de modération globale (Signalements)
+export const deleteUser = async (req, res) => {
+  const { id_user } = req.params;
+
+  try {
+    const userId = parseInt(id_user, 10);
+    const user = await prisma.utilisateur.findUnique({ where: { id_user: userId } });
+
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
+    if (user.id_user === req.user.id_user) {
+      return res.status(400).json({ error: 'Vous ne pouvez pas supprimer votre propre compte.' });
+    }
+
+    await prisma.utilisateur.delete({ where: { id_user: userId } });
+    return res.json({ message: 'Compte supprimé avec succès.' });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors de la suppression.' });
+  }
+};
+
+// Vendor catalogue view for admin (RG12)
+export const getVendorCatalogue = async (req, res) => {
+  const { id_user } = req.params;
+
+  try {
+    const products = await prisma.produit.findMany({
+      where: { id_user_vendeur: parseInt(id_user, 10) },
+      include: { historiques: { orderBy: { date_modification: 'asc' } } }
+    });
+    return res.json(products);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement du catalogue.' });
+  }
+};
+
+// Price history audit (RG24)
+export const getPriceHistory = async (req, res) => {
+  const { id_produit } = req.params;
+
+  try {
+    const history = await prisma.historiquePrix.findMany({
+      where: { id_produit: parseInt(id_produit, 10) },
+      include: { produit: { select: { nom: true, id_user_vendeur: true } } },
+      orderBy: { date_modification: 'asc' }
+    });
+    return res.json(history);
+  } catch (error) {
+    return res.status(500).json({ error: "Erreur lors du chargement de l'historique des prix." });
+  }
+};
+
+// --- 5.3. Centre de modération (Signalements - RG14) ---
+
 export const getSignalements = async (req, res) => {
   try {
     const reports = await prisma.signalement.findMany({
       include: {
-        auteur: {
-          select: { nom: true, prenom: true, email: true }
-        },
-        cible: {
-          select: { nom: true, prenom: true, email: true, statut_compte: true }
-        }
+        auteur: { select: { nom: true, prenom: true, email: true } },
+        cible: { select: { nom: true, prenom: true, email: true, statut_compte: true } }
       },
       orderBy: { date_heure: 'desc' }
     });
@@ -138,12 +171,15 @@ export const getSignalements = async (req, res) => {
 
 export const updateSignalementStatus = async (req, res) => {
   const { id_signalement } = req.params;
-  const { statut_traitement } = req.body; // "En attente", "Traite", "Classe"
+  const { statut_traitement } = req.body;
+
+  if (!['En attente', 'Traite', 'Classe'].includes(statut_traitement)) {
+    return res.status(400).json({ error: 'Statut invalide.' });
+  }
 
   try {
-    const reportId = parseInt(id_signalement, 10);
     const updated = await prisma.signalement.update({
-      where: { id_signalement: reportId },
+      where: { id_signalement: parseInt(id_signalement, 10) },
       data: { statut_traitement }
     });
     return res.json(updated);
@@ -152,17 +188,31 @@ export const updateSignalementStatus = async (req, res) => {
   }
 };
 
-// 5.4. Arbitrage des Litiges (Dispute Center - RG09, RG16)
+// --- 5.4. Centre d'Arbitrage des Litiges (RG09, RG16, RG21) ---
+
 export const getLitiges = async (req, res) => {
   try {
     const litiges = await prisma.litige.findMany({
       include: {
-        commande: {
+        livraison: {
           include: {
-            client: {
+            commande: {
+              include: {
+                client: {
+                  include: { utilisateur: { select: { nom: true, prenom: true } } }
+                }
+              }
+            },
+            livreur: {
               include: { utilisateur: { select: { nom: true, prenom: true } } }
             }
           }
+        },
+        preuve: {
+          include: { photos: true }  // Photographic evidence gallery (RG07)
+        },
+        detailsCommande: {
+          include: { produit: true }
         }
       },
       orderBy: { date_ouverture: 'desc' }
@@ -185,15 +235,12 @@ export const resolveLitige = async (req, res) => {
     const litigeId = parseInt(id_litige, 10);
     const litige = await prisma.litige.findUnique({
       where: { id_litige: litigeId },
-      include: { commande: true }
+      include: { livraison: { include: { commande: true } } }
     });
 
-    if (!litige) {
-      return res.status(404).json({ error: 'Litige introuvable.' });
-    }
+    if (!litige) return res.status(404).json({ error: 'Litige introuvable.' });
 
     await prisma.$transaction(async (tx) => {
-      // Update Litige
       await tx.litige.update({
         where: { id_litige: litigeId },
         data: {
@@ -203,11 +250,26 @@ export const resolveLitige = async (req, res) => {
         }
       });
 
-      // Update the global Commande state to reflect resolution
-      await tx.commande.update({
-        where: { id_commande: litige.id_commande },
-        data: { statut: 'Livree' } // Final status closed
+      // Update vendor reputation after dispute resolution (RG10)
+      // Find all rejected products in this litige's detail lines
+      const rejectedLines = await tx.detailCommande.findMany({
+        where: { id_litige: litigeId },
+        include: { produit: true }
       });
+
+      const affectedVendorIds = [...new Set(rejectedLines.map((l) => l.produit.id_user_vendeur))];
+      for (const vendorId of affectedVendorIds) {
+        const vendorFeedbacks = await tx.feedback.findMany({
+          where: { type_feedback: 'VENDEUR', id_user_vendeur: vendorId }
+        });
+        if (vendorFeedbacks.length > 0) {
+          const avg = vendorFeedbacks.reduce((s, f) => s + f.note, 0) / vendorFeedbacks.length;
+          await tx.vendeur.update({
+            where: { id_user: vendorId },
+            data: { score_reputation: parseFloat(avg.toFixed(1)) }
+          });
+        }
+      }
     });
 
     return res.json({ message: 'Litige résolu avec succès.' });
