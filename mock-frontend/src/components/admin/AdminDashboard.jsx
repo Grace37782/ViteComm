@@ -4,6 +4,7 @@ const API_BASE = 'http://localhost:5000/api';
 
 export default function AdminDashboard({ token, addAlert }) {
   const [activeTab, setActiveTab] = useState('analytics'); // 'analytics', 'users', 'reports', 'disputes'
+  const [searchQuery, setSearchQuery] = useState('');
 
   // States
   const [stats, setStats] = useState(null);
@@ -20,6 +21,7 @@ export default function AdminDashboard({ token, addAlert }) {
   // On mount or token change
   useEffect(() => {
     loadAnalytics();
+    loadUsers(); // load users initially to compute global counts
   }, [token]);
 
   // Loaders
@@ -207,6 +209,7 @@ export default function AdminDashboard({ token, addAlert }) {
         setResolvingDispute(null);
         setDisputeForm({ decision_admin: '', montant_rembourse: '' });
         loadDisputes();
+        loadAnalytics(); // Reload metrics too
       } else {
         addAlert('danger', data.error || 'Erreur lors de la résolution.');
       }
@@ -215,12 +218,85 @@ export default function AdminDashboard({ token, addAlert }) {
     }
   };
 
+  // --- CLIENT-SIDE FILTERS ---
+  const q = searchQuery.toLowerCase();
+
+  const totalVendors = users.filter(u => u.vendeur).length;
+  const totalClients = users.filter(u => u.client).length;
+  const totalDrivers = users.filter(u => u.livreur).length;
+
+  const filteredPopularProducts = stats?.produits_populaires?.filter(p => 
+    p.nom.toLowerCase().includes(q) || (p.vendeur?.nom_etablissement || '').toLowerCase().includes(q)
+  ) || [];
+
+  const filteredAvoidedProducts = stats?.produits_refuses?.filter(p => 
+    p.nom.toLowerCase().includes(q) || (p.vendeur?.nom_etablissement || '').toLowerCase().includes(q)
+  ) || [];
+
+  const filteredVendorsLeaderboard = stats?.classements?.vendeurs?.filter(v => 
+    v.nom_etablissement.toLowerCase().includes(q) || v.nom.toLowerCase().includes(q) || v.prenom.toLowerCase().includes(q)
+  ) || [];
+
+  const filteredDriversLeaderboard = stats?.classements?.livreurs?.filter(d => 
+    d.nom.toLowerCase().includes(q) || d.prenom.toLowerCase().includes(q)
+  ) || [];
+
+  const filteredClientsLeaderboard = stats?.classements?.clients?.filter(c => 
+    c.nom.toLowerCase().includes(q) || c.prenom.toLowerCase().includes(q)
+  ) || [];
+
+  const filteredUsers = users.filter(u => {
+    const roleString = u.client ? 'client' : u.vendeur ? 'vendeur' : u.livreur ? 'livreur' : 'admin';
+    return u.nom.toLowerCase().includes(q) || 
+           u.prenom.toLowerCase().includes(q) || 
+           u.email.toLowerCase().includes(q) || 
+           u.telephone.toLowerCase().includes(q) ||
+           u.statut_compte.toLowerCase().includes(q) ||
+           roleString.includes(q) ||
+           (u.vendeur?.nom_etablissement || '').toLowerCase().includes(q);
+  });
+
+  const filteredReports = reports.filter(r => 
+    r.motif.toLowerCase().includes(q) || 
+    r.auteur.nom.toLowerCase().includes(q) || 
+    r.auteur.prenom.toLowerCase().includes(q) || 
+    r.cible.nom.toLowerCase().includes(q) || 
+    r.cible.prenom.toLowerCase().includes(q)
+  );
+
+  const filteredDisputes = disputes.filter(d => 
+    d.description.toLowerCase().includes(q) || 
+    d.livraison.commande.client.utilisateur.nom.toLowerCase().includes(q) || 
+    d.livraison.commande.client.utilisateur.prenom.toLowerCase().includes(q) || 
+    d.livraison.livreur.utilisateur.nom.toLowerCase().includes(q) || 
+    d.livraison.livreur.utilisateur.prenom.toLowerCase().includes(q)
+  );
+
   return (
     <div className="admin-container">
       {/* Admin Panel Header */}
       <div className="admin-header fade-in">
         <h2><i className="fa-solid fa-screwdriver-wrench"></i> Console de Supervision Globale</h2>
         <p className="subtitle">Auditez les transactions, arbitrez les litiges et gérez les utilisateurs.</p>
+      </div>
+
+      {/* Global Dynamic Filter Search Bar */}
+      <div className="search-bar-container fade-in">
+        <div className="search-wrapper">
+          <i className="fa-solid fa-magnifying-glass search-icon"></i>
+          <input
+            type="text"
+            placeholder="Rechercher dynamiquement par nom, produit, marché, sachet, établissement..."
+            className="form-input search-input"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button className="btn-clear-search" onClick={() => setSearchQuery('')} title="Effacer la recherche">
+              <i className="fa-solid fa-circle-xmark"></i>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Admin navigation tabs */}
@@ -262,7 +338,28 @@ export default function AdminDashboard({ token, addAlert }) {
         {/* TAB 1: ANALYTICS & FINANCE */}
         {activeTab === 'analytics' && stats && (
           <div className="tab-pane">
-            <div className="metrics-grid">
+            
+            {/* Top Counters Row (Vendors, Clients, Livreurs) */}
+            <div className="metrics-grid" style={{ marginBottom: '30px' }}>
+              <div className="metric-box" style={{ background: 'linear-gradient(135deg, rgba(255, 46, 115, 0.08) 0%, rgba(255, 46, 115, 0.01) 100%)', borderLeft: '4px solid var(--accent)' }}>
+                <span className="metric-label">Marchands Actifs</span>
+                <span className="metric-value">{totalVendors} Vendeurs</span>
+                <span className="metric-tip">Suivi et réputation en lecture seule</span>
+              </div>
+              <div className="metric-box" style={{ background: 'linear-gradient(135deg, rgba(110, 68, 255, 0.08) 0%, rgba(110, 68, 255, 0.01) 100%)', borderLeft: '4px solid var(--primary)' }}>
+                <span className="metric-label">Clients Enregistrés</span>
+                <span className="metric-value">{totalClients} Clients</span>
+                <span className="metric-tip">Sécurisés sous conformité RGPD</span>
+              </div>
+              <div className="metric-box" style={{ background: 'linear-gradient(135deg, rgba(0, 180, 216, 0.08) 0%, rgba(0, 180, 216, 0.01) 100%)', borderLeft: '4px solid var(--info)' }}>
+                <span className="metric-label">Transporteurs Certifiés</span>
+                <span className="metric-value">{totalDrivers} Livreurs</span>
+                <span className="metric-tip">Avec suivi des plaques d'immatriculation</span>
+              </div>
+            </div>
+
+            {/* Financial Metrics aligned exactly with instructions */}
+            <div className="metrics-grid" style={{ marginBottom: '35px' }}>
               <div className="metric-box box-sales">
                 <span className="metric-label">Volume total des ventes (brut)</span>
                 <span className="metric-value">{stats.financier.total_ventes.toLocaleString()} FCFA</span>
@@ -275,25 +372,129 @@ export default function AdminDashboard({ token, addAlert }) {
               </div>
             </div>
 
-            <div className="audit-sections-grid">
+            {/* LEADERBOARDS & CLASSEMENTS GRID */}
+            <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <i className="fa-solid fa-ranking-star" style={{ color: 'var(--accent)' }}></i> Classements Chiffre d'Affaires & Volumes
+            </h3>
+            
+            <div className="metrics-grid" style={{ marginBottom: '40px', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
+              
+              {/* 1. Vendors CA Leaderboard */}
               <div className="audit-list-card">
-                <h3><i className="fa-solid fa-thumbs-up" style={{ color: 'var(--success)' }}></i> Produits Populaires</h3>
-                {stats.produits_populaires.length === 0 ? (
-                  <p className="no-data">Aucune donnée de vente pour le moment.</p>
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px', color: 'var(--accent)', fontSize: '15px' }}>
+                  <i className="fa-solid fa-shop"></i> Vendeurs par Volume (CA)
+                </h4>
+                {filteredVendorsLeaderboard.length === 0 ? (
+                  <p className="no-data">Aucun vendeur trouvé.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {filteredVendorsLeaderboard.map((v, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                        {v.photo_url ? (
+                          <img src={v.photo_url} alt="vendeur" style={{ width: '36px', height: '36px', borderRadius: '50px', objectFit: 'cover', border: '1.5px solid var(--accent)' }} />
+                        ) : (
+                          <div style={{ width: '36px', height: '36px', borderRadius: '50px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyCenter: 'center', fontSize: '14px', fontWeight: 'bold' }}>{v.nom[0]}</div>
+                        )}
+                        <div style={{ flexGrow: 1 }}>
+                          <span style={{ fontWeight: 'bold', display: 'block', fontSize: '13px' }}>{v.nom_etablissement}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{v.prenom} {v.nom}</span>
+                        </div>
+                        <span style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--success)' }}>{v.chiffre_affaires.toLocaleString()} FCFA</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 2. Drivers Volume Leaderboard */}
+              <div className="audit-list-card">
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px', color: 'var(--info)', fontSize: '15px' }}>
+                  <i className="fa-solid fa-motorcycle"></i> Livreurs par Volume (Livre)
+                </h4>
+                {filteredDriversLeaderboard.length === 0 ? (
+                  <p className="no-data">Aucun livreur trouvé.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {filteredDriversLeaderboard.map((d, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                        {d.photo_url ? (
+                          <img src={d.photo_url} alt="livreur" style={{ width: '36px', height: '36px', borderRadius: '50px', objectFit: 'cover', border: '1.5px solid var(--info)' }} />
+                        ) : (
+                          <div style={{ width: '36px', height: '36px', borderRadius: '50px', background: 'var(--info)', display: 'flex', alignItems: 'center', justifyCenter: 'center', fontSize: '14px', fontWeight: 'bold' }}>{d.nom[0]}</div>
+                        )}
+                        <div style={{ flexGrow: 1 }}>
+                          <span style={{ fontWeight: 'bold', display: 'block', fontSize: '13px' }}>{d.prenom} {d.nom}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{d.courses_count} livraisons effectuées</span>
+                        </div>
+                        <span style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--info)' }}>{d.volume_livre.toLocaleString()} FCFA</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Clients Order Volume Leaderboard */}
+              <div className="audit-list-card">
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px', color: 'var(--primary)', fontSize: '15px' }}>
+                  <i className="fa-solid fa-basket-shopping"></i> Clients par Achats Cumulés
+                </h4>
+                {filteredClientsLeaderboard.length === 0 ? (
+                  <p className="no-data">Aucun client trouvé.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {filteredClientsLeaderboard.map((c, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                        {c.photo_url ? (
+                          <img src={c.photo_url} alt="client" style={{ width: '36px', height: '36px', borderRadius: '50px', objectFit: 'cover', border: '1.5px solid var(--primary)' }} />
+                        ) : (
+                          <div style={{ width: '36px', height: '36px', borderRadius: '50px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyCenter: 'center', fontSize: '14px', fontWeight: 'bold' }}>{c.nom[0]}</div>
+                        )}
+                        <div style={{ flexGrow: 1 }}>
+                          <span style={{ fontWeight: 'bold', display: 'block', fontSize: '13px' }}>{c.prenom} {c.nom}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{c.commandes_count} commandes payées</span>
+                        </div>
+                        <span style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--primary)' }}>{c.volume_achat.toLocaleString()} FCFA</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* PRODUCT ANALYTICS GRID (RG12 - With photos and Vendor Establishment details) */}
+            <div className="audit-sections-grid">
+              
+              {/* Popular Products Table */}
+              <div className="audit-list-card">
+                <h3><i className="fa-solid fa-thumbs-up" style={{ color: 'var(--success)' }}></i> Produits Populaires (Ventes)</h3>
+                {filteredPopularProducts.length === 0 ? (
+                  <p className="no-data">Aucune donnée correspondante.</p>
                 ) : (
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>Nom du produit</th>
-                        <th>Quantité Vendue</th>
-                        <th>Prix Réf</th>
+                        <th>Photo</th>
+                        <th>Désignation & Étal</th>
+                        <th>Achetés</th>
+                        <th>Prix</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {stats.produits_populaires.map((p, idx) => (
+                      {filteredPopularProducts.map((p, idx) => (
                         <tr key={idx}>
-                          <td><strong>{p.nom}</strong></td>
-                          <td style={{ color: 'var(--success)' }}>{p.quantite} achetés</td>
+                          <td>
+                            {p.photo_url ? (
+                              <img src={p.photo_url} alt="produit" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover', border: '1px solid var(--glass-border)' }} />
+                            ) : (
+                              <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyCenter: 'center' }}><i className="fa-solid fa-carrot"></i></div>
+                            )}
+                          </td>
+                          <td>
+                            <strong>{p.nom}</strong>
+                            <span className="p-desc-sub"><i className="fa-solid fa-shop"></i> {p.vendeur?.nom_etablissement || 'Boutique local'}</span>
+                          </td>
+                          <td style={{ color: 'var(--success)', fontWeight: 'bold' }}>{p.quantite} vendus</td>
                           <td>{p.prix_reference} FCFA</td>
                         </tr>
                       ))}
@@ -302,24 +503,36 @@ export default function AdminDashboard({ token, addAlert }) {
                 )}
               </div>
 
+              {/* Rejected Products Table */}
               <div className="audit-list-card">
                 <h3><i className="fa-solid fa-circle-xmark" style={{ color: 'var(--danger)' }}></i> Produits Refusés (Rejets Qualité)</h3>
-                {stats.produits_refuses.length === 0 ? (
-                  <p className="no-data">Aucun rejet physique de produit signalé lors des livraisons.</p>
+                {filteredAvoidedProducts.length === 0 ? (
+                  <p className="no-data">Aucun rejet physique enregistré.</p>
                 ) : (
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>Nom du produit</th>
-                        <th>Quantité Refusée</th>
-                        <th>Prix Réf</th>
+                        <th>Photo</th>
+                        <th>Désignation & Étal</th>
+                        <th>Refusés</th>
+                        <th>Prix</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {stats.produits_refuses.map((p, idx) => (
+                      {filteredAvoidedProducts.map((p, idx) => (
                         <tr key={idx}>
-                          <td><strong>{p.nom}</strong></td>
-                          <td style={{ color: 'var(--danger)' }}>{p.quantite} rejets</td>
+                          <td>
+                            {p.photo_url ? (
+                              <img src={p.photo_url} alt="produit" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover', border: '1px solid var(--glass-border)' }} />
+                            ) : (
+                              <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyCenter: 'center' }}><i className="fa-solid fa-carrot"></i></div>
+                            )}
+                          </td>
+                          <td>
+                            <strong>{p.nom}</strong>
+                            <span className="p-desc-sub"><i className="fa-solid fa-shop"></i> {p.vendeur?.nom_etablissement || 'Boutique local'}</span>
+                          </td>
+                          <td style={{ color: 'var(--danger)', fontWeight: 'bold' }}>{p.quantite} rejets</td>
                           <td>{p.prix_reference} FCFA</td>
                         </tr>
                       ))}
@@ -327,6 +540,7 @@ export default function AdminDashboard({ token, addAlert }) {
                   </table>
                 )}
               </div>
+
             </div>
           </div>
         )}
@@ -336,104 +550,117 @@ export default function AdminDashboard({ token, addAlert }) {
           <div className="tab-pane">
             <div className="panel-helper">
               <i className="fa-solid fa-shield-halved"></i>
-              <span><strong>Conformité RGPD stricte (RG11 & RG15) :</strong> Aucun historique d'achat ou de navigation privé n'est exposé. Les scores de réputation sont verrouillés en lecture seule pour préserver la confiance du réseau.</span>
+              <span><strong>Conformité RGPD stricte (RG11 & RG15) :</strong> Aucun historique d'achat ou de navigation privé n'est exposé. Les scores de réputation sont verrouillés en lecture seule pour préserver la confiance du réseau. Les photos de profil sont affichées à titre d'identité.</span>
             </div>
 
-            <table className="admin-table user-table">
-              <thead>
-                <tr>
-                  <th>Nom complet</th>
-                  <th>Contact</th>
-                  <th>Rôle</th>
-                  <th>Réputation</th>
-                  <th>Statut</th>
-                  <th>Actions de Modération</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(u => (
-                  <tr key={u.id_user} className={`status-row-${u.statut_compte.toLowerCase()}`}>
-                    <td>
-                      <div className="user-name-cell">
-                        <i className="fa-solid fa-circle-user"></i>
-                        <div>
-                          <strong>{u.prenom} {u.nom}</strong>
-                          {u.est_admin && <span className="admin-tag-pill">Admin</span>}
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="contact-cell">
-                        <span><i className="fa-solid fa-envelope"></i> {u.email}</span>
-                        <span><i className="fa-solid fa-phone"></i> {u.telephone}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`role-tag role-${u.client ? 'client' : u.vendeur ? 'vendeur' : u.livreur ? 'livreur' : 'admin'}`}>
-                        {u.client ? 'Client' : u.vendeur ? 'Vendeur' : u.livreur ? 'Livreur' : 'Admin'}
-                      </span>
-                    </td>
-                    <td>
-                      {u.vendeur && (
-                        <span className="badge-reputation" title="Vendeur">
-                          <i className="fa-solid fa-star"></i> {u.vendeur.score_reputation.toFixed(1)}
-                        </span>
-                      )}
-                      {u.livreur && (
-                        <span className="badge-reputation active-liv" title="Livreur">
-                          <i className="fa-solid fa-truck"></i> {u.livreur.score_reputation.toFixed(1)}
-                        </span>
-                      )}
-                      {u.client && <span className="rep-na">N/A</span>}
-                    </td>
-                    <td>
-                      <span className={`status-pill status-${u.statut_compte.toLowerCase()}`}>
-                        {u.statut_compte}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="action-buttons-cell">
-                        {u.vendeur && (
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => viewVendorCatalogue(u.vendeur)}
-                            title="Consulter le Catalogue & Prix (RG12/RG24)"
-                          >
-                            <i className="fa-solid fa-store"></i> Étal
-                          </button>
-                        )}
-                        
-                        {u.statut_compte === 'Actif' ? (
-                          <button
-                            className="btn btn-warning btn-sm"
-                            onClick={() => handleUserStatusUpdate(u.id_user, 'Suspendu')}
-                            title="Suspendre temporairement"
-                          >
-                            <i className="fa-solid fa-user-slash"></i> Suspendre
-                          </button>
-                        ) : (
-                          <button
-                            className="btn btn-success btn-sm"
-                            onClick={() => handleUserStatusUpdate(u.id_user, 'Actif')}
-                            title="Réactiver le compte"
-                          >
-                            <i className="fa-solid fa-user-check"></i> Activer
-                          </button>
-                        )}
-
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleUserDelete(u.id_user)}
-                          title="Supprimer définitivement (RG13)"
-                        >
-                          <i className="fa-solid fa-trash-can"></i> Suppr
-                        </button>
-                      </div>
-                    </td>
+            {filteredUsers.length === 0 ? (
+              <p className="no-data">Aucun utilisateur correspondant à votre recherche.</p>
+            ) : (
+              <table className="admin-table user-table">
+                <thead>
+                  <tr>
+                    <th>Portrait</th>
+                    <th>Nom complet</th>
+                    <th>Contact</th>
+                    <th>Rôle</th>
+                    <th>Réputation</th>
+                    <th>Statut</th>
+                    <th>Actions de Modération</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredUsers.map(u => (
+                    <tr key={u.id_user} className={`status-row-${u.statut_compte.toLowerCase()}`}>
+                      <td>
+                        {u.photo_url ? (
+                          <img src={u.photo_url} alt="profil" style={{ width: '42px', height: '42px', borderRadius: '50px', objectFit: 'cover', border: '2px solid var(--glass-border)' }} />
+                        ) : (
+                          <div style={{ width: '42px', height: '42px', borderRadius: '50px', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyCenter: 'center', fontSize: '18px' }}>
+                            <i className="fa-solid fa-circle-user"></i>
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <div className="user-name-cell" style={{ gap: '6px' }}>
+                          <div>
+                            <strong>{u.prenom} {u.nom}</strong>
+                            {u.est_admin && <span className="admin-tag-pill">Admin</span>}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="contact-cell">
+                          <span><i className="fa-solid fa-envelope"></i> {u.email}</span>
+                          <span><i className="fa-solid fa-phone"></i> {u.telephone}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`role-tag role-${u.client ? 'client' : u.vendeur ? 'vendeur' : u.livreur ? 'livreur' : 'admin'}`}>
+                          {u.client ? 'Client' : u.vendeur ? 'Vendeur' : u.livreur ? 'Livreur' : 'Admin'}
+                        </span>
+                      </td>
+                      <td>
+                        {u.vendeur && (
+                          <span className="badge-reputation" title="Vendeur">
+                            <i className="fa-solid fa-star"></i> {u.vendeur.score_reputation.toFixed(1)}
+                          </span>
+                        )}
+                        {u.livreur && (
+                          <span className="badge-reputation active-liv" title="Livreur">
+                            <i className="fa-solid fa-truck"></i> {u.livreur.score_reputation.toFixed(1)}
+                          </span>
+                        )}
+                        {u.client && <span className="rep-na">N/A</span>}
+                      </td>
+                      <td>
+                        <span className={`status-pill status-${u.statut_compte.toLowerCase()}`}>
+                          {u.statut_compte}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="action-buttons-cell">
+                          {u.vendeur && (
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => viewVendorCatalogue(u.vendeur)}
+                              title="Consulter le Catalogue & Prix (RG12/RG24)"
+                            >
+                              <i className="fa-solid fa-store"></i> Étal
+                            </button>
+                          )}
+                          
+                          {u.statut_compte === 'Actif' ? (
+                            <button
+                              className="btn btn-warning btn-sm"
+                              onClick={() => handleUserStatusUpdate(u.id_user, 'Suspendu')}
+                              title="Suspendre temporairement"
+                            >
+                              <i className="fa-solid fa-user-slash"></i> Suspendre
+                            </button>
+                          ) : (
+                            <button
+                              className="btn btn-success btn-sm"
+                              onClick={() => handleUserStatusUpdate(u.id_user, 'Actif')}
+                              title="Réactiver le compte"
+                            >
+                              <i className="fa-solid fa-user-check"></i> Activer
+                            </button>
+                          )}
+
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleUserDelete(u.id_user)}
+                            title="Supprimer définitivement (RG13)"
+                          >
+                            <i className="fa-solid fa-trash-can"></i> Suppr
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
@@ -445,11 +672,11 @@ export default function AdminDashboard({ token, addAlert }) {
               <span><strong>Droit de Sanction Universel (RG14) :</strong> Même si la vie privée des clients est confidentielle, vous pouvez les suspendre ou les bannir directement s'ils font l'objet d'abus avérés signalés.</span>
             </div>
 
-            {reports.length === 0 ? (
+            {filteredReports.length === 0 ? (
               <p className="no-data">Aucun signalement en attente de modération.</p>
             ) : (
               <div className="reports-grid">
-                {reports.map(r => (
+                {filteredReports.map(r => (
                   <div key={r.id_signalement} className={`report-item-card report-status-${r.statut_traitement.toLowerCase()}`}>
                     <div className="report-card-header">
                       <span className="report-date"><i className="fa-solid fa-clock"></i> {new Date(r.date_heure).toLocaleString()}</span>
@@ -502,11 +729,11 @@ export default function AdminDashboard({ token, addAlert }) {
         {/* TAB 4: LITIGES & ARBITRAGE (RG09/RG16/RG21) */}
         {activeTab === 'disputes' && (
           <div className="tab-pane">
-            {disputes.length === 0 ? (
-              <p className="no-data">Aucun litige de livraison n'est actuellement ouvert.</p>
+            {filteredDisputes.length === 0 ? (
+              <p className="no-data">Aucun litige correspondant.</p>
             ) : (
               <div className="disputes-stack">
-                {disputes.map(d => (
+                {filteredDisputes.map(d => (
                   <div key={d.id_litige} className={`dispute-box dispute-state-${d.statut.toLowerCase()}`}>
                     <div className="dispute-box-header">
                       <div>
@@ -545,8 +772,15 @@ export default function AdminDashboard({ token, addAlert }) {
                         <strong>Articles Rejetés rattachés (RG18 / RG21) :</strong>
                         <ul>
                           {d.detailsCommande.map((line, idx) => (
-                            <li key={idx}>
-                              <strong>{line.produit.nom}</strong> x{line.quantite_commandee} (Prix appliqué: {line.prix_vente_applique} FCFA)
+                            <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              {line.produit.photo_url ? (
+                                <img src={line.produit.photo_url} alt="produit" style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'cover' }} />
+                              ) : (
+                                <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyCenter: 'center' }}><i className="fa-solid fa-carrot" style={{ fontSize: '12px' }}></i></div>
+                              )}
+                              <div>
+                                <strong>{line.produit.nom}</strong> x{line.quantite_commandee} (Prix appliqué: {line.prix_vente_applique} FCFA)
+                              </div>
                             </li>
                           ))}
                         </ul>
@@ -560,7 +794,6 @@ export default function AdminDashboard({ token, addAlert }) {
                         <div className="proof-photos-row">
                           {d.preuve.photos.map(p => (
                             <div key={p.id_photo} className="proof-image-wrapper">
-                              {/* Using generic placeholders or beautiful designs for demonstration */}
                               <div className="mock-photo-visualizer">
                                 <i className="fa-solid fa-file-image"></i>
                                 <span>{p.url_photo.split('/').pop()}</span>
@@ -619,6 +852,7 @@ export default function AdminDashboard({ token, addAlert }) {
                 <table className="admin-table">
                   <thead>
                     <tr>
+                      <th>Aperçu</th>
                       <th>Produit</th>
                       <th>Stock Dispo</th>
                       <th>Prix Actuel</th>
@@ -628,6 +862,13 @@ export default function AdminDashboard({ token, addAlert }) {
                   <tbody>
                     {selectedCatalogue.products.map(p => (
                       <tr key={p.id_produit}>
+                        <td>
+                          {p.photo_url ? (
+                            <img src={p.photo_url} alt="produit" style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: '40px', height: '40px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyCenter: 'center' }}><i className="fa-solid fa-carrot"></i></div>
+                          )}
+                        </td>
                         <td>
                           <strong>{p.nom}</strong>
                           <span className="p-desc-sub">{p.description}</span>
