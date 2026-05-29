@@ -15,6 +15,7 @@ model Utilisateur {
   mot_de_passe  String
   statut_compte String  @default("Actif") // "Actif" or "Suspendu" / "Banni"
   est_admin     Boolean @default(false)
+  photo_url     String?
 
   // Specialization relationships (1-to-1)
   client  Client?
@@ -68,6 +69,7 @@ model Produit {
   prix_reference   Float
   stock_disponible Int
   id_user_vendeur  Int
+  photo_url        String?
 
   vendeur         Vendeur          @relation(fields: [id_user_vendeur], references: [id_user], onDelete: Cascade)
   detailsCommande DetailCommande[]
