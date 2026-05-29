@@ -1193,7 +1193,7 @@ export default function AdminDashboard({ token, addAlert }) {
                                 <td>{d.commande?.client?.utilisateur?.prenom} {d.commande?.client?.utilisateur?.nom}</td>
                                 <td>{d.commande.total_marchandises.toLocaleString()} FCFA</td>
                                 <td><span className={`status-pill status-${d.statut_livraison.toLowerCase()}`}>{d.statut_livraison}</span></td>
-                                <td style={{ fontSize: '12px' }}>{d.date_debut_reelle ? new Date(d.date_debut_reelle).toLocaleDateString() : '-'}</td>
+                                <td style={{ fontSize: '12px' }}>{d.date_prise_en_charge ? new Date(d.date_prise_en_charge).toLocaleDateString() : '-'}</td>
                               </tr>
                             ))}
                           </tbody>

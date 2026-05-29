@@ -253,7 +253,7 @@ export const getUserDetails = async (req, res) => {
             include: { client: { include: { utilisateur: { select: { nom: true, prenom: true } } } } }
           }
         },
-        orderBy: { date_debut_reelle: 'desc' },
+        orderBy: { date_prise_en_charge: 'desc' },
         take: 20
       });
 
