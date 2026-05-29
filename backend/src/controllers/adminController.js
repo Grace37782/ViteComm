@@ -172,6 +172,133 @@ export const getAdminDashboard = async (req, res) => {
 
 // --- 5.2. Gestion des Comptes Utilisateurs (RG11, RG12, RG13, RG15) ---
 
+// Get full user details for admin (info, reputation, role-specific data)
+export const getUserDetails = async (req, res) => {
+  const { id_user } = req.params;
+
+  try {
+    const userId = parseInt(id_user, 10);
+
+    const user = await prisma.utilisateur.findUnique({
+      where: { id_user: userId },
+      include: {
+        client: true,
+        vendeur: true,
+        livreur: true
+      }
+    });
+
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
+
+    const { mot_de_passe, ...safeUser } = user;
+
+    // Feedback history for reputation
+    const orConditions = [];
+    if (safeUser.vendeur) orConditions.push({ id_user_vendeur: userId });
+    if (safeUser.livreur) orConditions.push({ livraison: { id_user_livreur: userId } });
+
+    const feedbacks = orConditions.length > 0 ? await prisma.feedback.findMany({
+      where: { OR: orConditions },
+      include: {
+        livraison: {
+          include: {
+            commande: { include: { client: { include: { utilisateur: { select: { nom: true, prenom: true } } } } } },
+            livreur: { include: { utilisateur: { select: { nom: true, prenom: true } } } }
+          }
+        }
+      },
+      orderBy: { date_publication: 'desc' },
+      take: 20
+    }) : [];
+
+    let roleData = {};
+
+    if (safeUser.vendeur) {
+      const products = await prisma.produit.findMany({
+        where: { id_user_vendeur: userId },
+        include: {
+          historiques: { orderBy: { date_modification: 'asc' } }
+        }
+      });
+
+      const totalOrders = await prisma.detailCommande.count({
+        where: {
+          statut_acceptation: 'Accepte',
+          produit: { id_user_vendeur: userId }
+        }
+      });
+
+      const totalRevenue = await prisma.detailCommande.aggregate({
+        where: {
+          statut_acceptation: 'Accepte',
+          produit: { id_user_vendeur: userId }
+        },
+        _sum: { prix_vente_applique: true }
+      });
+
+      roleData = {
+        type: 'vendeur',
+        products,
+        total_ventes: totalOrders,
+        total_revenu: totalRevenue._sum.prix_vente_applique || 0,
+        score_reputation: safeUser.vendeur.score_reputation,
+        nom_etablissement: safeUser.vendeur.nom_etablissement,
+        localisation_marche: safeUser.vendeur.localisation_marche
+      };
+    } else if (safeUser.livreur) {
+      const deliveries = await prisma.livraison.findMany({
+        where: { id_user_livreur: userId },
+        include: {
+          commande: {
+            include: { client: { include: { utilisateur: { select: { nom: true, prenom: true } } } } }
+          }
+        },
+        orderBy: { date_debut_reelle: 'desc' },
+        take: 20
+      });
+
+      const totalDeliveries = deliveries.length;
+      const totalVolume = deliveries.reduce((acc, d) => acc + d.commande.total_marchandises, 0);
+
+      roleData = {
+        type: 'livreur',
+        deliveries,
+        total_livraisons: totalDeliveries,
+        volume_total: totalVolume,
+        score_reputation: safeUser.livreur.score_reputation,
+        type_vehicule: safeUser.livreur.type_vehicule,
+        immatriculation: safeUser.livreur.immatriculation,
+        est_disponible: safeUser.livreur.est_disponible
+      };
+    } else if (safeUser.client) {
+      const orders = await prisma.commande.findMany({
+        where: { id_user_client: userId },
+        orderBy: { date_validation: 'desc' },
+        take: 20
+      });
+
+      const totalOrders = orders.length;
+      const totalSpent = orders.reduce((acc, o) => acc + o.total_marchandises, 0);
+
+      roleData = {
+        type: 'client',
+        orders,
+        total_commandes: totalOrders,
+        total_depense: totalSpent,
+        adresse_livraison: safeUser.client.adresse_livraison
+      };
+    }
+
+    return res.json({
+      user: safeUser,
+      feedbacks,
+      roleData
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement des détails utilisateur: ' + error.message });
+  }
+};
+
 export const getUsers = async (req, res) => {
   try {
     const users = await prisma.utilisateur.findMany({

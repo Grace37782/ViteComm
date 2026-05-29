@@ -289,6 +289,14 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
   - Pour les **Vendeurs** et **Livreurs** uniquement : affichage direct de leur `score_reputation` et bouton d'accès pour consulter le catalogue complet d'un vendeur (RG12).
   - Accès aux historiques de modification des prix d'un produit (audit d'évolution des prix via `HISTORIQUE_PRIX`, conformément à la règle **RG24**).
   - **Actions de Modération (Règle RG13) :** Boutons d'action pour suspendre définitivement (bannir) ou supprimer un compte vendeur ou livreur.
+* **Panneau de Détails Utilisateur (clic sur une ligne du tableau) :**
+  - **En-tête info :** Photo, nom complet, email, téléphone, rôle, statut du compte, et score de réputation (Vendeur/Livreur).
+  - **Historique des Évaluations :** Liste chronologique des feedbacks reçus avec note/5, commentaire, auteur, et type d'évaluation (VENDEUR ou LIVREUR). Permet à l'admin de comprendre la réputation de l'utilisateur en un coup d'œil (RG10).
+  - **Données spécifiques au rôle :**
+    - **Vendeur :** Catalogue complet des produits avec photo, prix actuel, stock disponible, et historique complet d'évolution des prix (RG24) affiché inline. Indicateur du nombre total de ventes et du revenu cumulé.
+    - **Livreur :** Tableau des livraisons effectuées incluant l'ID commande, le nom du client, le montant, le statut de livraison, et la date. Résumé du nombre total de livraisons, volume total transporté, type de véhicule et immatriculation.
+    - **Client :** Tableau des commandes passées incluant l'ID commande, le montant total, les frais de livraison, le statut et la date. Résumé du nombre total de commandes, dépense cumulée et adresse de livraison. **Aucun détail privé de navigation n'est exposé (RG11).**
+  - **Comportement :** Les lignes du tableau des utilisateurs (`Utilisateurs (RG11)`) sont cliquables (`cursor: pointer`). Les items des classements (vendeurs, livreurs, clients) dans l'onglet Analytics & Finance sont également cliquables et ouvrent le même panneau de détails. Un clic ouvre une modale large (max 800px) avec scroll vertical. Le fond de la modale est opaque (`hsl(250, 25%, 10%)`) pour une lisibilité maximale. Le chargement est asynchrone avec indicateur de spinner. La modale se ferme au clic sur la croix ou en cliquant sur l'overlay.
 * **Comportement frontend & Confidentialité stricte (Règles RG11 & RG15) :**
   - **Sécurité RGPD :** L'interface administrateur ne doit comporter **aucun lien, bouton ou écran permettant d'accéder à l'historique d'achat ou de navigation privé d'un Client**. L'administrateur n'a accès qu'à ses informations d'identité de base (`nom`, `prenom`, `telephone`, `email`).
 

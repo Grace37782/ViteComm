@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getAdminDashboard,
   getUsers,
+  getUserDetails,
   updateUserStatus,
   deleteUser,
   getVendorCatalogue,
@@ -25,6 +26,7 @@ router.get('/users', getUsers);
 router.put('/users/:id_user/status', updateUserStatus);
 router.delete('/users/:id_user', deleteUser);                            // RG13
 router.get('/users/:id_user/catalogue', getVendorCatalogue);             // RG12
+router.get('/users/:id_user/details', getUserDetails);                  // User detail with reputation & role data
 
 // Price history audit (RG24)
 router.get('/products/:id_produit/price-history', getPriceHistory);

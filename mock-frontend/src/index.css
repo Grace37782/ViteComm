@@ -52,6 +52,28 @@ body {
   line-height: 1.6;
 }
 
+/* Custom scrollbar theming */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  transition: var(--transition);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) rgba(255, 255, 255, 0.02);
+}
+
 /* Background animation bubbles */
 .glass-bg {
   position: fixed;
@@ -1635,6 +1657,23 @@ body {
   padding: 25px;
   overflow-y: auto;
   flex-grow: 1;
+}
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 3px;
+}
+.modal-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+/* User detail modal: solid background so content is readable */
+.modal-content.user-detail-modal {
+  background: hsl(250, 25%, 10%);
+  border: 1px solid var(--glass-border);
 }
 
 .p-desc-sub {

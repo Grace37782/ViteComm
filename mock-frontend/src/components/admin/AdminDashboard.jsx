@@ -18,6 +18,11 @@ export default function AdminDashboard({ token, addAlert }) {
   const [resolvingDispute, setResolvingDispute] = useState(null);
   const [disputeForm, setDisputeForm] = useState({ decision_admin: '', montant_rembourse: '' });
 
+  // User detail panel
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userDetail, setUserDetail] = useState(null);
+  const [loadingUserDetail, setLoadingUserDetail] = useState(false);
+
   // On mount or token change
   useEffect(() => {
     loadAnalytics();
@@ -155,6 +160,33 @@ export default function AdminDashboard({ token, addAlert }) {
     } catch (e) {
       addAlert('danger', 'Erreur réseau.');
     }
+  };
+
+  // View user details (info, reputation, role data)
+  const viewUserDetails = async (user) => {
+    setSelectedUser(user);
+    setLoadingUserDetail(true);
+    setUserDetail(null);
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${user.id_user}/details`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUserDetail(data);
+      } else {
+        addAlert('danger', data.error || 'Impossible de charger les détails.');
+      }
+    } catch (e) {
+      addAlert('danger', 'Erreur réseau.');
+    } finally {
+      setLoadingUserDetail(false);
+    }
+  };
+
+  const closeUserDetails = () => {
+    setSelectedUser(null);
+    setUserDetail(null);
   };
 
   // Signalement Actions
@@ -389,7 +421,7 @@ export default function AdminDashboard({ token, addAlert }) {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {filteredVendorsLeaderboard.map((v, idx) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                      <div key={idx} onClick={() => viewUserDetails({ id_user: v.id_user })} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)', cursor: 'pointer', transition: 'var(--transition)' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}>
                         {v.photo_url ? (
                           <img src={v.photo_url} alt="vendeur" style={{ width: '36px', height: '36px', borderRadius: '50px', objectFit: 'cover', border: '1.5px solid var(--accent)' }} />
                         ) : (
@@ -416,7 +448,7 @@ export default function AdminDashboard({ token, addAlert }) {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {filteredDriversLeaderboard.map((d, idx) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                      <div key={idx} onClick={() => viewUserDetails({ id_user: d.id_user })} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)', cursor: 'pointer', transition: 'var(--transition)' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}>
                         {d.photo_url ? (
                           <img src={d.photo_url} alt="livreur" style={{ width: '36px', height: '36px', borderRadius: '50px', objectFit: 'cover', border: '1.5px solid var(--info)' }} />
                         ) : (
@@ -443,7 +475,7 @@ export default function AdminDashboard({ token, addAlert }) {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {filteredClientsLeaderboard.map((c, idx) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                      <div key={idx} onClick={() => viewUserDetails({ id_user: c.id_user })} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)', cursor: 'pointer', transition: 'var(--transition)' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}>
                         {c.photo_url ? (
                           <img src={c.photo_url} alt="client" style={{ width: '36px', height: '36px', borderRadius: '50px', objectFit: 'cover', border: '1.5px solid var(--primary)' }} />
                         ) : (
@@ -570,7 +602,7 @@ export default function AdminDashboard({ token, addAlert }) {
                 </thead>
                 <tbody>
                   {filteredUsers.map(u => (
-                    <tr key={u.id_user} className={`status-row-${u.statut_compte.toLowerCase()}`}>
+                    <tr key={u.id_user} className={`status-row-${u.statut_compte.toLowerCase()}`} onClick={() => viewUserDetails(u)} style={{ cursor: 'pointer' }}>
                       <td>
                         {u.photo_url ? (
                           <img src={u.photo_url} alt="profil" style={{ width: '42px', height: '42px', borderRadius: '50px', objectFit: 'cover', border: '2px solid var(--glass-border)' }} />
@@ -985,6 +1017,225 @@ export default function AdminDashboard({ token, addAlert }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP MODAL 4: USER DETAIL PANEL (Info, Reputation, Role Data) */}
+      {selectedUser && (
+        <div className="modal-overlay" onClick={closeUserDetails}>
+          <div className="modal-content glassmorphism user-detail-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="modal-header">
+              <h3>
+                <i className="fa-solid fa-user"></i> Détails Utilisateur
+              </h3>
+              <button className="btn-close" onClick={closeUserDetails}>
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {loadingUserDetail ? (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '32px' }}></i>
+                  <p style={{ marginTop: '15px' }}>Chargement des détails...</p>
+                </div>
+              ) : userDetail ? (
+                <>
+                  {/* User Info Header */}
+                  <div className="user-detail-header" style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '25px', padding: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                    <div>
+                      {userDetail.user.photo_url ? (
+                        <img src={userDetail.user.photo_url} alt="photo" style={{ width: '72px', height: '72px', borderRadius: '50px', objectFit: 'cover', border: '3px solid var(--primary)' }} />
+                      ) : (
+                        <div style={{ width: '72px', height: '72px', borderRadius: '50px', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
+                          <i className="fa-solid fa-circle-user"></i>
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ flexGrow: 1 }}>
+                      <h2 style={{ margin: 0, fontSize: '22px' }}>{userDetail.user.prenom} {userDetail.user.nom}</h2>
+                      <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                        <span><i className="fa-solid fa-envelope"></i> {userDetail.user.email}</span>
+                        <span><i className="fa-solid fa-phone"></i> {userDetail.user.telephone}</span>
+                        <span className={`role-tag role-${userDetail.roleData.type || 'admin'}`}>
+                          {userDetail.roleData.type === 'vendeur' ? 'Vendeur' : userDetail.roleData.type === 'livreur' ? 'Livreur' : userDetail.roleData.type === 'client' ? 'Client' : 'Admin'}
+                        </span>
+                        <span className={`status-pill status-${userDetail.user.statut_compte.toLowerCase()}`}>
+                          {userDetail.user.statut_compte}
+                        </span>
+                      </div>
+                    </div>
+                    {userDetail.roleData.score_reputation !== undefined && (
+                      <div style={{ textAlign: 'center', padding: '10px 20px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                        <div style={{ fontSize: '28px', fontWeight: 'bold', color: userDetail.roleData.type === 'vendeur' ? 'var(--accent)' : 'var(--info)' }}>
+                          {userDetail.roleData.score_reputation.toFixed(1)}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Réputation</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Reputation & Feedback History */}
+                  <h4 style={{ marginBottom: '12px' }}><i className="fa-solid fa-star"></i> Historique des Évaluations (Feedbacks)</h4>
+                  {userDetail.feedbacks.length === 0 ? (
+                    <p className="no-data">Aucun feedback reçu.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '25px' }}>
+                      {userDetail.feedbacks.map((f, idx) => (
+                        <div key={idx} style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid var(--glass-border)', fontSize: '13px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <span style={{ fontWeight: 'bold' }}>
+                              {'★'.repeat(f.note)}{'☆'.repeat(5 - f.note)} {f.note}/5
+                            </span>
+                            <span style={{ color: 'var(--text-muted)' }}>{new Date(f.date_publication).toLocaleDateString()}</span>
+                          </div>
+                          {f.commentaire && <p style={{ margin: '4px 0', fontStyle: 'italic' }}>"{f.commentaire}"</p>}
+                          <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
+                            {f.type_feedback === 'VENDEUR' ? 'Évaluation vendeur' : 'Évaluation livreur'}
+                            {f.livraison?.commande?.client?.utilisateur && ` — par ${f.livraison.commande.client.utilisateur.prenom} ${f.livraison.commande.client.utilisateur.nom}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Role-specific Data */}
+                  {userDetail.roleData.type === 'vendeur' && (
+                    <>
+                      <h4 style={{ marginBottom: '12px' }}><i className="fa-solid fa-shop"></i> Catalogue Produits & Prix ({userDetail.roleData.nom_etablissement})</h4>
+                      <div className="panel-helper" style={{ marginBottom: '12px' }}>
+                        <i className="fa-solid fa-chart-simple"></i>
+                        <span><strong>RG24 - Traçabilité :</strong> {userDetail.roleData.total_ventes} ventes réalisées, {userDetail.roleData.total_revenu.toLocaleString()} FCFA de revenu total.</span>
+                      </div>
+                      {userDetail.roleData.products.length === 0 ? (
+                        <p className="no-data">Aucun produit dans le catalogue.</p>
+                      ) : (
+                        <table className="admin-table" style={{ marginBottom: '25px' }}>
+                          <thead>
+                            <tr>
+                              <th>Photo</th>
+                              <th>Produit</th>
+                              <th>Prix</th>
+                              <th>Stock</th>
+                              <th>Évolution Prix</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {userDetail.roleData.products.map(p => (
+                              <tr key={p.id_produit}>
+                                <td>
+                                  {p.photo_url ? (
+                                    <img src={p.photo_url} alt={p.nom} style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover' }} />
+                                  ) : (
+                                    <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className="fa-solid fa-carrot"></i></div>
+                                  )}
+                                </td>
+                                <td><strong>{p.nom}</strong></td>
+                                <td>{p.prix_reference} FCFA</td>
+                                <td>{p.stock_disponible}</td>
+                                <td>
+                                  {p.historiques && p.historiques.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                      {p.historiques.map((h, hidx) => (
+                                        <span key={hidx} style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                          {new Date(h.date_modification).toLocaleDateString()} → <strong>{h.prix} FCFA</strong>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Prix initial inchangé</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </>
+                  )}
+
+                  {userDetail.roleData.type === 'livreur' && (
+                    <>
+                      <h4 style={{ marginBottom: '12px' }}><i className="fa-solid fa-motorcycle"></i> Activité Livraisons</h4>
+                      <div className="panel-helper" style={{ marginBottom: '12px' }}>
+                        <i className="fa-solid fa-truck-fast"></i>
+                        <span><strong>{userDetail.roleData.total_livraisons} livraisons</strong> effectuées, volume total de <strong>{userDetail.roleData.volume_total.toLocaleString()} FCFA</strong>. Véhicule : {userDetail.roleData.type_vehicule} ({userDetail.roleData.immatriculation}). {userDetail.roleData.est_disponible ? '✅ Disponible' : '❌ Indisponible'}</span>
+                      </div>
+                      {userDetail.roleData.deliveries.length === 0 ? (
+                        <p className="no-data">Aucune livraison enregistrée.</p>
+                      ) : (
+                        <table className="admin-table" style={{ marginBottom: '25px' }}>
+                          <thead>
+                            <tr>
+                              <th>Commande</th>
+                              <th>Client</th>
+                              <th>Montant</th>
+                              <th>Statut</th>
+                              <th>Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {userDetail.roleData.deliveries.map((d, idx) => (
+                              <tr key={idx}>
+                                <td>#{d.id_commande}</td>
+                                <td>{d.commande?.client?.utilisateur?.prenom} {d.commande?.client?.utilisateur?.nom}</td>
+                                <td>{d.commande.total_marchandises.toLocaleString()} FCFA</td>
+                                <td><span className={`status-pill status-${d.statut_livraison.toLowerCase()}`}>{d.statut_livraison}</span></td>
+                                <td style={{ fontSize: '12px' }}>{d.date_debut_reelle ? new Date(d.date_debut_reelle).toLocaleDateString() : '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </>
+                  )}
+
+                  {userDetail.roleData.type === 'client' && (
+                    <>
+                      <h4 style={{ marginBottom: '12px' }}><i className="fa-solid fa-basket-shopping"></i> Historique Commandes</h4>
+                      <div className="panel-helper" style={{ marginBottom: '12px' }}>
+                        <i className="fa-solid fa-receipt"></i>
+                        <span><strong>{userDetail.roleData.total_commandes} commandes</strong> passées, dépense totale de <strong>{userDetail.roleData.total_depense.toLocaleString()} FCFA</strong>. Adresse : {userDetail.roleData.adresse_livraison}</span>
+                      </div>
+                      {userDetail.roleData.orders.length === 0 ? (
+                        <p className="no-data">Aucune commande passée.</p>
+                      ) : (
+                        <table className="admin-table" style={{ marginBottom: '25px' }}>
+                          <thead>
+                            <tr>
+                              <th>Commande</th>
+                              <th>Montant</th>
+                              <th>Frais Liv.</th>
+                              <th>Statut</th>
+                              <th>Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {userDetail.roleData.orders.map((o, idx) => (
+                              <tr key={idx}>
+                                <td>#{o.id_commande}</td>
+                                <td>{o.total_marchandises.toLocaleString()} FCFA</td>
+                                <td>{o.frais_livraison} FCFA</td>
+                                <td><span className={`status-pill status-${o.statut.toLowerCase()}`}>{o.statut}</span></td>
+                                <td style={{ fontSize: '12px' }}>{o.date_validation ? new Date(o.date_validation).toLocaleDateString() : '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </>
+                  )}
+
+                  {!userDetail.roleData.type && (
+                    <div className="panel-helper">
+                      <i className="fa-solid fa-shield-halved"></i>
+                      <span>Compte administrateur système. Aucune donnée métier associée.</span>
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
           </div>
         </div>
       )}
