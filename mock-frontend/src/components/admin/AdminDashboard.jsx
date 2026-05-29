@@ -22,6 +22,7 @@ export default function AdminDashboard({ token, addAlert }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userDetail, setUserDetail] = useState(null);
   const [loadingUserDetail, setLoadingUserDetail] = useState(false);
+  const [userDetailError, setUserDetailError] = useState(null);
 
   // On mount or token change
   useEffect(() => {
@@ -167,6 +168,7 @@ export default function AdminDashboard({ token, addAlert }) {
     setSelectedUser(user);
     setLoadingUserDetail(true);
     setUserDetail(null);
+    setUserDetailError(null);
     try {
       const res = await fetch(`${API_BASE}/admin/users/${user.id_user}/details`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -175,10 +177,10 @@ export default function AdminDashboard({ token, addAlert }) {
       if (res.ok) {
         setUserDetail(data);
       } else {
-        addAlert('danger', data.error || 'Impossible de charger les détails.');
+        setUserDetailError(data.error || 'Impossible de charger les détails.');
       }
     } catch (e) {
-      addAlert('danger', 'Erreur réseau.');
+      setUserDetailError('Erreur réseau. Vérifiez que le serveur backend est en cours d\'exécution.');
     } finally {
       setLoadingUserDetail(false);
     }
@@ -1039,6 +1041,15 @@ export default function AdminDashboard({ token, addAlert }) {
                 <div style={{ textAlign: 'center', padding: '40px 0' }}>
                   <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '32px' }}></i>
                   <p style={{ marginTop: '15px' }}>Chargement des détails...</p>
+                </div>
+              ) : userDetailError ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <i className="fa-solid fa-circle-exclamation" style={{ fontSize: '40px', color: 'var(--danger)', marginBottom: '15px' }}></i>
+                  <p style={{ color: 'var(--danger)', fontWeight: 'bold' }}>Échec du chargement</p>
+                  <p style={{ color: 'var(--text-muted)', marginTop: '8px', fontSize: '13px' }}>{userDetailError}</p>
+                  <button className="btn btn-secondary btn-sm" onClick={() => viewUserDetails(selectedUser)} style={{ marginTop: '15px' }}>
+                    <i className="fa-solid fa-rotate"></i> Réessayer
+                  </button>
                 </div>
               ) : userDetail ? (
                 <>
