@@ -120,7 +120,7 @@ Espace dédié à la recherche, à l'achat de produits et au suivi des commandes
   - Si l'option **Rejeter** est choisie : Un champ de texte obligatoire pour saisir le motif du rejet.
 * **Comportement et logique frontend (Règles RG07, RG09 & RG16) :**
   - **Rejet Granulaire :** Le client doit pouvoir rejeter un ou plusieurs articles individuellement sans avoir à annuler la totalité de sa commande.
-  - **Preuve photo client (RG07) :** Bouton **"Ajouter une preuve photo"** (optionnel mais recommandé) permettant au client d'uploader des images de non-conformité en cas de désaccord. Ces photos alimenteront directement l'entité `LITIGE` (`url_photos`) si le client décide d'initier un litige.
+  - **Preuve photo client (RG07) :** Bouton **"Ajouter des preuves photos"** (optionnel mais recommandé) permettant au client d'uploader une ou plusieurs images de non-conformité en cas de désaccord. Ces photos alimenteront la table `PHOTO_PREUVE` liée à la `PREUVE_COLLECTE` du client, laquelle sera ensuite associée à l'entité `LITIGE` via la clé étrangère `#id_preuve` si le litige est initié.
   - **Recalcul dynamique à l'écran :**
     - Le total de la commande est mis à jour instantanément pour exclure les produits rejetés.
     - Calcul et affichage immédiats des `frais_retour_calcules` applicables aux articles retournés.
@@ -222,7 +222,7 @@ Espace mobile-first dédié à la prise en charge, au retrait chez les vendeurs 
   - Liste ordonnée de tous les vendeurs distincts associés à la commande.
   - Pour chaque vendeur : Nom de l'établissement, localisation précise dans le marché, liste des articles à retirer, et statut de collecte du vendeur (`statut_collecte_vendeur`).
 * **Comportement et logique frontend de collecte (Règles RG06 & RG07) :**
-  - **Preuve photographique obligatoire (RG07) :** Le livreur est responsable de la réalisation de la preuve de collecte. L'UI doit fournir un mécanisme de prise de photo ou de téléversement qui alimentera l'attribut `url_photo` de l'entité `PREUVE_COLLECTE`, liée à la commande (`#id_commande`), au vendeur (`#id_user_vendeur`) et au livreur (`#id_user_livreur`).
+  - **Preuve photographique obligatoire (RG07) :** Le livreur est responsable de la réalisation de la preuve de collecte. L'UI doit fournir un mécanisme de prise de photo ou de téléversement qui alimentera l'entité `PHOTO_PREUVE` (une ou plusieurs photos avec leur `url_photo`) liée à la `PREUVE_COLLECTE` créée pour cette étape, elle-même liée à la commande (`#id_commande`), au vendeur (`#id_user_vendeur`) et au livreur (`#id_user_livreur`).
   - **Indicateur de validation vendeur :** L'interface affiche un indicateur visuel dynamique confirmant si le vendeur a bien saisi le code de vérification (`code_verification`) dans son interface pour valider la remise (cf. section 3.3).
   - **Confirmation de collecte :** Une fois que la preuve photo est prise par le livreur ET que le vendeur a saisi le code de vérification, l'application bascule automatiquement le statut de collecte de ce vendeur à "Collecté". Après validation de tous les points de collecte, le statut général passe en "En transit" (En cours de livraison).
 
@@ -285,6 +285,7 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
 * **Éléments à afficher :**
   - Liste des litiges en cours (`LITIGE`) initiés par les clients suite à des rejets d'articles.
   - Détail par litige : ID de commande, description de l'incident, montant total concerné par les articles rejetés.
+  - Galerie de preuves photographiques : Visualisation de l'ensemble des photos (récupérées depuis la table `PHOTO_PREUVE` associée à la `PREUVE_COLLECTE` liée au litige via la clé `#id_preuve`).
 * **Comportement et logique frontend d'arbitrage (Règles RG09 & RG16) :**
   - Zone de texte pour rédiger la décision officielle de l'administrateur (`decision_admin`).
   - Saisie du montant final validé pour remboursement au client (`montant_rembourse`).
