@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { login } from '../../services/api'
 
 export default function Connexion() {
 
@@ -12,29 +13,28 @@ export default function Connexion() {
   const [erreur, setErreur] = useState('')
   const [loading, setLoading] = useState(false)
 
-  function handleConnexion(e) {
-
+  async function handleConnexion(e) {
     e.preventDefault()
-
     setErreur('')
 
-    if (!email) {
-      return setErreur('Entrez votre adresse email.')
-    }
-
-    if (!motDePasse) {
-      return setErreur('Entrez votre mot de passe.')
-    }
+    if (!email) return setErreur('Entrez votre adresse email.')
+    if (!motDePasse) return setErreur('Entrez votre mot de passe.')
 
     setLoading(true)
+    try {
+      const data = await login(email, motDePasse)
+      const role = data.user.role
 
-    setTimeout(() => {
-
+      if (role === 'admin') navigate('/admin/dashboard')
+      else if (role === 'client') navigate('/client/accueil')
+      else if (role === 'vendeur') navigate('/vendeur/dashboard')
+      else if (role === 'livreur') navigate('/livreur/dashboard')
+      else navigate('/accueil')
+    } catch (err) {
+      setErreur(err.message)
+    } finally {
       setLoading(false)
-
-      navigate('/accueil')
-
-    }, 1000)
+    }
   }
 
   return (
@@ -47,12 +47,9 @@ export default function Connexion() {
       }}
     >
 
-      {/* Décor */}
       <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
-
       <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-[#A8EDCA]/20 blur-3xl" />
 
-      {/* Retour accueil */}
       <button
         onClick={() => navigate('/accueil')}
         className="absolute top-6 left-6 z-50
@@ -67,7 +64,6 @@ export default function Connexion() {
         ← Accueil
       </button>
 
-      {/* Carte */}
       <div
         className="relative w-full max-w-sm rounded-[32px] p-8 backdrop-blur-xl border"
         style={{
@@ -77,7 +73,6 @@ export default function Connexion() {
         }}
       >
 
-        {/* Logo */}
         <div className="flex flex-col items-center mb-8">
 
           <div
@@ -101,13 +96,11 @@ export default function Connexion() {
 
         </div>
 
-        {/* Formulaire */}
         <form
           onSubmit={handleConnexion}
           className="flex flex-col gap-5"
         >
 
-          {/* Email */}
           <div className="flex flex-col gap-2">
 
             <label className="text-sm font-semibold text-white/80">
@@ -139,7 +132,6 @@ export default function Connexion() {
 
           </div>
 
-          {/* Mot de passe */}
           <div className="flex flex-col gap-2">
 
             <label className="text-sm font-semibold text-white/80">
@@ -175,7 +167,6 @@ export default function Connexion() {
 
           </div>
 
-          {/* Mot de passe oublié */}
           <div className="flex justify-end -mt-2">
 
             <button
@@ -187,7 +178,6 @@ export default function Connexion() {
 
           </div>
 
-          {/* Erreur */}
           {erreur && (
 
             <div
@@ -202,7 +192,6 @@ export default function Connexion() {
 
           )}
 
-          {/* Bouton */}
           <button
             type="submit"
             disabled={loading}
@@ -218,7 +207,6 @@ export default function Connexion() {
 
         </form>
 
-        {/* Inscription */}
         <div className="mt-6 text-center">
 
           <p className="text-sm text-white/65">
