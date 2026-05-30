@@ -208,7 +208,7 @@
       </tr>
       <tr>
         <td>RG08</td>
-        <td>Le paiement s'effectue à la livraison (COD). La plateforme prélève automatiquement une commission de 0,6 %.
+        <td>Le paiement par l'usager s'effectue à la livraison (COD). La plateforme prélève automatiquement une commission de 0,6 %.
         </td>
       </tr>
       <tr>
@@ -334,6 +334,39 @@
           est purement logistique et ne porte aucun impact financier direct ; il complète la preuve de collecte (RG07)
           côté destinataire final.</td>
       </tr>
+      <tr>
+        <td>RG28</td>
+        <td>Calcul et versement de la rémunération du livreur : Le tarif de base pour une course (<code>frais_livraison</code>)
+          est un montant forfaitaire (fixé à 1500 FCFA par défaut) déterminé dès la validation de la commande par le client (checkout).
+          Ce tarif ne dépend ni de la distance de trajet, ni du poids des marchandises, ni des conditions de circulation en ville.
+          Le livreur est informé de cette rémunération avant d'accepter la course sur la marketplace de livraison.
+          En cas de rejet partiel de produits lors de la livraison en face-à-face, des frais de retour additionnels
+          (<code>frais_retour_calcules</code>, fixés à 500 FCFA par produit rejeté) s'ajoutent à la facturation finale du client (RG09).
+          Les gains de la course (frais de livraison de base + frais de retour éventuels) ne sont définitivement acquis et crédités
+          au livreur qu'après la finalisation réussie de la livraison (statut "Livrée" de la <code>LIVRAISON</code>) via la validation
+          du code de vérification unique du client.</td>
+      </tr>
+      <tr>
+        <td>RG29</td>
+        <td>Historique de Disponibilité des Livreurs : Les paramètres de disponibilité d'un livreur (son statut disponible/non disponible,
+          son rayon d'action maximal <code>distance_marche</code>, et ses plages horaires <code>heure_debut_dispo</code> / <code>heure_fin_dispo</code>)
+          sont des données éphémères et changeantes dans le temps. Pour des raisons d'historisation et de suivi, elles sont externalisées
+          de la table <code>LIVREUR</code> vers une entité d'historique dédiée <code>DISPONIBILITE_LIVREUR</code>.</td>
+      </tr>
+      <tr>
+        <td>RG30</td>
+        <td>Classification des Produits : Afin de structurer le catalogue de vente de la plateforme et de faciliter le filtrage,
+          la recherche et les statistiques (RG12), chaque produit doit obligatoirement être associé à un type ou une catégorie de produit
+          via une relation avec la table <code>CATEGORIE</code>.</td>
+      </tr>
+      <tr>
+        <td>RG31</td>
+        <td>Preuves Multimédias (Photos et Vidéos) : Pour attester de la conformité de la collecte ou pour constituer un dossier de litige
+          recevable lors de la livraison (RG07), les utilisateurs (livreurs ou clients) peuvent téléverser des preuves visuelles
+          comprenant des photographies ainsi que des séquences vidéo. Pour refléter cette capacité multimédia, la table
+          <code>PHOTO_PREUVE</code> est renommée <code>MEDIA_PREUVE</code>, et comporte un attribut qualifiant le type de fichier
+          (photo, vidéo).</td>
+      </tr>
     </tbody>
   </table>
 
@@ -366,13 +399,22 @@
       <tr>
         <td>LIVREUR</td>
         <td>#id_user</td>
-        <td>type_vehicule, immatriculation, score_reputation, est_disponible, distance_marche, heure_debut_dispo,
-          heure_fin_dispo</td>
+        <td>type_vehicule, immatriculation, score_reputation</td>
+      </tr>
+      <tr>
+        <td>DISPONIBILITE_LIVREUR</td>
+        <td>id_dispo</td>
+        <td>date_mise_a_jour, est_disponible, distance_marche, heure_debut_dispo, heure_fin_dispo, #id_user_livreur</td>
+      </tr>
+      <tr>
+        <td>CATEGORIE</td>
+        <td>id_categorie</td>
+        <td>nom_categorie, description_categorie</td>
       </tr>
       <tr>
         <td>PRODUIT</td>
         <td>id_produit</td>
-        <td>nom, description, prix_reference, stock_disponible</td>
+        <td>nom, description, prix_reference, stock_disponible, #id_user_vendeur, #id_categorie</td>
       </tr>
       <tr>
         <td>PANIER</td>
@@ -387,7 +429,7 @@
       <tr>
         <td>COMMANDE</td>
         <td>id_commande</td>
-        <td>date_creation, statut, total_marchandises (provisoire), frais_livraison (provisoire), commission (provisoire), code_verification</td>
+        <td>date_creation, statut, total_marchandises (provisoire), frais_livraison (provisoire), commission (provisoire), code_verification, #id_user_client</td>
       </tr>
       <tr>
         <td>PREUVE_COLLECTE</td>
@@ -395,9 +437,9 @@
         <td>date_heure, statut_validation, #id_commande</td>
       </tr>
       <tr>
-        <td>PHOTO_PREUVE</td>
-        <td>id_photo</td>
-        <td>url_photo, #id_preuve</td>
+        <td>MEDIA_PREUVE</td>
+        <td>id_media</td>
+        <td>url_media, type_media, #id_preuve</td>
       </tr>
       <tr>
         <td>LITIGE</td>
@@ -407,13 +449,12 @@
       <tr>
         <td>LIVRAISON</td>
         <td>id_livraison</td>
-        <td>date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules</td>
+        <td>date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules, #id_commande, #id_user_livreur</td>
       </tr>
       <tr>
         <td>FEEDBACK</td>
         <td>id_feedback</td>
-        <td>note, commentaire, date_publication, type_feedback, #id_user_client, #id_livraison (si type=LIVREUR),
-          #id_user_vendeur (si type=VENDEUR, optionnel)</td>
+        <td>note, commentaire, date_publication, type_feedback, #id_user_client, #id_livraison (si type=LIVREUR), #id_user_vendeur (si type=VENDEUR, optionnel)</td>
       </tr>
       <tr>
         <td>SIGNALEMENT</td>
@@ -423,8 +464,7 @@
       <tr>
         <td>DETAIL_COMMANDE</td>
         <td>#id_commande, #id_produit</td>
-        <td>quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige (FK nullable), #id_feedback (FK
-          nullable)</td>
+        <td>quantite_commandee, prix_vente_applique, statut_acceptation, #id_litige (FK nullable), #id_feedback (FK nullable)</td>
       </tr>
       <tr>
         <td>HISTORIQUE_PRIX</td>
@@ -461,7 +501,11 @@ id_user (CLIENT) → adresse_livraison
 
 id_user (VENDEUR) → nom_etablissement, localisation_marche, score_reputation
 
-id_user (LIVREUR) → type_vehicule, immatriculation, score_reputation, est_disponible, distance_marche, heure_debut_dispo, heure_fin_dispo
+id_user (LIVREUR) → type_vehicule, immatriculation, score_reputation
+
+id_dispo → date_mise_a_jour, est_disponible, distance_marche, heure_debut_dispo, heure_fin_dispo
+
+id_categorie → nom_categorie, description_categorie
 
 id_produit → nom, description, prix_reference, stock_disponible
 
@@ -471,7 +515,7 @@ id_commande → date_creation, statut, total_marchandises, frais_livraison, comm
 
 id_preuve → date_heure, statut_validation
 
-id_photo → url_photo, #id_preuve
+id_media → url_media, type_media, #id_preuve
 
 id_litige → description, date_ouverture, statut, decision_admin, montant_rembourse, #id_preuve, #id_livraison
 
@@ -511,6 +555,10 @@ id_livraison → #id_user_livreur
 
 id_produit → #id_user_vendeur
 
+id_produit → #id_categorie
+
+id_dispo → #id_user_livreur
+
 id_litige → #id_livraison
 
 id_litige → #id_preuve (optionnel)
@@ -527,7 +575,7 @@ id_signalement → #id_cible (CIF polymorphe géré par type_cible_cible)
 
 id_preuve → #id_commande
 
-id_photo → #id_preuve
+id_media → #id_preuve
 
 id_historique → #id_produit
 
@@ -547,9 +595,13 @@ id_user (CLIENT) → adresse_livraison
 
 id_user (VENDEUR) → nom_etablissement, localisation_marche, score_reputation
 
-id_user (LIVREUR) → type_vehicule, immatriculation, score_reputation, est_disponible, distance_marche, heure_debut_dispo, heure_fin_dispo
+id_user (LIVREUR) → type_vehicule, immatriculation, score_reputation
 
-id_produit → nom, description, prix_reference, stock_disponible, #id_user_vendeur
+id_dispo → date_mise_a_jour, est_disponible, distance_marche, heure_debut_dispo, heure_fin_dispo, #id_user_livreur
+
+id_categorie → nom_categorie, description_categorie
+
+id_produit → nom, description, prix_reference, stock_disponible, #id_user_vendeur, #id_categorie
 
 id_panier → date_creation, date_mise_a_jour, #id_user_client
 
@@ -557,7 +609,7 @@ id_commande → date_creation, statut, total_marchandises, frais_livraison, comm
 
 id_preuve → date_heure, statut_validation, #id_commande
 
-id_photo → url_photo, #id_preuve
+id_media → url_media, type_media, #id_preuve
 
 id_litige → description, date_ouverture, statut, decision_admin, montant_rembourse, #id_preuve, #id_livraison
 
@@ -592,9 +644,13 @@ CLIENT ( <u>#id_user</u>, adresse_livraison)
 
 VENDEUR ( <u>#id_user</u>, nom_etablissement, localisation_marche, score_reputation)
 
-LIVREUR ( <u>#id_user</u>, type_vehicule, immatriculation, score_reputation, est_disponible, distance_marche, heure_debut_dispo, heure_fin_dispo)
+LIVREUR ( <u>#id_user</u>, type_vehicule, immatriculation, score_reputation)
 
-PRODUIT ( <u>id_produit</u>, nom, description, prix_reference, stock_disponible, #id_user_vendeur)
+DISPONIBILITE_LIVREUR ( <u>id_dispo</u>, date_mise_a_jour, est_disponible, distance_marche, heure_debut_dispo, heure_fin_dispo, #id_user_livreur)
+
+CATEGORIE ( <u>id_categorie</u>, nom_categorie, description_categorie)
+
+PRODUIT ( <u>id_produit</u>, nom, description, prix_reference, stock_disponible, #id_user_vendeur, #id_categorie)
 
 PANIER ( <u>id_panier</u>, date_creation, date_mise_a_jour, #id_user_client)
 
@@ -608,7 +664,7 @@ DETAIL_COMMANDE ( <u>#id_commande, #id_produit</u>, quantite_commandee, prix_ven
 
 PREUVE_COLLECTE ( <u>id_preuve</u>, date_heure, statut_validation, #id_commande)
 
-PHOTO_PREUVE ( <u>id_photo</u>, url_photo, #id_preuve)
+MEDIA_PREUVE ( <u>id_media</u>, url_media, type_media, #id_preuve)
 
 LITIGE ( <u>id_litige</u>, description, date_ouverture, statut, decision_admin, montant_rembourse, #id_preuve [FK nullable], #id_livraison)
 
@@ -649,18 +705,21 @@ BON_DE_LIVRAISON ( <u>id_bon</u>, date_emission, date_signature_client, statut_b
     <li>Classe <code>Utilisateur</code> : Table parente regroupant les attributs communs. L'absence de spécialisation
       (Client/Vendeur/Livreur) définit l'Administrateur.</li>
     <li>Spécialisations : Héritage vers <code>Client</code>, <code>Vendeur</code> et <code>Livreur</code> avec leurs
-      attributs spécifiques respectifs.</li>
+      attributs spécifiques respectifs. Les informations de disponibilité fluctuant dans le temps ne sont pas directement portées par <code>Livreur</code> mais déléguées à <code>DisponibiliteLivreur</code>.</li>
+    <li>Classe <code>DisponibiliteLivreur</code> : Enregistre l'historique et l'état de disponibilité d'un livreur (statut disponible, rayon d'action, heures de disponibilité) à un moment donné. Relation de composition/association (many-to-one) avec <code>Livreur</code>.</li>
+    <li>Classe <code>Categorie</code> : Représente la catégorisation ou typage d'un produit (Légumes, Épices, etc.). Relation un-à-plusieurs (one-to-many) avec <code>Produit</code>.</li>
+    <li>Classe <code>Produit</code> : Modélise l'offre d'un vendeur, appartenant obligatoirement à une <code>Categorie</code>.</li>
     <li>Classe <code>Signalement</code> : Couvre la politique de modération avec relations vers auteur ET cible (RG14).
     </li>
     <li>Classe <code>Feedback</code> : Supporte l'évaluation du livreur OU du vendeur via attribut
       <code>type_feedback</code> et FK conditionnelles (RG23).
     </li>
-    <li>Classe <code>Litige</code> : Modélise les contestations clients lors de la livraison. Conformément à la conception basée sur les références, elle ne contient plus directement d'attribut d'image (<code>url_photos</code>), mais fait référence à <code>PreuveCollecte</code> via une clé étrangère nullable (<code>#id_preuve</code>) pour exploiter les photos associées.</li>
+    <li>Classe <code>Litige</code> : Modélise les contestations clients lors de la livraison. Conformément à la conception basée sur les références, elle ne contient plus directement d'attribut d'image (<code>url_photos</code>), mais fait référence à <code>PreuveCollecte</code> via une clé étrangère nullable (<code>#id_preuve</code>) pour exploiter les photos/vidéos associées.</li>
     <li>Classe d'Association <code>Detail_Commande</code> : Représente la relation entre Commande et Produit, portant
       les attributs de quantité et de prix spécifique. Les références à Litige/Feedback sont optionnelles.</li>
     <li>Classe <code>PreuveCollecte</code> : Liée à la Commande concernée (RG07).
-      Elle sert de support de preuve pour un <code>Litige</code> et possède une relation 1-to-many avec la classe <code>PhotoPreuve</code>.</li>
-    <li>Classe <code>PhotoPreuve</code> : Permet d'attacher une ou plusieurs photographies à une preuve de collecte, assurant ainsi la possibilité de fournir des visuels détaillés pour le dossier de litige.</li>
+      Elle sert de support de preuve pour un <code>Litige</code> et possède une relation 1-to-many avec la classe <code>MediaPreuve</code>.</li>
+    <li>Classe <code>MediaPreuve</code> : Permet d'attacher une ou plusieurs preuves sous forme de fichiers multimédias (photographies, vidéos) à une preuve de collecte, avec précision du type de média.</li>
     <li>Classe <code>HistoriquePrix</code> : Enregistre l'historique des changements de tarifs pour chaque produit. Elle possède une relation many-to-one avec la classe <code>Produit</code> (un produit a plusieurs prix historiques).</li>
     <li>Classe <code>Facture</code> : Générée après <code>LIVRAISON.statut = "TERMINEE"</code> et arbitrage des litiges. Remplace les totaux provisoires de <code>COMMANDE</code> par des montants financièrement verrouillés (RG08, RG09). Relation 1-to-(0..1) avec <code>Commande</code>. <code>COMMANDE.total_marchandises</code> et <code>COMMANDE.commission</code> restent des estimations provisoires ; <code>FACTURE</code> devient la source de vérité unique pour la facturation finale.</li>
     <li>Classe <code>Paiement</code> : Trace l'encaissement réel en espèces (COD) séparément de la facture théorique, conformément à RG08. Relation 1-to-(0..1) avec <code>Facture</code>.</li>

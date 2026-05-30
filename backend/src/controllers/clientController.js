@@ -62,9 +62,17 @@ export const getProductPriceHistory = async (req, res) => {
 // Get list of available delivery drivers for checkout selection (RG05, RG19)
 export const getDrivers = async (req, res) => {
   try {
+    // Get IDs of livreurs whose latest availability record has est_disponible = true (RG29)
+    const availableEntries = await prisma.disponibiliteLivreur.groupBy({
+      by: ['id_user_livreur'],
+      _max: { date_mise_a_jour: true },
+      where: { est_disponible: true }
+    });
+    const availableDriverIds = availableEntries.map(e => e.id_user_livreur);
+
     const drivers = await prisma.livreur.findMany({
       where: {
-        est_disponible: true,
+        id_user: { in: availableDriverIds },
         utilisateur: { statut_compte: 'Actif' }
       },
       include: {
@@ -278,7 +286,7 @@ export const getMyOrders = async (req, res) => {
           }
         },
         preuvesCollecte: {
-          include: { photos: true }
+          include: { medias: true }
         }
       },
       orderBy: { date_creation: 'desc' }

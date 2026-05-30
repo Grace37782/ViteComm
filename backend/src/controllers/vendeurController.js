@@ -68,9 +68,9 @@ export const getMyProducts = async (req, res) => {
 };
 
 export const createProduct = async (req, res) => {
-  const { nom, description, prix_reference, stock_disponible } = req.body;
+  const { nom, description, prix_reference, stock_disponible, id_categorie } = req.body;
 
-  if (!nom || !description || prix_reference === undefined || stock_disponible === undefined) {
+  if (!nom || !description || prix_reference === undefined || stock_disponible === undefined || !id_categorie) {
     return res.status(400).json({ error: 'Tous les champs requis doivent être fournis.' });
   }
   if (parseFloat(prix_reference) < 0 || parseInt(stock_disponible, 10) < 0) {
@@ -85,7 +85,8 @@ export const createProduct = async (req, res) => {
           description,
           prix_reference: parseFloat(prix_reference),
           stock_disponible: parseInt(stock_disponible, 10),
-          id_user_vendeur: req.user.id_user
+          id_user_vendeur: req.user.id_user,
+          id_categorie: parseInt(id_categorie, 10)
         }
       });
 
@@ -190,7 +191,7 @@ export const getVendorOrders = async (req, res) => {
         },
         // All collection proofs for this command (vendor deduces own status via produit join)
         preuvesCollecte: {
-          include: { photos: true }
+          include: { medias: true }
         }
       },
       orderBy: { date_creation: 'desc' }
@@ -234,11 +235,12 @@ export const verifyHandover = async (req, res) => {
         }
       });
 
-      // Attach photo to the proof (PHOTO_PREUVE - RG07)
-      await tx.photoPreuve.create({
+      // Attach media to the proof (MEDIA_PREUVE - RG07)
+      await tx.mediaPreuve.create({
         data: {
           id_preuve: preuve.id_preuve,
-          url_photo: `/uploads/${req.file.filename}`
+          url_media: `/uploads/${req.file.filename}`,
+          type_media: 'photo'
         }
       });
 

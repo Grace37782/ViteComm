@@ -122,7 +122,7 @@ Espace dédié à la recherche, à l'achat de produits et au suivi des commandes
   - Si l'option **Rejeter** est choisie : Un champ de texte obligatoire pour saisir le motif du rejet.
 * **Comportement et logique frontend (Règles RG07, RG09, RG16, RG18, RG20 & RG21) :**
   - **Rejet Granulaire (RG18 - Atomicité du Détail) :** Le client doit pouvoir rejeter un ou plusieurs articles individuellement sans avoir à annuler la totalité de sa commande, grâce à la liaison directe et granulaire dans `DETAIL_COMMANDE`.
-  - **Preuve photo client (RG07 & RG21) :** Bouton **"Ajouter des preuves photos"** (optionnel mais recommandé) permettant au client d'uploader une ou plusieurs images de non-conformité en cas de désaccord. Ces photos alimenteront la table `PHOTO_PREUVE` liée à la `PREUVE_COLLECTE` du client (`#id_commande` uniquement dans `PREUVE_COLLECTE`), laquelle sera ensuite associée à l'entité `LITIGE` via la clé étrangère `#id_preuve` si le litige est initié lors de la livraison (les entités litige et feedback n'existant pas au départ, voir **RG20**). Les lignes concernées dans `DETAIL_COMMANDE` sont directement rattachées au litige via `#id_litige`, évitant toute table intermédiaire inutile (RG21).
+  - **Preuve photo client (RG07 & RG21) :** Bouton **"Ajouter des preuves photos"** (optionnel mais recommandé) permettant au client d'uploader une ou plusieurs images de non-conformité en cas de désaccord. Ces médias alimenteront la table `MEDIA_PREUVE` liée à la `PREUVE_COLLECTE` du client (`#id_commande` uniquement dans `PREUVE_COLLECTE`), laquelle sera ensuite associée à l'entité `LITIGE` via la clé étrangère `#id_preuve` si le litige est initié lors de la livraison (les entités litige et feedback n'existant pas au départ, voir **RG20**). Les lignes concernées dans `DETAIL_COMMANDE` sont directement rattachées au litige via `#id_litige`, évitant toute table intermédiaire inutile (RG21).
   - **Recalcul dynamique à l'écran :**
     - Le total de la commande est mis à jour instantanément pour exclure les produits rejetés.
     - Calcul et affichage immédiats des `frais_retour_calcules` applicables aux articles retournés.
@@ -209,7 +209,7 @@ Espace mobile-first dédié à la prise en charge, au retrait chez les vendeurs 
   - **Nombre de courses :** Volume de livraisons clôturées.
   - **Indicateur de Réputation (Règles RG10 & RG15) :** Affichage très visible du score de réputation (`score_reputation` issu de l'entité `LIVREUR`), influencé par la note de transport reçue lors des évaluations clients.
   - **Véhicule actif :** Rappel du `type_vehicule` et de la plaque d'`immatriculation` renseignés lors de l'inscription.
-  - **Paramètres de Disponibilité (RG19) :** Section dédiée permettant au livreur de définir ses `heure_debut_dispo` et `heure_fin_dispo`, d'activer/désactiver son statut `est_disponible`, et de configurer un rayon d'action maximal (`distance_marche`) pour le filtrage des courses proposées.
+  - **Paramètres de Disponibilité (RG19) :** Section dédiée permettant au livreur de définir ses `heure_debut_dispo` et `heure_fin_dispo`, d'activer/désactiver son statut `est_disponible`, et de configurer un rayon d'action maximal (`distance_marche`) pour le filtrage des courses proposées. Ces champs sont stockés dans l'entité `DISPONIBILITE_LIVREUR` (RG29) plutôt que directement sur le livreur.
 
 ### 4.2. Gestion des Courses Disponibles (Delivery Marketplace)
 * **Éléments à afficher :**
@@ -226,7 +226,7 @@ Espace mobile-first dédié à la prise en charge, au retrait chez les vendeurs 
   - Liste ordonnée de tous les vendeurs distincts associés à la commande.
   - Pour chaque vendeur : Nom de l'établissement, localisation précise dans le marché, liste des articles à retirer, et statut de collecte du vendeur (`statut_collecte_vendeur`).
 * **Comportement et logique frontend de collecte (Règles RG06 & RG07) :**
-  - **Preuve photographique obligatoire (RG07) :** Le livreur est responsable de la réalisation de la preuve de collecte. L'UI doit fournir un mécanisme de prise de photo ou de téléversement qui alimentera l'entité `PHOTO_PREUVE` (une ou plusieurs photos avec leur `url_photo`) liée à la `PREUVE_COLLECTE` créée pour cette étape, elle-même liée uniquement à la commande (`#id_commande`) dans le modèle de données relationnel, les informations de livraison et de vendeur étant déduites par jointure.
+  - **Preuve photographique obligatoire (RG07) :** Le livreur est responsable de la réalisation de la preuve de collecte. L'UI doit fournir un mécanisme de prise de photo ou de téléversement qui alimentera l'entité `MEDIA_PREUVE` (un ou plusieurs médias avec leur `url_media`) liée à la `PREUVE_COLLECTE` créée pour cette étape, elle-même liée uniquement à la commande (`#id_commande`) dans le modèle de données relationnel, les informations de livraison et de vendeur étant déduites par jointure.
   - **Indicateur de validation vendeur :** L'interface affiche un indicateur visuel dynamique confirmant si le vendeur a bien saisi le code de vérification (`code_verification`) dans son interface pour valider la remise (cf. section 3.3).
   - **Confirmation de collecte :** Une fois que la preuve photo est prise par le livreur ET que le vendeur a saisi le code de vérification, l'application bascule automatiquement le statut de collecte de ce vendeur à "Collecté". Après validation de tous les points de collecte, le statut général passe en "En transit" (En cours de livraison).
 
@@ -327,7 +327,7 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
 * **Éléments à afficher :**
   - Liste des litiges en cours (`LITIGE`) initiés par les clients suite à des rejets d'articles.
   - Détail par litige : ID de commande, description de l'incident, montant total concerné par les articles rejetés.
-  - Galerie de preuves photographiques : Visualisation de l'ensemble des photos (récupérées depuis la table `PHOTO_PREUVE` associée à la `PREUVE_COLLECTE` liée au litige via la clé `#id_preuve`).
+  - Galerie de preuves photographiques : Visualisation de l'ensemble des médias (récupérés depuis la table `MEDIA_PREUVE` associée à la `PREUVE_COLLECTE` liée au litige via la clé `#id_preuve`).
 * **Comportement et logique frontend d'arbitrage (Règles RG09 & RG16) :**
   - Zone de texte pour rédiger la décision officielle de l'administrateur (`decision_admin`).
   - Saisie du montant final validé pour remboursement au client (`montant_rembourse`).
