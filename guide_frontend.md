@@ -272,9 +272,9 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
   - Sur mobile (largeur < 900px), la sidebar se transforme en **barre de navigation horizontale scrollable** en haut de la zone de contenu.
   - Chaque bouton de la sidebar est accompagné d'une icône et les alertes (signalements en attente, litiges ouverts) sont affichées sous forme de badge numérique avec animation pulsée.
 * **Profil Administrateur :**
-  - Bouton dédié en haut à droite de l'en-tête avec une icône de bouclier uniquement (pas de photo ni de nom, pour éviter l'affichage redondant de l'identité).
+  - Bouton dédié en haut à droite de l'en-tête affichant la photo (ou une icône utilisateur par défaut) et le nom complet de l'admin connecté.
   - Le profil est chargé depuis l'API (`GET /api/admin/me`) en utilisant l'ID de l'utilisateur authentifié, ce qui évite les doublons même si plusieurs admins existent en base.
-  - Clic → ouvre le panneau de détails inline avec les informations personnelles et un bouton "Modifier mon profil" pour éditer les champs (nom, prénom, email, téléphone, photo URL). Le nom et la photo de l'admin n'apparaissent que dans ce panneau, pas dans l'en-tête.
+  - Clic → ouvre le panneau de détails inline avec les informations personnelles et un bouton "Modifier mon profil" pour éditer les champs (nom, prénom, email, téléphone, photo URL). Le panneau affiche l'icône de bouclier dans son en-tête.
 * **Cartes de Synthèse de la Plateforme (Counters) :**
   - Des widgets affichant le nombre total de comptes par type : **Vendeurs actifs**, **Clients inscrits**, et **Livreurs certifiés**.
 * **Mesures Financières de la Plateforme (Règle RG08) :**
@@ -307,7 +307,7 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
   - **Comportement :** Les lignes du tableau des utilisateurs (`Utilisateurs (RG11)`) sont cliquables (`cursor: pointer`). Les items des classements (vendeurs, livreurs, clients) dans l'onglet Analytics & Finance sont également cliquables et ouvrent le même panneau de détails. Un clic ouvre une modale large (max 800px) avec scroll vertical. Le fond de la modale est opaque (`hsl(250, 25%, 10%)`) pour une lisibilité maximale. Le chargement est asynchrone avec indicateur de spinner. La modale se ferme au clic sur la croix ou en cliquant sur l'overlay.
 * **Profil Administrateur dédié :**
   - L'administrateur **n'apparaît pas** dans la liste des utilisateurs (filtré via `est_admin`).
-  - Un bouton de profil est affiché en haut à droite de l'en-tête du tableau de bord, avec une icône de bouclier uniquement (pas de nom ni photo — l'identité n'est visible que dans le panneau inline).
+  - Un bouton de profil est affiché en haut à droite de l'en-tête du tableau de bord, avec la photo (ou une icône utilisateur par défaut) et le nom complet de l'admin.
   - Clic sur le bouton → ouvre un **panneau de profil inline** (dans le corps, pas une modale). Un second clic referme le panneau. Le changement d'onglet via la sidebar referme aussi le panneau automatiquement.
   - **Modification du profil :** Un bouton "Modifier" dans le panneau transforme les champs en formulaire éditable (prénom, nom, email, téléphone, photo URL). La soumission appelle `PUT /api/admin/profile` et met à jour la base de données.
   - **Confidentialité :** L'admin ne peut pas modifier son propre statut ou se supprimer via les actions de modération (protection côté backend).
