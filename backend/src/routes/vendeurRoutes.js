@@ -9,7 +9,8 @@ import {
   deleteProduct,
   getVendorOrders,
   verifyHandover,
-  getVendorReturns
+  getVendorReturns,
+  createSignalement
 } from '../controllers/vendeurController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
@@ -50,5 +51,7 @@ router.delete('/products/:id', deleteProduct);
 router.get('/orders', getVendorOrders);
 router.post('/orders/:id_commande/verify-handover', upload.single('photo'), verifyHandover);
 router.get('/returns', getVendorReturns);
+router.post('/signalements', createSignalement);  // RG14
 
 export default router;
+

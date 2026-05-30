@@ -1,31 +1,28 @@
 import prisma from '../config/db.js';
 
-// 3.1. Tableau de bord Vendeur - Statistiques
+// --- 3.1. Tableau de bord Vendeur (RG02, RG08, RG16) ---
+
 export const getVendorDashboard = async (req, res) => {
   try {
     const vendorId = req.user.id_user;
 
-    const vendor = await prisma.vendeur.findUnique({
-      where: { id_user: vendorId }
-    });
+    const vendor = await prisma.vendeur.findUnique({ where: { id_user: vendorId } });
+    if (!vendor) return res.status(403).json({ error: 'Espace réservé aux vendeurs.' });
 
-    if (!vendor) {
-      return res.status(403).json({ error: 'Espace réservé aux vendeurs.' });
-    }
-
-    // Get all order lines for this vendor
+    // All order lines for this vendor's products
     const orderLines = await prisma.detailCommande.findMany({
-      where: { id_user_vendeur: vendorId }
+      where: {
+        produit: { id_user_vendeur: vendorId }
+      }
     });
 
     let totalBrut = 0;
-    let totalPertes = 0; // Rejected items value
+    let totalPertes = 0;
     let totalNetMarchandises = 0;
 
     orderLines.forEach((line) => {
       const lineVal = line.prix_vente_applique * line.quantite_commandee;
       totalBrut += lineVal;
-
       if (line.statut_acceptation === 'Rejete') {
         totalPertes += lineVal;
       } else {
@@ -33,16 +30,12 @@ export const getVendorDashboard = async (req, res) => {
       }
     });
 
-    // Commission (0.6% on accepted items, RG08)
-    const commission = parseFloat((totalNetMarchandises * 0.006).toFixed(2));
+    const commission = parseFloat((totalNetMarchandises * 0.006).toFixed(2)); // RG08
     const gainsNets = parseFloat((totalNetMarchandises - commission).toFixed(2));
 
-    // Low stock warnings
+    // Low stock alerts
     const lowStockAlerts = await prisma.produit.findMany({
-      where: {
-        id_user_vendeur: vendorId,
-        stock_disponible: { lte: 5 } // Alert threshold
-      }
+      where: { id_user_vendeur: vendorId, stock_disponible: { lte: 5 } }
     });
 
     return res.json({
@@ -60,11 +53,13 @@ export const getVendorDashboard = async (req, res) => {
   }
 };
 
-// 3.2. Catalogue de Produits (CRUD)
+// --- 3.2. Catalogue de Produits (CRUD - RG03, RG24) ---
+
 export const getMyProducts = async (req, res) => {
   try {
     const products = await prisma.produit.findMany({
-      where: { id_user_vendeur: req.user.id_user }
+      where: { id_user_vendeur: req.user.id_user },
+      include: { historiques: { orderBy: { date_modification: 'asc' } } }
     });
     return res.json(products);
   } catch (error) {
@@ -78,21 +73,33 @@ export const createProduct = async (req, res) => {
   if (!nom || !description || prix_reference === undefined || stock_disponible === undefined) {
     return res.status(400).json({ error: 'Tous les champs requis doivent être fournis.' });
   }
-
-  if (prix_reference < 0 || stock_disponible < 0) {
+  if (parseFloat(prix_reference) < 0 || parseInt(stock_disponible, 10) < 0) {
     return res.status(400).json({ error: 'Le prix et le stock doivent être des valeurs positives.' });
   }
 
   try {
-    const product = await prisma.produit.create({
-      data: {
-        nom,
-        description,
-        prix_reference: parseFloat(prix_reference),
-        stock_disponible: parseInt(stock_disponible, 10),
-        id_user_vendeur: req.user.id_user
-      }
+    const product = await prisma.$transaction(async (tx) => {
+      const newProduct = await tx.produit.create({
+        data: {
+          nom,
+          description,
+          prix_reference: parseFloat(prix_reference),
+          stock_disponible: parseInt(stock_disponible, 10),
+          id_user_vendeur: req.user.id_user
+        }
+      });
+
+      // Record initial price in history (RG24)
+      await tx.historiquePrix.create({
+        data: {
+          id_produit: newProduct.id_produit,
+          prix: newProduct.prix_reference
+        }
+      });
+
+      return newProduct;
     });
+
     return res.status(201).json(product);
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors de la création du produit.' });
@@ -111,14 +118,28 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ error: 'Produit introuvable.' });
     }
 
-    const updated = await prisma.produit.update({
-      where: { id_produit: productId },
-      data: {
-        nom: nom !== undefined ? nom : undefined,
-        description: description !== undefined ? description : undefined,
-        prix_reference: prix_reference !== undefined ? parseFloat(prix_reference) : undefined,
-        stock_disponible: stock_disponible !== undefined ? parseInt(stock_disponible, 10) : undefined
+    const newPrice = prix_reference !== undefined ? parseFloat(prix_reference) : undefined;
+    const priceChanged = newPrice !== undefined && newPrice !== existing.prix_reference;
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedProduct = await tx.produit.update({
+        where: { id_produit: productId },
+        data: {
+          nom: nom ?? undefined,
+          description: description ?? undefined,
+          prix_reference: newPrice,
+          stock_disponible: stock_disponible !== undefined ? parseInt(stock_disponible, 10) : undefined
+        }
+      });
+
+      // Log price change in history (RG24)
+      if (priceChanged) {
+        await tx.historiquePrix.create({
+          data: { id_produit: productId, prix: newPrice }
+        });
       }
+
+      return updatedProduct;
     });
 
     return res.json(updated);
@@ -145,24 +166,31 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-// 3.3. Commandes à collecter
+// --- 3.3. Commandes à collecter (RG06, RG07) ---
+
 export const getVendorOrders = async (req, res) => {
   try {
     const vendorId = req.user.id_user;
 
+    // Find commands that contain at least one product from this vendor
     const orders = await prisma.commande.findMany({
       where: {
         detailsCommande: {
-          some: { id_user_vendeur: vendorId }
+          some: {
+            produit: { id_user_vendeur: vendorId }
+          }
         }
       },
       include: {
         detailsCommande: {
-          where: { id_user_vendeur: vendorId },
+          where: {
+            produit: { id_user_vendeur: vendorId }
+          },
           include: { produit: true }
         },
+        // All collection proofs for this command (vendor deduces own status via produit join)
         preuvesCollecte: {
-          where: { id_user_vendeur: vendorId }
+          include: { photos: true }
         }
       },
       orderBy: { date_creation: 'desc' }
@@ -174,7 +202,7 @@ export const getVendorOrders = async (req, res) => {
   }
 };
 
-// 3.3. Validation de remise des articles au livreur (RG06, RG07)
+// Vendor validates handover to driver by submitting code + photo proof (RG06, RG07)
 export const verifyHandover = async (req, res) => {
   const { id_commande } = req.params;
   const { code_verification } = req.body;
@@ -182,72 +210,54 @@ export const verifyHandover = async (req, res) => {
   if (!code_verification) {
     return res.status(400).json({ error: 'Le code de vérification est requis.' });
   }
-
   if (!req.file) {
     return res.status(400).json({ error: 'La preuve photographique est obligatoire (RG07).' });
   }
 
   try {
     const commandId = parseInt(id_commande, 10);
-    const vendorId = req.user.id_user;
 
-    const command = await prisma.commande.findUnique({
-      where: { id_commande: commandId }
-    });
+    const command = await prisma.commande.findUnique({ where: { id_commande: commandId } });
+    if (!command) return res.status(404).json({ error: 'Commande introuvable.' });
 
-    if (!command) {
-      return res.status(404).json({ error: 'Commande introuvable.' });
-    }
-
-    // Verify code matching (RG06)
+    // Verify code (RG06)
     if (command.code_verification !== code_verification) {
       return res.status(400).json({ error: 'Code de vérification invalide.' });
     }
 
-    // Add entry in PREUVE_COLLECTE and update command status dynamically
     await prisma.$transaction(async (tx) => {
-      // Create proof
-      await tx.preuveCollecte.create({
+      // Create PREUVE_COLLECTE (linked only to commande - per MLD)
+      const preuve = await tx.preuveCollecte.create({
         data: {
           id_commande: commandId,
-          id_user_vendeur: vendorId,
-          url_photo: `/uploads/${req.file.filename}`,
           statut_validation: 'Validee'
         }
       });
 
-      // Update state for items belonging to this vendor
-      await tx.detailCommande.updateMany({
-        where: {
-          id_commande: commandId,
-          id_user_vendeur: vendorId
-        },
+      // Attach photo to the proof (PHOTO_PREUVE - RG07)
+      await tx.photoPreuve.create({
         data: {
-          statut_acceptation: 'En attente' // Wait for delivery finalization
+          id_preuve: preuve.id_preuve,
+          url_photo: `/uploads/${req.file.filename}`
         }
       });
 
-      // Check if all vendors for this order have provided proof
-      const allOrderLines = await tx.detailCommande.findMany({
-        where: { id_commande: commandId }
+      // Check if all vendors involved have submitted a proof
+      // Get distinct vendor IDs from the command's products
+      const orderLines = await tx.detailCommande.findMany({
+        where: { id_commande: commandId },
+        include: { produit: true }
       });
-      const uniqueVendorIds = [...new Set(allOrderLines.map(line => line.id_user_vendeur))];
-      const collectedProofs = await tx.preuveCollecte.findMany({
+      const uniqueVendorIds = [...new Set(orderLines.map((l) => l.produit.id_user_vendeur))];
+      const totalProofs = await tx.preuveCollecte.count({
         where: { id_commande: commandId, statut_validation: 'Validee' }
       });
 
-      if (collectedProofs.length >= uniqueVendorIds.length) {
-        // If all vendors collected, set global command status to 'En transit'
-        await tx.commande.update({
-          where: { id_commande: commandId },
-          data: { statut: 'En transit' }
-        });
-      } else {
-        await tx.commande.update({
-          where: { id_commande: commandId },
-          data: { statut: 'En collecte' }
-        });
-      }
+      // Advance command status
+      await tx.commande.update({
+        where: { id_commande: commandId },
+        data: { statut: totalProofs >= uniqueVendorIds.length ? 'En transit' : 'En collecte' }
+      });
     });
 
     return res.json({ message: 'Remise des articles validée et enregistrée avec succès.' });
@@ -256,28 +266,57 @@ export const verifyHandover = async (req, res) => {
   }
 };
 
-// 3.4. Gestion des retours
+// --- 3.4. Gestion des retours (RG16) ---
+
 export const getVendorReturns = async (req, res) => {
   try {
     const vendorId = req.user.id_user;
 
     const returnedLines = await prisma.detailCommande.findMany({
       where: {
-        id_user_vendeur: vendorId,
-        statut_acceptation: 'Rejete'
+        statut_acceptation: 'Rejete',
+        produit: { id_user_vendeur: vendorId }
       },
       include: {
         produit: true,
-        commande: {
-          include: {
-            litige: true
-          }
-        }
+        litige: true
       }
     });
 
     return res.json(returnedLines);
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors du chargement des retours.' });
+  }
+};
+
+// --- 3.5. Signalement (RG14) ---
+
+export const createSignalement = async (req, res) => {
+  const { motif, type_cible_cible, id_cible } = req.body;
+
+  if (!motif || !type_cible_cible || !id_cible) {
+    return res.status(400).json({ error: 'Motif et cible requis.' });
+  }
+
+  try {
+    const targetUser = await prisma.utilisateur.findUnique({ where: { id_user: parseInt(id_cible, 10) } });
+    if (!targetUser) return res.status(404).json({ error: 'Cible introuvable.' });
+
+    const signalement = await prisma.signalement.create({
+      data: {
+        motif,
+        type_cible_cible,
+        id_auteur: req.user.id_user,
+        id_cible: parseInt(id_cible, 10),
+        statut_traitement: 'En attente'
+      }
+    });
+
+    return res.status(201).json({
+      message: "Signalement envoyé. L'administrateur étudiera le cas.",
+      id_signalement: signalement.id_signalement
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du signalement.' });
   }
 };
