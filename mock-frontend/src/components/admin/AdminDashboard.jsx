@@ -492,22 +492,9 @@ export default function AdminDashboard({ token, addAlert }) {
           <p className="subtitle">Auditez les transactions, arbitrez les litiges et gérez les utilisateurs.</p>
         </div>
         <button className={`btn-admin-profile ${showAdminProfile ? 'profile-open' : ''}`} onClick={openAdminProfile} title={showAdminProfile ? 'Fermer mon profil' : 'Voir mon profil'}>
-          {showAdminProfile ? (
-            <div className="admin-profile-avatar admin-profile-avatar-placeholder">
-              <i className="fa-solid fa-user-shield"></i>
-            </div>
-          ) : (
-            <>
-              {adminUser?.photo_url ? (
-                <img src={adminUser.photo_url} alt="admin" className="admin-profile-avatar" />
-              ) : (
-                <div className="admin-profile-avatar admin-profile-avatar-placeholder">
-                  <i className="fa-solid fa-user-shield"></i>
-                </div>
-              )}
-              <span className="admin-profile-name">{adminUser ? `${adminUser.prenom} ${adminUser.nom}` : 'Admin'}</span>
-            </>
-          )}
+          <div className="admin-profile-avatar admin-profile-avatar-placeholder">
+            <i className="fa-solid fa-user-shield"></i>
+          </div>
         </button>
       </div>
 
