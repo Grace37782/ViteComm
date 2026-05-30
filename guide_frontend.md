@@ -268,13 +268,12 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
 * **Barre de Recherche Globale et Filtrage Dynamique :**
   - Un champ de recherche textuel dynamique (`input[type="text"]`) permettant de filtrer instantanément les widgets, les listes, les tableaux d'utilisateurs, de produits et de litiges en temps réel.
 * **Navigation par Sidebar :**
-  - Les onglets (Analytics, Utilisateurs, Signalements, Centre des Litiges) sont présentés dans une **barre latérale verticale** (sticky) sur desktop.
+  - Les onglets (Analytics, Utilisateurs, Signalements, Centre des Litiges, Produits) sont présentés dans une **barre latérale verticale** (sticky) sur desktop.
   - Sur mobile (largeur < 900px), la sidebar se transforme en **barre de navigation horizontale scrollable** en haut de la zone de contenu.
   - Chaque bouton de la sidebar est accompagné d'une icône et les alertes (signalements en attente, litiges ouverts) sont affichées sous forme de badge numérique avec animation pulsée.
 * **Profil Administrateur :**
-  - Bouton dédié en haut à droite de l'en-tête affichant la photo (ou une icône utilisateur par défaut) et le nom complet de l'admin connecté.
-  - Le profil est chargé depuis l'API (`GET /api/admin/me`) en utilisant l'ID de l'utilisateur authentifié, ce qui évite les doublons même si plusieurs admins existent en base.
-  - Clic → ouvre le panneau de détails inline avec les informations personnelles et un bouton "Modifier mon profil" pour éditer les champs (nom, prénom, email, téléphone, photo URL). Le panneau affiche l'icône de bouclier dans son en-tête.
+  - Pas de bouton de profil dans l'en-tête du tableau de bord. L'identité de l'admin n'est affichée que dans la barre de navigation principale de l'application (navbar ViteComm), ce qui évite toute duplication (RG11).
+* **Cartes de Synthèse de la Plateforme (Counters) :**
 * **Cartes de Synthèse de la Plateforme (Counters) :**
   - Des widgets affichant le nombre total de comptes par type : **Vendeurs actifs**, **Clients inscrits**, et **Livreurs certifiés**.
 * **Mesures Financières de la Plateforme (Règle RG08) :**
@@ -305,15 +304,9 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
     - **Livreur :** Tableau des livraisons effectuées incluant l'ID commande, le nom du client, le montant, le statut de livraison, et la date. Résumé du nombre total de livraisons, volume total transporté, type de véhicule et immatriculation.
     - **Client :** Tableau des commandes passées incluant l'ID commande, le montant total, les frais de livraison, le statut et la date. Résumé du nombre total de commandes, dépense cumulée et adresse de livraison. **Aucun détail privé de navigation n'est exposé (RG11).**
   - **Comportement :** Les lignes du tableau des utilisateurs (`Utilisateurs (RG11)`) sont cliquables (`cursor: pointer`). Les items des classements (vendeurs, livreurs, clients) dans l'onglet Analytics & Finance sont également cliquables et ouvrent le même panneau de détails. Un clic ouvre une modale large (max 800px) avec scroll vertical. Le fond de la modale est opaque (`hsl(250, 25%, 10%)`) pour une lisibilité maximale. Le chargement est asynchrone avec indicateur de spinner. La modale se ferme au clic sur la croix ou en cliquant sur l'overlay.
-* **Profil Administrateur dédié :**
-  - L'administrateur **n'apparaît pas** dans la liste des utilisateurs (filtré via `est_admin`).
-  - Un bouton de profil est affiché en haut à droite de l'en-tête du tableau de bord, avec la photo (ou une icône utilisateur par défaut) et le nom complet de l'admin.
-  - Clic sur le bouton → ouvre un **panneau de profil inline** (dans le corps, pas une modale). Un second clic referme le panneau. Le changement d'onglet via la sidebar referme aussi le panneau automatiquement.
-  - **Modification du profil :** Un bouton "Modifier" dans le panneau transforme les champs en formulaire éditable (prénom, nom, email, téléphone, photo URL). La soumission appelle `PUT /api/admin/profile` et met à jour la base de données.
-  - **Confidentialité :** L'admin ne peut pas modifier son propre statut ou se supprimer via les actions de modération (protection côté backend).
 * **Comportement frontend & Confidentialité stricte (Règles RG11 & RG15) :**
   - **Sécurité RGPD :** L'interface administrateur ne doit comporter **aucun lien, bouton ou écran permettant d'accéder à l'historique d'achat ou de navigation privé d'un Client**. L'administrateur n'a accès qu'à ses informations d'identité de base (`nom`, `prenom`, `telephone`, `email`).
-  - **Note :** L'administrateur courant est exclu de la liste des utilisateurs du tableau (filtré via `est_admin`). Son profil est accessible depuis le bouton dédié dans l'en-tête, qui ouvre un panneau de profil **inline** (pas de modale) dans la zone de contenu. Le panneau affiche les informations personnelles et un formulaire d'édition (nom, prénom, email, téléphone, photo URL).
+  - **Note :** L'administrateur courant est exclu de la liste des utilisateurs du tableau (filtré via `est_admin`).
 
 ### 5.3. Centre de Gestion des Signalements (Universal Moderation)
 * **Éléments à afficher :**

@@ -309,6 +309,31 @@
           graphiques d'évolution de prix et d'auditer toute modification suspecte de tarif par rapport à la date de validation d'une commande.
         </td>
       </tr>
+      <tr>
+        <td>RG25</td>
+        <td>Émission de la Facture : Une facture (<code>FACTURE</code>) est générée automatiquement uniquement après que
+          <code>LIVRAISON.statut = "TERMINEE"</code> et après l'arbitrage définitif de tout litige associé. Elle constitue
+          la source de vérité unique pour la facturation finale, en verrouillant les montants réels (articles acceptés,
+          frais de retour, commission). Les champs <code>total_marchandises</code>, <code>frais_livraison</code> et
+          <code>commission</code> de <code>COMMANDE</code> demeurent des estimations provisoires initiales et ne doivent
+          pas être dupliqués dans la facture.</td>
+      </tr>
+      <tr>
+        <td>RG26</td>
+        <td>Traçabilité du Paiement COD : Conformément à RG08, chaque encaissement en espèces à la livraison doit être
+          enregistré dans un enregistrement <code>PAIEMENT</code> distinct de la facture théorique. Cela permet de séparer
+          le montant facturé (montant dû) du montant réellement perçu, de tracer le mode de règlement
+          (ESPECES, CARTE, MOBILE_MONEY…) et de gérer les cas d'échec ou d'annulation de paiement. Un seul paiement
+          est associé à une facture pour le MVP (relation 1:1).</td>
+      </tr>
+      <tr>
+        <td>RG27</td>
+        <td>Bon de Livraison &amp; Preuve de Signature : À chaque livraison, un bon de livraison (<code>BON_DE_LIVRAISON</code>)
+          peut être émis pour matérialiser la remise physique des marchandises au client. Il enregistre la date de
+          signature client, le statut du bon (EN_ATTENTE, SIGNE, REFUSE) et les observations du livreur. Ce document
+          est purement logistique et ne porte aucun impact financier direct ; il complète la preuve de collecte (RG07)
+          côté destinataire final.</td>
+      </tr>
     </tbody>
   </table>
 
@@ -362,7 +387,7 @@
       <tr>
         <td>COMMANDE</td>
         <td>id_commande</td>
-        <td>date_creation, statut, total_marchandises, frais_livraison, commission, code_verification</td>
+        <td>date_creation, statut, total_marchandises (provisoire), frais_livraison (provisoire), commission (provisoire), code_verification</td>
       </tr>
       <tr>
         <td>PREUVE_COLLECTE</td>
@@ -406,6 +431,21 @@
         <td>id_historique</td>
         <td>prix, date_modification, #id_produit</td>
       </tr>
+      <tr>
+        <td>FACTURE</td>
+        <td>id_facture</td>
+        <td>date_emission, montant_marchandises, montant_frais_livraison, montant_frais_retour, montant_commission, montant_total_du, statut_paiement, #id_commande</td>
+      </tr>
+      <tr>
+        <td>PAIEMENT</td>
+        <td>id_paiement</td>
+        <td>date_paiement, montant_perçu, mode_reglement, reference_transaction, statut, #id_facture</td>
+      </tr>
+      <tr>
+        <td>BON_DE_LIVRAISON</td>
+        <td>id_bon</td>
+        <td>date_emission, date_signature_client, statut_bon, observations_livreur, #id_livraison</td>
+      </tr>
     </tbody>
   </table>
 
@@ -441,7 +481,13 @@ id_signalement → date_heure, motif, statut_traitement
 
 id_livraison → date_prise_en_charge, date_fin_reelle, statut_livraison, frais_retour_calcules
 
-id_historique → prix, date_modification</pre>
+id_historique → prix, date_modification
+
+id_facture → date_emission, montant_marchandises, montant_frais_livraison, montant_frais_retour, montant_commission, montant_total_du, statut_paiement
+
+id_paiement → date_paiement, montant_perçu, mode_reglement, reference_transaction, statut
+
+id_bon → date_emission, date_signature_client, statut_bon, observations_livreur</pre>
 
   <h3>3.2. DFED à Source Composée (Sources multiples → Associations CIM)</h3>
   <pre>
@@ -483,7 +529,13 @@ id_preuve → #id_commande
 
 id_photo → #id_preuve
 
-id_historique → #id_produit</pre>
+id_historique → #id_produit
+
+id_facture → #id_commande
+
+id_paiement → #id_facture
+
+id_bon → #id_livraison</pre>
 
   <h3>3.4. Fusion des Dépendances Fonctionnelles (Couverture Minimale Totale)</h3>
   <p>Synthèse globale de toutes les dépendances permettant de valider la 3NF (Troisième Forme Normale) et de déduire le
@@ -523,7 +575,13 @@ id_livraison → date_prise_en_charge, date_fin_reelle, statut_livraison, frais_
 
 (id_commande, #id_user_client) → statut_livraison_client
 
-id_historique → prix, date_modification, #id_produit</pre>
+id_historique → prix, date_modification, #id_produit
+
+id_facture → date_emission, montant_marchandises, montant_frais_livraison, montant_frais_retour, montant_commission, montant_total_du, statut_paiement, #id_commande
+
+id_paiement → date_paiement, montant_perçu, mode_reglement, reference_transaction, statut, #id_facture
+
+id_bon → date_emission, date_signature_client, statut_bon, observations_livreur, #id_livraison</pre>
 
   <h2 id="mld">4. Modèle Logique des Données (MLD)</h2>
 
@@ -558,7 +616,13 @@ FEEDBACK ( <u>id_feedback</u>, note, commentaire, date_publication, type_feedbac
 
 SIGNALEMENT ( <u>id_signalement</u>, date_heure, motif, statut_traitement, type_cible_cible, #id_auteur, #id_cible)
 
-HISTORIQUE_PRIX ( <u>id_historique</u>, prix, date_modification, #id_produit)</pre>
+HISTORIQUE_PRIX ( <u>id_historique</u>, prix, date_modification, #id_produit)
+
+FACTURE ( <u>id_facture</u>, date_emission, montant_marchandises, montant_frais_livraison, montant_frais_retour, montant_commission, montant_total_du, statut_paiement, #id_commande)
+
+PAIEMENT ( <u>id_paiement</u>, date_paiement, montant_perçu, mode_reglement, reference_transaction, statut, #id_facture)
+
+BON_DE_LIVRAISON ( <u>id_bon</u>, date_emission, date_signature_client, statut_bon, observations_livreur, #id_livraison)</pre>
 
   <h2 id="uml">5. Conception Orientée Objet (UML)</h2>
   <p>Passage du modèle relationnel (Merise) au modèle conceptuel objet, conforme aux standards UML 2.x.</p>
@@ -598,6 +662,9 @@ HISTORIQUE_PRIX ( <u>id_historique</u>, prix, date_modification, #id_produit)</p
       Elle sert de support de preuve pour un <code>Litige</code> et possède une relation 1-to-many avec la classe <code>PhotoPreuve</code>.</li>
     <li>Classe <code>PhotoPreuve</code> : Permet d'attacher une ou plusieurs photographies à une preuve de collecte, assurant ainsi la possibilité de fournir des visuels détaillés pour le dossier de litige.</li>
     <li>Classe <code>HistoriquePrix</code> : Enregistre l'historique des changements de tarifs pour chaque produit. Elle possède une relation many-to-one avec la classe <code>Produit</code> (un produit a plusieurs prix historiques).</li>
+    <li>Classe <code>Facture</code> : Générée après <code>LIVRAISON.statut = "TERMINEE"</code> et arbitrage des litiges. Remplace les totaux provisoires de <code>COMMANDE</code> par des montants financièrement verrouillés (RG08, RG09). Relation 1-to-(0..1) avec <code>Commande</code>. <code>COMMANDE.total_marchandises</code> et <code>COMMANDE.commission</code> restent des estimations provisoires ; <code>FACTURE</code> devient la source de vérité unique pour la facturation finale.</li>
+    <li>Classe <code>Paiement</code> : Trace l'encaissement réel en espèces (COD) séparément de la facture théorique, conformément à RG08. Relation 1-to-(0..1) avec <code>Facture</code>.</li>
+    <li>Classe <code>BonDeLivraison</code> : Document logistique (non financier) matérialisant la signature du client à la livraison. Relation 1-to-(0..1) avec <code>Livraison</code>.</li>
   </ul>
 
   <h3>5.3. Diagramme d'Activité</h3>

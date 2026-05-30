@@ -2,130 +2,6 @@ import React, { useState, useEffect } from 'react';
 
 const API_BASE = 'http://localhost:5000/api';
 
-function AdminProfilePanel({ adminUser, onClose, token, addAlert, loadUsers }) {
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ nom: '', prenom: '', telephone: '', email: '', photo_url: '' });
-
-  useEffect(() => {
-    if (adminUser) {
-      setForm({
-        nom: adminUser.nom || '',
-        prenom: adminUser.prenom || '',
-        telephone: adminUser.telephone || '',
-        email: adminUser.email || '',
-        photo_url: adminUser.photo_url || ''
-      });
-    }
-  }, [adminUser]);
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const res = await fetch(`${API_BASE}/admin/profile`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
-      });
-      if (res.ok) {
-        addAlert('success', 'Profil mis à jour avec succès.');
-        setEditing(false);
-        loadUsers();
-      } else {
-        const data = await res.json();
-        addAlert('danger', data.error || 'Erreur de mise à jour.');
-      }
-    } catch (e) {
-      addAlert('danger', 'Erreur réseau.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (!adminUser) return null;
-
-  return (
-    <div className="tab-pane">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '20px' }}>
-          <i className="fa-solid fa-user-shield"></i> Mon Profil Administrateur
-        </h3>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          {!editing ? (
-            <button className="btn btn-primary btn-sm" onClick={() => setEditing(true)}>
-              <i className="fa-solid fa-pen-to-square"></i> Modifier
-            </button>
-          ) : (
-            <button className="btn btn-secondary btn-sm" onClick={() => setEditing(false)}>
-              <i className="fa-solid fa-xmark"></i> Annuler
-            </button>
-          )}
-          <button className="btn-close" onClick={onClose} title="Fermer le profil">
-            <i className="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--glass-border)', marginBottom: '20px' }}>
-        <div>
-          {adminUser.photo_url ? (
-            <img src={adminUser.photo_url} alt="photo" style={{ width: '72px', height: '72px', borderRadius: '50px', objectFit: 'cover', border: '3px solid var(--primary)' }} />
-          ) : (
-            <div style={{ width: '72px', height: '72px', borderRadius: '50px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', color: '#fff' }}>
-              <i className="fa-solid fa-user-shield"></i>
-            </div>
-          )}
-        </div>
-        <div>
-          <h2 style={{ margin: 0, fontSize: '22px' }}>{adminUser.prenom} {adminUser.nom}</h2>
-          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
-            <span><i className="fa-solid fa-envelope"></i> {adminUser.email}</span>
-            <span><i className="fa-solid fa-phone"></i> {adminUser.telephone}</span>
-            <span className="role-tag role-admin">Admin</span>
-            <span className={`status-pill status-${adminUser.statut_compte?.toLowerCase() || 'actif'}`}>{adminUser.statut_compte || 'Actif'}</span>
-          </div>
-        </div>
-      </div>
-
-      {editing ? (
-        <form onSubmit={handleSave}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-            <div className="form-group">
-              <label>Prénom</label>
-              <input className="form-input" required value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} />
-            </div>
-            <div className="form-group">
-              <label>Nom</label>
-              <input className="form-input" required value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} />
-            </div>
-            <div className="form-group">
-              <label>Email</label>
-              <input className="form-input" type="email" required value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
-            </div>
-            <div className="form-group">
-              <label>Téléphone</label>
-              <input className="form-input" required value={form.telephone} onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))} />
-            </div>
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label>Photo URL</label>
-              <input className="form-input" placeholder="https://..." value={form.photo_url} onChange={e => setForm(f => ({ ...f, photo_url: e.target.value }))} />
-            </div>
-          </div>
-          <button type="submit" className="btn btn-success" disabled={saving}>
-            {saving ? <><i className="fa-solid fa-spinner fa-spin"></i> Enregistrement...</> : <><i className="fa-solid fa-floppy-disk"></i> Enregistrer</>}
-          </button>
-        </form>
-      ) : (
-        <div className="panel-helper">
-          <i className="fa-solid fa-shield-halved"></i>
-          <span>Compte administrateur système avec droits de modération, d'arbitrage et d'audit sur l'ensemble de la plateforme.</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function AdminDashboard({ token, addAlert }) {
   const [activeTab, setActiveTab] = useState('analytics'); // 'analytics', 'users', 'reports', 'disputes'
   const [searchQuery, setSearchQuery] = useState('');
@@ -148,10 +24,6 @@ export default function AdminDashboard({ token, addAlert }) {
   const [loadingUserDetail, setLoadingUserDetail] = useState(false);
   const [userDetailError, setUserDetailError] = useState(null);
 
-  // Admin own profile
-  const [adminUser, setAdminUser] = useState(null);
-  const [showAdminProfile, setShowAdminProfile] = useState(false);
-
   // All products for Products tab
   const [allProducts, setAllProducts] = useState([]);
 
@@ -159,22 +31,6 @@ export default function AdminDashboard({ token, addAlert }) {
   useEffect(() => {
     loadAnalytics();
     loadUsers(); // load users initially to compute global counts
-  }, [token]);
-
-  // Load admin own profile from API (fixes duplicate admin issue)
-  useEffect(() => {
-    const loadAdminMe = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/admin/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setAdminUser(data);
-        }
-      } catch (e) { /* silent */ }
-    };
-    loadAdminMe();
   }, [token]);
 
   // Loaders
@@ -240,7 +96,6 @@ export default function AdminDashboard({ token, addAlert }) {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setShowAdminProfile(false); // close profile when switching tabs
     if (tab === 'analytics') loadAnalytics();
     if (tab === 'users') loadUsers();
     if (tab === 'reports') loadReports();
@@ -350,14 +205,6 @@ export default function AdminDashboard({ token, addAlert }) {
   const closeUserDetails = () => {
     setSelectedUser(null);
     setUserDetail(null);
-  };
-
-  // Admin own profile — toggle inline panel in body (no duplicate modal)
-  const openAdminProfile = () => {
-    setShowAdminProfile(prev => !prev);
-    if (!adminUser) {
-      addAlert('danger', 'Profil administrateur non trouvé.');
-    }
   };
 
   // Signalement Actions
@@ -486,21 +333,11 @@ export default function AdminDashboard({ token, addAlert }) {
   return (
     <div className="admin-container">
       {/* Admin Panel Header */}
-      <div className="admin-header fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="admin-header fade-in">
         <div>
           <h2><i className="fa-solid fa-screwdriver-wrench"></i> Console de Supervision Globale</h2>
           <p className="subtitle">Auditez les transactions, arbitrez les litiges et gérez les utilisateurs.</p>
         </div>
-        <button className={`btn-admin-profile ${showAdminProfile ? 'profile-open' : ''}`} onClick={openAdminProfile} title={showAdminProfile ? 'Fermer mon profil' : 'Voir mon profil'}>
-          {adminUser?.photo_url ? (
-            <img src={adminUser.photo_url} alt="admin" className="admin-profile-avatar" />
-          ) : (
-            <div className="admin-profile-avatar admin-profile-avatar-placeholder">
-              <i className="fa-solid fa-circle-user"></i>
-            </div>
-          )}
-          <span className="admin-profile-name">{adminUser ? `${adminUser.prenom} ${adminUser.nom}` : 'Admin'}</span>
-        </button>
       </div>
 
       {/* Global Dynamic Filter Search Bar */}
@@ -570,19 +407,8 @@ export default function AdminDashboard({ token, addAlert }) {
 
       <div className="admin-tab-body glassmorphism-inset fade-in">
 
-        {/* ADMIN PROFILE PANEL (inline, not modal) */}
-        {showAdminProfile && adminUser && (
-          <AdminProfilePanel
-            adminUser={adminUser}
-            onClose={() => setShowAdminProfile(false)}
-            token={token}
-            addAlert={addAlert}
-            loadUsers={loadUsers}
-          />
-        )}
-
         {/* TAB 1: ANALYTICS & FINANCE */}
-        {!showAdminProfile && activeTab === 'analytics' && stats && (
+        {activeTab === 'analytics' && stats && (
           <div className="tab-pane">
             
             {/* Top Counters Row (Vendors, Clients, Livreurs) */}
@@ -798,7 +624,7 @@ export default function AdminDashboard({ token, addAlert }) {
         )}
 
         {/* TAB 2: UTILISATEURS (RG11/15) */}
-        {!showAdminProfile && activeTab === 'users' && (
+        {activeTab === 'users' && (
           <div className="tab-pane">
             <div className="panel-helper">
               <i className="fa-solid fa-shield-halved"></i>
@@ -917,7 +743,7 @@ export default function AdminDashboard({ token, addAlert }) {
         )}
 
         {/* TAB 3: SIGNALEMENTS (RG14) */}
-        {!showAdminProfile && activeTab === 'reports' && (
+        {activeTab === 'reports' && (
           <div className="tab-pane">
             <div className="panel-helper warning-helper">
               <i className="fa-solid fa-triangle-exclamation"></i>
@@ -979,7 +805,7 @@ export default function AdminDashboard({ token, addAlert }) {
         )}
 
         {/* TAB 4: LITIGES & ARBITRAGE (RG09/RG16/RG21) */}
-        {!showAdminProfile && activeTab === 'disputes' && (
+        {activeTab === 'disputes' && (
           <div className="tab-pane">
             {filteredDisputes.length === 0 ? (
               <p className="no-data">Aucun litige correspondant.</p>
@@ -1086,7 +912,7 @@ export default function AdminDashboard({ token, addAlert }) {
         )}
 
         {/* TAB 5: PRODUITS (searchable full product list) */}
-        {!showAdminProfile && activeTab === 'products' && (
+        {activeTab === 'products' && (
           <div className="tab-pane">
             <div className="panel-helper">
               <i className="fa-solid fa-box"></i>
