@@ -163,14 +163,14 @@ export default function AdminDashboard({ token, addAlert }) {
     }
   };
 
-  const viewProductPriceHistory = async (id_produit, nom_produit) => {
+  const viewProductPriceHistory = async (id_produit, product) => {
     try {
       const res = await fetch(`${API_BASE}/admin/products/${id_produit}/price-history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
       if (res.ok) {
-        setSelectedProductHistory({ nom_produit, history: data });
+        setSelectedProductHistory({ ...product, history: data });
       } else {
         addAlert('danger', 'Impossible de charger l\'historique des prix de cet article.');
       }
@@ -937,7 +937,7 @@ export default function AdminDashboard({ token, addAlert }) {
                 </thead>
                 <tbody>
                   {filteredAllProducts.map((p, idx) => (
-                    <tr key={p.id_produit} onClick={() => viewProductPriceHistory(p.id_produit, p.nom)} style={{ cursor: 'pointer' }}>
+                    <tr key={p.id_produit} onClick={() => viewProductPriceHistory(p.id_produit, p)} style={{ cursor: 'pointer' }}>
                       <td>
                         {p.photo_url ? (
                           <img src={p.photo_url} alt={p.nom} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
@@ -1009,7 +1009,7 @@ export default function AdminDashboard({ token, addAlert }) {
                         <td>
                           <button
                             className="btn btn-secondary btn-sm"
-                            onClick={() => viewProductPriceHistory(p.id_produit, p.nom)}
+                            onClick={() => viewProductPriceHistory(p.id_produit, p)}
                           >
                             <i className="fa-solid fa-timeline"></i> Voir l'Historique (RG24)
                           </button>
@@ -1024,25 +1024,49 @@ export default function AdminDashboard({ token, addAlert }) {
         </div>
       )}
 
-      {/* POPUP MODAL 2: PRICE HISTORY EVOLUTION AUDIT TRAIL (RG24) */}
+      {/* POPUP MODAL 2: PRODUCT DETAIL & PRICE HISTORY */}
       {selectedProductHistory && (
         <div className="modal-overlay" style={{ zIndex: 1100 }}>
-          <div className="modal-content glassmorphism" style={{ maxWidth: '500px' }}>
+          <div className="modal-content" style={{ maxWidth: '550px', background: 'hsl(250, 25%, 10%)' }}>
             <div className="modal-header">
-              <h3>Historique Audit de : {selectedProductHistory.nom_produit}</h3>
+              <h3>{selectedProductHistory.nom || 'Produit'}</h3>
               <button className="btn-close" onClick={() => setSelectedProductHistory(null)}>
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
             
             <div className="modal-body">
-              <div className="panel-helper">
-                <i className="fa-solid fa-clock-rotate-left"></i>
-                <span><strong>RG24 - Traçabilité Obligatoire des Prix :</strong> Toutes les fluctuations de prix sont archivées afin de garantir la transparence et de prévenir les spéculations.</span>
+              <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', padding: '15px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                <div>
+                  {selectedProductHistory.photo_url ? (
+                    <img src={selectedProductHistory.photo_url} alt={selectedProductHistory.nom} style={{ width: '72px', height: '72px', borderRadius: '12px', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '72px', height: '72px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
+                      <i className="fa-solid fa-box"></i>
+                    </div>
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ margin: '0 0 6px 0', fontSize: '18px' }}>{selectedProductHistory.nom}</h4>
+                  {selectedProductHistory.description && (
+                    <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--text-muted)' }}>{selectedProductHistory.description}</p>
+                  )}
+                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '13px' }}>
+                    <span><strong>Prix:</strong> {selectedProductHistory.prix_reference?.toLocaleString()} FCFA</span>
+                    <span><strong>Stock:</strong> {selectedProductHistory.stock_disponible}</span>
+                    <span><strong>Vendeur:</strong> {selectedProductHistory.vendeur?.nom_etablissement || 'N/A'}</span>
+                    <span><strong>Marché:</strong> {selectedProductHistory.vendeur?.localisation_marche || '-'}</span>
+                    {selectedProductHistory.vendeur && (
+                      <span><strong>Réputation:</strong> {selectedProductHistory.vendeur.score_reputation?.toFixed(1)}</span>
+                    )}
+                  </div>
+                </div>
               </div>
               
+              <h4 style={{ marginBottom: '12px' }}><i className="fa-solid fa-clock-rotate-left"></i> Historique des prix</h4>
+              
               {selectedProductHistory.history.length === 0 ? (
-                <p className="no-data">Aucun changement de prix n'a été enregistré pour ce produit. Son prix initial est fige.</p>
+                <p className="no-data">Aucun changement de prix enregistré. Prix initial inchangé.</p>
               ) : (
                 <div className="history-timeline">
                   {selectedProductHistory.history.map((h, idx) => (
@@ -1051,7 +1075,7 @@ export default function AdminDashboard({ token, addAlert }) {
                         {new Date(h.date_modification).toLocaleString()}
                       </div>
                       <div className="timeline-node-desc">
-                        Prix fixé à <strong>{h.prix} FCFA</strong>
+                        <strong>{h.prix.toLocaleString()} FCFA</strong>
                       </div>
                     </div>
                   ))}

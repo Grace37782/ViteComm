@@ -319,7 +319,7 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
 * **Nouvel onglet dédié "Produits"** dans la barre latérale : liste exhaustive et filtrable de tous les produits de la plateforme.
 * **Tableau des colonnes :** Photo, Désignation (nom + description), Prix, Stock, Vendeur (`nom_etablissement`), Marché (`localisation_marche`), Réputation du vendeur, Dernier Prix (dernière entrée dans `historiques`, ou "Initial" si aucun changement).
 * **Comportement :**
-  - Les lignes du tableau sont cliquables → ouvre la modale d'historique des prix (RG24) du produit.
+  - Les lignes du tableau sont cliquables → ouvre une modale produit détaillée (fond opaque) affichant la photo, le nom, la description, le prix, le stock, le vendeur, le marché, la réputation, et l'historique complet des prix.
   - Barre de recherche globale filtre dynamiquement par nom, description, établissement ou marché.
   - Données chargées depuis `GET /api/admin/products` (endpoint ajouté dans le backend, controller `getAllProducts`, avec inclusion du vendeur et du dernier historique prix).
 
