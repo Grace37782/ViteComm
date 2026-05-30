@@ -416,6 +416,32 @@ export const getVendorCatalogue = async (req, res) => {
   }
 };
 
+// --- 5.5. All Products — full platform inventory ---
+
+export const getAllProducts = async (req, res) => {
+  try {
+    const products = await prisma.produit.findMany({
+      include: {
+        vendeur: {
+          select: {
+            nom_etablissement: true,
+            localisation_marche: true,
+            score_reputation: true
+          }
+        },
+        historiques: {
+          orderBy: { date_modification: 'desc' },
+          take: 1
+        }
+      },
+      orderBy: { nom: 'asc' }
+    });
+    return res.json(products);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement des produits.' });
+  }
+};
+
 // Price history audit (RG24)
 export const getPriceHistory = async (req, res) => {
   const { id_produit } = req.params;

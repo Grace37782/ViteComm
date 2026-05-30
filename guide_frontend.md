@@ -275,6 +275,7 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
   - Bouton dédié en haut à droite de l'en-tête avec la photo et le nom de l'admin (ou icône de bouclier par défaut).
   - Le profil est chargé depuis l'API (`GET /api/admin/me`) en utilisant l'ID de l'utilisateur authentifié, ce qui évite les doublons même si plusieurs admins existent en base.
   - Clic → ouvre le panneau de détails avec les informations personnelles et un bouton "Modifier mon profil" pour éditer les champs (nom, prénom, email, téléphone, photo URL).
+  - **Anti-duplication :** Lorsque le panneau de profil inline est ouvert dans le corps, le bouton d'en-tête masque la photo et le nom de l'admin (affichage d'une simple icône de bouclier) pour éviter toute redondance et préserver la confidentialité visuelle.
 * **Cartes de Synthèse de la Plateforme (Counters) :**
   - Des widgets affichant le nombre total de comptes par type : **Vendeurs actifs**, **Clients inscrits**, et **Livreurs certifiés**.
 * **Mesures Financières de la Plateforme (Règle RG08) :**
@@ -285,8 +286,8 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
   - **Classement des Livreurs par Activité :** Liste triée des livreurs avec la valeur cumulée de leurs courses ou livraisons. Items cliquables.
   - **Classement des Clients par Volume d'Achat :** Liste triée des clients selon la valeur totale de leurs commandes validées (RGPD-compliant : n'affiche pas le détail de leurs achats). Items cliquables.
 * **Analyses Produits & Qualité (Règle RG12) :**
-  - **Produits les plus populaires :** Tableau enrichi avec la photo de l'article, son nom, le volume vendu, et le nom de l'établissement du vendeur.
-  - **Produits les plus refusés (Rejets Qualité) :** Tableau enrichi avec la photo de l'article, son nom, le volume rejeté lors des livraisons, et le nom de l'établissement du vendeur.
+  - **Produits les plus populaires :** Tableau enrichi avec photo, nom, description, vendeur, marché, prix formaté, stock disponible et volume vendu.
+  - **Produits les plus refusés (Rejets Qualité) :** Tableau enrichi avec photo, nom, description, vendeur, marché, prix formaté, stock disponible et volume rejeté.
   - Indicateurs de statut des alertes (litiges ouverts et signalements en attente).
 
 ### 5.2. Gestion des Comptes Utilisateurs (User Administration)
@@ -308,12 +309,12 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
 * **Profil Administrateur dédié :**
   - L'administrateur **n'apparaît pas** dans la liste des utilisateurs (filtré via `est_admin`).
   - Un bouton de profil est affiché en haut à droite de l'en-tête du tableau de bord, avec la photo (ou une icône de bouclier par défaut) et le nom de l'admin.
-  - Clic sur le bouton → ouvre le panneau de détails avec les informations du profil admin.
-  - **Modification du profil :** Un bouton "Modifier mon profil" apparaît dans le panneau de détails admin. Il transforme les champs en formulaire éditable (prénom, nom, email, téléphone, photo URL). La soumission appelle `PUT /api/admin/profile` et met à jour la base de données.
+  - Clic sur le bouton → ouvre un **panneau de profil inline** (dans le corps, pas une modale). Un second clic referme le panneau. Le changement d'onglet via la sidebar referme aussi le panneau automatiquement.
+  - **Modification du profil :** Un bouton "Modifier" dans le panneau transforme les champs en formulaire éditable (prénom, nom, email, téléphone, photo URL). La soumission appelle `PUT /api/admin/profile` et met à jour la base de données.
   - **Confidentialité :** L'admin ne peut pas modifier son propre statut ou se supprimer via les actions de modération (protection côté backend).
 * **Comportement frontend & Confidentialité stricte (Règles RG11 & RG15) :**
   - **Sécurité RGPD :** L'interface administrateur ne doit comporter **aucun lien, bouton ou écran permettant d'accéder à l'historique d'achat ou de navigation privé d'un Client**. L'administrateur n'a accès qu'à ses informations d'identité de base (`nom`, `prenom`, `telephone`, `email`).
-  - **Note :** L'administrateur courant est exclu de la liste des utilisateurs du tableau (filtré via `est_admin`). Son profil est accessible depuis le bouton dédié dans l'en-tête.
+  - **Note :** L'administrateur courant est exclu de la liste des utilisateurs du tableau (filtré via `est_admin`). Son profil est accessible depuis le bouton dédié dans l'en-tête, qui ouvre un panneau de profil **inline** (pas de modale) dans la zone de contenu. Le panneau affiche les informations personnelles et un formulaire d'édition (nom, prénom, email, téléphone, photo URL).
 
 ### 5.3. Centre de Gestion des Signalements (Universal Moderation)
 * **Éléments à afficher :**
@@ -321,6 +322,14 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
   - Indicateur visuel du statut de traitement (En attente / Sanctionné / Classé sans suite).
 * **Comportement et logique frontend (Règle RG14) :**
   - **Droit de sanction universel :** Bien que l'historique d'un client soit confidentiel, les signalements reçus permettent à l'administrateur de suspendre ou supprimer tout type de compte s'il y a un abus avéré, **y compris le compte d'un Client**.
+
+### 5.5. Gestion Globale des Produits (Product Inventory)
+* **Nouvel onglet dédié "Produits"** dans la barre latérale : liste exhaustive et filtrable de tous les produits de la plateforme.
+* **Tableau des colonnes :** Photo, Désignation (nom + description), Prix, Stock, Vendeur (`nom_etablissement`), Marché (`localisation_marche`), Réputation du vendeur, Dernier Prix (dernière entrée dans `historiques`, ou "Initial" si aucun changement).
+* **Comportement :**
+  - Les lignes du tableau sont cliquables → ouvre la modale d'historique des prix (RG24) du produit.
+  - Barre de recherche globale filtre dynamiquement par nom, description, établissement ou marché.
+  - Données chargées depuis `GET /api/admin/products` (endpoint ajouté dans le backend, controller `getAllProducts`, avec inclusion du vendeur et du dernier historique prix).
 
 ### 5.4. Centre de Gestion et d'Arbitrage des Litiges (Dispute Center)
 * **Éléments à afficher :**
