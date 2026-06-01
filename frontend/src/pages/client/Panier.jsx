@@ -4,9 +4,9 @@ import BottomNav from '../../components/client/BottomNav'
 
 /* ── Données statiques panier (remplacer par contexte/API) ── */
 const PANIER_INIT = {
-  101: { id: 101, emoji: '🍅', nom: 'Tomates fraîches',  prix: 250,  unite: 'kg',    qte: 2, etalId: 1, etalNom: 'Étal Maman Adjoua' },
-  201: { id: 201, emoji: '🐟', nom: 'Poisson capitaine', prix: 1800, unite: 'kg',    qte: 1, etalId: 2, etalNom: 'Étal Brice Poisson' },
-  103: { id: 103, emoji: '🥬', nom: 'Gombo frais',       prix: 300,  unite: 'tas',   qte: 1, etalId: 1, etalNom: 'Étal Maman Adjoua' },
+  101: { id: 101, emoji: '🍅', nom: 'Tomates fraîches',  prix: 250,  unite: 'kg',    qte: 2, stock: 7,  etalId: 1, etalNom: 'Étal Maman Adjoua' },
+  201: { id: 201, emoji: '🐟', nom: 'Poisson capitaine', prix: 1800, unite: 'kg',    qte: 1, stock: 3,  etalId: 2, etalNom: 'Étal Brice Poisson' },
+  103: { id: 103, emoji: '🥬', nom: 'Gombo frais',       prix: 300,  unite: 'tas',   qte: 1, stock: 5,  etalId: 1, etalNom: 'Étal Maman Adjoua' },
 }
 
 const FRAIS_LIVRAISON = 450
@@ -37,6 +37,8 @@ export default function Panier() {
     setPanier((prev) => {
       const p = prev[id]
       if (!p) return prev
+      // Bloquer si on dépasse le stock disponible (RG01)
+      if (delta > 0 && p.qte >= p.stock) return prev
       if (p.qte + delta <= 0) {
         const n = { ...prev }
         delete n[id]
@@ -158,24 +160,37 @@ export default function Panier() {
                     </div>
 
                     {/* Compteur */}
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => modifier(item.id, -1)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center font-black cursor-pointer text-sm"
-                        style={{ background: '#F1EFE8', border: 'none', color: '#5F5E5A' }}
-                      >
-                        −
-                      </button>
-                      <span className="w-6 text-center font-black text-sm" style={{ color: '#2C2C2A' }}>
-                        {item.qte}
-                      </span>
-                      <button
-                        onClick={() => modifier(item.id, +1)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center font-black cursor-pointer text-sm"
-                        style={{ background: '#1D9E75', border: 'none', color: '#fff' }}
-                      >
-                        +
-                      </button>
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => modifier(item.id, -1)}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center font-black cursor-pointer text-sm"
+                          style={{ background: '#F1EFE8', border: 'none', color: '#5F5E5A' }}
+                        >
+                          −
+                        </button>
+                        <span className="w-6 text-center font-black text-sm" style={{ color: '#2C2C2A' }}>
+                          {item.qte}
+                        </span>
+                        <button
+                          onClick={() => modifier(item.id, +1)}
+                          disabled={item.qte >= item.stock}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-sm"
+                          style={{
+                            background: item.qte >= item.stock ? '#D3D1C7' : '#1D9E75',
+                            border: 'none',
+                            color: '#fff',
+                            cursor: item.qte >= item.stock ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+                      {item.qte >= item.stock && (
+                        <span style={{ background: '#FAEEDA', color: '#854F0B', fontSize: 9, padding: '1px 5px', borderRadius: 6, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          Max {item.stock}
+                        </span>
+                      )}
                     </div>
 
                     {/* Sous-total + supprimer */}
