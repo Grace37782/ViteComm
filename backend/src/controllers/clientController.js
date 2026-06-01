@@ -3,7 +3,7 @@ import prisma from '../config/db.js';
 // --- 2.1. Tableau de bord Client - Recherche de produits et marchés ---
 
 export const getProducts = async (req, res) => {
-  const { search, marche } = req.query;
+  const { search, marche, vendeur_id } = req.query;
 
   try {
     const products = await prisma.produit.findMany({
@@ -24,6 +24,9 @@ export const getProducts = async (req, res) => {
                 }
               }
             : undefined,
+          vendeur_id
+            ? { id_user_vendeur: parseInt(vendeur_id, 10) }
+            : undefined,
           { stock_disponible: { gt: 0 } }
         ].filter(Boolean)
       },
@@ -34,6 +37,9 @@ export const getProducts = async (req, res) => {
               select: { nom: true, prenom: true }
             }
           }
+        },
+        categorie: {
+          select: { id_categorie: true, nom_categorie: true }
         }
       }
     });
@@ -56,6 +62,28 @@ export const getProductPriceHistory = async (req, res) => {
     return res.json(history);
   } catch (error) {
     return res.status(500).json({ error: "Erreur lors du chargement de l'historique des prix." });
+  }
+};
+
+// Get a single vendor by ID — for Catalogue page
+export const getVendorById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const vendor = await prisma.vendeur.findUnique({
+      where: { id_user: parseInt(id, 10) },
+      include: {
+        utilisateur: {
+          select: { nom: true, prenom: true, photo_url: true }
+        },
+        _count: {
+          select: { produits: true }
+        }
+      }
+    });
+    if (!vendor) return res.status(404).json({ error: 'Vendeur introuvable.' });
+    return res.json(vendor);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement du vendeur.' });
   }
 };
 
