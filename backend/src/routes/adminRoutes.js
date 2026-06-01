@@ -33,10 +33,8 @@ router.delete('/users/:id_user', deleteUser);                            // RG13
 router.get('/users/:id_user/catalogue', getVendorCatalogue);             // RG12
 router.get('/users/:id_user/details', getUserDetails);                  // User detail with reputation & role data
 
-// All products — full platform inventory (for Products tab)
+// All products — full platform inventory (for Products tab) and price history audit (RG24)
 router.get('/products', getAllProducts);
-
-// Price history audit (RG24)
 router.get('/products/:id_produit/price-history', getPriceHistory);
 
 // Signalements (RG14)
