@@ -122,7 +122,7 @@ Espace dédié à la recherche, à l'achat de produits et au suivi des commandes
   - Si l'option **Rejeter** est choisie : Un champ de texte obligatoire pour saisir le motif du rejet.
 * **Comportement et logique frontend (Règles RG07, RG09, RG16, RG18, RG20 & RG21) :**
   - **Rejet Granulaire (RG18 - Atomicité du Détail) :** Le client doit pouvoir rejeter un ou plusieurs articles individuellement sans avoir à annuler la totalité de sa commande, grâce à la liaison directe et granulaire dans `DETAIL_COMMANDE`.
-  - **Preuve photo client (RG07 & RG21) :** Bouton **"Ajouter des preuves photos"** (optionnel mais recommandé) permettant au client d'uploader une ou plusieurs images de non-conformité en cas de désaccord. Ces photos alimenteront la table `PHOTO_PREUVE` liée à la `PREUVE_COLLECTE` du client (`#id_commande` uniquement dans `PREUVE_COLLECTE`), laquelle sera ensuite associée à l'entité `LITIGE` via la clé étrangère `#id_preuve` si le litige est initié lors de la livraison (les entités litige et feedback n'existant pas au départ, voir **RG20**). Les lignes concernées dans `DETAIL_COMMANDE` sont directement rattachées au litige via `#id_litige`, évitant toute table intermédiaire inutile (RG21).
+  - **Preuve photo client (RG07 & RG21) :** Bouton **"Ajouter des preuves photos"** (optionnel mais recommandé) permettant au client d'uploader une ou plusieurs images de non-conformité en cas de désaccord. Ces médias alimenteront la table `MEDIA_PREUVE` liée à la `PREUVE_COLLECTE` du client (`#id_commande` uniquement dans `PREUVE_COLLECTE`), laquelle sera ensuite associée à l'entité `LITIGE` via la clé étrangère `#id_preuve` si le litige est initié lors de la livraison (les entités litige et feedback n'existant pas au départ, voir **RG20**). Les lignes concernées dans `DETAIL_COMMANDE` sont directement rattachées au litige via `#id_litige`, évitant toute table intermédiaire inutile (RG21).
   - **Recalcul dynamique à l'écran :**
     - Le total de la commande est mis à jour instantanément pour exclure les produits rejetés.
     - Calcul et affichage immédiats des `frais_retour_calcules` applicables aux articles retournés.
@@ -209,7 +209,7 @@ Espace mobile-first dédié à la prise en charge, au retrait chez les vendeurs 
   - **Nombre de courses :** Volume de livraisons clôturées.
   - **Indicateur de Réputation (Règles RG10 & RG15) :** Affichage très visible du score de réputation (`score_reputation` issu de l'entité `LIVREUR`), influencé par la note de transport reçue lors des évaluations clients.
   - **Véhicule actif :** Rappel du `type_vehicule` et de la plaque d'`immatriculation` renseignés lors de l'inscription.
-  - **Paramètres de Disponibilité (RG19) :** Section dédiée permettant au livreur de définir ses `heure_debut_dispo` et `heure_fin_dispo`, d'activer/désactiver son statut `est_disponible`, et de configurer un rayon d'action maximal (`distance_marche`) pour le filtrage des courses proposées.
+  - **Paramètres de Disponibilité (RG19) :** Section dédiée permettant au livreur de définir ses `heure_debut_dispo` et `heure_fin_dispo`, d'activer/désactiver son statut `est_disponible`, et de configurer un rayon d'action maximal (`distance_marche`) pour le filtrage des courses proposées. Ces champs sont stockés dans l'entité `DISPONIBILITE_LIVREUR` (RG29) plutôt que directement sur le livreur.
 
 ### 4.2. Gestion des Courses Disponibles (Delivery Marketplace)
 * **Éléments à afficher :**
@@ -226,7 +226,7 @@ Espace mobile-first dédié à la prise en charge, au retrait chez les vendeurs 
   - Liste ordonnée de tous les vendeurs distincts associés à la commande.
   - Pour chaque vendeur : Nom de l'établissement, localisation précise dans le marché, liste des articles à retirer, et statut de collecte du vendeur (`statut_collecte_vendeur`).
 * **Comportement et logique frontend de collecte (Règles RG06 & RG07) :**
-  - **Preuve photographique obligatoire (RG07) :** Le livreur est responsable de la réalisation de la preuve de collecte. L'UI doit fournir un mécanisme de prise de photo ou de téléversement qui alimentera l'entité `PHOTO_PREUVE` (une ou plusieurs photos avec leur `url_photo`) liée à la `PREUVE_COLLECTE` créée pour cette étape, elle-même liée uniquement à la commande (`#id_commande`) dans le modèle de données relationnel, les informations de livraison et de vendeur étant déduites par jointure.
+  - **Preuve photographique obligatoire (RG07) :** Le livreur est responsable de la réalisation de la preuve de collecte. L'UI doit fournir un mécanisme de prise de photo ou de téléversement qui alimentera l'entité `MEDIA_PREUVE` (un ou plusieurs médias avec leur `url_media`) liée à la `PREUVE_COLLECTE` créée pour cette étape, elle-même liée uniquement à la commande (`#id_commande`) dans le modèle de données relationnel, les informations de livraison et de vendeur étant déduites par jointure.
   - **Indicateur de validation vendeur :** L'interface affiche un indicateur visuel dynamique confirmant si le vendeur a bien saisi le code de vérification (`code_verification`) dans son interface pour valider la remise (cf. section 3.3).
   - **Confirmation de collecte :** Une fois que la preuve photo est prise par le livreur ET que le vendeur a saisi le code de vérification, l'application bascule automatiquement le statut de collecte de ce vendeur à "Collecté". Après validation de tous les points de collecte, le statut général passe en "En transit" (En cours de livraison).
 
@@ -268,13 +268,12 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
 * **Barre de Recherche Globale et Filtrage Dynamique :**
   - Un champ de recherche textuel dynamique (`input[type="text"]`) permettant de filtrer instantanément les widgets, les listes, les tableaux d'utilisateurs, de produits et de litiges en temps réel.
 * **Navigation par Sidebar :**
-  - Les onglets (Analytics, Utilisateurs, Signalements, Centre des Litiges) sont présentés dans une **barre latérale verticale** (sticky) sur desktop.
+  - Les onglets (Analytics, Utilisateurs, Signalements, Centre des Litiges, Produits) sont présentés dans une **barre latérale verticale** (sticky) sur desktop.
   - Sur mobile (largeur < 900px), la sidebar se transforme en **barre de navigation horizontale scrollable** en haut de la zone de contenu.
   - Chaque bouton de la sidebar est accompagné d'une icône et les alertes (signalements en attente, litiges ouverts) sont affichées sous forme de badge numérique avec animation pulsée.
 * **Profil Administrateur :**
-  - Bouton dédié en haut à droite de l'en-tête avec la photo et le nom de l'admin (ou icône de bouclier par défaut).
-  - Le profil est chargé depuis l'API (`GET /api/admin/me`) en utilisant l'ID de l'utilisateur authentifié, ce qui évite les doublons même si plusieurs admins existent en base.
-  - Clic → ouvre le panneau de détails avec les informations personnelles et un bouton "Modifier mon profil" pour éditer les champs (nom, prénom, email, téléphone, photo URL).
+  - Pas de bouton de profil dans l'en-tête du tableau de bord. L'identité de l'admin n'est affichée que dans la barre de navigation principale de l'application (navbar ViteComm), ce qui évite toute duplication (RG11).
+* **Cartes de Synthèse de la Plateforme (Counters) :**
 * **Cartes de Synthèse de la Plateforme (Counters) :**
   - Des widgets affichant le nombre total de comptes par type : **Vendeurs actifs**, **Clients inscrits**, et **Livreurs certifiés**.
 * **Mesures Financières de la Plateforme (Règle RG08) :**
@@ -285,8 +284,8 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
   - **Classement des Livreurs par Activité :** Liste triée des livreurs avec la valeur cumulée de leurs courses ou livraisons. Items cliquables.
   - **Classement des Clients par Volume d'Achat :** Liste triée des clients selon la valeur totale de leurs commandes validées (RGPD-compliant : n'affiche pas le détail de leurs achats). Items cliquables.
 * **Analyses Produits & Qualité (Règle RG12) :**
-  - **Produits les plus populaires :** Tableau enrichi avec la photo de l'article, son nom, le volume vendu, et le nom de l'établissement du vendeur.
-  - **Produits les plus refusés (Rejets Qualité) :** Tableau enrichi avec la photo de l'article, son nom, le volume rejeté lors des livraisons, et le nom de l'établissement du vendeur.
+  - **Produits les plus populaires :** Tableau enrichi avec photo, nom, description, vendeur, marché, prix formaté, stock disponible et volume vendu.
+  - **Produits les plus refusés (Rejets Qualité) :** Tableau enrichi avec photo, nom, description, vendeur, marché, prix formaté, stock disponible et volume rejeté.
   - Indicateurs de statut des alertes (litiges ouverts et signalements en attente).
 
 ### 5.2. Gestion des Comptes Utilisateurs (User Administration)
@@ -305,15 +304,9 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
     - **Livreur :** Tableau des livraisons effectuées incluant l'ID commande, le nom du client, le montant, le statut de livraison, et la date. Résumé du nombre total de livraisons, volume total transporté, type de véhicule et immatriculation.
     - **Client :** Tableau des commandes passées incluant l'ID commande, le montant total, les frais de livraison, le statut et la date. Résumé du nombre total de commandes, dépense cumulée et adresse de livraison. **Aucun détail privé de navigation n'est exposé (RG11).**
   - **Comportement :** Les lignes du tableau des utilisateurs (`Utilisateurs (RG11)`) sont cliquables (`cursor: pointer`). Les items des classements (vendeurs, livreurs, clients) dans l'onglet Analytics & Finance sont également cliquables et ouvrent le même panneau de détails. Un clic ouvre une modale large (max 800px) avec scroll vertical. Le fond de la modale est opaque (`hsl(250, 25%, 10%)`) pour une lisibilité maximale. Le chargement est asynchrone avec indicateur de spinner. La modale se ferme au clic sur la croix ou en cliquant sur l'overlay.
-* **Profil Administrateur dédié :**
-  - L'administrateur **n'apparaît pas** dans la liste des utilisateurs (filtré via `est_admin`).
-  - Un bouton de profil est affiché en haut à droite de l'en-tête du tableau de bord, avec la photo (ou une icône de bouclier par défaut) et le nom de l'admin.
-  - Clic sur le bouton → ouvre le panneau de détails avec les informations du profil admin.
-  - **Modification du profil :** Un bouton "Modifier mon profil" apparaît dans le panneau de détails admin. Il transforme les champs en formulaire éditable (prénom, nom, email, téléphone, photo URL). La soumission appelle `PUT /api/admin/profile` et met à jour la base de données.
-  - **Confidentialité :** L'admin ne peut pas modifier son propre statut ou se supprimer via les actions de modération (protection côté backend).
 * **Comportement frontend & Confidentialité stricte (Règles RG11 & RG15) :**
   - **Sécurité RGPD :** L'interface administrateur ne doit comporter **aucun lien, bouton ou écran permettant d'accéder à l'historique d'achat ou de navigation privé d'un Client**. L'administrateur n'a accès qu'à ses informations d'identité de base (`nom`, `prenom`, `telephone`, `email`).
-  - **Note :** L'administrateur courant est exclu de la liste des utilisateurs du tableau (filtré via `est_admin`). Son profil est accessible depuis le bouton dédié dans l'en-tête, qui ouvre un panneau de profil **inline** (pas de modale) dans la zone de contenu. Le panneau affiche les informations personnelles et un formulaire d'édition (nom, prénom, email, téléphone, photo URL).
+  - **Note :** L'administrateur courant est exclu de la liste des utilisateurs du tableau (filtré via `est_admin`).
 
 ### 5.3. Centre de Gestion des Signalements (Universal Moderation)
 * **Éléments à afficher :**
@@ -322,22 +315,19 @@ Espace de contrôle global et de gouvernance de la plateforme, conçu pour arbit
 * **Comportement et logique frontend (Règle RG14) :**
   - **Droit de sanction universel :** Bien que l'historique d'un client soit confidentiel, les signalements reçus permettent à l'administrateur de suspendre ou supprimer tout type de compte s'il y a un abus avéré, **y compris le compte d'un Client**.
 
-### 5.5. Gestion des Produits (Product Inventory)
+### 5.5. Gestion Globale des Produits (Product Inventory)
 * **Nouvel onglet dédié "Produits"** dans la barre latérale : liste exhaustive et filtrable de tous les produits de la plateforme.
-* **Éléments à afficher :**
-  - Photo, nom, description, prix actuel, stock disponible.
-  - Vendeur (`nom_etablissement`), marché (`localisation_marche`), et score de réputation du vendeur.
-  - Dernier prix enregistré (pour suivre les évolutions).
+* **Tableau des colonnes :** Photo, Désignation (nom + description), Prix, Stock, Vendeur (`nom_etablissement`), Marché (`localisation_marche`), Réputation du vendeur, Dernier Prix (dernière entrée dans `historiques`, ou "Initial" si aucun changement).
 * **Comportement :**
-  - Les lignes du tableau sont cliquables → ouvre la modale d'historique des prix (RG24) du produit.
+  - Les lignes du tableau sont cliquables → ouvre une modale produit détaillée (fond opaque) affichant la photo, le nom, la description, le prix, le stock, le vendeur, le marché, la réputation, et l'historique complet des prix.
   - Barre de recherche globale filtre dynamiquement par nom, description, établissement ou marché.
-  - Données chargées depuis `GET /api/admin/products`.
+  - Données chargées depuis `GET /api/admin/products` (endpoint ajouté dans le backend, controller `getAllProducts`, avec inclusion du vendeur et du dernier historique prix).
 
 ### 5.4. Centre de Gestion et d'Arbitrage des Litiges (Dispute Center)
 * **Éléments à afficher :**
   - Liste des litiges en cours (`LITIGE`) initiés par les clients suite à des rejets d'articles.
   - Détail par litige : ID de commande, description de l'incident, montant total concerné par les articles rejetés.
-  - Galerie de preuves photographiques : Visualisation de l'ensemble des photos (récupérées depuis la table `PHOTO_PREUVE` associée à la `PREUVE_COLLECTE` liée au litige via la clé `#id_preuve`).
+  - Galerie de preuves photographiques : Visualisation de l'ensemble des médias (récupérés depuis la table `MEDIA_PREUVE` associée à la `PREUVE_COLLECTE` liée au litige via la clé `#id_preuve`).
 * **Comportement et logique frontend d'arbitrage (Règles RG09 & RG16) :**
   - Zone de texte pour rédiger la décision officielle de l'administrateur (`decision_admin`).
   - Saisie du montant final validé pour remboursement au client (`montant_rembourse`).

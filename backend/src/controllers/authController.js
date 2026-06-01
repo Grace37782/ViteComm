@@ -14,7 +14,7 @@ const deriveRole = (user) => {
 };
 
 // Build safe user payload for API responses (strip password, shape role-specific data)
-const buildUserPayload = (user) => {
+const buildUserPayload = async (user) => {
   const role = deriveRole(user);
 
   const base = {
@@ -42,14 +42,18 @@ const buildUserPayload = (user) => {
       score_reputation: user.vendeur.score_reputation // Read-only (RG15)
     };
   } else if (role === 'livreur') {
+    const latestDispo = await prisma.disponibiliteLivreur.findFirst({
+      where: { id_user_livreur: user.id_user },
+      orderBy: { date_mise_a_jour: 'desc' }
+    });
     base.profil = {
       type_vehicule: user.livreur.type_vehicule,
       immatriculation: user.livreur.immatriculation,
-      score_reputation: user.livreur.score_reputation, // Read-only (RG15)
-      est_disponible: user.livreur.est_disponible,     // RG19
-      distance_marche: user.livreur.distance_marche,
-      heure_debut_dispo: user.livreur.heure_debut_dispo,
-      heure_fin_dispo: user.livreur.heure_fin_dispo
+      score_reputation: user.livreur.score_reputation,
+      est_disponible: latestDispo?.est_disponible ?? true,
+      distance_marche: latestDispo?.distance_marche ?? 0,
+      heure_debut_dispo: latestDispo?.heure_debut_dispo ?? null,
+      heure_fin_dispo: latestDispo?.heure_fin_dispo ?? null
     };
   }
 
@@ -171,8 +175,14 @@ export const register = async (req, res) => {
             id_user: created.id_user,
             type_vehicule,
             immatriculation,
-            score_reputation: 0.0,   // Guide §1.3 - initialised to 0
-            est_disponible: true,    // RG19 - available by default
+            score_reputation: 0.0
+          }
+        });
+        // Create initial availability record (RG29)
+        await tx.disponibiliteLivreur.create({
+          data: {
+            id_user_livreur: created.id_user,
+            est_disponible: true,
             distance_marche: 0.0,
             heure_debut_dispo: null,
             heure_fin_dispo: null
@@ -185,7 +195,7 @@ export const register = async (req, res) => {
 
     // Fetch full user for response
     const fullUser = await findUserWithRole({ id_user: newUser.id_user });
-    const userPayload = buildUserPayload(fullUser);
+    const userPayload = await buildUserPayload(fullUser);
 
     // Issue JWT immediately (guide §1.3 - connexion automatique option)
     const token = jwt.sign(
@@ -254,7 +264,7 @@ export const login = async (req, res) => {
     );
 
     // Return full profile data so frontend can pre-fill UI without extra call
-    const userPayload = buildUserPayload(user);
+    const userPayload = await buildUserPayload(user);
 
     return res.json({
       message: 'Connexion réussie.',
@@ -275,7 +285,7 @@ export const getProfile = async (req, res) => {
     const user = await findUserWithRole({ id_user: req.user.id_user });
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé.' });
 
-    return res.json(buildUserPayload(user));
+    return res.json(await buildUserPayload(user));
   } catch (error) {
     return res.status(500).json({ error: 'Erreur serveur.' });
   }
@@ -355,13 +365,22 @@ export const updateProfile = async (req, res) => {
         const livreurData = {};
         if (type_vehicule) livreurData.type_vehicule = type_vehicule;
         if (immatriculation) livreurData.immatriculation = immatriculation;
-        // Availability fields (RG19) - also editable from profile page
-        if (est_disponible !== undefined) livreurData.est_disponible = Boolean(est_disponible);
-        if (distance_marche !== undefined) livreurData.distance_marche = parseFloat(distance_marche);
-        if (heure_debut_dispo !== undefined) livreurData.heure_debut_dispo = heure_debut_dispo;
-        if (heure_fin_dispo !== undefined) livreurData.heure_fin_dispo = heure_fin_dispo;
         if (Object.keys(livreurData).length > 0) {
           await tx.livreur.update({ where: { id_user: req.user.id_user }, data: livreurData });
+        }
+        // Availability fields now stored in DisponibiliteLivreur (RG29)
+        const hasAvailUpdate = est_disponible !== undefined || distance_marche !== undefined ||
+          heure_debut_dispo !== undefined || heure_fin_dispo !== undefined;
+        if (hasAvailUpdate) {
+          await tx.disponibiliteLivreur.create({
+            data: {
+              id_user_livreur: req.user.id_user,
+              est_disponible: est_disponible !== undefined ? Boolean(est_disponible) : true,
+              distance_marche: distance_marche !== undefined ? parseFloat(distance_marche) : 0,
+              heure_debut_dispo: heure_debut_dispo ?? null,
+              heure_fin_dispo: heure_fin_dispo ?? null
+            }
+          });
         }
       }
     });
@@ -370,7 +389,7 @@ export const updateProfile = async (req, res) => {
     const updated = await findUserWithRole({ id_user: req.user.id_user });
     return res.json({
       message: 'Profil mis à jour avec succès.',
-      user: buildUserPayload(updated)
+      user: await buildUserPayload(updated)
     });
   } catch (error) {
     return res.status(400).json({ error: error.message });

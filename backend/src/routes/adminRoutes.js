@@ -8,8 +8,8 @@ import {
   updateAdminProfile,
   deleteUser,
   getVendorCatalogue,
-  getPriceHistory,
   getAllProducts,
+  getPriceHistory,
   getSignalements,
   updateSignalementStatus,
   getLitiges,
@@ -33,7 +33,7 @@ router.delete('/users/:id_user', deleteUser);                            // RG13
 router.get('/users/:id_user/catalogue', getVendorCatalogue);             // RG12
 router.get('/users/:id_user/details', getUserDetails);                  // User detail with reputation & role data
 
-// Product list & price history audit (RG24)
+// All products — full platform inventory (for Products tab) and price history audit (RG24)
 router.get('/products', getAllProducts);
 router.get('/products/:id_produit/price-history', getPriceHistory);
 

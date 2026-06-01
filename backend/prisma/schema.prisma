@@ -13,18 +13,15 @@ model Utilisateur {
   telephone     String
   email         String  @unique
   mot_de_passe  String
-  statut_compte String  @default("Actif") // "Actif" or "Suspendu" / "Banni"
+  statut_compte String  @default("Actif")
   est_admin     Boolean @default(false)
   photo_url     String?
 
-  // Specialization relationships (1-to-1)
-  client  Client?
-  vendeur Vendeur?
-  livreur Livreur?
-
-  // Mod moderation / reports
-  signalementsAuteur Signalement[] @relation("SignalementsAuteur")
-  signalementsCible  Signalement[] @relation("SignalementsCible")
+  client           Client?
+  vendeur          Vendeur?
+  livreur          Livreur?
+  signalementsAuteur Signalement[]  @relation("SignalementsAuteur")
+  signalementsCible  Signalement[]  @relation("SignalementsCible")
 }
 
 model Client {
@@ -49,17 +46,34 @@ model Vendeur {
 }
 
 model Livreur {
-  id_user           Int         @id
-  utilisateur       Utilisateur @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
-  type_vehicule     String
-  immatriculation   String
-  score_reputation  Float       @default(0.0)
-  est_disponible    Boolean     @default(true)
-  distance_marche   Float       @default(0.0)
+  id_user          Int         @id
+  utilisateur      Utilisateur @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+  type_vehicule    String
+  immatriculation  String
+  score_reputation Float       @default(0.0)
+
+  livraisons         Livraison[]
+  disponibilites     DisponibiliteLivreur[]
+}
+
+model DisponibiliteLivreur {
+  id_dispo          Int      @id @default(autoincrement())
+  date_mise_a_jour  DateTime @default(now())
+  est_disponible    Boolean  @default(true)
+  distance_marche   Float    @default(0.0)
   heure_debut_dispo String?
   heure_fin_dispo   String?
+  id_user_livreur   Int
 
-  livraisons Livraison[]
+  livreur Livreur @relation(fields: [id_user_livreur], references: [id_user], onDelete: Cascade)
+}
+
+model Categorie {
+  id_categorie          Int    @id @default(autoincrement())
+  nom_categorie         String
+  description_categorie String
+
+  produits Produit[]
 }
 
 model Produit {
@@ -69,9 +83,11 @@ model Produit {
   prix_reference   Float
   stock_disponible Int
   id_user_vendeur  Int
+  id_categorie     Int
   photo_url        String?
 
   vendeur         Vendeur          @relation(fields: [id_user_vendeur], references: [id_user], onDelete: Cascade)
+  categorie       Categorie        @relation(fields: [id_categorie], references: [id_categorie], onDelete: Restrict)
   detailsCommande DetailCommande[]
   detailsPanier   DetailPanier[]
   historiques     HistoriquePrix[]
@@ -101,24 +117,25 @@ model DetailPanier {
 model Commande {
   id_commande        Int      @id @default(autoincrement())
   date_creation      DateTime @default(now())
-  statut             String   @default("En attente") // "En attente", "Validee", "En collecte", "En transit", "Livree", "Rejetee"
+  statut             String   @default("En attente")
   total_marchandises Float
   frais_livraison    Float
-  commission         Float    @default(0.0) // 0.6% of goods value
-  code_verification  String // Verification code for handover
+  commission         Float    @default(0.0)
+  code_verification  String
   id_user_client     Int
 
   client          Client           @relation(fields: [id_user_client], references: [id_user], onDelete: Cascade)
   detailsCommande DetailCommande[]
   livraison       Livraison?
   preuvesCollecte PreuveCollecte[]
+  factures        Facture[]
 }
 
 model Livraison {
   id_livraison          Int       @id @default(autoincrement())
   date_prise_en_charge  DateTime  @default(now())
   date_fin_reelle       DateTime?
-  statut_livraison      String    @default("En cours de collecte") // "En cours de collecte", "En transit", "Livree", "Retourne"
+  statut_livraison      String    @default("En cours de collecte")
   frais_retour_calcules Float     @default(0.0)
   id_commande           Int       @unique
   id_user_livreur       Int
@@ -127,6 +144,7 @@ model Livraison {
   livreur   Livreur    @relation(fields: [id_user_livreur], references: [id_user], onDelete: Cascade)
   litiges   Litige[]
   feedbacks Feedback[]
+  bons      BonDeLivraison[]
 }
 
 model DetailCommande {
@@ -134,7 +152,7 @@ model DetailCommande {
   id_produit          Int
   quantite_commandee  Int
   prix_vente_applique Float
-  statut_acceptation  String @default("En attente") // "En attente", "Accepte", "Rejete"
+  statut_acceptation  String @default("En attente")
   id_litige           Int?
   id_feedback         Int?
 
@@ -149,18 +167,19 @@ model DetailCommande {
 model PreuveCollecte {
   id_preuve         Int      @id @default(autoincrement())
   date_heure        DateTime @default(now())
-  statut_validation String   @default("En attente") // "En attente", "Validee", "Rejetee"
+  statut_validation String   @default("En attente")
   id_commande       Int
 
   commande Commande      @relation(fields: [id_commande], references: [id_commande], onDelete: Cascade)
-  photos   PhotoPreuve[]
+  medias   MediaPreuve[]
   litiges  Litige[]
 }
 
-model PhotoPreuve {
-  id_photo  Int    @id @default(autoincrement())
-  url_photo String
-  id_preuve Int
+model MediaPreuve {
+  id_media   Int    @id @default(autoincrement())
+  url_media  String
+  type_media String @default("photo")
+  id_preuve  Int
 
   preuve PreuveCollecte @relation(fields: [id_preuve], references: [id_preuve], onDelete: Cascade)
 }
@@ -169,7 +188,7 @@ model Litige {
   id_litige         Int      @id @default(autoincrement())
   description       String
   date_ouverture    DateTime @default(now())
-  statut            String   @default("Ouvert") // "Ouvert", "Resolu"
+  statut            String   @default("Ouvert")
   decision_admin    String?
   montant_rembourse Float    @default(0.0)
   id_preuve         Int?
@@ -182,10 +201,10 @@ model Litige {
 
 model Feedback {
   id_feedback      Int      @id @default(autoincrement())
-  note             Int // rating 1-5
+  note             Int
   commentaire      String?
   date_publication DateTime @default(now())
-  type_feedback    String // "LIVREUR" or "VENDEUR"
+  type_feedback    String
   id_user_client   Int
   id_livraison     Int?
   id_user_vendeur  Int?
@@ -200,8 +219,8 @@ model Signalement {
   id_signalement    Int      @id @default(autoincrement())
   date_heure        DateTime @default(now())
   motif             String
-  statut_traitement String   @default("En attente") // "En attente", "Traite", "Classe"
-  type_cible_cible  String // "Client", "Vendeur", "Livreur"
+  statut_traitement String   @default("En attente")
+  type_cible_cible  String
   id_auteur         Int
   id_cible          Int
 
@@ -216,4 +235,42 @@ model HistoriquePrix {
   id_produit        Int
 
   produit Produit @relation(fields: [id_produit], references: [id_produit], onDelete: Cascade)
+}
+
+model Facture {
+  id_facture            Int      @id @default(autoincrement())
+  date_emission         DateTime @default(now())
+  montant_marchandises  Float
+  montant_frais_livraison Float
+  montant_frais_retour  Float    @default(0.0)
+  montant_commission    Float    @default(0.0)
+  montant_total_du      Float
+  statut_paiement       String   @default("En attente")
+  id_commande           Int
+
+  commande Commande  @relation(fields: [id_commande], references: [id_commande], onDelete: Cascade)
+  paiements Paiement[]
+}
+
+model Paiement {
+  id_paiement          Int      @id @default(autoincrement())
+  date_paiement        DateTime @default(now())
+  montant_percu        Float
+  mode_reglement       String   @default("ESPECES")
+  reference_transaction String?
+  statut               String   @default("Effectue")
+  id_facture           Int
+
+  facture Facture @relation(fields: [id_facture], references: [id_facture], onDelete: Cascade)
+}
+
+model BonDeLivraison {
+  id_bon                Int      @id @default(autoincrement())
+  date_emission         DateTime @default(now())
+  date_signature_client DateTime?
+  statut_bon            String   @default("EN_ATTENTE")
+  observations_livreur  String?
+  id_livraison          Int
+
+  livraison Livraison @relation(fields: [id_livraison], references: [id_livraison], onDelete: Cascade)
 }

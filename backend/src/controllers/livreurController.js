@@ -16,6 +16,12 @@ export const getDriverDashboard = async (req, res) => {
 
     const totalGains = completedDeliveries.reduce((acc, curr) => acc + curr.commande.frais_livraison, 0);
 
+    // Fetch latest availability from DisponibiliteLivreur (RG29)
+    const latestDispo = await prisma.disponibiliteLivreur.findFirst({
+      where: { id_user_livreur: driverId },
+      orderBy: { date_mise_a_jour: 'desc' }
+    });
+
     return res.json({
       score_reputation: driver.score_reputation,
       total_gains: totalGains,
@@ -25,10 +31,10 @@ export const getDriverDashboard = async (req, res) => {
         immatriculation: driver.immatriculation
       },
       disponibilite: {
-        est_disponible: driver.est_disponible,
-        distance_marche: driver.distance_marche,
-        heure_debut_dispo: driver.heure_debut_dispo,
-        heure_fin_dispo: driver.heure_fin_dispo
+        est_disponible: latestDispo?.est_disponible ?? true,
+        distance_marche: latestDispo?.distance_marche ?? 0,
+        heure_debut_dispo: latestDispo?.heure_debut_dispo ?? null,
+        heure_fin_dispo: latestDispo?.heure_fin_dispo ?? null
       }
     });
   } catch (error) {
@@ -44,17 +50,18 @@ export const updateAvailability = async (req, res) => {
     const driver = await prisma.livreur.findUnique({ where: { id_user: req.user.id_user } });
     if (!driver) return res.status(403).json({ error: 'Espace réservé aux livreurs.' });
 
-    const updated = await prisma.livreur.update({
-      where: { id_user: req.user.id_user },
+    // Create a new availability record in DisponibiliteLivreur (RG29)
+    const newDispo = await prisma.disponibiliteLivreur.create({
       data: {
-        est_disponible: est_disponible !== undefined ? Boolean(est_disponible) : undefined,
-        distance_marche: distance_marche !== undefined ? parseFloat(distance_marche) : undefined,
-        heure_debut_dispo: heure_debut_dispo ?? undefined,
-        heure_fin_dispo: heure_fin_dispo ?? undefined
+        id_user_livreur: req.user.id_user,
+        est_disponible: est_disponible !== undefined ? Boolean(est_disponible) : true,
+        distance_marche: distance_marche !== undefined ? parseFloat(distance_marche) : 0,
+        heure_debut_dispo: heure_debut_dispo ?? null,
+        heure_fin_dispo: heure_fin_dispo ?? null
       }
     });
 
-    return res.json({ message: 'Disponibilité mise à jour.', disponibilite: updated });
+    return res.json({ message: 'Disponibilité mise à jour.', disponibilite: newDispo });
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors de la mise à jour de la disponibilité.' });
   }
@@ -115,7 +122,7 @@ export const getMyDeliveries = async (req, res) => {
               }
             },
             preuvesCollecte: {
-              include: { photos: true }
+              include: { medias: true }
             }
           }
         }
@@ -237,10 +244,9 @@ export const finalizeDelivery = async (req, res) => {
         }
       });
 
-      // Mark driver as available again
-      await tx.livreur.update({
-        where: { id_user: driverId },
-        data: { est_disponible: true }
+      // Mark driver as available again via DisponibiliteLivreur (RG29)
+      await tx.disponibiliteLivreur.create({
+        data: { id_user_livreur: driverId, est_disponible: true }
       });
     });
 

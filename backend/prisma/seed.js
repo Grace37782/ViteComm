@@ -11,8 +11,11 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('Début du peuplement de la base de données (Seeding)...');
 
-  // Clear existing data in reverse order of dependencies to avoid FK errors
-  await prisma.photoPreuve.deleteMany({});
+  // Clear existing data in reverse order of dependencies
+  await prisma.bonDeLivraison.deleteMany({});
+  await prisma.paiement.deleteMany({});
+  await prisma.facture.deleteMany({});
+  await prisma.mediaPreuve.deleteMany({});
   await prisma.litige.deleteMany({});
   await prisma.feedback.deleteMany({});
   await prisma.detailCommande.deleteMany({});
@@ -23,6 +26,8 @@ async function main() {
   await prisma.panier.deleteMany({});
   await prisma.historiquePrix.deleteMany({});
   await prisma.produit.deleteMany({});
+  await prisma.categorie.deleteMany({});
+  await prisma.disponibiliteLivreur.deleteMany({});
   await prisma.signalement.deleteMany({});
   await prisma.client.deleteMany({});
   await prisma.vendeur.deleteMany({});
@@ -32,10 +37,22 @@ async function main() {
   const hashedPassword = await bcryptjs.hash('admin123', 12);
   const commonPassword = await bcryptjs.hash('password123', 12);
 
+  // 0. Create Categories (RG30)
+  console.log('Création des catégories...');
+  const catLegumes = await prisma.categorie.create({
+    data: { nom_categorie: 'Légumes', description_categorie: 'Produits maraîchers frais' }
+  });
+  const catEpices = await prisma.categorie.create({
+    data: { nom_categorie: 'Épices & Condiments', description_categorie: 'Épices traditionnelles et mélanges' }
+  });
+  const catHuiles = await prisma.categorie.create({
+    data: { nom_categorie: 'Huiles & Matières Grasses', description_categorie: 'Huiles végétales et animales' }
+  });
+
   // 1. Create Users
   console.log('Création des utilisateurs...');
   
-  // Admin (RG17: no specialization details = Admin by default)
+  // Admin
   const admin = await prisma.utilisateur.create({
     data: {
       nom: 'Nkoulou',
@@ -61,13 +78,10 @@ async function main() {
       est_admin: false,
       photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&h=150&q=80',
       client: {
-        create: {
-          adresse_livraison: 'Logbessou, Douala'
-        }
+        create: { adresse_livraison: 'Logbessou, Douala' }
       }
     }
   });
-  // Auto-create cart for Client 1 (RG22)
   await prisma.panier.create({ data: { id_user_client: client1.id_user } });
 
   const client2 = await prisma.utilisateur.create({
@@ -81,13 +95,10 @@ async function main() {
       est_admin: false,
       photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&h=150&q=80',
       client: {
-        create: {
-          adresse_livraison: 'Bastos, Yaoundé'
-        }
+        create: { adresse_livraison: 'Bastos, Yaoundé' }
       }
     }
   });
-  // Auto-create cart for Client 2 (RG22)
   await prisma.panier.create({ data: { id_user_client: client2.id_user } });
 
   // Vendeurs
@@ -100,7 +111,7 @@ async function main() {
       mot_de_passe: commonPassword,
       statut_compte: 'Actif',
       est_admin: false,
-      photo_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&h=150&q=80',
+      photo_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&h=200&q=80',
       vendeur: {
         create: {
           nom_etablissement: 'Frais de l\'Ouest',
@@ -120,7 +131,7 @@ async function main() {
       mot_de_passe: commonPassword,
       statut_compte: 'Actif',
       est_admin: false,
-      photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80',
+      photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&h=200&q=80',
       vendeur: {
         create: {
           nom_etablissement: 'Épices de Sandaga',
@@ -141,18 +152,24 @@ async function main() {
       mot_de_passe: commonPassword,
       statut_compte: 'Actif',
       est_admin: false,
-      photo_url: 'https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&w=150&h=150&q=80',
+      photo_url: 'https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&w=300&h=200&q=80',
       livreur: {
         create: {
           type_vehicule: 'Moto',
           immatriculation: 'LT-777-EX',
-          score_reputation: 4.5,
-          est_disponible: true,
-          distance_marche: 8.5,
-          heure_debut_dispo: '07:30',
-          heure_fin_dispo: '19:00'
+          score_reputation: 4.5
         }
       }
+    }
+  });
+  // Availability history (RG29)
+  await prisma.disponibiliteLivreur.create({
+    data: {
+      id_user_livreur: livreur1.id_user,
+      est_disponible: true,
+      distance_marche: 8.5,
+      heure_debut_dispo: '07:30',
+      heure_fin_dispo: '19:00'
     }
   });
 
@@ -165,28 +182,34 @@ async function main() {
       mot_de_passe: commonPassword,
       statut_compte: 'Actif',
       est_admin: false,
-      photo_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&h=150&q=80',
+      photo_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&h=200&q=80',
       livreur: {
         create: {
           type_vehicule: 'Tricycle',
           immatriculation: 'LT-888-TR',
-          score_reputation: 3.9,
-          est_disponible: true,
-          distance_marche: 5.0,
-          heure_debut_dispo: '08:00',
-          heure_fin_dispo: '18:00'
+          score_reputation: 3.9
         }
       }
     }
   });
+  await prisma.disponibiliteLivreur.create({
+    data: {
+      id_user_livreur: livreur2.id_user,
+      est_disponible: true,
+      distance_marche: 5.0,
+      heure_debut_dispo: '08:00',
+      heure_fin_dispo: '18:00'
+    }
+  });
 
-  // 2. Create Products (PRODUIT) + Log Price Histories (HISTORIQUE_PRIX) (RG24)
+  // 2. Create Products + Price Histories
   console.log('Création des produits et de l\'historique des prix...');
   
   // Vendeur 1 Products
   const prod1 = await prisma.produit.create({
     data: {
       id_user_vendeur: vendeur1.id_user,
+      id_categorie: catLegumes.id_categorie,
       nom: 'Tomates Fraîches (Panier)',
       description: 'Panier de tomates de Foumban sélectionnées.',
       prix_reference: 2500,
@@ -206,6 +229,7 @@ async function main() {
   const prod2 = await prisma.produit.create({
     data: {
       id_user_vendeur: vendeur1.id_user,
+      id_categorie: catLegumes.id_categorie,
       nom: 'Piment Rouge Séché (Sachet)',
       description: 'Piment de qualité supérieure bien sec.',
       prix_reference: 500,
@@ -225,6 +249,7 @@ async function main() {
   const prod3 = await prisma.produit.create({
     data: {
       id_user_vendeur: vendeur2.id_user,
+      id_categorie: catEpices.id_categorie,
       nom: 'Épices de Ndolè (Kit)',
       description: 'Mélange traditionnel complet pour réussir votre Ndolè.',
       prix_reference: 1200,
@@ -243,6 +268,7 @@ async function main() {
   const prod4 = await prisma.produit.create({
     data: {
       id_user_vendeur: vendeur2.id_user,
+      id_categorie: catHuiles.id_categorie,
       nom: 'Huile de Palme (Litre)',
       description: 'Huile de palme raffinée et clarifiée.',
       prix_reference: 1500,
@@ -258,8 +284,7 @@ async function main() {
     }
   });
 
-
-  // 3. Create Orders (COMMANDE) + Order Details (DETAIL_COMMANDE) (RG24: frozen price)
+  // 3. Create Orders + Order Details
   console.log('Création des commandes de démonstration...');
 
   // Order 1: Delivered & Completed
@@ -271,7 +296,7 @@ async function main() {
       code_verification: '123456',
       total_marchandises: 6200,
       frais_livraison: 1500,
-      commission: 6200 * 0.006, // RG08
+      commission: 6200 * 0.006,
       detailsCommande: {
         createMany: {
           data: [
@@ -294,7 +319,7 @@ async function main() {
     }
   });
 
-  // Feedbacks for Order 1 (type_feedback is type-checked)
+  // Feedback for Order 1
   await prisma.feedback.create({
     data: {
       note: 5,
@@ -305,7 +330,38 @@ async function main() {
     }
   });
 
-  // Order 2: Disputed / Litige (Client Pierre, Driver Vincent)
+  // Invoice + Payment for Order 1 (RG25-26)
+  const facture1 = await prisma.facture.create({
+    data: {
+      id_commande: order1.id_commande,
+      montant_marchandises: 6200,
+      montant_frais_livraison: 1500,
+      montant_frais_retour: 0,
+      montant_commission: 6200 * 0.006,
+      montant_total_du: 6200 + 1500,
+      statut_paiement: 'Paye'
+    }
+  });
+  await prisma.paiement.create({
+    data: {
+      id_facture: facture1.id_facture,
+      montant_percu: 7700,
+      mode_reglement: 'MOBILE_MONEY',
+      statut: 'Effectue'
+    }
+  });
+
+  // Delivery receipt for Order 1 (RG27)
+  await prisma.bonDeLivraison.create({
+    data: {
+      id_livraison: delivery1.id_livraison,
+      statut_bon: 'SIGNE',
+      date_signature_client: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 40 * 60 * 1000),
+      observations_livreur: 'Client satisfait, colis en bon état.'
+    }
+  });
+
+  // Order 2: Disputed / Litige
   const order2 = await prisma.commande.create({
     data: {
       id_user_client: client2.id_user,
@@ -335,7 +391,7 @@ async function main() {
     }
   });
 
-  // Collect Proof for Order 2 (Double Photo Collect - RG07)
+  // Collect Proof for Order 2 (RG07)
   const collectProof2 = await prisma.preuveCollecte.create({
     data: {
       id_commande: order2.id_commande,
@@ -344,14 +400,14 @@ async function main() {
     }
   });
 
-  await prisma.photoPreuve.createMany({
+  await prisma.mediaPreuve.createMany({
     data: [
-      { id_preuve: collectProof2.id_preuve, url_photo: '/uploads/tomates_abimees_1.jpg' },
-      { id_preuve: collectProof2.id_preuve, url_photo: '/uploads/tomates_abimees_2.jpg' }
+      { id_preuve: collectProof2.id_preuve, url_media: '/uploads/tomates_abimees_1.jpg', type_media: 'photo' },
+      { id_preuve: collectProof2.id_preuve, url_media: '/uploads/tomates_abimees_2.jpg', type_media: 'photo' }
     ]
   });
 
-  // Litige entry (Linked to Delivery - RG09, RG16, RG21)
+  // Litige entry
   const litige2 = await prisma.litige.create({
     data: {
       id_livraison: delivery2.id_livraison,
@@ -364,13 +420,12 @@ async function main() {
     }
   });
 
-  // Link DetailCommande line items to the Litige (RG21 - precise item attribution)
   await prisma.detailCommande.updateMany({
     where: { id_commande: order2.id_commande, id_produit: prod1.id_produit },
     data: { id_litige: litige2.id_litige }
   });
 
-  // 4. Create Signalement (Universal Moderation - RG14)
+  // 4. Create Signalements
   console.log('Création des signalements de démonstration...');
   
   await prisma.signalement.create({

@@ -293,9 +293,17 @@ export const getUserDetails = async (req, res) => {
         volume_total: totalVolume,
         score_reputation: safeUser.livreur.score_reputation,
         type_vehicule: safeUser.livreur.type_vehicule,
-        immatriculation: safeUser.livreur.immatriculation,
-        est_disponible: safeUser.livreur.est_disponible
+        immatriculation: safeUser.livreur.immatriculation
       };
+
+      // Fetch latest availability from DisponibiliteLivreur (RG29)
+      const latestDispo = await prisma.disponibiliteLivreur.findFirst({
+        where: { id_user_livreur: userId },
+        orderBy: { date_mise_a_jour: 'desc' }
+      });
+      if (latestDispo) {
+        roleData.est_disponible = latestDispo.est_disponible;
+      }
     } else if (safeUser.client) {
       const orders = await prisma.commande.findMany({
         where: { id_user_client: userId },
@@ -442,6 +450,8 @@ export const getVendorCatalogue = async (req, res) => {
   }
 };
 
+
+
 // Price history audit (RG24)
 export const getPriceHistory = async (req, res) => {
   const { id_produit } = req.params;
@@ -515,7 +525,7 @@ export const getLitiges = async (req, res) => {
           }
         },
         preuve: {
-          include: { photos: true }  // Photographic evidence gallery (RG07)
+          include: { medias: true }
         },
         detailsCommande: {
           include: { produit: true }
