@@ -59,6 +59,44 @@ export const getProductPriceHistory = async (req, res) => {
   }
 };
 
+// Get all active vendors (stalls) grouped by market location — for AccueilClient
+export const getVendors = async (req, res) => {
+  try {
+    const vendors = await prisma.vendeur.findMany({
+      where: {
+        utilisateur: { statut_compte: 'Actif' }
+      },
+      include: {
+        utilisateur: {
+          select: { nom: true, prenom: true, photo_url: true }
+        },
+        _count: {
+          select: { produits: true }
+        }
+      },
+      orderBy: { score_reputation: 'desc' }
+    });
+    return res.json(vendors);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement des vendeurs.' });
+  }
+};
+
+// Get all categories
+export const getCategories = async (req, res) => {
+  try {
+    const categories = await prisma.categorie.findMany({
+      include: {
+        _count: { select: { produits: true } }
+      },
+      orderBy: { nom_categorie: 'asc' }
+    });
+    return res.json(categories);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement des catégories.' });
+  }
+};
+
 // Get list of available delivery drivers for checkout selection (RG05, RG19)
 export const getDrivers = async (req, res) => {
   try {
