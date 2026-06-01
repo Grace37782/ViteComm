@@ -26,7 +26,7 @@ export default function App() {
 
         {/* Pages temporaires */}
         <Route path="/client/accueil" element={<AccueilClient />} />
-        <Route path="/client/catalogue/marche:marcheId" element={<Catalogue />} />
+        <Route path="/client/catalogue/:marcheId" element={<Catalogue />} />
         <Route path="/client/panier" element={<Panier />} />
         <Route path="/client/selection-livreur" element={<SelectionLivreur />} />
         <Route path="/vendeur/dashboard" element={<Vendeur />} />
