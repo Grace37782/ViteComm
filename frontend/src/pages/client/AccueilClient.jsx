@@ -314,7 +314,7 @@ export default function AccueilClient() {
               Produits populaires
             </h2>
             <button
-              onClick={() => vendors.length > 0 && navigate('/client/catalogue/marche' + vendors[0].id_user)}
+              onClick={() => navigate('/client/catalogue/marche' + (vendors[0]?.id_user || 1))}
               className="text-xs font-semibold cursor-pointer"
               style={{ color: '#1D9E75', background: 'none', border: 'none' }}
             >
@@ -326,7 +326,7 @@ export default function AccueilClient() {
             {popularProducts.map((p) => (
               <button
                 key={p.id_produit}
-                onClick={() => p.vendeur?.id_user && navigate('/client/catalogue/marche' + p.vendeur.id_user)}
+                onClick={() => navigate('/client/catalogue/marche' + p.id_user_vendeur)}
                 className="rounded-2xl p-3 text-center cursor-pointer transition-all hover:shadow-md active:scale-95"
                 style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}
               >
