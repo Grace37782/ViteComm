@@ -12,6 +12,7 @@ import Admin from './pages/admin/Admin'
 import Inscription from './pages/auth/Inscription'
 import Profil from './pages/client/Profil'
 import SuiviCommande from './pages/client/SuiviCommande'
+import MarcheDetail from './pages/client/MarcheDetail'
 export default function App() {
   return (
     <AuthProvider>
@@ -30,6 +31,7 @@ export default function App() {
 
         {/* Pages temporaires */}
         <Route path="/client/accueil" element={<AccueilClient />} />
+        <Route path="/client/market/:marketId" element={<MarcheDetail />} />
         <Route path="/client/catalogue/:marcheId" element={<Catalogue />} />
         <Route path="/client/panier" element={<Panier />} />
         <Route path="/client/selection-livreur" element={<SelectionLivreur />} />

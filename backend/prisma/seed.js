@@ -31,6 +31,7 @@ async function main() {
   await prisma.signalement.deleteMany({});
   await prisma.client.deleteMany({});
   await prisma.vendeur.deleteMany({});
+  await prisma.marche.deleteMany({});
   await prisma.livreur.deleteMany({});
   await prisma.utilisateur.deleteMany({});
 
@@ -47,6 +48,58 @@ async function main() {
   });
   const catHuiles = await prisma.categorie.create({
     data: { nom_categorie: 'Huiles & Matières Grasses', description_categorie: 'Huiles végétales et animales' }
+  });
+
+  // 0.1 Create Markets (Localmarts)
+  console.log('Création des marchés...');
+  const marcheSandaga = await prisma.marche.create({
+    data: {
+      nom: 'Marché Sandaga',
+      latitude: 4.0415,
+      longitude: 9.6885,
+      image_url: 'https://images.unsplash.com/photo-1533900298318-6b8da08a523e?auto=format&fit=crop&w=600&h=400&q=80',
+      description: "Le plus grand marché d'épices et de vivres frais de Douala."
+    }
+  });
+
+  const marcheCentralDouala = await prisma.marche.create({
+    data: {
+      nom: 'Marché Central',
+      latitude: 4.0375,
+      longitude: 9.7070,
+      image_url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&h=400&q=80',
+      description: "Le cœur commercial historique de la ville de Douala."
+    }
+  });
+
+  const marcheBonamoussadi = await prisma.marche.create({
+    data: {
+      nom: 'Marché Bonamoussadi',
+      latitude: 4.0810,
+      longitude: 9.7390,
+      image_url: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&w=600&h=400&q=80',
+      description: "Marché moderne situé dans la zone résidentielle de Douala Nord."
+    }
+  });
+
+  const marcheCentralYaounde = await prisma.marche.create({
+    data: {
+      nom: 'Marché Central de Yaoundé',
+      latitude: 3.8660,
+      longitude: 11.5175,
+      image_url: 'https://images.unsplash.com/photo-1488459718432-01055e67e1f5?auto=format&fit=crop&w=600&h=400&q=80',
+      description: "Le principal marché de Yaoundé pour la mode et les vivres."
+    }
+  });
+
+  const marcheMokolo = await prisma.marche.create({
+    data: {
+      nom: 'Marché Mokolo',
+      latitude: 3.8640,
+      longitude: 11.5020,
+      image_url: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=600&h=400&q=80',
+      description: "Un marché très populaire et dynamique à Yaoundé."
+    }
   });
 
   // 1. Create Users
@@ -116,6 +169,7 @@ async function main() {
         create: {
           nom_etablissement: 'Frais de l\'Ouest',
           localisation_marche: 'Marché Central',
+          id_marche: marcheCentralDouala.id_marche,
           score_reputation: 4.8
         }
       }
@@ -136,7 +190,71 @@ async function main() {
         create: {
           nom_etablissement: 'Épices de Sandaga',
           localisation_marche: 'Marché Sandaga',
+          id_marche: marcheSandaga.id_marche,
           score_reputation: 4.2
+        }
+      }
+    }
+  });
+
+  const vendeur3 = await prisma.utilisateur.create({
+    data: {
+      nom: 'Kamga',
+      prenom: 'Jean',
+      email: 'jean.kamga@shop.com',
+      telephone: '+237677777773',
+      mot_de_passe: commonPassword,
+      statut_compte: 'Actif',
+      est_admin: false,
+      photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&h=200&q=80',
+      vendeur: {
+        create: {
+          nom_etablissement: 'Bona Fruits',
+          localisation_marche: 'Marché Bonamoussadi',
+          id_marche: marcheBonamoussadi.id_marche,
+          score_reputation: 4.5
+        }
+      }
+    }
+  });
+
+  const vendeur4 = await prisma.utilisateur.create({
+    data: {
+      nom: 'Ngo',
+      prenom: 'Marie',
+      email: 'marie.ngo@shop.com',
+      telephone: '+237677777774',
+      mot_de_passe: commonPassword,
+      statut_compte: 'Actif',
+      est_admin: false,
+      photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&h=200&q=80',
+      vendeur: {
+        create: {
+          nom_etablissement: 'Épices du Mfoundi',
+          localisation_marche: 'Marché Central de Yaoundé',
+          id_marche: marcheCentralYaounde.id_marche,
+          score_reputation: 4.0
+        }
+      }
+    }
+  });
+
+  const vendeur5 = await prisma.utilisateur.create({
+    data: {
+      nom: 'Tchinda',
+      prenom: 'Marc',
+      email: 'marc.tchinda@shop.com',
+      telephone: '+237677777775',
+      mot_de_passe: commonPassword,
+      statut_compte: 'Actif',
+      est_admin: false,
+      photo_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&h=200&q=80',
+      vendeur: {
+        create: {
+          nom_etablissement: 'Gombo Royal',
+          localisation_marche: 'Marché Mokolo',
+          id_marche: marcheMokolo.id_marche,
+          score_reputation: 4.6
         }
       }
     }
@@ -279,6 +397,77 @@ async function main() {
           data: [
             { date_modification: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), prix: 1500 }
           ]
+        }
+      }
+    }
+  });
+
+  // Vendeur 3 Products (Marché Bonamoussadi)
+  const prod5 = await prisma.produit.create({
+    data: {
+      id_user_vendeur: vendeur3.id_user,
+      id_categorie: catLegumes.id_categorie,
+      nom: 'Gombo Frais (Sachet)',
+      description: 'Gombo vert tendre récolté ce matin.',
+      prix_reference: 800,
+      stock_disponible: 40,
+      photo_url: 'https://images.unsplash.com/photo-1524179091875-bf99a9a6af57?auto=format&fit=crop&w=300&h=200&q=80',
+      historiques: {
+        createMany: {
+          data: [{ date_modification: new Date(), prix: 800 }]
+        }
+      }
+    }
+  });
+
+  const prod6 = await prisma.produit.create({
+    data: {
+      id_user_vendeur: vendeur3.id_user,
+      id_categorie: catLegumes.id_categorie,
+      nom: 'Bananes Douces (Régime)',
+      description: 'Bananes mûres et douces du Moungo.',
+      prix_reference: 2000,
+      stock_disponible: 10,
+      photo_url: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=300&h=200&q=80',
+      historiques: {
+        createMany: {
+          data: [{ date_modification: new Date(), prix: 2000 }]
+        }
+      }
+    }
+  });
+
+  // Vendeur 4 Products (Marché Central Yaoundé)
+  const prod7 = await prisma.produit.create({
+    data: {
+      id_user_vendeur: vendeur4.id_user,
+      id_categorie: catEpices.id_categorie,
+      nom: 'Poivre Noir de Penja',
+      description: 'Le célèbre poivre noir de Penja, moulu ou en grains.',
+      prix_reference: 3500,
+      stock_disponible: 20,
+      photo_url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=300&h=200&q=80',
+      historiques: {
+        createMany: {
+          data: [{ date_modification: new Date(), prix: 3500 }]
+        }
+      }
+    }
+  });
+
+  // Vendeur 5 Products (Marché Mokolo Yaoundé)
+  const prod8 = await prisma.produit.create({
+    data: {
+      id_user_vendeur: vendeur5.id_user,
+      id_categorie: catLegumes.id_categorie,
+      nom: 'Oignons Rouges (Sac)',
+      description: 'Sac d\'oignons de Garoua de calibre moyen.',
+      prix_reference: 4000,
+      stock_disponible: 8,
+      photo_url: 'https://images.unsplash.com/photo-1508747702-f222958a8a25?auto=format&fit=crop&w=300&h=200&q=80',
+      historiques: {
+        createMany: {
+          data: [{ date_modification: new Date(), prix: 4000 }]
         }
       }
     }
