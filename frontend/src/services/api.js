@@ -24,10 +24,10 @@ export const api = {
   delete: (url) => request(url, { method: 'DELETE' }),
 }
 
-export async function login(email, mot_de_passe) {
+export async function login(credentials) {
   const data = await request('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, mot_de_passe }),
+    body: JSON.stringify(credentials),
     headers: {}
   })
   localStorage.setItem('vc_user', JSON.stringify(data.user))

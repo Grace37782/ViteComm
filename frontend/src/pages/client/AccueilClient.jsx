@@ -41,7 +41,7 @@ export default function AccueilClient() {
 
   const [vendors, setVendors] = useState([])
   const [categories, setCategories] = useState([])
-  const [popularProducts, setPopularProducts] = useState([])
+  const [allProducts, setAllProducts] = useState([])
   const [cart, setCart] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -66,7 +66,7 @@ export default function AccueilClient() {
         ])
         setVendors(vendorsRes)
         setCategories(catsRes)
-        setPopularProducts(prodsRes.slice(0, 6))
+        setAllProducts(prodsRes)
         setCart(cartRes)
       } catch (err) {
         console.error(err)
@@ -98,12 +98,19 @@ export default function AccueilClient() {
 
   const catList = ['Tout', ...categories.map((c) => c.nom_categorie)]
 
-  const vendorsFiltered = vendors.filter((v) => {
-    const matchRecherche = v.nom_etablissement.toLowerCase().includes(recherche.toLowerCase()) ||
-      v.localisation_marche.toLowerCase().includes(recherche.toLowerCase())
-    const matchCat = categorie === 'Tout'
-    return matchRecherche && matchCat
-  })
+  // Vendors: filter by text search only (vendors have no single category)
+  const vendorsFiltered = vendors.filter((v) =>
+    v.nom_etablissement.toLowerCase().includes(recherche.toLowerCase()) ||
+    v.localisation_marche.toLowerCase().includes(recherche.toLowerCase())
+  )
+
+  // Popular products: filter by selected category chip
+  const popularProducts = allProducts
+    .filter((p) => {
+      if (categorie === 'Tout') return true
+      return p.categorie?.nom_categorie === categorie
+    })
+    .slice(0, 6)
 
   if (loading) {
     return (
@@ -307,21 +314,30 @@ export default function AccueilClient() {
       </div>
 
       {/* ══ PRODUITS POPULAIRES ══ */}
-      {popularProducts.length > 0 && (
-        <div className="px-4 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-black text-base" style={{ color: '#2C2C2A' }}>
-              Produits populaires
-            </h2>
+      <div className="px-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-black text-base" style={{ color: '#2C2C2A' }}>
+            {categorie === 'Tout' ? 'Produits populaires' : `Produits · ${categorie}`}
+          </h2>
+          {vendors[0] && (
             <button
-              onClick={() => navigate('/client/catalogue/' + (vendors[0]?.id_user || 1))}
+              onClick={() => navigate('/client/catalogue/' + vendors[0].id_user)}
               className="text-xs font-semibold cursor-pointer"
               style={{ color: '#1D9E75', background: 'none', border: 'none' }}
             >
               Voir tout →
             </button>
-          </div>
+          )}
+        </div>
 
+        {popularProducts.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="text-4xl mb-2">📦</div>
+            <p className="text-sm font-semibold" style={{ color: '#888780' }}>
+              Aucun produit dans cette catégorie
+            </p>
+          </div>
+        ) : (
           <div className="grid grid-cols-3 gap-3">
             {popularProducts.map((p) => (
               <button
@@ -333,12 +349,14 @@ export default function AccueilClient() {
                 <div className="text-3xl mb-2">{productEmoji(p.nom)}</div>
                 <div className="font-black text-xs mb-0.5" style={{ color: '#2C2C2A' }}>{p.nom}</div>
                 <div className="text-xs font-medium" style={{ color: '#1D9E75' }}>{formatPrice(p.prix_reference)}</div>
-                <div className="text-xs mt-0.5" style={{ color: '#888780' }}>{p.vendeur?.localisation_marche || ''}</div>
+                <div className="text-xs mt-0.5" style={{ color: '#888780' }}>
+                  {p.categorie?.nom_categorie || p.vendeur?.localisation_marche || ''}
+                </div>
               </button>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <BottomNav panierCount={panierCount} />
     </div>

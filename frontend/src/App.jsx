@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
 import Accueil from './pages/Accueil/Accueil'
 import Connexion from './pages/auth/Connexion'
 import AccueilClient from './pages/client/AccueilClient'
@@ -9,10 +10,13 @@ import Vendeur from './pages/vendeur/Vendeur'
 import Livreur from './pages/livreur/Livreur'
 import Admin from './pages/admin/Admin'
 import Inscription from './pages/auth/Inscription'
+import Profil from './pages/client/Profil'
+import SuiviCommande from './pages/client/SuiviCommande'
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
 
         {/* Accueil */}
         <Route path="/" element={<Navigate to="/accueil" />} />
@@ -29,6 +33,8 @@ export default function App() {
         <Route path="/client/catalogue/:marcheId" element={<Catalogue />} />
         <Route path="/client/panier" element={<Panier />} />
         <Route path="/client/selection-livreur" element={<SelectionLivreur />} />
+        <Route path="/client/profil" element={<Profil />} />
+        <Route path="/client/suivi" element={<SuiviCommande />} />
         <Route path="/vendeur/dashboard" element={<Vendeur />} />
         <Route path="/livreur/dashboard" element={<Livreur />} />
         <Route path="/admin/dashboard" element={<Admin />} />
@@ -37,6 +43,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/accueil" />} />
 
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }

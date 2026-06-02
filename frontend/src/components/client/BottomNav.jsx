@@ -1,10 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 
 const items = [
-  { icon: '🏠', label: 'Accueil',  path: '/client/accueil'   },
-  { icon: '🔍', label: 'Chercher', path: '/client/catalogue'  },
-  { icon: '🛒', label: 'Panier',   path: '/client/panier'     },
-  { icon: '👤', label: 'Profil',   path: '/client/profil'     },
+  { icon: '🏠', label: 'Accueil',  path: '/client/accueil', activeOn: '/client/accueil' },
+  { icon: '🔍', label: 'Chercher', path: '/client/accueil', activeOn: null              },
+  { icon: '🛒', label: 'Panier',   path: '/client/panier',  activeOn: '/client/panier'  },
+  { icon: '👤', label: 'Profil',   path: '/client/profil',  activeOn: '/client/profil'  },
 ]
 
 export default function BottomNav({ panierCount = 0 }) {
@@ -16,10 +16,10 @@ export default function BottomNav({ panierCount = 0 }) {
       style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}
     >
       {items.map((item) => {
-        const actif = pathname.startsWith(item.path)
+        const actif = item.activeOn ? pathname.startsWith(item.activeOn) : false
         return (
           <button
-            key={item.path}
+            key={item.label}
             onClick={() => navigate(item.path)}
             className="flex-1 flex flex-col items-center justify-center py-3 gap-1 relative cursor-pointer"
             style={{ background: 'none', border: 'none' }}

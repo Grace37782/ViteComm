@@ -1,135 +1,121 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { api } from '../../services/api'
 import BottomNav from '../../components/client/BottomNav'
 
-/* ── Données statiques (remplacer par API) ───────────────── */
-const LIVREURS = [
-  {
-    id: 1,
-    nom: 'Rodrigue K.',
-    emoji: '🏍️',
-    type: 'Zemidjan',
-    note: 4.9,
-    avis: 134,
-    livraisons: 312,
-    distance: '0.4 km',
-    temps: '8 min',
-    tarif: 450,
-    disponible: true,
-    badge: 'Meilleur de la zone',
-    badgeColor: '#1D9E75',
-  },
-  {
-    id: 2,
-    nom: 'Kofi A.',
-    emoji: '🏍️',
-    type: 'Zemidjan',
-    note: 4.7,
-    avis: 98,
-    livraisons: 201,
-    distance: '0.9 km',
-    temps: '12 min',
-    tarif: 450,
-    disponible: true,
-    badge: null,
-    badgeColor: null,
-  },
-  {
-    id: 3,
-    nom: 'Mensah T.',
-    emoji: '🛺',
-    type: 'Tricycle',
-    note: 4.8,
-    avis: 76,
-    livraisons: 189,
-    distance: '1.2 km',
-    temps: '15 min',
-    tarif: 600,
-    disponible: true,
-    badge: 'Gros volumes',
-    badgeColor: '#BA7517',
-  },
-  {
-    id: 4,
-    nom: 'Olivier D.',
-    emoji: '🏍️',
-    type: 'Zemidjan',
-    note: 4.5,
-    avis: 52,
-    livraisons: 98,
-    distance: '1.8 km',
-    temps: '20 min',
-    tarif: 450,
-    disponible: false,
-    badge: null,
-    badgeColor: null,
-  },
-]
-
-const TOTAL_COMMANDE = 2750 // TODO : depuis contexte panier
+function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
 export default function SelectionLivreur() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { cart, total: totalMarchandises, sousTotal } = location.state || {}
+
+  const [drivers, setDrivers]   = useState([])
+  const [loading, setLoading]   = useState(true)
   const [livreurId, setLivreurId] = useState(null)
-  const [loading, setLoading]     = useState(false)
+  const [placing, setPlacing]   = useState(false)
+  const [toast, setToast]       = useState('')
 
-  const livreur = LIVREURS.find((l) => l.id === livreurId)
-  const totalFinal = livreur ? TOTAL_COMMANDE - 450 + livreur.tarif : TOTAL_COMMANDE
+  /* ── Load drivers from API ──────────────────────────── */
+  useEffect(() => {
+    api.get('/client/drivers')
+      .then(setDrivers)
+      .catch(err => showToast('❌ ' + err.message))
+      .finally(() => setLoading(false))
+  }, [])
 
-  function confirmerCommande() {
+  function showToast(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(''), 3000)
+  }
+
+  /* ── Place order ────────────────────────────────────── */
+  async function confirmerCommande() {
     if (!livreurId) return
-    setLoading(true)
-    // TODO : POST /api/commandes { livreurId, ... }
-    setTimeout(() => {
-      setLoading(false)
-      navigate('/client/suivi')
-    }, 1200)
+    setPlacing(true)
+    try {
+      const details = cart?.details || []
+      const items = details.map(d => ({
+        id_produit: d.id_produit,
+        quantite_commandee: d.quantite,
+      }))
+
+      const res = await api.post('/client/orders', {
+        id_user_livreur: livreurId,
+        items,
+      })
+
+      navigate('/client/suivi', {
+        state: {
+          id_commande: res.id_commande,
+          code_verification: res.code_verification,
+          livreur: drivers.find(d => d.id_user === livreurId),
+        }
+      })
+    } catch (err) {
+      showToast('❌ ' + err.message)
+      setPlacing(false)
+    }
+  }
+
+  const livreurSelected = drivers.find(d => d.id_user === livreurId)
+  const FRAIS_LIVRAISON = 1500
+  const totalFinal = (sousTotal || 0) + FRAIS_LIVRAISON
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F8F3' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🏍️</div>
+          <div style={{ fontWeight: 700, color: '#888780', fontSize: 13 }}>Recherche des livreurs disponibles…</div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="w-full min-h-screen font-sans" style={{ background: '#F7F8F3', paddingBottom: 80 }}>
 
-      {/* ══ HEADER ══ */}
-      <div
-        className="relative overflow-hidden px-5 pt-5 pb-5"
-        style={{ background: 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}
-      >
+      {/* TOAST */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: 16, left: 16, right: 16, zIndex: 100,
+          background: '#E24B4A', color: '#fff', borderRadius: 16,
+          padding: '14px 20px', fontWeight: 700, fontSize: 14, textAlign: 'center',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+        }}>{toast}</div>
+      )}
+
+      {/* HEADER */}
+      <div className="relative overflow-hidden px-5 pt-5 pb-5"
+        style={{ background: 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
 
         <div className="relative z-10 flex items-center gap-3 mb-4">
-          <button
-            onClick={() => navigate('/client/panier')}
+          <button onClick={() => navigate('/client/panier')}
             className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
-            style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}
-          >
+            style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}>
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
             <div className="text-white font-black text-base">Choisir un livreur</div>
-            <div className="text-white/70 text-xs">Livreurs disponibles près de vous</div>
+            <div className="text-white/70 text-xs">
+              {drivers.length} livreur{drivers.length > 1 ? 's' : ''} disponible{drivers.length > 1 ? 's' : ''}
+            </div>
           </div>
         </div>
 
-        {/* Étapes commande */}
+        {/* Étapes */}
         <div className="relative z-10 flex items-center gap-2">
-          {['Panier', 'Livreur', 'Suivi'].map((etape, i) => (
+          {['Panier', 'Livreur', 'Confirmation'].map((etape, i) => (
             <div key={etape} className="flex items-center gap-2">
               <div className="flex items-center gap-1.5">
-                <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0"
-                  style={{
-                    background: i === 1 ? '#fff' : 'rgba(255,255,255,0.3)',
-                    color: i === 1 ? '#1D9E75' : '#fff',
-                  }}
-                >
+                <div className="w-5 h-5 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0"
+                  style={{ background: i === 1 ? '#fff' : 'rgba(255,255,255,0.3)', color: i === 1 ? '#1D9E75' : '#fff' }}>
                   {i < 1 ? '✓' : i + 1}
                 </div>
-                <span
-                  className="text-xs font-semibold"
-                  style={{ color: i === 1 ? '#fff' : 'rgba(255,255,255,0.6)' }}
-                >
-                  {etape}
-                </span>
+                <span className="text-xs font-semibold"
+                  style={{ color: i === 1 ? '#fff' : 'rgba(255,255,255,0.6)' }}>{etape}</span>
               </div>
               {i < 2 && <div className="w-6 h-px" style={{ background: 'rgba(255,255,255,0.3)' }} />}
             </div>
@@ -139,193 +125,116 @@ export default function SelectionLivreur() {
 
       <div className="px-4 py-4 flex flex-col gap-4">
 
-        {/* ══ RÉSUMÉ COMMANDE ══ */}
-        <div
-          className="rounded-2xl p-4 flex items-center gap-3"
-          style={{ background: '#E1F5EE', border: '1.5px solid #9FE1CB' }}
-        >
-          <span className="text-2xl">🛒</span>
-          <div className="flex-1">
-            <div className="font-black text-sm" style={{ color: '#0F6E56' }}>
-              Commande · 3 articles · 2 étals
-            </div>
-            <div className="text-xs" style={{ color: '#1D9E75' }}>
-              Dantokpa — livraison à Akpakpa
+        {/* NO DRIVERS */}
+        {drivers.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-5xl mb-3">😔</div>
+            <div className="font-bold text-sm" style={{ color: '#888780' }}>
+              Aucun livreur disponible pour le moment.<br />Réessayez dans quelques minutes.
             </div>
           </div>
-          <div className="font-black text-sm" style={{ color: '#0F6E56' }}>
-            {(TOTAL_COMMANDE - 450).toLocaleString()} F
-          </div>
-        </div>
-
-        {/* ══ LISTE LIVREURS ══ */}
-        <div>
-          <h2 className="font-black text-base mb-3" style={{ color: '#2C2C2A' }}>
-            Livreurs disponibles
-          </h2>
-
+        ) : (
           <div className="flex flex-col gap-3">
-            {LIVREURS.map((l) => {
-              const selectionne = livreurId === l.id
+            <h2 className="font-black text-base" style={{ color: '#2C2C2A' }}>Livreurs disponibles</h2>
+
+            {drivers.map((drv) => {
+              const sel = livreurId === drv.id_user
+              const nom = `${drv.utilisateur.prenom} ${drv.utilisateur.nom}`
               return (
                 <button
-                  key={l.id}
-                  onClick={() => l.disponible && setLivreurId(l.id)}
-                  disabled={!l.disponible}
+                  key={drv.id_user}
+                  onClick={() => setLivreurId(drv.id_user)}
                   className="w-full text-left rounded-2xl p-4 cursor-pointer transition-all active:scale-98"
                   style={{
-                    background:   selectionne ? '#E1F5EE' : '#fff',
-                    border:       `2px solid ${selectionne ? '#1D9E75' : '#E8E6DF'}`,
-                    boxShadow:    selectionne ? '0 4px 16px rgba(29,158,117,0.2)' : '0 2px 8px rgba(0,0,0,0.04)',
-                    opacity:      l.disponible ? 1 : 0.5,
-                    transform:    selectionne ? 'translateY(-1px)' : 'none',
+                    background: sel ? '#E1F5EE' : '#fff',
+                    border: `2px solid ${sel ? '#1D9E75' : '#E8E6DF'}`,
+                    boxShadow: sel ? '0 4px 16px rgba(29,158,117,0.2)' : '0 2px 8px rgba(0,0,0,0.04)',
+                    transform: sel ? 'translateY(-1px)' : 'none',
                   }}
                 >
                   <div className="flex items-start gap-3">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                      style={{ background: sel ? '#1D9E75' : '#F7F8F3' }}>🏍️</div>
 
-                    {/* Avatar */}
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-                      style={{ background: selectionne ? '#1D9E75' : '#F7F8F3' }}
-                    >
-                      {l.emoji}
-                    </div>
-
-                    {/* Infos */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                        <span className="font-black text-sm" style={{ color: '#2C2C2A' }}>{l.nom}</span>
-                        {l.badge && (
-                          <span
-                            className="text-xs font-bold px-2 py-0.5 rounded-full"
-                            style={{ background: l.badgeColor + '20', color: l.badgeColor }}
-                          >
-                            {l.badge}
-                          </span>
-                        )}
-                        {!l.disponible && (
-                          <span
-                            className="text-xs font-bold px-2 py-0.5 rounded-full"
-                            style={{ background: '#F1EFE8', color: '#888780' }}
-                          >
-                            Indisponible
-                          </span>
-                        )}
+                        <span className="font-black text-sm" style={{ color: '#2C2C2A' }}>{nom}</span>
                       </div>
-
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
                         <span className="text-xs" style={{ color: '#888780' }}>
-                          ⭐ {l.note} · {l.avis} avis
+                          ⭐ {drv.score_reputation.toFixed(1)} · {drv.type_vehicule}
                         </span>
-                        <span className="text-xs" style={{ color: '#888780' }}>
-                          🚀 {l.livraisons} courses
-                        </span>
-                        <span className="text-xs" style={{ color: '#888780' }}>
-                          {l.type}
-                        </span>
+                        <span className="text-xs" style={{ color: '#888780' }}>📞 {drv.utilisateur.telephone}</span>
                       </div>
-
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span
-                          className="text-xs font-semibold px-2 py-1 rounded-lg"
-                          style={{ background: '#E1F5EE', color: '#0F6E56' }}
-                        >
-                          📍 {l.distance}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold px-2 py-1 rounded-lg"
+                          style={{ background: '#FAEEDA', color: '#854F0B' }}>
+                          💵 {formatPrice(FRAIS_LIVRAISON)} livraison
                         </span>
-                        <span
-                          className="text-xs font-semibold px-2 py-1 rounded-lg"
-                          style={{ background: '#E6F1FB', color: '#185FA5' }}
-                        >
-                          ⏱ {l.temps}
-                        </span>
-                        <span
-                          className="text-xs font-semibold px-2 py-1 rounded-lg"
-                          style={{ background: '#FAEEDA', color: '#854F0B' }}
-                        >
-                          💵 {l.tarif.toLocaleString()} F
+                        <span className="text-xs font-semibold px-2 py-1 rounded-lg"
+                          style={{ background: '#E1F5EE', color: '#0F6E56' }}>
+                          🚗 {drv.immatriculation}
                         </span>
                       </div>
                     </div>
 
-                    {/* Indicateur sélection */}
-                    <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
-                      style={{
-                        background: selectionne ? '#1D9E75' : 'transparent',
-                        border: `2px solid ${selectionne ? '#1D9E75' : '#E8E6DF'}`,
-                      }}
-                    >
-                      {selectionne && (
-                        <span style={{ color: '#fff', fontSize: 12, fontWeight: 900 }}>✓</span>
-                      )}
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
+                      style={{ background: sel ? '#1D9E75' : 'transparent', border: `2px solid ${sel ? '#1D9E75' : '#E8E6DF'}` }}>
+                      {sel && <span style={{ color: '#fff', fontSize: 12, fontWeight: 900 }}>✓</span>}
                     </div>
-
                   </div>
                 </button>
               )
             })}
           </div>
-        </div>
+        )}
 
-        {/* ══ RÉCAP FINAL ══ */}
-        {livreur && (
-          <div
-            className="rounded-2xl p-4"
-            style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}
-          >
+        {/* RÉCAP */}
+        {livreurSelected && (
+          <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
             <h3 className="font-black text-sm mb-3" style={{ color: '#2C2C2A' }}>Récapitulatif final</h3>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between text-sm">
                 <span style={{ color: '#888780' }}>Articles</span>
-                <span className="font-semibold" style={{ color: '#2C2C2A' }}>
-                  {(TOTAL_COMMANDE - 450).toLocaleString()} F
-                </span>
+                <span className="font-semibold" style={{ color: '#2C2C2A' }}>{formatPrice(sousTotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#888780' }}>Livraison — {livreur.nom}</span>
-                <span className="font-semibold" style={{ color: '#2C2C2A' }}>
-                  {livreur.tarif.toLocaleString()} F
-                </span>
+                <span style={{ color: '#888780' }}>Livraison — {livreurSelected.utilisateur.prenom}</span>
+                <span className="font-semibold" style={{ color: '#2C2C2A' }}>{formatPrice(FRAIS_LIVRAISON)}</span>
               </div>
-              <div
-                className="flex justify-between pt-2 mt-1"
-                style={{ borderTop: '1.5px solid #E8E6DF' }}
-              >
+              <div className="flex justify-between pt-2 mt-1" style={{ borderTop: '1.5px solid #E8E6DF' }}>
                 <span className="font-black text-base" style={{ color: '#2C2C2A' }}>Total COD</span>
-                <span className="font-black text-base" style={{ color: '#1D9E75' }}>
-                  {totalFinal.toLocaleString()} F
-                </span>
+                <span className="font-black text-base" style={{ color: '#1D9E75' }}>{formatPrice(totalFinal)}</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* ══ BOUTON CONFIRMER ══ */}
+        {/* BOUTON */}
         <button
           onClick={confirmerCommande}
-          disabled={!livreurId || loading}
+          disabled={!livreurId || placing}
           className="w-full py-4 rounded-2xl text-white font-black text-base cursor-pointer transition-all active:scale-98"
           style={{
             background: livreurId ? '#1D9E75' : '#D3D1C7',
             border: 'none',
             boxShadow: livreurId ? '0 6px 24px rgba(29,158,117,0.4)' : 'none',
-            opacity: loading ? 0.8 : 1,
+            opacity: placing ? 0.8 : 1,
           }}
         >
-          {loading
+          {placing
             ? '⏳ Confirmation en cours…'
             : livreurId
-            ? `Confirmer avec ${livreur?.nom} →`
+            ? `Confirmer avec ${livreurSelected?.utilisateur?.prenom} →`
             : 'Sélectionnez un livreur'}
         </button>
 
         <p className="text-center text-xs pb-2" style={{ color: '#888780' }}>
-          💵 Vous payez {totalFinal.toLocaleString()} F en espèces à la réception
+          💵 Vous payez {formatPrice(totalFinal)} en espèces à la réception
         </p>
-
       </div>
 
-      <BottomNav panierCount={3} />
+      <BottomNav panierCount={0} />
     </div>
   )
 }

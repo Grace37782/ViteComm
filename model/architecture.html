@@ -155,6 +155,7 @@
     <a href="#dfed">DFED</a>
     <a href="#mld">MLD</a>
     <a href="#uml">UML</a>
+    <a href="#etats">Diag. d'États</a>
   </div>
 
   <div class="meta">
@@ -731,6 +732,98 @@ BON_DE_LIVRAISON ( <u>id_bon</u>, date_emission, date_signature_client, statut_b
     séquentiel.</p>
   <img src="diags/uml-activity-diag.png" alt="Diagramme d'Activité UML ViteComm">
   <p><em>Figure 3 : Diagramme d'Activité.</em></p>
+  <ul>
+    <li>Swimlanes : <strong>Client</strong>, <strong>Système ViteComm</strong>, <strong>Vendeur</strong>, <strong>Livreur</strong>, <strong>Administrateur</strong>.</li>
+    <li>Flux normal : Recherche → Panier multi-vendeurs → Validation commande → Génération code unique → Attribution livreur → Collecte avec preuve photo → Livraison finale au client.</li>
+    <li>Branchement conformité : Si marchandise conforme → paiement COD total + prélèvement commission 0,6&nbsp;% → mise à jour réputation. Si non-conforme → paiement frais de retour uniquement → calcul frais de retour.</li>
+    <li>Branchement litige : Si litige signalé → l'Administrateur arbitre et résout → ajuste remboursements → met à jour réputation.</li>
+    <li>Clôture : Laisser feedback produit/transport après finalisation de la transaction.</li>
+  </ul>
+
+  <h2 id="etats">6. Diagrammes d'État et de Transition (UML State Machine)
+  </h2>
+  <p>Ces diagrammes modélisent le cycle de vie complet des entités clés du système ViteComm selon les standards UML 2.x.
+    Chaque état représente une configuration stable d'un objet ; chaque transition est déclenchée par un événement
+    (action ou condition entre crochets).</p>
+
+  <h3>6.1. Diagramme d'État — <code>COMMANDE</code></h3>
+  <p><strong>Rôle :</strong> Représenter le cycle de vie complet d'une commande, de sa création jusqu'à la clôture
+    après paiement et feedback.</p>
+  <img src="diags/diag-detat-et-transition-de-commande.png"
+    alt="Diagramme d'état et de transition — Commande ViteComm">
+  <p><em>Figure 4 : Diagramme d'état-transition de la Commande.</em></p>
+  <ul>
+    <li><strong>Créer commande</strong> : état initial, déclenché par la validation du panier client.</li>
+    <li><strong>Valider par vendeur</strong> : transition <code>validation_par_vendeur</code> — le vendeur confirme la disponibilité des articles.</li>
+    <li><strong>Assigner à livreur</strong> : transition <code>assignation_par_livreur</code> — un livreur disponible accepte la course.</li>
+    <li><strong>Collecter</strong> : transition <code>valider_code_de_vérification / confirmer_collecte</code> — le livreur présente le code et prend une preuve photo (RG06, RG07).</li>
+    <li><strong>Livrer</strong> : transition <code>confirmer_prise_en_charge</code> — le livreur est en route vers le client.</li>
+    <li>Branchement <em>Litige ?</em> :
+      <ul>
+        <li><strong>Non</strong> → état final <strong>Livrer</strong> (commande acceptée intégralement).</li>
+        <li><strong>Oui</strong> → <strong>Ouvrir Litige</strong> (<code>litige_ouvert</code>) → <strong>Arbitrer</strong> par l'administrateur.</li>
+      </ul>
+    </li>
+    <li><strong>Facturer</strong> : transition <code>générer_facture</code> après résolution du litige (<code>resoudre_litige[accepté]</code> ou <code>resoudre_litige[rejeté]</code>). La facture verrouille les montants définitifs (RG25).</li>
+    <li><strong>Payer</strong> : transition <code>Confirmer_paiement_cod</code> — encaissement COD enregistré dans <code>PAIEMENT</code> (RG26).</li>
+    <li>État terminal : <code>soumettre_feedback</code> — le client évalue livreur et/ou vendeur (RG23).</li>
+  </ul>
+
+  <h3>6.2. Diagramme d'État — <code>LIVRAISON</code></h3>
+  <p><strong>Rôle :</strong> Suivre précisément les étapes opérationnelles d'une livraison, de l'attente
+    d'affectation jusqu'à la remise physique au client.</p>
+  <img src="diags/diag-detat-et-transition-de-livraison.png"
+    alt="Diagramme d'état et de transition — Livraison ViteComm">
+  <p><em>Figure 5 : Diagramme d'état-transition de la Livraison.</em></p>
+  <ul>
+    <li><strong>En Attente</strong> : état initial — aucun livreur assigné. Transition <code>abandonner</code> → <strong>Échec Livraison</strong> (état terminal d'échec).</li>
+    <li><strong>Assigner</strong> : transition <code>affectation_livreur</code> — un livreur est affecté à la course (RG05).</li>
+    <li><strong>En Cours</strong> : transition <code>code_validation + preuve_collecte</code> — code vérifié et preuve photo enregistrée (RG06, RG07).</li>
+    <li><strong>En Livraison</strong> : transition <code>départ_livraison</code> — le livreur est en route. En cas de problème : <code>réessayer | échec[problème]</code> → retour vers <strong>Échec Livraison</strong>.</li>
+    <li><strong>Livrer</strong> : transition <code>livraison_réussie[client_satisfait]</code> — marchandises remises au client.</li>
+    <li>État terminal : <code>signature + paiement COD</code> — signature du bon de livraison et encaissement (RG27, RG28).</li>
+  </ul>
+
+  <h3>6.3. Diagramme d'État — <code>LITIGE</code></h3>
+  <p><strong>Rôle :</strong> Modéliser le processus d'arbitrage d'un litige depuis son ouverture jusqu'à sa
+    clôture, en garantissant la traçabilité des preuves multimédias (RG09, RG16, RG21, RG31).</p>
+  <img src="diags/diag-detat-et-transition-de-litige.png"
+    alt="Diagramme d'état et de transition — Litige ViteComm">
+  <p><em>Figure 6 : Diagramme d'état-transition du Litige.</em></p>
+  <ul>
+    <li><strong>Créer Litige</strong> : état initial déclenché par <code>creation_du_litige</code> lors de la livraison.</li>
+    <li><strong>En Attente Preuves</strong> : transition <code>ouverture du litige</code> — le client dispose d'un délai pour soumettre ses preuves visuelles (<code>MEDIA_PREUVE</code>).</li>
+    <li><strong>Soumettre à Arbitrage</strong> : transition <code>soumission_preuve / enregistrer_media</code> — au moins un média téléversé dans <code>MEDIA_PREUVE</code>.</li>
+    <li><strong>En Cours Traitement</strong> : transition <code>mise_a_jour_des_preuves [nombre_medias &gt;= 1] / noter_admin</code> — l'administrateur prend connaissance du dossier.</li>
+    <li>Branchement décision :
+      <ul>
+        <li><code>debut_arbitrage / decision_admin = 'accepté'</code> → état <strong>Accepter</strong> (remboursement total).</li>
+        <li><code>calcul_de_remboursement / decision_admin = 'rejeté'</code> → état <strong>Rejeter</strong> (aucun remboursement).</li>
+        <li><code>decision_admin = accepté</code> (partiel) → état <strong>Partiellement Accepté</strong> (remboursement partiel).</li>
+      </ul>
+    </li>
+    <li>État terminal : <code>clôture_litige / noter_parties</code> — litige clos, réputation mise à jour (RG10).</li>
+  </ul>
+
+  <h3>6.4. Diagramme d'État — <code>PAIEMENT</code></h3>
+  <p><strong>Rôle :</strong> Tracer le cycle de vie de l'encaissement COD (Cash On Delivery), depuis l'émission de
+    la facture jusqu'à la validation définitive du règlement (RG08, RG26).</p>
+  <img src="diags/diag-detat-et-transition-de-paiement.png"
+    alt="Diagramme d'état et de transition — Paiement ViteComm">
+  <p><em>Figure 7 : Diagramme d'état-transition du Paiement.</em></p>
+  <ul>
+    <li><strong>En Attente</strong> : état initial — facture émise mais pas encore encaissée. Transition <code>annulation_client</code> → <strong>Annuler</strong> (état terminal d'abandon).</li>
+    <li><strong>En Cours Collecte</strong> : transition <code>Début_collecte_COD / [facture_prête]</code> — le livreur initie la collecte du montant auprès du client.</li>
+    <li><strong>Vérifier</strong> : transition <code>collecte_effectuée / entry : enregistrer montant</code> — le montant reçu est enregistré dans <code>PAIEMENT.montant_perçu</code>.</li>
+    <li>Branchement vérification :
+      <ul>
+        <li><code>code_verification_ok / [montant = total]</code> → <strong>Valider</strong> → <code>paiement_terminé</code> → état terminal (succès).</li>
+        <li><code>code_incorrect / [echec_verification]</code> → <strong>Réjeter</strong> → <code>nouvelle_tentative</code> → <strong>Nouvelle Tentative</strong> → retour vers <strong>Annuler</strong>.</li>
+        <li><code>annulation</code> depuis <em>En Cours Collecte</em> → <strong>Annuler</strong> directement.</li>
+      </ul>
+    </li>
+    <li>État terminal succès : paiement validé, commission de 0,6&nbsp;% prélevée automatiquement (RG08), gains crédités au livreur (RG28).</li>
+  </ul>
 
 </body>
 
