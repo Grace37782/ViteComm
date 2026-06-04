@@ -6,6 +6,7 @@ const TABS = [
   { id: 'dashboard', label: 'Tableau de bord', icon: '📊' },
   { id: 'users', label: 'Utilisateurs', icon: '👥' },
   { id: 'products', label: 'Produits', icon: '📦' },
+  { id: 'marchés', label: 'Marchés', icon: '🗺️' },
   { id: 'signalements', label: 'Signalements', icon: '🚩' },
   { id: 'litiges', label: 'Litiges', icon: '⚖️' },
 ]
@@ -33,6 +34,7 @@ export default function Admin() {
         {tab === 'dashboard' && <DashboardTab />}
         {tab === 'users' && <UsersTab />}
         {tab === 'products' && <ProductsTab />}
+        {tab === 'marchés' && <MarketsTab />}
         {tab === 'signalements' && <SignalementsTab />}
         {tab === 'litiges' && <LitigesTab />}
       </main>
@@ -696,6 +698,336 @@ function ResolveForm({ litige, onResolve, onCancel }) {
           Annuler
         </button>
       </div>
+    </div>
+  )
+}
+
+// ============================================================
+// 🗺️  MARKETS TAB — Admin creates / edits / deletes Marchés
+// ============================================================
+const EMPTY_FORM = { nom: '', latitude: '', longitude: '', image_url: '', description: '' }
+
+function MarketsTab() {
+  const [markets, setMarkets] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [editId, setEditId] = useState(null)  // null = create mode, number = edit mode
+  const [showForm, setShowForm] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState('')
+
+  function flash(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(''), 3000)
+  }
+
+  function fetchMarkets() {
+    setLoading(true)
+    api.get('/admin/markets').then(d => { setMarkets(d); setLoading(false) }).catch(() => setLoading(false))
+  }
+
+  useEffect(() => { fetchMarkets() }, [])
+
+  function openCreate() {
+    setForm(EMPTY_FORM)
+    setEditId(null)
+    setShowForm(true)
+  }
+
+  function openEdit(m) {
+    setForm({
+      nom: m.nom,
+      latitude: String(m.latitude),
+      longitude: String(m.longitude),
+      image_url: m.image_url || '',
+      description: m.description || ''
+    })
+    setEditId(m.id_marche)
+    setShowForm(true)
+  }
+
+  async function handleSave() {
+    if (!form.nom || !form.latitude || !form.longitude) {
+      flash('⚠️ Nom, latitude et longitude sont requis.')
+      return
+    }
+    setSaving(true)
+    try {
+      if (editId) {
+        await api.put(`/admin/markets/${editId}`, form)
+        flash('✅ Marché mis à jour.')
+      } else {
+        await api.post('/admin/markets', form)
+        flash('✅ Marché créé avec succès.')
+      }
+      setShowForm(false)
+      fetchMarkets()
+    } catch (e) {
+      flash('❌ ' + e.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete(m) {
+    if (!confirm(`Supprimer "${m.nom}" ? Les vendeurs de ce marché seront déliés.`)) return
+    try {
+      await api.delete(`/admin/markets/${m.id_marche}`)
+      flash('✅ Marché supprimé.')
+      fetchMarkets()
+    } catch (e) {
+      flash('❌ ' + e.message)
+    }
+  }
+
+  // Lightweight map preview via OpenStreetMap static tile
+  function mapPreviewUrl(lat, lng) {
+    const z = 14
+    const x = Math.floor((lng + 180) / 360 * Math.pow(2, z))
+    const latRad = lat * Math.PI / 180
+    const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, z))
+    return `https://tile.openstreetmap.org/${z}/${x}/${y}.png`
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"
+          style={{ background: toast.startsWith('❌') ? '#D85A30' : '#1D9E75' }}>
+          {toast}
+        </div>
+      )}
+
+      {/* Header row */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-black" style={{ color: '#2C2C2A' }}>Gestion des Marchés</h2>
+          <p className="text-xs mt-0.5" style={{ color: '#888780' }}>
+            {markets.length} localmart{markets.length !== 1 ? 's' : ''} enregistré{markets.length !== 1 ? 's' : ''} sur la plateforme
+          </p>
+        </div>
+        <button
+          onClick={openCreate}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-white text-sm font-black cursor-pointer transition-all hover:opacity-90"
+          style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)' }}
+        >
+          + Nouveau Marché
+        </button>
+      </div>
+
+      {/* Create / Edit Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}
+          onClick={() => setShowForm(false)}>
+          <div className="rounded-3xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+            style={{ background: '#fff' }}
+            onClick={e => e.stopPropagation()}>
+
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-black" style={{ color: '#2C2C2A' }}>
+                {editId ? '✏️ Modifier le Marché' : '🏛️ Nouveau Localmart'}
+              </h3>
+              <button onClick={() => setShowForm(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 cursor-pointer text-sm"
+                style={{ border: 'none', background: 'transparent' }}>✕</button>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: '#888780' }}>Nom du Marché *</label>
+                <input
+                  type="text"
+                  placeholder="ex: Marché Dantokpa"
+                  value={form.nom}
+                  onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
+                  className="w-full mt-1 px-4 py-3 rounded-xl text-sm outline-none border"
+                  style={{ borderColor: '#E8E6DF', color: '#2C2C2A' }}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: '#888780' }}>Latitude *</label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    placeholder="6.3764"
+                    value={form.latitude}
+                    onChange={e => setForm(f => ({ ...f, latitude: e.target.value }))}
+                    className="w-full mt-1 px-4 py-3 rounded-xl text-sm outline-none border"
+                    style={{ borderColor: '#E8E6DF', color: '#2C2C2A' }}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: '#888780' }}>Longitude *</label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    placeholder="2.4430"
+                    value={form.longitude}
+                    onChange={e => setForm(f => ({ ...f, longitude: e.target.value }))}
+                    className="w-full mt-1 px-4 py-3 rounded-xl text-sm outline-none border"
+                    style={{ borderColor: '#E8E6DF', color: '#2C2C2A' }}
+                  />
+                </div>
+              </div>
+
+              {/* Map coordinate hint */}
+              {form.latitude && form.longitude && (
+                <div className="rounded-xl overflow-hidden border text-center" style={{ borderColor: '#E8E6DF', height: 120 }}>
+                  <img
+                    src={mapPreviewUrl(parseFloat(form.latitude), parseFloat(form.longitude))}
+                    alt="Aperçu carte"
+                    className="w-full h-full object-cover"
+                    onError={e => { e.target.style.display = 'none' }}
+                  />
+                </div>
+              )}
+              {form.latitude && form.longitude && (
+                <p className="text-[10px] text-center" style={{ color: '#888780' }}>
+                  📍 Aperçu: ({parseFloat(form.latitude).toFixed(4)}, {parseFloat(form.longitude).toFixed(4)}) ·
+                  <a href={`https://www.openstreetmap.org/?mlat=${form.latitude}&mlon=${form.longitude}#map=15/${form.latitude}/${form.longitude}`}
+                    target="_blank" rel="noreferrer" className="ml-1 underline" style={{ color: '#1D9E75' }}>Vérifier sur OSM</a>
+                </p>
+              )}
+
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: '#888780' }}>URL de l'image (optionnel)</label>
+                <input
+                  type="url"
+                  placeholder="https://images.unsplash.com/..."
+                  value={form.image_url}
+                  onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
+                  className="w-full mt-1 px-4 py-3 rounded-xl text-sm outline-none border"
+                  style={{ borderColor: '#E8E6DF', color: '#2C2C2A' }}
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: '#888780' }}>Description</label>
+                <textarea
+                  rows={3}
+                  placeholder="Description du marché visible par les clients..."
+                  value={form.description}
+                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                  className="w-full mt-1 px-4 py-3 rounded-xl text-sm outline-none border resize-none"
+                  style={{ borderColor: '#E8E6DF', color: '#2C2C2A' }}
+                />
+              </div>
+
+              {/* Quick coordinate helper for common Benin cities */}
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: '#888780' }}>Coordonnées rapides (Bénin)</label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {[
+                    { label: 'Cotonou Centre', lat: 6.3654, lng: 2.4183 },
+                    { label: 'Dantokpa', lat: 6.3764, lng: 2.4430 },
+                    { label: 'Porto-Novo', lat: 6.4969, lng: 2.6289 },
+                    { label: 'Parakou', lat: 9.3376, lng: 2.6278 },
+                    { label: 'Abomey-Calavi', lat: 6.4491, lng: 2.3553 },
+                  ].map(c => (
+                    <button
+                      key={c.label}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, latitude: String(c.lat), longitude: String(c.lng) }))}
+                      className="text-[9px] font-bold px-2.5 py-1.5 rounded-full cursor-pointer transition-all"
+                      style={{ background: '#E1F5EE', color: '#0F6E56', border: '1px solid #9FE1CB' }}
+                    >
+                      📍 {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer transition-all mt-2"
+                style={{ background: saving ? '#ccc' : 'linear-gradient(135deg, #1D9E75, #0F6E56)', border: 'none' }}
+              >
+                {saving ? 'Enregistrement...' : editId ? 'Mettre à jour' : 'Créer le Marché'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Market Cards Grid */}
+      {loading ? (
+        <div className="text-center py-12 text-sm" style={{ color: '#888780' }}>Chargement des marchés...</div>
+      ) : markets.length === 0 ? (
+        <div className="text-center py-16 rounded-3xl border-2 border-dashed" style={{ borderColor: '#E8E6DF' }}>
+          <div className="text-5xl mb-3">🗺️</div>
+          <p className="font-bold text-sm mb-3" style={{ color: '#888780' }}>Aucun marché enregistré</p>
+          <button onClick={openCreate}
+            className="text-sm font-black px-5 py-2.5 rounded-2xl text-white cursor-pointer"
+            style={{ background: '#1D9E75', border: 'none' }}>+ Créer le premier marché</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {markets.map(m => (
+            <div key={m.id_marche} className="rounded-2xl border overflow-hidden shadow-sm hover:shadow-md transition-all"
+              style={{ background: '#fff', borderColor: '#E8E6DF' }}>
+
+              {/* Market Image */}
+              <div className="relative h-36 overflow-hidden" style={{ background: '#F7F8F3' }}>
+                {m.image_url ? (
+                  <img src={m.image_url} alt={m.nom} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl">🏛️</div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-3 left-3 right-3">
+                  <h3 className="font-black text-sm text-white leading-tight">{m.nom}</h3>
+                </div>
+                {/* Vendor count badge */}
+                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-black"
+                  style={{ background: 'rgba(255,255,255,0.92)', color: '#0F6E56' }}>
+                  🏪 {m._count?.vendeurs || 0} étals
+                </div>
+              </div>
+
+              <div className="p-4">
+                {/* Coordinates */}
+                <div className="flex items-center gap-2 text-[10px] mb-2" style={{ color: '#888780' }}>
+                  <span>📍 {m.latitude.toFixed(4)}, {m.longitude.toFixed(4)}</span>
+                  <a
+                    href={`https://www.openstreetmap.org/?mlat=${m.latitude}&mlon=${m.longitude}#map=15/${m.latitude}/${m.longitude}`}
+                    target="_blank" rel="noreferrer"
+                    className="underline font-semibold"
+                    style={{ color: '#1D9E75' }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    OSM ↗
+                  </a>
+                </div>
+
+                {m.description && (
+                  <p className="text-[10px] mb-3 line-clamp-2" style={{ color: '#5F5E5A' }}>{m.description}</p>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => openEdit(m)}
+                    className="flex-1 text-xs font-bold py-2 rounded-xl cursor-pointer transition-all"
+                    style={{ background: '#E1F5EE', color: '#0F6E56', border: 'none' }}
+                  >
+                    ✏️ Modifier
+                  </button>
+                  <button
+                    onClick={() => handleDelete(m)}
+                    className="text-xs font-bold px-4 py-2 rounded-xl cursor-pointer transition-all"
+                    style={{ background: '#FDE8E2', color: '#D85A30', border: 'none' }}
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
