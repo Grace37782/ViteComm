@@ -3,53 +3,72 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import BottomNav from '../../components/client/BottomNav'
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
-const CATEGORY_EMOJI = {
-  'Légumes': '🥬',
-  'Épices & Condiments': '🌶️',
-  'Huiles & Matières Grasses': '🫒',
+// Custom Leaflet marker icons using divIcon (bypasses URL image path issues in Vite)
+const createMarketIcon = (isActive) => L.divIcon({
+  html: `<div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white shadow-lg text-white font-bold text-lg hover:scale-115 transition-transform ${
+    isActive ? 'bg-amber-500 scale-110 ring-4 ring-amber-300' : 'bg-emerald-650'
+  }">🏪</div>`,
+  className: 'custom-div-icon',
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40]
+})
+
+const createUserIcon = () => L.divIcon({
+  html: `<div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 border-2 border-white shadow-lg text-white text-sm animate-bounce">📍</div>`,
+  className: 'custom-div-icon',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32]
+})
+
+function getDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371 // Earth radius in km
+  const dLat = deg2rad(lat2 - lat1)
+  const dLon = deg2rad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
 }
 
-function catEmoji(name) {
-  return CATEGORY_EMOJI[name] || '📦'
+function deg2rad(deg) {
+  return deg * (Math.PI / 180)
 }
 
-function productEmoji(name) {
-  const map = {
-    'tomate': '🍅', 'piment': '🌶️', 'oignon': '🧅',
-    'banane': '🍌', 'poisson': '🐟', 'épice': '🌶️',
-    'huile': '🫒', 'palme': '🌴', 'crevette': '🦐',
-    'tilapia': '🐠', 'maïs': '🌽', 'riz': '🍚',
-    'haricot': '🫘', 'gombo': '🥬', 'mangue': '🥭',
-    'ananas': '🍍', 'pain': '🍞', 'œuf': '🥚', 'poulet': '🍗',
-    'ndolè': '🥬', 'frais': '🍅',
-  }
-  const lower = name.toLowerCase()
-  for (const [key, emoji] of Object.entries(map)) {
-    if (lower.includes(key)) return emoji
-  }
-  return '📦'
-}
-
-function formatPrice(price) {
-  return price.toLocaleString() + ' F'
+function MapRecenter({ center, zoomLevel }) {
+  const map = useMap()
+  useEffect(() => {
+    if (center) {
+      map.setView(center, zoomLevel || 13)
+    }
+  }, [center, zoomLevel, map])
+  return null
 }
 
 export default function AccueilClient() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const [vendors, setVendors] = useState([])
-  const [categories, setCategories] = useState([])
-  const [allProducts, setAllProducts] = useState([])
+  const [markets, setMarkets] = useState([])
   const [cart, setCart] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const [recherche, setRecherche] = useState('')
-  const [categorie, setCategorie] = useState('Tout')
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
   const [geoPosition, setGeoPosition] = useState(null)
   const [geoErreur, setGeoErreur] = useState('')
+  
+  const [mapCenter, setMapCenter] = useState([6.370, 2.430]) // Default Cotonou
+  const [mapZoom, setMapZoom] = useState(13)
+  const [activeMarket, setActiveMarket] = useState(null)
 
   const prenom = user?.prenom || 'Client'
   const adresse = user?.profil?.adresse_livraison || null
@@ -58,15 +77,11 @@ export default function AccueilClient() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [vendorsRes, catsRes, prodsRes, cartRes] = await Promise.all([
-          api.get('/client/vendors'),
-          api.get('/client/categories'),
-          api.get('/client/products'),
+        const [marketsRes, cartRes] = await Promise.all([
+          api.get('/client/markets'),
           api.get('/client/cart'),
         ])
-        setVendors(vendorsRes)
-        setCategories(catsRes)
-        setAllProducts(prodsRes)
+        setMarkets(marketsRes)
         setCart(cartRes)
       } catch (err) {
         console.error(err)
@@ -77,6 +92,26 @@ export default function AccueilClient() {
     loadData()
   }, [])
 
+  // Auto-selection of market when exactly 1 market matches the search term
+  useEffect(() => {
+    const term = recherche.trim().toLowerCase()
+    if (term.length >= 2) {
+      const matched = markets.filter(m =>
+        m.nom.toLowerCase().includes(term) ||
+        (m.description && m.description.toLowerCase().includes(term))
+      )
+      if (matched.length === 1) {
+        const singleMarket = matched[0]
+        setActiveMarket(singleMarket)
+        setMapCenter([singleMarket.latitude, singleMarket.longitude])
+        setMapZoom(15)
+      }
+    } else if (term.length === 0) {
+      setActiveMarket(null)
+      setMapZoom(13)
+    }
+  }, [recherche, markets])
+
   function demanderPosition() {
     if (!navigator.geolocation) {
       setGeoErreur('Géolocalisation non disponible sur cet appareil.')
@@ -86,7 +121,10 @@ export default function AccueilClient() {
     setGeoErreur('')
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setGeoPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setGeoPosition(coords)
+        setMapCenter([coords.lat, coords.lng])
+        setMapZoom(14)
         setGeoLoading(false)
       },
       () => {
@@ -96,264 +134,350 @@ export default function AccueilClient() {
     )
   }
 
-  const catList = ['Tout', ...categories.map((c) => c.nom_categorie)]
+  function setPositionMock(city) {
+    setGeoErreur('')
+    let coords = null
+    if (city === 'cotonou_dantokpa') {
+      coords = { lat: 6.3764, lng: 2.4430 }
+    } else if (city === 'cotonou_saintmichel') {
+      coords = { lat: 6.3685, lng: 2.4180 }
+    } else if (city === 'porto_novo') {
+      coords = { lat: 6.5120, lng: 2.6170 }
+    }
+    if (coords) {
+      setGeoPosition(coords)
+      setMapCenter([coords.lat, coords.lng])
+      setMapZoom(14)
+      setActiveMarket(null)
+    }
+  }
 
-  // Vendors: filter by text search only (vendors have no single category)
-  const vendorsFiltered = vendors.filter((v) =>
-    v.nom_etablissement.toLowerCase().includes(recherche.toLowerCase()) ||
-    v.localisation_marche.toLowerCase().includes(recherche.toLowerCase())
+  // Calculate distances
+  const marketsWithDistance = markets.map(m => {
+    if (geoPosition) {
+      const dist = getDistanceKm(geoPosition.lat, geoPosition.lng, m.latitude, m.longitude)
+      return { ...m, distance: dist }
+    }
+    return { ...m, distance: null }
+  })
+
+  // Sort closest first
+  const sortedMarkets = [...marketsWithDistance].sort((a, b) => {
+    if (a.distance !== null && b.distance !== null) {
+      return a.distance - b.distance
+    }
+    return 0
+  })
+
+  // Filter based on search query
+  const marketsFiltered = sortedMarkets.filter(m =>
+    m.nom.toLowerCase().includes(recherche.toLowerCase()) ||
+    (m.description && m.description.toLowerCase().includes(recherche.toLowerCase()))
   )
 
-  // Popular products: filter by selected category chip
-  const popularProducts = allProducts
-    .filter((p) => {
-      if (categorie === 'Tout') return true
-      return p.categorie?.nom_categorie === categorie
-    })
-    .slice(0, 6)
+  const suggestions = recherche
+    ? markets.filter(m => m.nom.toLowerCase().includes(recherche.toLowerCase()))
+    : []
+
+  const handleSelectMarket = (m) => {
+    setActiveMarket(m)
+    setMapCenter([m.latitude, m.longitude])
+    setMapZoom(15)
+    setShowSuggestions(false)
+    setRecherche(m.nom)
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      if (marketsFiltered.length > 0) {
+        handleSelectMarket(marketsFiltered[0])
+      }
+      setShowSuggestions(false)
+    }
+  }
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center" style={{ background: '#F7F8F3' }}>
+      <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="text-4xl mb-3">⏳</div>
-          <div className="font-bold text-sm" style={{ color: '#888780' }}>Chargement…</div>
+          <div className="text-4xl mb-3 animate-spin">⏳</div>
+          <div className="font-bold text-sm text-gray-500">Chargement de la carte et des marchés…</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: '#F7F8F3', paddingBottom: 72 }}>
-      {/* ══ HEADER ══ */}
-      <div
-        className="relative overflow-hidden px-5 pt-5 pb-5"
-        style={{ background: 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}
-      >
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />
+    <div className="w-full min-h-screen font-sans bg-gray-50 flex flex-col pb-20">
+      {/* Header Panel */}
+      <div className="bg-emerald-800 text-white px-5 pt-6 pb-6 shadow-md relative overflow-hidden flex-shrink-0">
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-emerald-700/40 pointer-events-none" />
+        <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-emerald-700/40 pointer-events-none" />
 
         <div className="relative z-10 flex items-center justify-between mb-4">
           <div>
-            <div className="text-white font-black text-lg leading-tight">
-              Bonjour {prenom} 👋
-            </div>
-            {geoPosition ? (
-              <div className="text-white/70 text-xs mt-0.5 flex items-center gap-1">
-                📍 Position détectée
-              </div>
-            ) : adresse ? (
-              <div className="text-white/70 text-xs mt-0.5">{adresse}</div>
-            ) : (
-              <div className="text-white/70 text-xs mt-0.5">Cotonou</div>
-            )}
+            <h1 className="font-black text-xl leading-tight">Découverte des Marchés 👋</h1>
+            <p className="text-emerald-200 text-xs mt-0.5">
+              Bonjour {prenom} • {geoPosition ? `Pos: ${geoPosition.lat.toFixed(4)}, ${geoPosition.lng.toFixed(4)}` : adresse || 'Bénin'}
+            </p>
           </div>
+
           <button
             onClick={() => navigate('/client/panier')}
-            className="relative w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer"
-            style={{ background: 'rgba(255,255,255,0.2)' }}
+            className="relative w-11 h-11 rounded-2xl bg-emerald-700/50 hover:bg-emerald-750 border border-emerald-600 flex items-center justify-center transition-all cursor-pointer"
           >
             <span className="text-xl">🛒</span>
             {panierCount > 0 && (
-              <div
-                className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white font-black flex items-center justify-center"
-                style={{ background: '#E24B4A', fontSize: 9 }}
-              >
+              <div className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full text-white font-black text-[9px] bg-rose-500 border border-white">
                 {panierCount}
               </div>
             )}
           </button>
         </div>
 
-        {/* Barre de recherche */}
-        <div
-          className="relative z-10 flex items-center gap-2 px-4 py-3 rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)' }}
-        >
-          <span className="text-base">🔍</span>
-          <input
-            type="text"
-            placeholder="Chercher un étal ou marché…"
-            value={recherche}
-            onChange={(e) => setRecherche(e.target.value)}
-            className="flex-1 bg-transparent outline-none text-sm font-medium"
-            style={{ color: '#fff' }}
-          />
-          {recherche && (
-            <button
-              onClick={() => setRecherche('')}
-              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16 }}
-            >
-              ✕
-            </button>
+        {/* Search Suggestion wrapper */}
+        <div className="relative z-30">
+          <div className="flex items-center gap-2 bg-emerald-900/60 border border-emerald-700/80 px-4 py-3 rounded-2xl">
+            <span className="text-gray-300">🔍</span>
+            <input
+              type="text"
+              placeholder="Rechercher un marché (Dantokpa, Ganhi...)..."
+              value={recherche}
+              onFocus={() => setShowSuggestions(true)}
+              onKeyDown={handleKeyDown}
+              onChange={(e) => {
+                setRecherche(e.target.value)
+                setShowSuggestions(true)
+              }}
+              className="flex-1 bg-transparent outline-none text-sm text-white placeholder-emerald-300/80 font-medium"
+            />
+            {recherche && (
+              <button
+                onClick={() => {
+                  setRecherche('')
+                  setActiveMarket(null)
+                  setShowSuggestions(false)
+                }}
+                className="text-white hover:text-gray-200 text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Autocomplete Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 text-gray-805">
+              {suggestions.map((m) => (
+                <div
+                  key={m.id_marche}
+                  onClick={() => handleSelectMarket(m)}
+                  className="px-4 py-3 hover:bg-gray-100 cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-b-0 text-gray-800"
+                >
+                  <div>
+                    <p className="font-bold text-xs">{m.nom}</p>
+                    <p className="text-[10px] text-gray-400 truncate max-w-xs">{m.description}</p>
+                  </div>
+                  <span className="text-xs">🏪</span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
-        {/* Bouton géoloc */}
-        <div className="relative z-10 mt-3">
+        {/* Location selectors */}
+        <div className="relative z-10 mt-4 flex flex-wrap gap-2 items-center">
           <button
             onClick={demanderPosition}
             disabled={geoLoading}
-            className="flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer text-xs font-semibold"
-            style={{
-              background: 'rgba(255,255,255,0.18)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              color: '#fff',
-              opacity: geoLoading ? 0.7 : 1,
-            }}
+            className="flex items-center gap-1 bg-emerald-700 hover:bg-emerald-600 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all disabled:opacity-50 cursor-pointer"
           >
-            <span>{geoLoading ? '⏳' : '📍'}</span>
-            {geoLoading ? 'Localisation en cours…' : geoPosition ? 'Position détectée ✓' : 'Utiliser ma position'}
+            📍 {geoLoading ? 'Localisation...' : 'GPS Temps Réel'}
           </button>
+
+          <button
+            onClick={() => setPositionMock('cotonou_dantokpa')}
+            className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+              geoPosition?.lat === 6.3764 ? 'bg-white text-emerald-800 shadow-sm' : 'bg-emerald-700/60 text-white hover:bg-emerald-700'
+            }`}
+          >
+            🏢 Cotonou (Dantokpa)
+          </button>
+
+          <button
+            onClick={() => setPositionMock('cotonou_saintmichel')}
+            className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+              geoPosition?.lat === 6.3685 ? 'bg-white text-emerald-800 shadow-sm' : 'bg-emerald-700/60 text-white hover:bg-emerald-700'
+            }`}
+          >
+            🏢 Cotonou (St Michel)
+          </button>
+
+          <button
+            onClick={() => setPositionMock('porto_novo')}
+            className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+              geoPosition?.lat === 6.5120 ? 'bg-white text-emerald-800 shadow-sm' : 'bg-emerald-700/60 text-white hover:bg-emerald-700'
+            }`}
+          >
+            🏢 Porto-Novo
+          </button>
+
           {geoErreur && (
-            <p className="text-xs mt-1.5" style={{ color: '#FFD6D6' }}>⚠️ {geoErreur}</p>
+            <p className="text-[10px] text-rose-300 w-full mt-1">⚠️ {geoErreur}</p>
           )}
         </div>
       </div>
 
-      {/* ══ FILTRES CATÉGORIES ══ */}
-      {categories.length > 0 && (
-        <div className="px-4 mb-4 overflow-x-auto mt-4">
-          <div className="flex gap-2 pb-1" style={{ width: 'max-content' }}>
-            {catList.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setCategorie(cat)}
-                className="px-4 py-2 rounded-full text-xs font-bold cursor-pointer whitespace-nowrap transition-all"
-                style={{
-                  background: categorie === cat ? '#1D9E75' : '#fff',
-                  color: categorie === cat ? '#fff' : '#5F5E5A',
-                  border: `1.5px solid ${categorie === cat ? '#1D9E75' : '#E8E6DF'}`,
-                }}
-              >
-                {cat === 'Tout' ? '🏠 Tous' : `${catEmoji(cat)} ${cat}`}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* 🗺️ Interactive Map Container with absolute selection drawer overlay */}
+      <div className="w-full h-96 relative shadow-inner border-b border-gray-200 flex-shrink-0">
+        <MapContainer center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%', zIndex: 10 }}>
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          
+          <MapRecenter center={mapCenter} zoomLevel={mapZoom} />
 
-      {/* ══ ÉTALS / VENDEURS ══ */}
-      <div className="px-4 mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-black text-base" style={{ color: '#2C2C2A' }}>
-            Étals disponibles
-          </h2>
-          <span className="text-xs font-semibold" style={{ color: '#1D9E75' }}>
-            {vendorsFiltered.length} trouvé{vendorsFiltered.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-
-        {vendorsFiltered.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-4xl mb-2">🔍</div>
-            <p className="text-sm font-semibold" style={{ color: '#888780' }}>
-              Aucun étal trouvé pour "{recherche}"
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {vendorsFiltered.map((v) => (
-              <button
-                key={v.id_user}
-                onClick={() => navigate('/client/catalogue/' + v.id_user)}
-                className="w-full text-left rounded-2xl p-4 cursor-pointer transition-all hover:-translate-y-0.5 active:scale-98"
-                style={{
-                  background: '#fff',
-                  border: '1.5px solid #E8E6DF',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-                }}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl flex-shrink-0 font-black"
-                    style={{ background: '#E1F5EE', color: '#0F6E56' }}
-                  >
-                    {v.nom_etablissement.charAt(0)}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <h3 className="font-black text-sm truncate" style={{ color: '#2C2C2A' }}>
-                        {v.nom_etablissement}
-                      </h3>
-                      <span
-                        className="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-                        style={{
-                          background: '#E1F5EE',
-                          color: '#0F6E56',
-                        }}
-                      >
-                        🏪 {v._count.produits} produit{v._count.produits !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-xs font-semibold" style={{ color: '#1D9E75' }}>
-                        📍 {v.localisation_marche}
-                      </span>
-                      <span className="text-xs" style={{ color: '#888780' }}>
-                        ⭐ {v.score_reputation.toFixed(1)}
-                      </span>
-                    </div>
-
-                    <div className="flex gap-1.5 flex-wrap">
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-lg font-medium"
-                        style={{ background: '#F7F8F3', color: '#5F5E5A' }}
-                      >
-                        {v.utilisateur.prenom} {v.utilisateur.nom}
-                      </span>
-                    </div>
-                  </div>
+          {/* User Location Pin */}
+          {geoPosition && (
+            <Marker position={[geoPosition.lat, geoPosition.lng]} icon={createUserIcon()}>
+              <Popup>
+                <div className="p-1 text-center">
+                  <p className="text-xs font-black text-blue-700">📍 Votre position actuelle</p>
                 </div>
-              </button>
-            ))}
+              </Popup>
+            </Marker>
+          )}
+
+          {/* Markets Pins */}
+          {marketsFiltered.map(m => {
+            const isActive = activeMarket?.id_marche === m.id_marche
+            return (
+              <Marker
+                key={m.id_marche}
+                position={[m.latitude, m.longitude]}
+                icon={createMarketIcon(isActive)}
+                eventHandlers={{
+                  click: () => {
+                    setActiveMarket(m)
+                    setMapCenter([m.latitude, m.longitude])
+                    setMapZoom(15)
+                    setRecherche(m.nom)
+                    setShowSuggestions(false)
+                  }
+                }}
+              />
+            )
+          })}
+        </MapContainer>
+
+        {/* 🌟 Premium Selected Market Map Overlay Card */}
+        {activeMarket && (
+          <div className="absolute bottom-5 left-4 right-4 bg-white/90 backdrop-blur-md border border-gray-200 rounded-3xl p-4 shadow-2xl z-20 transition-all duration-300 animate-slide-up flex gap-3 items-center">
+            <img
+              src={activeMarket.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=120&q=80'}
+              alt={activeMarket.nom}
+              className="w-16 h-16 rounded-2xl object-cover flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-1">
+                <h4 className="font-extrabold text-sm text-gray-800 truncate">{activeMarket.nom}</h4>
+                <button
+                  onClick={() => {
+                    setActiveMarket(null)
+                    setRecherche('')
+                  }}
+                  className="text-gray-400 hover:text-gray-600 text-xs w-5 h-5 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-[10px] text-gray-500 line-clamp-1 mt-0.5">{activeMarket.description}</p>
+              
+              <div className="flex items-center gap-3 mt-2">
+                <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  🏪 {activeMarket._count?.vendeurs || 0} étals actifs
+                </span>
+                {geoPosition && (
+                  <span className="text-[9px] font-bold text-gray-500">
+                    📏 {getDistanceKm(geoPosition.lat, geoPosition.lng, activeMarket.latitude, activeMarket.longitude).toFixed(1)} km
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            <button
+              onClick={() => navigate('/client/market/' + activeMarket.id_marche)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-3 rounded-2xl transition-all flex-shrink-0 cursor-pointer shadow-lg shadow-emerald-600/20"
+            >
+              Visiter →
+            </button>
           </div>
         )}
       </div>
 
-      {/* ══ PRODUITS POPULAIRES ══ */}
-      <div className="px-4 mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-black text-base" style={{ color: '#2C2C2A' }}>
-            {categorie === 'Tout' ? 'Produits populaires' : `Produits · ${categorie}`}
-          </h2>
-          {vendors[0] && (
-            <button
-              onClick={() => navigate('/client/catalogue/' + vendors[0].id_user)}
-              className="text-xs font-semibold cursor-pointer"
-              style={{ color: '#1D9E75', background: 'none', border: 'none' }}
-            >
-              Voir tout →
-            </button>
-          )}
-        </div>
+      {/* List Section */}
+      <div className="px-5 mt-6 flex-1">
+        <h3 className="font-black text-gray-850 text-base mb-3 flex items-center justify-between">
+          <span>Marchés Disponibles</span>
+          <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+            {marketsFiltered.length} localmarts
+          </span>
+        </h3>
 
-        {popularProducts.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-4xl mb-2">📦</div>
-            <p className="text-sm font-semibold" style={{ color: '#888780' }}>
-              Aucun produit dans cette catégorie
-            </p>
+        {marketsFiltered.length === 0 ? (
+          <div className="text-center py-10 bg-white rounded-3xl border border-gray-150 shadow-sm">
+            <span className="text-4xl">🏜️</span>
+            <p className="text-xs font-bold text-gray-400 mt-2">Aucun marché ne correspond à ce secteur.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-3">
-            {popularProducts.map((p) => (
-              <button
-                key={p.id_produit}
-                onClick={() => navigate('/client/catalogue/' + p.id_user_vendeur)}
-                className="rounded-2xl p-3 text-center cursor-pointer transition-all hover:shadow-md active:scale-95"
-                style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}
-              >
-                <div className="text-3xl mb-2">{productEmoji(p.nom)}</div>
-                <div className="font-black text-xs mb-0.5" style={{ color: '#2C2C2A' }}>{p.nom}</div>
-                <div className="text-xs font-medium" style={{ color: '#1D9E75' }}>{formatPrice(p.prix_reference)}</div>
-                <div className="text-xs mt-0.5" style={{ color: '#888780' }}>
-                  {p.categorie?.nom_categorie || p.vendeur?.localisation_marche || ''}
+          <div className="flex flex-col gap-4">
+            {marketsFiltered.map((m) => {
+              const isSelected = activeMarket?.id_marche === m.id_marche
+              return (
+                <div
+                  key={m.id_marche}
+                  onClick={() => handleSelectMarket(m)}
+                  className={`flex items-center gap-3 p-3 bg-white rounded-2xl border transition-all shadow-sm cursor-pointer ${
+                    isSelected ? 'border-amber-400 ring-2 ring-amber-200' : 'border-gray-150 hover:border-emerald-300'
+                  }`}
+                >
+                  <img
+                    src={m.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=150&q=80'}
+                    alt={m.nom}
+                    className="w-20 h-20 rounded-xl object-cover flex-shrink-0"
+                  />
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-extrabold text-sm text-gray-800 truncate">{m.nom}</h4>
+                      {m.distance !== null && (
+                        <span className="text-[10px] font-bold text-emerald-600 flex-shrink-0">
+                          📏 {m.distance.toFixed(1)} km
+                        </span>
+                      )}
+                    </div>
+                    
+                    <p className="text-[10px] text-gray-400 line-clamp-2 mt-0.5 leading-normal">{m.description}</p>
+                    
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[10px] font-bold text-gray-450 bg-gray-100 px-2 py-0.5 rounded-full">
+                        🏪 {m._count?.vendeurs || 0} étals actifs
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate('/client/market/' + m.id_marche)
+                        }}
+                        className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 rounded-xl cursor-pointer transition-all shadow-sm"
+                      >
+                        Entrer →
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </button>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

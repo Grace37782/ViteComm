@@ -593,3 +593,61 @@ export const resolveLitige = async (req, res) => {
     return res.status(400).json({ error: error.message });
   }
 };
+
+// --- 5.5. Gestion des Marchés par l'Administrateur ---
+
+export const createMarket = async (req, res) => {
+  const { nom, latitude, longitude, image_url, description } = req.body;
+  if (!nom || latitude === undefined || longitude === undefined) {
+    return res.status(400).json({ error: 'Nom, latitude et longitude requis.' });
+  }
+
+  try {
+    const market = await prisma.marche.create({
+      data: {
+        nom,
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        image_url,
+        description
+      }
+    });
+    return res.status(201).json(market);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors de la création du marché: ' + error.message });
+  }
+};
+
+export const updateMarket = async (req, res) => {
+  const { id } = req.params;
+  const { nom, latitude, longitude, image_url, description } = req.body;
+
+  try {
+    const data = {};
+    if (nom) data.nom = nom;
+    if (latitude !== undefined) data.latitude = parseFloat(latitude);
+    if (longitude !== undefined) data.longitude = parseFloat(longitude);
+    if (image_url !== undefined) data.image_url = image_url;
+    if (description !== undefined) data.description = description;
+
+    const market = await prisma.marche.update({
+      where: { id_marche: parseInt(id, 10) },
+      data
+    });
+    return res.json(market);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors de la mise à jour du marché: ' + error.message });
+  }
+};
+
+export const deleteMarket = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.marche.delete({
+      where: { id_marche: parseInt(id, 10) }
+    });
+    return res.json({ message: 'Marché supprimé avec succès.' });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors de la suppression du marché: ' + error.message });
+  }
+};

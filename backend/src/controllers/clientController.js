@@ -479,3 +479,55 @@ export const createSignalement = async (req, res) => {
     return res.status(500).json({ error: 'Erreur lors du signalement.' });
   }
 };
+
+// --- 2.8. Marchés (Localmarts) ---
+
+export const getMarkets = async (req, res) => {
+  try {
+    const markets = await prisma.marche.findMany({
+      include: {
+        _count: {
+          select: { vendeurs: true }
+        }
+      }
+    });
+    return res.json(markets);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement des marchés.' });
+  }
+};
+
+export const getMarketById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const market = await prisma.marche.findUnique({
+      where: { id_marche: parseInt(id, 10) },
+      include: {
+        vendeurs: {
+          where: {
+            utilisateur: { statut_compte: 'Actif' }
+          },
+          include: {
+            utilisateur: {
+              select: { nom: true, prenom: true, photo_url: true }
+            },
+            produits: {
+              where: { stock_disponible: { gt: 0 } },
+              include: {
+                categorie: { select: { id_categorie: true, nom_categorie: true } }
+              }
+            },
+            _count: {
+              select: { produits: true }
+            }
+          },
+          orderBy: { score_reputation: 'desc' }
+        }
+      }
+    });
+    if (!market) return res.status(404).json({ error: 'Marché introuvable.' });
+    return res.json(market);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement du marché.' });
+  }
+};

@@ -34,11 +34,26 @@ model Client {
   panier    Panier?
 }
 
+model Marche {
+  id_marche   Int       @id @default(autoincrement())
+  nom         String    @unique
+  latitude    Float
+  longitude   Float
+  image_url   String?
+  description String?
+
+  vendeurs Vendeur[]
+}
+
 model Vendeur {
   id_user             Int         @id
   utilisateur         Utilisateur @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
   nom_etablissement   String
   localisation_marche String
+  id_marche           Int?
+  marche              Marche?     @relation(fields: [id_marche], references: [id_marche], onDelete: SetNull)
+  latitude            Float?
+  longitude           Float?
   score_reputation    Float       @default(0.0)
 
   produits  Produit[]

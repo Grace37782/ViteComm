@@ -12,7 +12,9 @@ import {
   createOrder,
   getMyOrders,
   createFeedback,
-  createSignalement
+  createSignalement,
+  getMarkets,
+  getMarketById
 } from '../controllers/clientController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
@@ -21,6 +23,10 @@ const router = Router();
 // Public product browsing
 router.get('/products', requireAuth, requireRole(['client']), getProducts);
 router.get('/products/:id_produit/price-history', requireAuth, requireRole(['client']), getProductPriceHistory); // RG24
+
+// Localmarts (markets)
+router.get('/markets', requireAuth, requireRole(['client']), getMarkets);
+router.get('/markets/:id', requireAuth, requireRole(['client']), getMarketById);
 
 // Vendor stalls for AccueilClient & Catalogue
 router.get('/vendors', requireAuth, requireRole(['client']), getVendors);

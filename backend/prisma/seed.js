@@ -31,6 +31,7 @@ async function main() {
   await prisma.signalement.deleteMany({});
   await prisma.client.deleteMany({});
   await prisma.vendeur.deleteMany({});
+  await prisma.marche.deleteMany({});
   await prisma.livreur.deleteMany({});
   await prisma.utilisateur.deleteMany({});
 
@@ -47,6 +48,48 @@ async function main() {
   });
   const catHuiles = await prisma.categorie.create({
     data: { nom_categorie: 'Huiles & Matières Grasses', description_categorie: 'Huiles végétales et animales' }
+  });
+
+  // 0.1 Create Markets (Localmarts)
+  console.log('Création des marchés du Bénin (Localmarts)...');
+  const marcheDantokpa = await prisma.marche.create({
+    data: {
+      nom: 'Marché Dantokpa',
+      latitude: 6.3764,
+      longitude: 2.4430,
+      image_url: 'https://images.unsplash.com/photo-1533900298318-6b8da08a523e?auto=format&fit=crop&w=600&h=400&q=80',
+      description: "Le plus grand marché à ciel ouvert de l'Afrique de l'Ouest, situé au bord de la lagune de Cotonou. Célèbre pour son dynamisme, ses épices, ses tissus et ses produits locaux."
+    }
+  });
+
+  const marcheGanhi = await prisma.marche.create({
+    data: {
+      nom: 'Marché Ganhi',
+      latitude: 6.3532,
+      longitude: 2.4340,
+      image_url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&h=400&q=80',
+      description: "Marché historique de Cotonou, situé au cœur du quartier commercial. Idéal pour trouver des fruits, légumes et produits frais de consommation courante."
+    }
+  });
+
+  const marcheSaintMichel = await prisma.marche.create({
+    data: {
+      nom: 'Marché Saint Michel',
+      latitude: 6.3685,
+      longitude: 2.4180,
+      image_url: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&w=600&h=400&q=80',
+      description: "Marché populaire de Cotonou réputé pour les produits artisanaux, les fruits frais et les légumes de saison."
+    }
+  });
+
+  const marcheOuando = await prisma.marche.create({
+    data: {
+      nom: 'Marché de Ouando',
+      latitude: 6.5120,
+      longitude: 2.6170,
+      image_url: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=600&h=400&q=80',
+      description: "Grand marché de Porto-Novo, carrefour d'échanges agricoles majeurs entre le sud et l'intérieur du Bénin."
+    }
   });
 
   // 1. Create Users
@@ -78,7 +121,7 @@ async function main() {
       est_admin: false,
       photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&h=150&q=80',
       client: {
-        create: { adresse_livraison: 'Logbessou, Douala' }
+        create: { adresse_livraison: 'Fidjrossè, Cotonou' }
       }
     }
   });
@@ -95,7 +138,7 @@ async function main() {
       est_admin: false,
       photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&h=150&q=80',
       client: {
-        create: { adresse_livraison: 'Bastos, Yaoundé' }
+        create: { adresse_livraison: 'Haie Vive, Cotonou' }
       }
     }
   });
@@ -114,8 +157,11 @@ async function main() {
       photo_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&h=200&q=80',
       vendeur: {
         create: {
-          nom_etablissement: 'Frais de l\'Ouest',
-          localisation_marche: 'Marché Central',
+          nom_etablissement: 'Frais du Sud',
+          localisation_marche: 'Marché Dantokpa - Allée A, Box 15',
+          id_marche: marcheDantokpa.id_marche,
+          latitude: 6.3768,
+          longitude: 2.4435,
           score_reputation: 4.8
         }
       }
@@ -134,9 +180,81 @@ async function main() {
       photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&h=200&q=80',
       vendeur: {
         create: {
-          nom_etablissement: 'Épices de Sandaga',
-          localisation_marche: 'Marché Sandaga',
+          nom_etablissement: 'Épices Dantokpa',
+          localisation_marche: 'Marché Dantokpa - Allée D, Box 45',
+          id_marche: marcheDantokpa.id_marche,
+          latitude: 6.3760,
+          longitude: 2.4425,
           score_reputation: 4.2
+        }
+      }
+    }
+  });
+
+  const vendeur3 = await prisma.utilisateur.create({
+    data: {
+      nom: 'Kamga',
+      prenom: 'Jean',
+      email: 'jean.kamga@shop.com',
+      telephone: '+237677777773',
+      mot_de_passe: commonPassword,
+      statut_compte: 'Actif',
+      est_admin: false,
+      photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&h=200&q=80',
+      vendeur: {
+        create: {
+          nom_etablissement: 'Ganhi Primeurs',
+          localisation_marche: 'Marché Ganhi - Secteur Fruits',
+          id_marche: marcheGanhi.id_marche,
+          latitude: 6.3535,
+          longitude: 2.4345,
+          score_reputation: 4.5
+        }
+      }
+    }
+  });
+
+  const vendeur4 = await prisma.utilisateur.create({
+    data: {
+      nom: 'Ngo',
+      prenom: 'Marie',
+      email: 'marie.ngo@shop.com',
+      telephone: '+237677777774',
+      mot_de_passe: commonPassword,
+      statut_compte: 'Actif',
+      est_admin: false,
+      photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&h=200&q=80',
+      vendeur: {
+        create: {
+          nom_etablissement: 'Épices de Saint Michel',
+          localisation_marche: 'Marché Saint Michel - Allée Centrale',
+          id_marche: marcheSaintMichel.id_marche,
+          latitude: 6.3688,
+          longitude: 2.4185,
+          score_reputation: 4.0
+        }
+      }
+    }
+  });
+
+  const vendeur5 = await prisma.utilisateur.create({
+    data: {
+      nom: 'Tchinda',
+      prenom: 'Marc',
+      email: 'marc.tchinda@shop.com',
+      telephone: '+237677777775',
+      mot_de_passe: commonPassword,
+      statut_compte: 'Actif',
+      est_admin: false,
+      photo_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&h=200&q=80',
+      vendeur: {
+        create: {
+          nom_etablissement: 'Ouando Vivres',
+          localisation_marche: 'Marché de Ouando - Secteur Maraîcher',
+          id_marche: marcheOuando.id_marche,
+          latitude: 6.5125,
+          longitude: 2.6175,
+          score_reputation: 4.6
         }
       }
     }
@@ -279,6 +397,77 @@ async function main() {
           data: [
             { date_modification: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), prix: 1500 }
           ]
+        }
+      }
+    }
+  });
+
+  // Vendeur 3 Products (Marché Bonamoussadi)
+  const prod5 = await prisma.produit.create({
+    data: {
+      id_user_vendeur: vendeur3.id_user,
+      id_categorie: catLegumes.id_categorie,
+      nom: 'Gombo Frais (Sachet)',
+      description: 'Gombo vert tendre récolté ce matin.',
+      prix_reference: 800,
+      stock_disponible: 40,
+      photo_url: 'https://images.unsplash.com/photo-1524179091875-bf99a9a6af57?auto=format&fit=crop&w=300&h=200&q=80',
+      historiques: {
+        createMany: {
+          data: [{ date_modification: new Date(), prix: 800 }]
+        }
+      }
+    }
+  });
+
+  const prod6 = await prisma.produit.create({
+    data: {
+      id_user_vendeur: vendeur3.id_user,
+      id_categorie: catLegumes.id_categorie,
+      nom: 'Bananes Douces (Régime)',
+      description: 'Bananes mûres et douces du Moungo.',
+      prix_reference: 2000,
+      stock_disponible: 10,
+      photo_url: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=300&h=200&q=80',
+      historiques: {
+        createMany: {
+          data: [{ date_modification: new Date(), prix: 2000 }]
+        }
+      }
+    }
+  });
+
+  // Vendeur 4 Products (Marché Central Yaoundé)
+  const prod7 = await prisma.produit.create({
+    data: {
+      id_user_vendeur: vendeur4.id_user,
+      id_categorie: catEpices.id_categorie,
+      nom: 'Poivre Noir de Penja',
+      description: 'Le célèbre poivre noir de Penja, moulu ou en grains.',
+      prix_reference: 3500,
+      stock_disponible: 20,
+      photo_url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=300&h=200&q=80',
+      historiques: {
+        createMany: {
+          data: [{ date_modification: new Date(), prix: 3500 }]
+        }
+      }
+    }
+  });
+
+  // Vendeur 5 Products (Marché Mokolo Yaoundé)
+  const prod8 = await prisma.produit.create({
+    data: {
+      id_user_vendeur: vendeur5.id_user,
+      id_categorie: catLegumes.id_categorie,
+      nom: 'Oignons Rouges (Sac)',
+      description: 'Sac d\'oignons de Garoua de calibre moyen.',
+      prix_reference: 4000,
+      stock_disponible: 8,
+      photo_url: 'https://images.unsplash.com/photo-1508747702-f222958a8a25?auto=format&fit=crop&w=300&h=200&q=80',
+      historiques: {
+        createMany: {
+          data: [{ date_modification: new Date(), prix: 4000 }]
         }
       }
     }
