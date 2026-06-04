@@ -33,11 +33,11 @@ export default function App() {
         <Route path="/client/catalogue/:marcheId" element={<Catalogue />} />
         <Route path="/client/panier" element={<Panier />} />
         <Route path="/client/selection-livreur" element={<SelectionLivreur />} />
-        <Route path="/client/profil" element={<Profil />} />
-        <Route path="/client/suivi" element={<SuiviCommande />} />
+        <Route path="/client/suivi-commande" element={<SuiviCommande />} />
         <Route path="/vendeur/dashboard" element={<Vendeur />} />
         <Route path="/livreur/dashboard" element={<Livreur />} />
         <Route path="/admin/dashboard" element={<Admin />} />
+        <Route path="/client/profil" element={<Profil />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/accueil" />} />
