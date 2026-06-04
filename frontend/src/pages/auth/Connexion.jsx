@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login } from '../../services/api'
+import { login as apiLogin } from '../../services/api'
+import { useAuth } from '../../context/AuthContext'
 
 /* Détecte si la saisie est un email ou un téléphone */
 function detecterTypeIdentifiant(valeur) {
@@ -23,6 +24,7 @@ function messageErreur(err) {
 
 export default function Connexion() {
   const navigate = useNavigate()
+  const { login: updateAuthContext } = useAuth()
 
   const [identifiant, setIdentifiant] = useState('')
   const [motDePasse,  setMdp]         = useState('')
@@ -60,7 +62,10 @@ export default function Connexion() {
         ? { email: identifiant, mot_de_passe: motDePasse }
         : { telephone: identifiant, mot_de_passe: motDePasse }
 
-      const data = await login(payload)
+      const data = await apiLogin(payload)
+
+      // Met à jour le contexte global d'authentification React
+      updateAuthContext(data.user, data.token)
 
       // Redirection automatique selon le rôle renvoyé par le backend
       const role = data.user?.role || data.role

@@ -2,6 +2,9 @@ import { Router } from 'express';
 import {
   getProducts,
   getProductPriceHistory,
+  getVendors,
+  getVendorById,
+  getCategories,
   getDrivers,
   getCart,
   upsertCartItem,
@@ -18,6 +21,13 @@ const router = Router();
 // Public product browsing
 router.get('/products', requireAuth, requireRole(['client']), getProducts);
 router.get('/products/:id_produit/price-history', requireAuth, requireRole(['client']), getProductPriceHistory); // RG24
+
+// Vendor stalls for AccueilClient & Catalogue
+router.get('/vendors', requireAuth, requireRole(['client']), getVendors);
+router.get('/vendors/:id', requireAuth, requireRole(['client']), getVendorById);
+
+// Categories
+router.get('/categories', requireAuth, requireRole(['client']), getCategories);
 
 // Driver selection for checkout
 router.get('/drivers', requireAuth, requireRole(['client']), getDrivers);
