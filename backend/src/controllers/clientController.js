@@ -511,6 +511,12 @@ export const getMarketById = async (req, res) => {
             utilisateur: {
               select: { nom: true, prenom: true, photo_url: true }
             },
+            produits: {
+              where: { stock_disponible: { gt: 0 } },
+              include: {
+                categorie: { select: { id_categorie: true, nom_categorie: true } }
+              }
+            },
             _count: {
               select: { produits: true }
             }

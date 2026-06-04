@@ -52,6 +52,8 @@ model Vendeur {
   localisation_marche String
   id_marche           Int?
   marche              Marche?     @relation(fields: [id_marche], references: [id_marche], onDelete: SetNull)
+  latitude            Float?
+  longitude           Float?
   score_reputation    Float       @default(0.0)
 
   produits  Produit[]

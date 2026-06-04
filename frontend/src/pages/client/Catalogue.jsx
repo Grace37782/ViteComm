@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import BottomNav from '../../components/client/BottomNav'
 
@@ -32,7 +32,19 @@ function formatPrice(price) {
 
 export default function Catalogue() {
   const navigate = useNavigate()
-  const { marcheId } = useParams()
+  const location = useLocation()
+  const { vendeurId } = useParams()
+
+  // If navigated from a market, we can go back to it
+  const fromMarket = location.state?.fromMarket
+  const marketName = location.state?.marketName
+  const handleBack = () => {
+    if (fromMarket) {
+      navigate('/client/market/' + fromMarket)
+    } else {
+      navigate('/client/accueil')
+    }
+  }
 
   const [vendor, setVendor] = useState(null)
   const [products, setProducts] = useState([])
@@ -48,8 +60,8 @@ export default function Catalogue() {
     async function load() {
       try {
         const [vendorRes, prodsRes, catsRes, cartRes] = await Promise.all([
-          api.get('/client/vendors/' + marcheId),
-          api.get('/client/products?vendeur_id=' + marcheId),
+          api.get('/client/vendors/' + vendeurId),
+          api.get('/client/products?vendeur_id=' + vendeurId),
           api.get('/client/categories'),
           api.get('/client/cart'),
         ])
@@ -60,7 +72,7 @@ export default function Catalogue() {
         const cartMap = {}
         if (cartRes?.details) {
           for (const d of cartRes.details) {
-            if (d.produit.id_user_vendeur === parseInt(marcheId)) {
+            if (d.produit.id_user_vendeur === parseInt(vendeurId)) {
               cartMap[d.id_produit] = d.quantite
             }
           }
@@ -73,7 +85,7 @@ export default function Catalogue() {
       }
     }
     load()
-  }, [marcheId])
+  }, [vendeurId])
 
   async function ajouterAuPanier(prod) {
     const newQte = (cartItems[prod.id_produit] || 0) + 1
@@ -152,7 +164,7 @@ export default function Catalogue() {
 
         <div className="relative z-10 flex items-center gap-3 mb-4">
           <button
-            onClick={() => navigate('/client/accueil')}
+            onClick={handleBack}
             className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
             style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}
           >
@@ -161,6 +173,7 @@ export default function Catalogue() {
           <div className="flex-1">
             <div className="text-white font-black text-base leading-tight">{vendor.nom_etablissement}</div>
             <div className="text-white/70 text-xs">
+              {fromMarket && <span>🏛️ {marketName} · </span>}
               📍 {vendor.localisation_marche} · 🏪 {vendor._count.produits} produit{vendor._count.produits !== 1 ? 's' : ''} · ⭐ {vendor.score_reputation.toFixed(1)}
             </div>
           </div>

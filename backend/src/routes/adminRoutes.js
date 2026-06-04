@@ -13,7 +13,10 @@ import {
   getSignalements,
   updateSignalementStatus,
   getLitiges,
-  resolveLitige
+  resolveLitige,
+  createMarket,
+  updateMarket,
+  deleteMarket
 } from '../controllers/adminController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
@@ -25,6 +28,11 @@ router.use(requireRole(['admin']));
 router.get('/dashboard', getAdminDashboard);
 router.get('/me', getAdminMe);
 router.put('/profile', updateAdminProfile);
+
+// Market management by admin
+router.post('/markets', createMarket);
+router.put('/markets/:id', updateMarket);
+router.delete('/markets/:id', deleteMarket);
 
 // User management (RG12, RG13)
 router.get('/users', getUsers);

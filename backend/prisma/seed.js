@@ -51,54 +51,44 @@ async function main() {
   });
 
   // 0.1 Create Markets (Localmarts)
-  console.log('Création des marchés...');
-  const marcheSandaga = await prisma.marche.create({
+  console.log('Création des marchés du Bénin (Localmarts)...');
+  const marcheDantokpa = await prisma.marche.create({
     data: {
-      nom: 'Marché Sandaga',
-      latitude: 4.0415,
-      longitude: 9.6885,
+      nom: 'Marché Dantokpa',
+      latitude: 6.3764,
+      longitude: 2.4430,
       image_url: 'https://images.unsplash.com/photo-1533900298318-6b8da08a523e?auto=format&fit=crop&w=600&h=400&q=80',
-      description: "Le plus grand marché d'épices et de vivres frais de Douala."
+      description: "Le plus grand marché à ciel ouvert de l'Afrique de l'Ouest, situé au bord de la lagune de Cotonou. Célèbre pour son dynamisme, ses épices, ses tissus et ses produits locaux."
     }
   });
 
-  const marcheCentralDouala = await prisma.marche.create({
+  const marcheGanhi = await prisma.marche.create({
     data: {
-      nom: 'Marché Central',
-      latitude: 4.0375,
-      longitude: 9.7070,
+      nom: 'Marché Ganhi',
+      latitude: 6.3532,
+      longitude: 2.4340,
       image_url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&h=400&q=80',
-      description: "Le cœur commercial historique de la ville de Douala."
+      description: "Marché historique de Cotonou, situé au cœur du quartier commercial. Idéal pour trouver des fruits, légumes et produits frais de consommation courante."
     }
   });
 
-  const marcheBonamoussadi = await prisma.marche.create({
+  const marcheSaintMichel = await prisma.marche.create({
     data: {
-      nom: 'Marché Bonamoussadi',
-      latitude: 4.0810,
-      longitude: 9.7390,
+      nom: 'Marché Saint Michel',
+      latitude: 6.3685,
+      longitude: 2.4180,
       image_url: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&w=600&h=400&q=80',
-      description: "Marché moderne situé dans la zone résidentielle de Douala Nord."
+      description: "Marché populaire de Cotonou réputé pour les produits artisanaux, les fruits frais et les légumes de saison."
     }
   });
 
-  const marcheCentralYaounde = await prisma.marche.create({
+  const marcheOuando = await prisma.marche.create({
     data: {
-      nom: 'Marché Central de Yaoundé',
-      latitude: 3.8660,
-      longitude: 11.5175,
-      image_url: 'https://images.unsplash.com/photo-1488459718432-01055e67e1f5?auto=format&fit=crop&w=600&h=400&q=80',
-      description: "Le principal marché de Yaoundé pour la mode et les vivres."
-    }
-  });
-
-  const marcheMokolo = await prisma.marche.create({
-    data: {
-      nom: 'Marché Mokolo',
-      latitude: 3.8640,
-      longitude: 11.5020,
+      nom: 'Marché de Ouando',
+      latitude: 6.5120,
+      longitude: 2.6170,
       image_url: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=600&h=400&q=80',
-      description: "Un marché très populaire et dynamique à Yaoundé."
+      description: "Grand marché de Porto-Novo, carrefour d'échanges agricoles majeurs entre le sud et l'intérieur du Bénin."
     }
   });
 
@@ -131,7 +121,7 @@ async function main() {
       est_admin: false,
       photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&h=150&q=80',
       client: {
-        create: { adresse_livraison: 'Logbessou, Douala' }
+        create: { adresse_livraison: 'Fidjrossè, Cotonou' }
       }
     }
   });
@@ -148,7 +138,7 @@ async function main() {
       est_admin: false,
       photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&h=150&q=80',
       client: {
-        create: { adresse_livraison: 'Bastos, Yaoundé' }
+        create: { adresse_livraison: 'Haie Vive, Cotonou' }
       }
     }
   });
@@ -167,9 +157,11 @@ async function main() {
       photo_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&h=200&q=80',
       vendeur: {
         create: {
-          nom_etablissement: 'Frais de l\'Ouest',
-          localisation_marche: 'Marché Central',
-          id_marche: marcheCentralDouala.id_marche,
+          nom_etablissement: 'Frais du Sud',
+          localisation_marche: 'Marché Dantokpa - Allée A, Box 15',
+          id_marche: marcheDantokpa.id_marche,
+          latitude: 6.3768,
+          longitude: 2.4435,
           score_reputation: 4.8
         }
       }
@@ -188,9 +180,11 @@ async function main() {
       photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&h=200&q=80',
       vendeur: {
         create: {
-          nom_etablissement: 'Épices de Sandaga',
-          localisation_marche: 'Marché Sandaga',
-          id_marche: marcheSandaga.id_marche,
+          nom_etablissement: 'Épices Dantokpa',
+          localisation_marche: 'Marché Dantokpa - Allée D, Box 45',
+          id_marche: marcheDantokpa.id_marche,
+          latitude: 6.3760,
+          longitude: 2.4425,
           score_reputation: 4.2
         }
       }
@@ -209,9 +203,11 @@ async function main() {
       photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&h=200&q=80',
       vendeur: {
         create: {
-          nom_etablissement: 'Bona Fruits',
-          localisation_marche: 'Marché Bonamoussadi',
-          id_marche: marcheBonamoussadi.id_marche,
+          nom_etablissement: 'Ganhi Primeurs',
+          localisation_marche: 'Marché Ganhi - Secteur Fruits',
+          id_marche: marcheGanhi.id_marche,
+          latitude: 6.3535,
+          longitude: 2.4345,
           score_reputation: 4.5
         }
       }
@@ -230,9 +226,11 @@ async function main() {
       photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&h=200&q=80',
       vendeur: {
         create: {
-          nom_etablissement: 'Épices du Mfoundi',
-          localisation_marche: 'Marché Central de Yaoundé',
-          id_marche: marcheCentralYaounde.id_marche,
+          nom_etablissement: 'Épices de Saint Michel',
+          localisation_marche: 'Marché Saint Michel - Allée Centrale',
+          id_marche: marcheSaintMichel.id_marche,
+          latitude: 6.3688,
+          longitude: 2.4185,
           score_reputation: 4.0
         }
       }
@@ -251,9 +249,11 @@ async function main() {
       photo_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&h=200&q=80',
       vendeur: {
         create: {
-          nom_etablissement: 'Gombo Royal',
-          localisation_marche: 'Marché Mokolo',
-          id_marche: marcheMokolo.id_marche,
+          nom_etablissement: 'Ouando Vivres',
+          localisation_marche: 'Marché de Ouando - Secteur Maraîcher',
+          id_marche: marcheOuando.id_marche,
+          latitude: 6.5125,
+          longitude: 2.6175,
           score_reputation: 4.6
         }
       }
