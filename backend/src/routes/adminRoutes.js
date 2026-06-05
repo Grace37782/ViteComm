@@ -16,7 +16,8 @@ import {
   resolveLitige,
   createMarket,
   updateMarket,
-  deleteMarket
+  deleteMarket,
+  getMarketsAdmin
 } from '../controllers/adminController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
@@ -30,6 +31,7 @@ router.get('/me', getAdminMe);
 router.put('/profile', updateAdminProfile);
 
 // Market management by admin
+router.get('/markets', getMarketsAdmin);
 router.post('/markets', createMarket);
 router.put('/markets/:id', updateMarket);
 router.delete('/markets/:id', deleteMarket);
