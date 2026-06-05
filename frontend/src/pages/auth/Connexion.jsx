@@ -10,16 +10,22 @@ function detecterTypeIdentifiant(valeur) {
   return null
 }
 
-/* Messages d'erreur selon le statut du compte renvoyé par le backend */
+/* Messages d'erreur selon le type de problème */
 function messageErreur(err) {
   const msg = err.message?.toLowerCase() || ''
+  if (msg === 'network_error')
+    return { texte: 'Impossible de joindre le serveur. Vérifiez votre connexion internet.', type: 'network' }
   if (msg.includes('suspendu') || msg.includes('suspended'))
     return { texte: 'Votre compte a été suspendu. Contactez le support ViteComm.', type: 'suspend' }
   if (msg.includes('banni') || msg.includes('banned'))
     return { texte: 'Votre compte a été banni de la plateforme.', type: 'ban' }
   if (msg.includes('inactif') || msg.includes('inactive'))
     return { texte: "Votre compte est inactif. Contactez l'administrateur.", type: 'suspend' }
-  return { texte: err.message || 'Identifiant ou mot de passe incorrect.', type: 'erreur' }
+  if (msg.includes('invalide') || msg.includes('incorrect') || msg.includes('inexistant') || msg.includes('existe pas'))
+    return { texte: 'Identifiant ou mot de passe incorrect.', type: 'erreur' }
+  if (msg.includes('connexion') && (msg.includes('erreur') || msg.includes('500')))
+    return { texte: 'Erreur serveur. Veuillez réessayer plus tard.', type: 'erreur' }
+  return { texte: 'Identifiant ou mot de passe incorrect.', type: 'erreur' }
 }
 
 export default function Connexion() {
@@ -89,6 +95,7 @@ export default function Connexion() {
     erreur:  { bg: 'rgba(255,80,80,0.15)',  border: 'rgba(255,100,100,0.3)', icon: '⚠️' },
     suspend: { bg: 'rgba(186,117,23,0.2)',  border: 'rgba(186,117,23,0.4)', icon: '🔒' },
     ban:     { bg: 'rgba(216,90,48,0.2)',   border: 'rgba(216,90,48,0.4)',  icon: '🚫' },
+    network: { bg: 'rgba(255,80,80,0.15)',  border: 'rgba(255,100,100,0.3)', icon: '🌐' },
   }
   const styleErreur = erreur ? (erreurStyles[erreur.type] || erreurStyles.erreur) : null
 

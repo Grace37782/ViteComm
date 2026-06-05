@@ -9,13 +9,19 @@ async function request(endpoint, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...options.headers }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
-  const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers })
+  let res
+  try {
+    res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers })
+  } catch {
+    throw new Error('NETWORK_ERROR')
+  }
+
   if (!res.ok) {
-    if (res.status === 401 || res.status === 403) {
+    if ((res.status === 401 || res.status === 403) && token) {
       localStorage.removeItem('vc_user')
       localStorage.removeItem('vc_token')
       window.location.href = '/connect'
-      return new Promise(() => {}) // Halt execution
+      return new Promise(() => {})
     }
     const err = await res.json().catch(() => ({ error: res.statusText }))
     throw new Error(err.error || `Erreur ${res.status}`)
