@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 
 const items = [
   { icon: '🏠', label: 'Accueil',  path: '/client/accueil', activeOn: '/client/accueil' },
-  { icon: '🔍', label: 'Chercher', path: '/client/accueil', activeOn: null              },
+  { icon: '📋', label: 'Commandes', path: '/client/mes-commandes', activeOn: '/client/mes-commandes' },
   { icon: '🛒', label: 'Panier',   path: '/client/panier',  activeOn: '/client/panier'  },
   { icon: '👤', label: 'Profil',   path: '/client/profil',  activeOn: '/client/profil'  },
 ]

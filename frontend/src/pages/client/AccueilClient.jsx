@@ -42,6 +42,65 @@ function deg2rad(deg) {
   return deg * (Math.PI / 180)
 }
 
+function levenshteinDistance(str1, str2) {
+  const track = Array(str2.length + 1).fill(null).map(() =>
+    Array(str1.length + 1).fill(null));
+  for (let i = 0; i <= str1.length; i += 1) {
+    track[0][i] = i;
+  }
+  for (let j = 0; j <= str2.length; j += 1) {
+    track[j][0] = j;
+  }
+  for (let j = 1; j <= str2.length; j += 1) {
+    for (let i = 1; i <= str1.length; i += 1) {
+      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      track[j][i] = Math.min(
+        track[j][i - 1] + 1, // deletion
+        track[j - 1][i] + 1, // insertion
+        track[j - 1][i - 1] + indicator, // substitution
+      );
+    }
+  }
+  return track[str2.length][str1.length];
+}
+
+function fuzzyMatch(kw, target) {
+  if (target.includes(kw)) return true;
+  if (kw.length < 4) return false;
+  
+  const maxDistance = kw.length > 6 ? 2 : 1;
+  const targetWords = target.split(/\s+/);
+  
+  for (const tWord of targetWords) {
+    if (tWord.includes(kw) || kw.includes(tWord)) return true;
+    if (levenshteinDistance(kw, tWord) <= maxDistance) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function normalizeText(text) {
+  if (!text) return ''
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove accents/diacritics
+    .replace(/\bmart\b/g, 'marche')  // replace 'mart' with 'marche'
+    .replace(/\bmarket\b/g, 'marche') // replace 'market' with 'marche'
+}
+
+function getKeywords(recherche) {
+  return normalizeText(recherche).split(/\s+/).filter(Boolean)
+}
+
+function matchMarket(market, keywords) {
+  if (keywords.length === 0) return true
+  const normNom = normalizeText(market.nom)
+  const normDesc = market.description ? normalizeText(market.description) : ''
+  return keywords.every(kw => fuzzyMatch(kw, normNom) || fuzzyMatch(kw, normDesc))
+}
+
 function MapRecenter({ center, zoomLevel }) {
   const map = useMap()
   useEffect(() => {
@@ -94,19 +153,16 @@ export default function AccueilClient() {
 
   // Auto-selection of market when exactly 1 market matches the search term
   useEffect(() => {
-    const term = recherche.trim().toLowerCase()
-    if (term.length >= 2) {
-      const matched = markets.filter(m =>
-        m.nom.toLowerCase().includes(term) ||
-        (m.description && m.description.toLowerCase().includes(term))
-      )
+    const keywords = getKeywords(recherche)
+    if (keywords.length > 0 && recherche.trim().length >= 2) {
+      const matched = markets.filter(m => matchMarket(m, keywords))
       if (matched.length === 1) {
         const singleMarket = matched[0]
         setActiveMarket(singleMarket)
         setMapCenter([singleMarket.latitude, singleMarket.longitude])
         setMapZoom(15)
       }
-    } else if (term.length === 0) {
+    } else if (recherche.trim().length === 0) {
       setActiveMarket(null)
       setMapZoom(13)
     }
@@ -170,13 +226,11 @@ export default function AccueilClient() {
   })
 
   // Filter based on search query
-  const marketsFiltered = sortedMarkets.filter(m =>
-    m.nom.toLowerCase().includes(recherche.toLowerCase()) ||
-    (m.description && m.description.toLowerCase().includes(recherche.toLowerCase()))
-  )
+  const keywords = getKeywords(recherche)
+  const marketsFiltered = sortedMarkets.filter(m => matchMarket(m, keywords))
 
   const suggestions = recherche
-    ? markets.filter(m => m.nom.toLowerCase().includes(recherche.toLowerCase()))
+    ? markets.filter(m => matchMarket(m, keywords))
     : []
 
   const handleSelectMarket = (m) => {

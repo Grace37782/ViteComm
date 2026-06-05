@@ -596,6 +596,20 @@ export const resolveLitige = async (req, res) => {
 
 // --- 5.5. Gestion des Marchés par l'Administrateur ---
 
+export const getMarketsAdmin = async (req, res) => {
+  try {
+    const markets = await prisma.marche.findMany({
+      include: {
+        _count: { select: { vendeurs: true } }
+      },
+      orderBy: { nom: 'asc' }
+    });
+    return res.json(markets);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement des marchés: ' + error.message });
+  }
+};
+
 export const createMarket = async (req, res) => {
   const { nom, latitude, longitude, image_url, description } = req.body;
   if (!nom || latitude === undefined || longitude === undefined) {

@@ -11,6 +11,12 @@ async function request(endpoint, options = {}) {
 
   const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers })
   if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      localStorage.removeItem('vc_user')
+      localStorage.removeItem('vc_token')
+      window.location.href = '/connect'
+      return new Promise(() => {}) // Halt execution
+    }
     const err = await res.json().catch(() => ({ error: res.statusText }))
     throw new Error(err.error || `Erreur ${res.status}`)
   }
