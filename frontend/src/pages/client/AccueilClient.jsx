@@ -42,6 +42,27 @@ function deg2rad(deg) {
   return deg * (Math.PI / 180)
 }
 
+function normalizeText(text) {
+  if (!text) return ''
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove accents/diacritics
+    .replace(/\bmart\b/g, 'marche')  // replace 'mart' with 'marche'
+    .replace(/\bmarket\b/g, 'marche') // replace 'market' with 'marche'
+}
+
+function getKeywords(recherche) {
+  return normalizeText(recherche).split(/\s+/).filter(Boolean)
+}
+
+function matchMarket(market, keywords) {
+  if (keywords.length === 0) return true
+  const normNom = normalizeText(market.nom)
+  const normDesc = market.description ? normalizeText(market.description) : ''
+  return keywords.every(kw => normNom.includes(kw) || normDesc.includes(kw))
+}
+
 function MapRecenter({ center, zoomLevel }) {
   const map = useMap()
   useEffect(() => {
@@ -94,19 +115,16 @@ export default function AccueilClient() {
 
   // Auto-selection of market when exactly 1 market matches the search term
   useEffect(() => {
-    const term = recherche.trim().toLowerCase()
-    if (term.length >= 2) {
-      const matched = markets.filter(m =>
-        m.nom.toLowerCase().includes(term) ||
-        (m.description && m.description.toLowerCase().includes(term))
-      )
+    const keywords = getKeywords(recherche)
+    if (keywords.length > 0 && recherche.trim().length >= 2) {
+      const matched = markets.filter(m => matchMarket(m, keywords))
       if (matched.length === 1) {
         const singleMarket = matched[0]
         setActiveMarket(singleMarket)
         setMapCenter([singleMarket.latitude, singleMarket.longitude])
         setMapZoom(15)
       }
-    } else if (term.length === 0) {
+    } else if (recherche.trim().length === 0) {
       setActiveMarket(null)
       setMapZoom(13)
     }
@@ -170,13 +188,11 @@ export default function AccueilClient() {
   })
 
   // Filter based on search query
-  const marketsFiltered = sortedMarkets.filter(m =>
-    m.nom.toLowerCase().includes(recherche.toLowerCase()) ||
-    (m.description && m.description.toLowerCase().includes(recherche.toLowerCase()))
-  )
+  const keywords = getKeywords(recherche)
+  const marketsFiltered = sortedMarkets.filter(m => matchMarket(m, keywords))
 
   const suggestions = recherche
-    ? markets.filter(m => m.nom.toLowerCase().includes(recherche.toLowerCase()))
+    ? markets.filter(m => matchMarket(m, keywords))
     : []
 
   const handleSelectMarket = (m) => {
