@@ -13,6 +13,7 @@ import Inscription from './pages/auth/Inscription'
 import Profil from './pages/client/Profil'
 import SuiviCommande from './pages/client/SuiviCommande'
 import MarcheDetail from './pages/client/MarcheDetail'
+import MesCommandes from './pages/client/MesCommandes'
 export default function App() {
   return (
     <AuthProvider>
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/client/catalogue/:vendeurId" element={<Catalogue />} />
         <Route path="/client/panier" element={<Panier />} />
         <Route path="/client/selection-livreur" element={<SelectionLivreur />} />
+        <Route path="/client/mes-commandes" element={<MesCommandes />} />
         <Route path="/client/profil" element={<Profil />} />
         <Route path="/client/suivi" element={<SuiviCommande />} />
         <Route path="/vendeur/dashboard" element={<Vendeur />} />
