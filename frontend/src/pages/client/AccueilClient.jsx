@@ -166,8 +166,6 @@ export default function AccueilClient() {
   const [mapZoom, setMapZoom] = useState(13)
   const [activeMarket, setActiveMarket] = useState(null)
 
-  const prenom = user?.prenom || 'Client'
-  const adresse = user?.profil?.adresse_livraison || null
   const panierCount = cart?.details?.reduce((s, d) => s + d.quantite, 0) || 0
 
   useEffect(() => {
@@ -299,60 +297,11 @@ export default function AccueilClient() {
   }
 
   return (
-    <div className="w-full min-h-screen font-sans bg-gray-50 flex flex-col pb-20">
-      {/* Header Panel */}
-      <div className="bg-emerald-800 text-white px-5 pt-6 pb-6 shadow-md relative overflow-hidden flex-shrink-0">
+    <div className="w-full font-sans bg-gray-50 flex flex-col pb-6">
+      {/* Header Panel - Search & Filters */}
+      <div className="bg-emerald-800 text-white px-5 pt-4 pb-6 shadow-md relative overflow-hidden flex-shrink-0">
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-emerald-700/40 pointer-events-none" />
         <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-emerald-700/40 pointer-events-none" />
-
-        {/* ── Profile section ── */}
-        <div className="relative z-10 mb-4">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/client/profil')} className="cursor-pointer">
-              <AvatarCircle user={user} size={52} />
-            </button>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="font-black text-lg leading-tight truncate">
-                    👋 Bonjour {prenom}
-                  </h1>
-                  <p className="text-emerald-200 text-[11px] mt-0.5 truncate">
-                    🛒 Client · {adresse || (geoPosition ? `${geoPosition.lat.toFixed(4)}, ${geoPosition.lng.toFixed(4)}` : 'Bénin')}
-                  </p>
-                </div>
-                <button
-                  onClick={() => navigate('/client/panier')}
-                  className="relative w-11 h-11 rounded-2xl bg-emerald-700/50 hover:bg-emerald-750 border border-emerald-600 flex items-center justify-center transition-all cursor-pointer flex-shrink-0"
-                >
-                  <span className="text-xl">🛒</span>
-                  {panierCount > 0 && (
-                    <div className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full text-white font-black text-[9px] bg-rose-500 border border-white">
-                      {panierCount}
-                    </div>
-                  )}
-                </button>
-              </div>
-              {/* Quick profile stats */}
-              <div className="flex items-center gap-3 mt-2">
-                <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-100 bg-emerald-700/40 px-2.5 py-1 rounded-full">
-                  <span>📧</span>
-                  <span className="truncate max-w-[120px]">{user?.email || '—'}</span>
-                </div>
-                <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-100 bg-emerald-700/40 px-2.5 py-1 rounded-full">
-                  <span>📱</span>
-                  <span>{user?.telephone || '—'}</span>
-                </div>
-                <button
-                  onClick={() => navigate('/client/profil')}
-                  className="ml-auto text-[10px] font-bold text-white bg-emerald-600/60 hover:bg-emerald-600 px-2.5 py-1 rounded-full transition-all cursor-pointer flex-shrink-0"
-                >
-                  ✏️ Profil
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Search Suggestion wrapper */}
         <div className="relative z-30">
