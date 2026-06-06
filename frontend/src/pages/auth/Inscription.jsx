@@ -72,6 +72,7 @@ export default function Inscription() {
 
   const [form, setForm] = useState({
     nom: '', prenom: '', email: '', telephone: '',
+    identifiant: '',
     mot_de_passe: '', mot_de_passe_confirmation: '',
     adresse_livraison: '',
     nom_etablissement: '', localisation_marche: '',
@@ -93,8 +94,19 @@ export default function Inscription() {
 
     try {
       const res = await api.post('/auth/register', { ...form, role: profil })
+      // Telephone-only: created directly, no verification step
+      if (res.telephone_only) {
+        updateAuthContext(res.user, res.token)
+        const redirects = {
+          client:  '/client/accueil',
+          vendeur: '/vendeur/dashboard',
+          livreur: '/livreur/dashboard',
+        }
+        navigate(redirects[res.user?.role] || '/accueil')
+        return
+      }
       setVerifyToken(res.token)
-      setVerifyEmail(form.email)
+      setVerifyEmail(form.email || form.telephone)
       setStep('verify')
     } catch (err) {
       showError(err.message)
@@ -232,20 +244,21 @@ export default function Inscription() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-white/80">Adresse email</label>
-                <input type="email" placeholder="exemple@gmail.com" value={form.email} onChange={set('email')}
+                <label className="text-xs font-semibold text-white/80">Email ou téléphone</label>
+                <input type="text" placeholder="exemple@gmail.com  ou  +229 97 00 00 00"
+                  value={form.identifiant || ''}
+                  onChange={e => {
+                    const v = e.target.value
+                    const clean = v.replace(/\s/g, '')
+                    setForm(p => ({
+                      ...p,
+                      identifiant: v,
+                      email: clean.includes('@') ? clean : '',
+                      telephone: /^[\d+]/.test(clean) && !clean.includes('@') ? clean : '',
+                    }))
+                  }}
                   className="rounded-2xl px-4 py-3.5 text-sm text-white placeholder:text-white/40 outline-none border"
                   style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }} />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-white/80">Téléphone</label>
-                <div className="flex items-center rounded-2xl overflow-hidden border"
-                  style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}>
-                  <span className="px-4 text-white/70 text-sm">+229</span>
-                  <input type="tel" placeholder="97 00 00 00" value={form.telephone} onChange={set('telephone')}
-                    className="flex-1 bg-transparent px-2 py-3.5 text-sm text-white placeholder:text-white/40 outline-none" />
-                </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -332,6 +345,9 @@ export default function Inscription() {
                 Nous avons envoyé un code à 6 chiffres à<br />
                 <strong className="text-white font-bold">{verifyEmail}</strong>
               </p>
+              <p className="text-white/50 text-xs mt-1 text-center">
+                {verifyEmail?.includes('@') ? 'Vérifiez vos spams si vous ne trouvez pas le message.' : 'Vérifiez votre téléphone.'}
+              </p>
             </div>
 
             <form onSubmit={handleVerify} className="flex flex-col gap-6">
@@ -360,7 +376,7 @@ export default function Inscription() {
               <button type="button" onClick={handleRestart}
                 className="text-sm text-white/50 hover:text-white/80 underline underline-offset-2 cursor-pointer"
                 style={{ background: 'none', border: 'none' }}>
-                ← Utiliser une autre adresse email
+                ← Utiliser un autre identifiant
               </button>
             </form>
           </>

@@ -95,14 +95,20 @@ export const register = async (req, res) => {
   } = req.body;
 
   // ── Validate common required fields ──────────────────────
-  if (!nom || !prenom || !telephone || !email || !mot_de_passe) {
+  if (!nom || !prenom || !mot_de_passe) {
     return res.status(400).json({
-      error: 'Champs obligatoires manquants : nom, prenom, telephone, email, mot_de_passe.'
+      error: 'Champs obligatoires manquants : nom, prenom, mot_de_passe.'
+    });
+  }
+
+  if (!email && !telephone) {
+    return res.status(400).json({
+      error: 'Email ou téléphone obligatoire.'
     });
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
+  if (email && !emailRegex.test(email)) {
     return res.status(400).json({ error: "Format de l'adresse email invalide." });
   }
 
@@ -131,23 +137,100 @@ export const register = async (req, res) => {
   }
 
   try {
-    // Check if email already has an active user
-    const existingUser = await prisma.utilisateur.findUnique({ where: { email } });
-    if (existingUser) {
-      return res.status(409).json({ error: 'Cette adresse email est déjà utilisée.' });
+    // Check if email already has an active user (only if email provided)
+    if (email) {
+      const existingUser = await prisma.utilisateur.findUnique({ where: { email } });
+      if (existingUser) {
+        return res.status(409).json({ error: 'Cette adresse email est déjà utilisée.' });
+      }
+
+      // Check for existing pending verification for this email
+      const existingPending = await prisma.verificationToken.findFirst({
+        where: { email, expires_at: { gt: new Date() } }
+      });
+      if (existingPending) {
+        return res.status(429).json({
+          error: 'Un code de vérification a déjà été envoyé à cet email. Vérifiez vos spams ou attendez 10 minutes.',
+          pending: true
+        });
+      }
     }
 
-    // Check for existing pending verification for this email
-    const existingPending = await prisma.verificationToken.findFirst({
-      where: { email, expires_at: { gt: new Date() } }
-    });
-    if (existingPending) {
-      return res.status(429).json({
-        error: 'Un code de vérification a déjà été envoyé à cet email. Vérifiez vos spams ou attendez 10 minutes.',
-        pending: true
+    // ── Telephone-only: create user directly (no email verification) ──
+    if (!email && telephone) {
+      // Check telephone uniqueness
+      const existingPhone = await prisma.utilisateur.findFirst({ where: { telephone } });
+      if (existingPhone) {
+        return res.status(409).json({ error: 'Ce numéro de téléphone est déjà utilisé.' });
+      }
+
+      const hashedPassword = await bcryptjs.hash(mot_de_passe, 12);
+
+      const newUser = await prisma.$transaction(async (tx) => {
+        const created = await tx.utilisateur.create({
+          data: {
+            nom, prenom, telephone,
+            email: '',
+            mot_de_passe: hashedPassword,
+            statut_compte: 'Actif',
+            est_admin: false,
+          }
+        });
+
+        if (role === 'client') {
+          await tx.client.create({
+            data: { id_user: created.id_user, adresse_livraison }
+          });
+          await tx.panier.create({ data: { id_user_client: created.id_user } });
+        } else if (role === 'vendeur') {
+          await tx.vendeur.create({
+            data: {
+              id_user: created.id_user,
+              nom_etablissement,
+              localisation_marche,
+              score_reputation: 0.0,
+            }
+          });
+        } else if (role === 'livreur') {
+          await tx.livreur.create({
+            data: {
+              id_user: created.id_user,
+              type_vehicule,
+              immatriculation,
+              score_reputation: 0.0,
+            }
+          });
+          await tx.disponibiliteLivreur.create({
+            data: {
+              id_user_livreur: created.id_user,
+              est_disponible: true,
+              distance_marche: 0.0,
+              heure_debut_dispo: null,
+              heure_fin_dispo: null,
+            }
+          });
+        }
+
+        return created;
+      });
+
+      const fullUser = await findUserWithRole({ id_user: newUser.id_user });
+      const userPayload = await buildUserPayload(fullUser);
+      const jwtToken = jwt.sign(
+        { id_user: newUser.id_user, role },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES }
+      );
+
+      return res.status(201).json({
+        message: 'Compte créé avec succès.',
+        token: jwtToken,
+        user: userPayload,
+        telephone_only: true,
       });
     }
 
+    // ── Email provided: send verification code ──
     // Generate 6-digit code and unique token
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const token = crypto.randomUUID();
