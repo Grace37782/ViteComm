@@ -91,7 +91,7 @@ export const register = async (req, res) => {
     mot_de_passe, mot_de_passe_confirmation,
     role,
     adresse_livraison,
-    nom_etablissement, localisation_marche,
+    nom_etablissement, localisation_marche, id_marche,
     type_vehicule, immatriculation
   } = req.body;
 
@@ -191,7 +191,8 @@ export const register = async (req, res) => {
             data: {
               id_user: created.id_user,
               nom_etablissement,
-              localisation_marche,
+              localisation_marche: localisation_marche || '',
+              id_marche: id_marche ? parseInt(id_marche, 10) : undefined,
               score_reputation: 0.0,
             }
           });
@@ -243,7 +244,7 @@ export const register = async (req, res) => {
     const photoFile = req.file?.filename;
     const payload = JSON.stringify({
       nom, prenom, telephone, email, mot_de_passe,
-      adresse_livraison, nom_etablissement, localisation_marche,
+      adresse_livraison, nom_etablissement, localisation_marche, id_marche,
       type_vehicule, immatriculation,
       photo: photoFile || null,
     });
@@ -336,7 +337,8 @@ export const verifyEmail = async (req, res) => {
           data: {
             id_user: created.id_user,
             nom_etablissement: data.nom_etablissement,
-            localisation_marche: data.localisation_marche,
+            localisation_marche: data.localisation_marche || '',
+            id_marche: data.id_marche ? parseInt(data.id_marche, 10) : undefined,
             score_reputation: 0.0,
           }
         });
@@ -562,7 +564,23 @@ export const login = async (req, res) => {
       user: userPayload
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la connexion.' });
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// GET /auth/markets
+// Public — liste des marchés disponibles (pour le select d'inscription)
+// ────────────────────────────────────────────────────────────
+export const getMarkets = async (req, res) => {
+  try {
+    const markets = await prisma.marche.findMany({
+      select: { id_marche: true, nom: true },
+      orderBy: { nom: 'asc' }
+    });
+    return res.json(markets);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
@@ -123,9 +123,18 @@ export default function Inscription() {
     identifiant: '',
     mot_de_passe: '', mot_de_passe_confirmation: '',
     adresse_livraison: '',
-    nom_etablissement: '', localisation_marche: '',
+    nom_etablissement: '', localisation_marche: '', id_marche: '',
     type_vehicule: '', immatriculation: '',
   })
+
+  const [markets, setMarkets] = useState([])
+
+  useEffect(() => {
+    if (profil !== 'vendeur') return
+    api.get('/auth/markets')
+      .then(setMarkets)
+      .catch(() => {})
+  }, [profil])
 
   function set(field) {
     return e => setForm(p => ({ ...p, [field]: e.target.value }))
@@ -399,9 +408,20 @@ export default function Inscription() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold text-white/80">Marché</label>
-                    <input type="text" placeholder="Ex: Dantokpa" value={form.localisation_marche} onChange={set('localisation_marche')}
-                      className="rounded-2xl px-4 py-3.5 text-sm text-white placeholder:text-white/40 outline-none border"
-                      style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }} />
+                    <select value={form.id_marche} onChange={e => {
+                      const id = e.target.value
+                      const m = markets.find(m => String(m.id_marche) === id)
+                      setForm(p => ({ ...p, id_marche: id, localisation_marche: m ? m.nom : '' }))
+                    }}
+                      className="rounded-2xl px-4 py-3.5 text-sm text-white outline-none border appearance-none"
+                      style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}>
+                      <option value="" style={{ background: '#15795A', color: '#fff' }}>Sélectionnez un marché</option>
+                      {markets.map(m => (
+                        <option key={m.id_marche} value={m.id_marche} style={{ background: '#15795A', color: '#fff' }}>
+                          {m.nom}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </>
               )}

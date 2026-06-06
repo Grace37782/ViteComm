@@ -2,7 +2,8 @@ import { Router } from 'express';
 import {
   register, verifyEmail, resendCode, login, googleAuth,
   getProfile, updateProfile, logout,
-  forgotPassword, resetPassword
+  forgotPassword, resetPassword,
+  getMarkets
 } from '../controllers/authController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { uploadAvatar } from '../middleware/upload.js';
@@ -28,6 +29,9 @@ router.post('/google', googleAuth);
 // Mot de passe oublié
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+
+// Marchés disponibles (public — pour le select d'inscription)
+router.get('/markets', getMarkets);
 
 // Guide §1.4 - Profil (read & edit; score_reputation read-only per RG15)
 router.get('/profile', requireAuth, getProfile);
