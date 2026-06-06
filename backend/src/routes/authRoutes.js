@@ -1,11 +1,17 @@
 import { Router } from 'express';
-import { register, login, getProfile, updateProfile, logout } from '../controllers/authController.js';
+import { register, verifyEmail, resendCode, login, getProfile, updateProfile, logout } from '../controllers/authController.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-// Guide §1.3 - Inscription (all user types)
+// Guide §1.3 - Inscription (étape 1 : envoi du code email)
 router.post('/register', register);
+
+// Vérification email (étape 2 : validation du code → création du compte)
+router.post('/verify-email', verifyEmail);
+
+// Renvoi du code
+router.post('/resend-code', resendCode);
 
 // Guide §1.2 - Connexion (email or telephone + password → role-based redirect)
 router.post('/login', login);

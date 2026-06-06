@@ -1,6 +1,8 @@
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import prisma from '../config/db.js';
+import { sendVerificationCode } from '../services/mail.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-vitecomm-2026-academic-mvp';
 const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || '7d';
@@ -70,6 +72,8 @@ const findUserWithRole = (where) =>
 // ────────────────────────────────────────────────────────────
 // POST /auth/register
 // Guide §1.3 - Écran d'Inscription
+// Étape 1 : valide les champs, génère un code, envoie l'email,
+//            stocke un VerificationToken (pas d'utilisateur en DB)
 // Body: { nom, prenom, telephone, email, mot_de_passe,
 //         mot_de_passe_confirmation, role,
 //         /* client */ adresse_livraison,
@@ -81,11 +85,8 @@ export const register = async (req, res) => {
     nom, prenom, telephone, email,
     mot_de_passe, mot_de_passe_confirmation,
     role,
-    // Client
     adresse_livraison,
-    // Vendeur
     nom_etablissement, localisation_marche,
-    // Livreur
     type_vehicule, immatriculation
   } = req.body;
 
@@ -96,24 +97,21 @@ export const register = async (req, res) => {
     });
   }
 
-  // Email format check
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    return res.status(400).json({ error: 'Format de l\'adresse email invalide.' });
+    return res.status(400).json({ error: "Format de l'adresse email invalide." });
   }
 
-  // Password confirmation (guide §1.3 - validation en temps réel)
   if (mot_de_passe_confirmation !== undefined && mot_de_passe !== mot_de_passe_confirmation) {
     return res.status(400).json({ error: 'Les mots de passe ne correspondent pas.' });
   }
 
   if (!['client', 'vendeur', 'livreur'].includes(role)) {
     return res.status(400).json({
-      error: "Le rôle doit être 'client', 'vendeur' ou 'livreur'. Les administrateurs sont créés manuellement."
+      error: "Le rôle doit être 'client', 'vendeur' ou 'livreur'."
     });
   }
 
-  // ── Validate role-specific required fields ────────────────
   if (role === 'client' && !adresse_livraison) {
     return res.status(400).json({ error: "L'adresse de livraison est obligatoire pour les clients." });
   }
@@ -129,63 +127,140 @@ export const register = async (req, res) => {
   }
 
   try {
-    // Check email uniqueness
+    // Check if email already has an active user
     const existingUser = await prisma.utilisateur.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(409).json({ error: 'Cette adresse email est déjà utilisée.' });
     }
 
-    const hashedPassword = await bcryptjs.hash(mot_de_passe, 12);
+    // Check for existing pending verification for this email
+    const existingPending = await prisma.verificationToken.findFirst({
+      where: { email, expires_at: { gt: new Date() } }
+    });
+    if (existingPending) {
+      return res.status(429).json({
+        error: 'Un code de vérification a déjà été envoyé à cet email. Vérifiez vos spams ou attendez 10 minutes.',
+        pending: true
+      });
+    }
 
-    // ── Create user + specialization in one transaction ──────
+    // Generate 6-digit code and unique token
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const token = crypto.randomUUID();
+
+    // Build payload as JSON
+    const payload = JSON.stringify({
+      nom, prenom, telephone, email, mot_de_passe,
+      adresse_livraison, nom_etablissement, localisation_marche,
+      type_vehicule, immatriculation
+    });
+
+    // Store verification token (expires in 10 min)
+    await prisma.verificationToken.create({
+      data: {
+        email,
+        code,
+        token,
+        data: payload,
+        role,
+        expires_at: new Date(Date.now() + 10 * 60 * 1000),
+      }
+    });
+
+    // Send email
+    await sendVerificationCode(email, code, prenom);
+
+    return res.status(200).json({
+      message: 'Code de vérification envoyé par email.',
+      token, // frontend uses this to verify later
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// POST /auth/verify-email
+// Étape 2 : vérifie le code, crée l'utilisateur en DB, connecte
+// Body: { token, code }
+// ────────────────────────────────────────────────────────────
+export const verifyEmail = async (req, res) => {
+  const { token, code } = req.body;
+
+  if (!token || !code) {
+    return res.status(400).json({ error: 'Token et code requis.' });
+  }
+
+  try {
+    const vt = await prisma.verificationToken.findUnique({ where: { token } });
+
+    if (!vt) {
+      return res.status(404).json({ error: 'Token de vérification invalide.' });
+    }
+
+    if (new Date() > vt.expires_at) {
+      await prisma.verificationToken.delete({ where: { id: vt.id } });
+      return res.status(410).json({ error: 'Code expiré. Veuillez recommencer l\'inscription.' });
+    }
+
+    if (vt.code !== code) {
+      return res.status(400).json({ error: 'Code incorrect.' });
+    }
+
+    // Check email still free (defensive)
+    const existingUser = await prisma.utilisateur.findUnique({ where: { email: vt.email } });
+    if (existingUser) {
+      await prisma.verificationToken.delete({ where: { id: vt.id } });
+      return res.status(409).json({ error: 'Cette adresse email est déjà utilisée.' });
+    }
+
+    const data = JSON.parse(vt.data);
+    const hashedPassword = await bcryptjs.hash(data.mot_de_passe, 12);
+
+    // ── Create user + specialization ──
     const newUser = await prisma.$transaction(async (tx) => {
       const created = await tx.utilisateur.create({
         data: {
-          nom,
-          prenom,
-          telephone,
-          email,
+          nom: data.nom,
+          prenom: data.prenom,
+          telephone: data.telephone,
+          email: vt.email,
           mot_de_passe: hashedPassword,
-          statut_compte: 'Actif',  // Guide §1.3 - default value
-          est_admin: false
+          statut_compte: 'Actif',
+          est_admin: false,
         }
       });
 
-      if (role === 'client') {
+      if (vt.role === 'client') {
         await tx.client.create({
-          data: { id_user: created.id_user, adresse_livraison }
+          data: { id_user: created.id_user, adresse_livraison: data.adresse_livraison }
         });
-
-        // Auto-create empty cart for new client (RG22)
         await tx.panier.create({ data: { id_user_client: created.id_user } });
-
-      } else if (role === 'vendeur') {
+      } else if (vt.role === 'vendeur') {
         await tx.vendeur.create({
           data: {
             id_user: created.id_user,
-            nom_etablissement,
-            localisation_marche,
-            score_reputation: 0.0  // Guide §1.3 - initialised to 0
+            nom_etablissement: data.nom_etablissement,
+            localisation_marche: data.localisation_marche,
+            score_reputation: 0.0,
           }
         });
-
-      } else if (role === 'livreur') {
+      } else if (vt.role === 'livreur') {
         await tx.livreur.create({
           data: {
             id_user: created.id_user,
-            type_vehicule,
-            immatriculation,
-            score_reputation: 0.0
+            type_vehicule: data.type_vehicule,
+            immatriculation: data.immatriculation,
+            score_reputation: 0.0,
           }
         });
-        // Create initial availability record (RG29)
         await tx.disponibiliteLivreur.create({
           data: {
             id_user_livreur: created.id_user,
             est_disponible: true,
             distance_marche: 0.0,
             heure_debut_dispo: null,
-            heure_fin_dispo: null
+            heure_fin_dispo: null,
           }
         });
       }
@@ -193,22 +268,60 @@ export const register = async (req, res) => {
       return created;
     });
 
-    // Fetch full user for response
+    // Clean up used token
+    await prisma.verificationToken.delete({ where: { id: vt.id } });
+
+    // Issue JWT
     const fullUser = await findUserWithRole({ id_user: newUser.id_user });
     const userPayload = await buildUserPayload(fullUser);
-
-    // Issue JWT immediately (guide §1.3 - connexion automatique option)
-    const token = jwt.sign(
-      { id_user: newUser.id_user, role },
+    const jwtToken = jwt.sign(
+      { id_user: newUser.id_user, role: vt.role },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES }
     );
 
     return res.status(201).json({
-      message: 'Inscription réussie.',
-      token,
-      user: userPayload
+      message: 'Compte créé avec succès.',
+      token: jwtToken,
+      user: userPayload,
     });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// POST /auth/resend-code
+// Body: { token }
+// ────────────────────────────────────────────────────────────
+export const resendCode = async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ error: 'Token requis.' });
+  }
+
+  try {
+    const vt = await prisma.verificationToken.findUnique({ where: { token } });
+    if (!vt) {
+      return res.status(404).json({ error: 'Token invalide ou inscription expirée.' });
+    }
+
+    // Generate new code, extend expiry
+    const newCode = String(Math.floor(100000 + Math.random() * 900000));
+    const data = JSON.parse(vt.data);
+
+    await prisma.verificationToken.update({
+      where: { id: vt.id },
+      data: {
+        code: newCode,
+        expires_at: new Date(Date.now() + 10 * 60 * 1000),
+      }
+    });
+
+    await sendVerificationCode(vt.email, newCode, data.prenom);
+
+    return res.json({ message: 'Nouveau code envoyé par email.' });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
