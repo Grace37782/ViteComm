@@ -15,9 +15,19 @@ import Profil from './pages/client/Profil'
 import SuiviCommande from './pages/client/SuiviCommande'
 import MarcheDetail from './pages/client/MarcheDetail'
 import MesCommandes from './pages/client/MesCommandes'
+
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+
+function AppProviders({ children }) {
+  if (googleClientId) {
+    return <GoogleOAuthProvider clientId={googleClientId}>{children}</GoogleOAuthProvider>
+  }
+  return children
+}
+
 export default function App() {
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
+    <AppProviders>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -51,6 +61,6 @@ export default function App() {
       </Routes>
       </BrowserRouter>
     </AuthProvider>
-    </GoogleOAuthProvider>
+    </AppProviders>
   )
 }
