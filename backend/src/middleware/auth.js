@@ -1,6 +1,11 @@
 import jwt from 'jsonwebtoken';
 import prisma from '../config/db.js';
 
+const { JWT_SECRET } = process.env;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in environment variables.');
+}
+
 export const requireAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -10,7 +15,7 @@ export const requireAuth = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super-secret-jwt-key-vitecomm-2026-academic-mvp');
+    const decoded = jwt.verify(token, JWT_SECRET);
     
     // Fetch user with specializations to confirm existence, status, and role
     const user = await prisma.utilisateur.findUnique({

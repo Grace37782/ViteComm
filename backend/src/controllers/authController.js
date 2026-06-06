@@ -4,8 +4,11 @@ import crypto from 'crypto';
 import prisma from '../config/db.js';
 import { sendVerificationCode } from '../services/mail.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-vitecomm-2026-academic-mvp';
-const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || '7d';
+const { JWT_SECRET, JWT_EXPIRES_IN } = process.env;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in environment variables.');
+}
+const JWT_EXPIRES = JWT_EXPIRES_IN || '7d';
 
 // Derive role from user specialization rows (RG17)
 const deriveRole = (user) => {
