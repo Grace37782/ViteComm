@@ -51,6 +51,16 @@ export default function Connexion() {
       return 'Numéro de téléphone invalide (8 à 10 chiffres).'
     if (!motDePasse)
       return 'Entrez votre mot de passe.'
+    if (motDePasse.length < 8)
+      return 'Le mot de passe doit contenir au moins 8 caractères.'
+    if (!/[A-Z]/.test(motDePasse))
+      return 'Le mot de passe doit contenir au moins une majuscule.'
+    if (!/[a-z]/.test(motDePasse))
+      return 'Le mot de passe doit contenir au moins une minuscule.'
+    if (!/\d/.test(motDePasse))
+      return 'Le mot de passe doit contenir au moins un chiffre.'
+    if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'/`~]/.test(motDePasse))
+      return 'Le mot de passe doit contenir au moins un caractère spécial (!@#...).'
     return null
   }
 
@@ -250,11 +260,13 @@ export default function Connexion() {
 
         </form>
 
-        <GoogleSignInButton
-          onError={(msg) => setErreur({ texte: msg, type: 'erreur' })}
-          onStart={() => setErreur(null)}
-          disabled={loading}
-        />
+        <div className="mt-3">
+          <GoogleSignInButton
+            onError={(msg) => setErreur({ texte: msg, type: 'erreur' })}
+            onStart={() => setErreur(null)}
+            disabled={loading}
+          />
+        </div>
 
         {/* Inscription */}
         <div className="mt-6 text-center">

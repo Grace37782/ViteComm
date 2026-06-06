@@ -9,6 +9,52 @@ const profils = [
   { id: 'livreur', emoji: '🏍️', label: 'Livrer',   color: '#D85A30' },
 ]
 
+const PWD_RULES = [
+  { key: 'min',   label: '8+',     test: v => v.length >= 8 },
+  { key: 'upper', label: 'A',      test: v => /[A-Z]/.test(v) },
+  { key: 'lower', label: 'a',      test: v => /[a-z]/.test(v) },
+  { key: 'digit', label: '1',      test: v => /\d/.test(v) },
+  { key: 'sym',   label: '!@#',    test: v => /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'/`~]/.test(v) },
+]
+
+function PasswordChecklist({ value }) {
+  return (
+    <div className="flex gap-2 flex-wrap mt-1">
+      {PWD_RULES.map(r => {
+        const ok = r.test(value)
+        return (
+          <span key={r.key}
+            className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all"
+            style={{
+              background: ok ? 'rgba(29,158,117,0.25)' : 'rgba(255,255,255,0.08)',
+              color: ok ? '#1D9E75' : 'rgba(255,255,255,0.35)',
+              border: `1px solid ${ok ? '#1D9E75' : 'rgba(255,255,255,0.08)'}`,
+            }}>
+            {ok ? '✓ ' : ''}{r.label}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
+function PasswordStrengthInput({ showMdp, setShowMdp, value, onChange }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-semibold text-white/80">Mot de passe</label>
+      <div className="flex items-center rounded-2xl overflow-hidden border"
+        style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}>
+        <input type={showMdp ? 'text' : 'password'} placeholder="••••••••" value={value} onChange={onChange}
+          className="flex-1 bg-transparent px-4 py-3.5 text-sm text-white placeholder:text-white/40 outline-none" />
+        <button type="button" onClick={() => setShowMdp(!showMdp)} className="px-4 text-lg cursor-pointer" style={{ background: 'none', border: 'none' }}>
+          {showMdp ? '🙈' : '👁️'}
+        </button>
+      </div>
+      {value && <PasswordChecklist value={value} />}
+    </div>
+  )
+}
+
 /* ─── Champs code à 6 chiffres ─── */
 function CodeInput({ value, onChange }) {
   const digits = Array.from({ length: 6 }, (_, i) => value[i] || '')
@@ -91,6 +137,15 @@ export default function Inscription() {
     e.preventDefault()
     setError('')
     setLoading(true)
+
+    // ── Client-side validation ──
+    const mdp = form.mot_de_passe
+    if (!mdp) return void (setLoading(false) || showError('Mot de passe obligatoire.'))
+    if (mdp !== form.mot_de_passe_confirmation)
+      return void (setLoading(false) || showError('Les mots de passe ne correspondent pas.'))
+    const failing = PWD_RULES.find(r => !r.test(mdp))
+    if (failing)
+      return void (setLoading(false) || showError('Le mot de passe doit contenir au moins ' + PWD_RULES.map(r => r.label).join(', ') + '.'))
 
     try {
       const res = await api.post('/auth/register', { ...form, role: profil })
@@ -261,17 +316,30 @@ export default function Inscription() {
                   style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }} />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-white/80">Mot de passe</label>
-                <div className="flex items-center rounded-2xl overflow-hidden border"
-                  style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}>
-                  <input type={showMdp ? 'text' : 'password'} placeholder="••••••••" value={form.mot_de_passe} onChange={set('mot_de_passe')}
-                    className="flex-1 bg-transparent px-4 py-3.5 text-sm text-white placeholder:text-white/40 outline-none" />
-                  <button type="button" onClick={() => setShowMdp(!showMdp)} className="px-4 text-lg cursor-pointer" style={{ background: 'none', border: 'none' }}>
-                    {showMdp ? '🙈' : '👁️'}
-                  </button>
+              <PasswordStrengthInput
+                showMdp={showMdp}
+                setShowMdp={setShowMdp}
+                value={form.mot_de_passe}
+                onChange={set('mot_de_passe')}
+              />
+
+              {form.mot_de_passe && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-white/80">Confirmer le mot de passe</label>
+                  <input type={showMdp ? 'text' : 'password'} placeholder="Retaper le mot de passe"
+                    value={form.mot_de_passe_confirmation}
+                    onChange={set('mot_de_passe_confirmation')}
+                    className="rounded-2xl px-4 py-3.5 text-sm text-white placeholder:text-white/40 outline-none border"
+                    style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      borderColor: form.mot_de_passe_confirmation
+                        ? form.mot_de_passe === form.mot_de_passe_confirmation
+                           ? '#1D9E75'
+                           : '#E24B4A'
+                        : 'rgba(255,255,255,0.12)',
+                    }} />
                 </div>
-              </div>
+              )}
 
               {profil === 'client' && (
                 <div className="flex flex-col gap-1.5">
