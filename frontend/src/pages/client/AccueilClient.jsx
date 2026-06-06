@@ -7,6 +7,44 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
+/* ─── Profile helpers (moved from Profil.jsx for reuse) ─── */
+function initials(u) {
+  if (!u) return '?'
+  return ((u.prenom?.[0] || '') + (u.nom?.[0] || '')).toUpperCase() || '?'
+}
+
+function AvatarCircle({ user, size = 48 }) {
+  if (user?.photo_url) {
+    return (
+      <img
+        src={user.photo_url}
+        alt="Photo profil"
+        style={{
+          width: size, height: size,
+          borderRadius: '50%',
+          objectFit: 'cover',
+          border: '2px solid rgba(255,255,255,0.3)',
+        }}
+      />
+    )
+  }
+  return (
+    <div
+      style={{
+        width: size, height: size,
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #1D9E75, #0F6E56)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: size * 0.38, fontWeight: 900, color: '#fff',
+        border: '2px solid rgba(255,255,255,0.3)',
+        flexShrink: 0,
+      }}
+    >
+      {initials(user)}
+    </div>
+  )
+}
+
 // Custom Leaflet marker icons using divIcon (bypasses URL image path issues in Vite)
 const createMarketIcon = (isActive) => L.divIcon({
   html: `<div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white shadow-lg text-white font-bold text-lg hover:scale-115 transition-transform ${
@@ -268,25 +306,53 @@ export default function AccueilClient() {
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-emerald-700/40 pointer-events-none" />
         <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-emerald-700/40 pointer-events-none" />
 
-        <div className="relative z-10 flex items-center justify-between mb-4">
-          <div>
-            <h1 className="font-black text-xl leading-tight">Découverte des Marchés 👋</h1>
-            <p className="text-emerald-200 text-xs mt-0.5">
-              Bonjour {prenom} • {geoPosition ? `Pos: ${geoPosition.lat.toFixed(4)}, ${geoPosition.lng.toFixed(4)}` : adresse || 'Bénin'}
-            </p>
-          </div>
-
-          <button
-            onClick={() => navigate('/client/panier')}
-            className="relative w-11 h-11 rounded-2xl bg-emerald-700/50 hover:bg-emerald-750 border border-emerald-600 flex items-center justify-center transition-all cursor-pointer"
-          >
-            <span className="text-xl">🛒</span>
-            {panierCount > 0 && (
-              <div className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full text-white font-black text-[9px] bg-rose-500 border border-white">
-                {panierCount}
+        {/* ── Profile section ── */}
+        <div className="relative z-10 mb-4">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate('/client/profil')} className="cursor-pointer">
+              <AvatarCircle user={user} size={52} />
+            </button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="font-black text-lg leading-tight truncate">
+                    👋 Bonjour {prenom}
+                  </h1>
+                  <p className="text-emerald-200 text-[11px] mt-0.5 truncate">
+                    🛒 Client · {adresse || (geoPosition ? `${geoPosition.lat.toFixed(4)}, ${geoPosition.lng.toFixed(4)}` : 'Bénin')}
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate('/client/panier')}
+                  className="relative w-11 h-11 rounded-2xl bg-emerald-700/50 hover:bg-emerald-750 border border-emerald-600 flex items-center justify-center transition-all cursor-pointer flex-shrink-0"
+                >
+                  <span className="text-xl">🛒</span>
+                  {panierCount > 0 && (
+                    <div className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full text-white font-black text-[9px] bg-rose-500 border border-white">
+                      {panierCount}
+                    </div>
+                  )}
+                </button>
               </div>
-            )}
-          </button>
+              {/* Quick profile stats */}
+              <div className="flex items-center gap-3 mt-2">
+                <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-100 bg-emerald-700/40 px-2.5 py-1 rounded-full">
+                  <span>📧</span>
+                  <span className="truncate max-w-[120px]">{user?.email || '—'}</span>
+                </div>
+                <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-100 bg-emerald-700/40 px-2.5 py-1 rounded-full">
+                  <span>📱</span>
+                  <span>{user?.telephone || '—'}</span>
+                </div>
+                <button
+                  onClick={() => navigate('/client/profil')}
+                  className="ml-auto text-[10px] font-bold text-white bg-emerald-600/60 hover:bg-emerald-600 px-2.5 py-1 rounded-full transition-all cursor-pointer flex-shrink-0"
+                >
+                  ✏️ Profil
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Search Suggestion wrapper */}
