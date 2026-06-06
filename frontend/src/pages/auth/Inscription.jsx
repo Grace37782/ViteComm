@@ -24,7 +24,7 @@ function PasswordChecklist({ value }) {
         const ok = r.test(value)
         return (
           <span key={r.key}
-            className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all"
+            className="text-[13px] font-black px-3 py-1.5 rounded-full transition-all"
             style={{
               background: ok ? 'rgba(29,158,117,0.25)' : 'rgba(255,255,255,0.08)',
               color: ok ? '#1D9E75' : 'rgba(255,255,255,0.35)',
