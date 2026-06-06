@@ -45,7 +45,7 @@ export default function SelectionLivreur() {
         items,
       })
 
-      navigate('/client/suivi', {
+      navigate('/client/suivi-commande', {
         state: {
           id_commande: res.id_commande,
           code_verification: res.code_verification,
