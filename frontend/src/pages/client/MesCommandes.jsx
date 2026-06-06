@@ -211,7 +211,7 @@ export default function MesCommandes() {
                   display: 'flex', justifyContent: 'flex-end',
                 }}>
                   <button
-                    onClick={() => navigate('/client/suivi', {
+                    onClick={() => navigate('/client/suivi-commande', {
                       state: {
                         id_commande: order.id_commande,
                         code_verification: order.code_verification,

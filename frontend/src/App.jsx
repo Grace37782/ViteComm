@@ -41,6 +41,7 @@ export default function App() {
         <Route path="/livreur/dashboard" element={<Livreur />} />
         <Route path="/admin/dashboard" element={<Admin />} />
         <Route path="/client/profil" element={<Profil />} />
+        <Route path="/client/mes-commandes" element={<MesCommandes />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/accueil" />} />
