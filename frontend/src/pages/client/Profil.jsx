@@ -2,99 +2,35 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
-import BottomNav from '../../components/client/BottomNav'
 
-/* ─── Helpers ──────────────────────────────────────────── */
-function initials(u) {
-  if (!u) return '?'
-  return ((u.prenom?.[0] || '') + (u.nom?.[0] || '')).toUpperCase() || '?'
-}
+const TABS = [
+  { id: 'infos', label: 'Mon Profil', icon: '👤' },
+  { id: 'securite', label: 'Sécurité', icon: '🔒' },
+]
 
-function AvatarCircle({ user, size = 80 }) {
-  if (user?.photo_url) {
-    return (
-      <img
-        src={user.photo_url}
-        alt="Photo profil"
-        style={{
-          width: size, height: size,
-          borderRadius: '50%',
-          objectFit: 'cover',
-          border: '3px solid #fff',
-          boxShadow: '0 4px 16px rgba(29,158,117,0.25)',
-        }}
-      />
-    )
-  }
-  return (
-    <div
-      style={{
-        width: size, height: size,
-        borderRadius: '50%',
-        background: 'linear-gradient(135deg, #1D9E75, #0F6E56)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: size * 0.38, fontWeight: 900, color: '#fff',
-        border: '3px solid #fff',
-        boxShadow: '0 4px 16px rgba(29,158,117,0.25)',
-        flexShrink: 0,
-      }}
-    >
-      {initials(user)}
-    </div>
-  )
-}
-
-function Field({ label, value, icon }) {
-  return (
-    <div
-      style={{
-        background: '#F7F8F3',
-        border: '1.5px solid #E8E6DF',
-        borderRadius: 16,
-        padding: '14px 16px',
-      }}
-    >
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#888780', marginBottom: 4 }}>
-        {icon} {label}
-      </div>
-      <div style={{ fontSize: 14, fontWeight: 700, color: '#2C2C2A' }}>
-        {value || <span style={{ color: '#C0BEB7' }}>Non renseigné</span>}
-      </div>
-    </div>
-  )
-}
-
-/* ─── Component ────────────────────────────────────────── */
 export default function Profil() {
   const navigate = useNavigate()
   const { user: ctxUser, login: updateCtx, logout: ctxLogout } = useAuth()
-
-  const [user, setUser]         = useState(ctxUser)
-  const [loading, setLoading]   = useState(true)
-  const [editing, setEditing]   = useState(false)
-  const [saving, setSaving]     = useState(false)
-  const [toast, setToast]       = useState(null)
+  const [tab, setTab] = useState('infos')
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({ nom: '', prenom: '', email: '', telephone: '', adresse_livraison: '', mot_de_passe: '', confirm: '' })
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState('')
+  const [toast, setToast] = useState(null)
   const [showLogout, setShowLogout] = useState(false)
 
-  /* form state */
-  const [form, setForm] = useState({})
-
-  /* ── Load fresh profile from API ── */
   useEffect(() => {
-    api.get('/auth/profile')
-      .then(data => {
-        setUser(data)
-        setForm({
-          nom: data.nom || '',
-          prenom: data.prenom || '',
-          telephone: data.telephone || '',
-          email: data.email || '',
-          adresse_livraison: data.profil?.adresse_livraison || '',
-          mot_de_passe: '',
-          mot_de_passe_confirmation: '',
-        })
-      })
-      .catch(err => showToast('❌ ' + err.message, 'error'))
+    api.get('/auth/profile').then(data => {
+      setProfile(data)
+      setForm(f => ({
+        ...f, nom: data.nom || '', prenom: data.prenom || '',
+        telephone: data.telephone || '', email: data.email || '',
+        adresse_livraison: data.profil?.adresse_livraison || '',
+      }))
+    }).catch(e => showToast('❌ ' + e.message, 'error'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -103,40 +39,42 @@ export default function Profil() {
     setTimeout(() => setToast(null), 3000)
   }
 
+  function handlePhotoChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    const reader = new FileReader()
+    reader.onload = () => setPhotoPreview(reader.result)
+    reader.readAsDataURL(file)
+  }
+
   async function handleSave(e) {
     e.preventDefault()
-
-    if (form.mot_de_passe && form.mot_de_passe !== form.mot_de_passe_confirmation) {
-      return showToast('⚠️ Les mots de passe ne correspondent pas.', 'error')
-    }
-    if (form.mot_de_passe && form.mot_de_passe.length < 6) {
-      return showToast('⚠️ Le mot de passe doit comporter au moins 6 caractères.', 'error')
-    }
-
+    if (!form.nom || !form.prenom || !form.email) return showToast('⚠️ Nom, prénom et email requis.', 'error')
+    if (form.mot_de_passe && form.mot_de_passe !== form.confirm) return showToast('⚠️ Les mots de passe ne correspondent pas.', 'error')
+    if (form.mot_de_passe && form.mot_de_passe.length < 6) return showToast('⚠️ Le mot de passe doit comporter au moins 6 caractères.', 'error')
     setSaving(true)
     try {
-      const payload = {
-        nom: form.nom,
-        prenom: form.prenom,
-        telephone: form.telephone,
-        email: form.email,
-        adresse_livraison: form.adresse_livraison,
-      }
+      const body = new FormData()
+      body.set('nom', form.nom)
+      body.set('prenom', form.prenom)
+      body.set('email', form.email)
+      body.set('telephone', form.telephone)
+      body.set('adresse_livraison', form.adresse_livraison)
+      if (photoFile) body.set('photo', photoFile)
       if (form.mot_de_passe) {
-        payload.mot_de_passe = form.mot_de_passe
-        payload.mot_de_passe_confirmation = form.mot_de_passe_confirmation
+        body.set('mot_de_passe', form.mot_de_passe)
+        body.set('mot_de_passe_confirmation', form.confirm)
       }
-
-      const res = await api.put('/auth/profile', payload)
-      setUser(res.user)
+      const res = await api.put('/auth/profile', body)
+      setProfile(res.user)
       updateCtx(res.user, localStorage.getItem('vc_token'))
       showToast('✅ Profil mis à jour !', 'ok')
       setEditing(false)
-    } catch (err) {
-      showToast('❌ ' + err.message, 'error')
-    } finally {
-      setSaving(false)
-    }
+      setPhotoFile(null)
+      setPhotoPreview('')
+    } catch (e) { showToast('❌ ' + e.message, 'error') }
+    finally { setSaving(false) }
   }
 
   function handleLogout() {
@@ -144,279 +82,253 @@ export default function Profil() {
     navigate('/connect')
   }
 
-  /* ── Loading ── */
+  const initials = ((profile?.prenom?.[0] || '') + (profile?.nom?.[0] || '')).toUpperCase() || '?'
+
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F8F3' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
-          <div style={{ fontWeight: 700, color: '#888780', fontSize: 13 }}>Chargement du profil…</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F7F8F3' }}>
+        <div className="text-center">
+          <div className="text-4xl mb-3">⏳</div>
+          <div className="font-bold text-sm" style={{ color: '#888780' }}>Chargement du profil…</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F7F8F3', fontFamily: 'sans-serif', paddingBottom: 80 }}>
-
-      {/* ── TOAST ── */}
+    <div className="bg-[#F7F8F3] font-sans">
+      {/* Toast */}
       {toast && (
-        <div style={{
-          position: 'fixed', top: 16, left: 16, right: 16, zIndex: 100,
-          background: toast.type === 'ok' ? '#1D9E75' : '#E24B4A',
-          color: '#fff', borderRadius: 16, padding: '14px 20px',
-          fontWeight: 700, fontSize: 14, textAlign: 'center',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-        }}>
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"
+          style={{ background: toast.type === 'ok' ? '#1D9E75' : '#D85A30' }}>
           {toast.msg}
         </div>
       )}
 
-      {/* ── HEADER HERO ── */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)',
-        padding: '24px 20px 48px',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-        <div style={{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-
-        {/* Back button */}
-        <button
-          onClick={() => navigate('/client/accueil')}
-          style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 12, padding: '8px 14px', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 6 }}
-        >
-          ← Accueil
-        </button>
-
-        {/* Avatar + name */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <AvatarCircle user={user} size={88} />
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontWeight: 900, fontSize: 22, color: '#fff' }}>
-              {user?.prenom} {user?.nom}
-            </div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
-              👤 Client · ViteComm
-            </div>
-          </div>
-
-          {/* Badge statut */}
-          <div style={{
-            background: user?.statut_compte === 'Actif' ? 'rgba(255,255,255,0.2)' : 'rgba(226,75,74,0.3)',
-            border: '1px solid rgba(255,255,255,0.3)',
-            borderRadius: 20, padding: '4px 14px',
-            fontSize: 11, fontWeight: 700, color: '#fff',
-          }}>
-            {user?.statut_compte === 'Actif' ? '✅ Compte actif' : `⚠️ ${user?.statut_compte}`}
-          </div>
+      {/* Sub-tabs */}
+      <div className="px-4 pt-4 pb-2">
+        <div className="flex gap-1 overflow-x-auto scrollbar-none" style={{ maxWidth: '48rem', margin: '0 auto' }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
+              style={{
+                background: tab === t.id ? '#fff' : 'transparent',
+                color: tab === t.id ? '#1D9E75' : '#888780',
+                border: tab === t.id ? '1px solid #E8E6DF' : 'none',
+                boxShadow: tab === t.id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
+              }}>
+              <span>{t.icon}</span> {t.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* ── CARD flottante ── */}
-      <div style={{ margin: '-24px 16px 0', position: 'relative', zIndex: 10 }}>
-        <div style={{
-          background: '#fff', borderRadius: 24, padding: 20,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-          border: '1.5px solid #E8E6DF',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#888780' }}>Rôle</div>
-            <div style={{ fontSize: 15, fontWeight: 900, color: '#1D9E75', marginTop: 2 }}>🛒 Client</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#888780' }}>Adresse</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#2C2C2A', marginTop: 2 }}>
-              {user?.profil?.adresse_livraison || '—'}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── MAIN CONTENT ── */}
-      <div style={{ padding: '20px 16px 0' }}>
-
-        {!editing ? (
-          /* ── VIEW MODE ── */
+      {/* Content */}
+      <div className="max-w-2xl mx-auto px-4 pb-24">
+        {tab === 'infos' && (
           <>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#888780', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-                Informations personnelles
+            {!editing ? (
+              <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: '#E8E6DF' }}>
+                {/* Avatar */}
+                <div className="flex justify-center mb-5">
+                  {profile?.photo_url ? (
+                    <img src={profile.photo_url} alt="" className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md" />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black text-white shadow-md"
+                      style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)' }}>
+                      {initials}
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-center mb-5">
+                  <h2 className="text-xl font-black" style={{ color: '#2C2C2A' }}>{profile?.prenom} {profile?.nom}</h2>
+                  <p className="text-sm font-semibold mt-1" style={{ color: '#1D9E75' }}>🛒 Client ViteComm</p>
+                </div>
+
+                <div className="flex flex-col gap-3 mb-5">
+                  <InfoRow label="Prénom" value={profile?.prenom} icon="👤" />
+                  <InfoRow label="Nom" value={profile?.nom} icon="👤" />
+                  <InfoRow label="Email" value={profile?.email} icon="✉️" />
+                  <InfoRow label="Téléphone" value={profile?.telephone || '—'} icon="📱" />
+                  <InfoRow label="Adresse livraison" value={profile?.profil?.adresse_livraison || '—'} icon="📍" />
+                  <InfoRow label="Statut" value={profile?.statut_compte || '—'} icon={profile?.statut_compte === 'Actif' ? '✅' : '🔒'} />
+                </div>
+
+                <button onClick={() => setEditing(true)}
+                  className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
+                  style={{ background: '#1D9E75', color: '#fff', border: 'none' }}>
+                  ✏️ Modifier mon profil
+                </button>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <Field label="Prénom" value={user?.prenom} icon="👤" />
-                <Field label="Nom" value={user?.nom} icon="👤" />
-                <Field label="Email" value={user?.email} icon="✉️" />
-                <Field label="Téléphone" value={user?.telephone} icon="📱" />
-                <Field label="Adresse de livraison" value={user?.profil?.adresse_livraison} icon="📍" />
+            ) : (
+              <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: '#E8E6DF' }}>
+                <form onSubmit={handleSave} className="flex flex-col gap-4">
+                  {/* Photo upload */}
+                  <div className="flex justify-center">
+                    <label className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-dashed cursor-pointer flex items-center justify-center transition-all hover:scale-105"
+                      style={{
+                        background: photoPreview ? 'transparent' : '#F7F8F3',
+                        borderColor: photoPreview ? '#1D9E75' : '#E8E6DF',
+                      }}>
+                      {photoPreview ? (
+                        <img src={photoPreview} alt="Aperçu" className="w-full h-full object-cover" />
+                      ) : profile?.photo_url ? (
+                        <img src={profile.photo_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-3xl" style={{ color: '#888780' }}>📷</span>
+                      )}
+                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                      {(photoPreview || profile?.photo_url) && (
+                        <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview('') }}
+                          className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-md">✕</button>
+                      )}
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Nom" value={form.nom} onChange={v => setForm(p => ({ ...p, nom: v }))} />
+                    <Field label="Prénom" value={form.prenom} onChange={v => setForm(p => ({ ...p, prenom: v }))} />
+                  </div>
+                  <Field label="Email" type="email" value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} />
+                  <Field label="Téléphone" value={form.telephone} onChange={v => setForm(p => ({ ...p, telephone: v }))} />
+                  <Field label="Adresse de livraison" value={form.adresse_livraison} onChange={v => setForm(p => ({ ...p, adresse_livraison: v }))} />
+
+                  <div className="flex gap-3 mt-2">
+                    <button type="submit" disabled={saving}
+                      className="flex-1 rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
+                      style={{ background: '#1D9E75', color: '#fff', border: 'none', opacity: saving ? 0.7 : 1 }}>
+                      {saving ? '⏳' : '💾 Enregistrer'}
+                    </button>
+                    <button type="button" onClick={() => {
+                      setEditing(false); setPhotoFile(null); setPhotoPreview('')
+                      setForm(f => ({
+                        ...f, nom: profile?.nom || '', prenom: profile?.prenom || '',
+                        telephone: profile?.telephone || '', email: profile?.email || '',
+                        adresse_livraison: profile?.profil?.adresse_livraison || '',
+                      }))
+                    }}
+                      className="rounded-2xl py-3 px-5 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
+                      style={{ background: '#F0EFEA', color: '#888780', border: 'none' }}>
+                      Annuler
+                    </button>
+                  </div>
+                </form>
               </div>
+            )}
+          </>
+        )}
+
+        {tab === 'securite' && (
+          <div className="flex flex-col gap-4">
+            <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: '#E8E6DF' }}>
+              <h3 className="text-sm font-black mb-4" style={{ color: '#2C2C2A' }}>🔑 Changer le mot de passe</h3>
+              <PasswordChangeForm />
             </div>
 
-            {/* Actions */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-              <button
-                onClick={() => setEditing(true)}
-                style={{
-                  background: '#1D9E75', color: '#fff',
-                  border: 'none', borderRadius: 18, padding: '16px',
-                  fontSize: 15, fontWeight: 900, cursor: 'pointer',
-                  boxShadow: '0 4px 16px rgba(29,158,117,0.3)',
-                }}
-              >
-                ✏️ Modifier mon profil
-              </button>
-              <button
-                onClick={() => setShowLogout(true)}
-                style={{
-                  background: '#fff', color: '#E24B4A',
-                  border: '2px solid #FDDCDC', borderRadius: 18, padding: '14px',
-                  fontSize: 15, fontWeight: 700, cursor: 'pointer',
-                }}
-              >
+            <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: '#E8E6DF' }}>
+              <h3 className="text-sm font-black mb-2" style={{ color: '#2C2C2A' }}>🚪 Session</h3>
+              <p className="text-xs mb-4" style={{ color: '#888780' }}>Déconnectez-vous de votre compte sur cet appareil.</p>
+              <button onClick={() => setShowLogout(true)}
+                className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
+                style={{ background: '#FDE8E2', color: '#D85A30', border: 'none' }}>
                 🚪 Se déconnecter
               </button>
             </div>
-          </>
-        ) : (
-          /* ── EDIT MODE ── */
-          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#888780', textTransform: 'uppercase', letterSpacing: 1 }}>
-                Modifier le profil
-              </div>
-              <button type="button" onClick={() => setEditing(false)}
-                style={{ background: 'none', border: 'none', color: '#888780', fontSize: 20, cursor: 'pointer' }}>
-                ✕
-              </button>
-            </div>
-
-            {[
-              { key: 'prenom',  label: 'Prénom',                 icon: '👤', type: 'text'     },
-              { key: 'nom',     label: 'Nom',                    icon: '👤', type: 'text'     },
-              { key: 'email',   label: 'Email',                  icon: '✉️', type: 'email'    },
-              { key: 'telephone', label: 'Téléphone',            icon: '📱', type: 'tel'      },
-              { key: 'adresse_livraison', label: 'Adresse livraison', icon: '📍', type: 'text' },
-            ].map(f => (
-              <div key={f.key}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: '#888780', display: 'block', marginBottom: 6 }}>
-                  {f.icon} {f.label}
-                </label>
-                <input
-                  type={f.type}
-                  value={form[f.key] || ''}
-                  onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                  style={{
-                    width: '100%', boxSizing: 'border-box',
-                    background: '#F7F8F3', border: '1.5px solid #E8E6DF',
-                    borderRadius: 14, padding: '13px 14px',
-                    fontSize: 14, fontWeight: 600, color: '#2C2C2A',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-            ))}
-
-            {/* Séparateur mot de passe */}
-            <div style={{ borderTop: '1px solid #E8E6DF', paddingTop: 12, marginTop: 4 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#888780', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-                Changer le mot de passe (optionnel)
-              </div>
-              {[
-                { key: 'mot_de_passe',              label: 'Nouveau mot de passe'    },
-                { key: 'mot_de_passe_confirmation', label: 'Confirmer le mot de passe' },
-              ].map(f => (
-                <div key={f.key} style={{ marginBottom: 10 }}>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#888780', display: 'block', marginBottom: 6 }}>
-                    🔒 {f.label}
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    value={form[f.key] || ''}
-                    onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                    style={{
-                      width: '100%', boxSizing: 'border-box',
-                      background: '#F7F8F3', border: '1.5px solid #E8E6DF',
-                      borderRadius: 14, padding: '13px 14px',
-                      fontSize: 14, fontWeight: 600, color: '#2C2C2A',
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-
-            <button
-              type="submit"
-              disabled={saving}
-              style={{
-                background: saving ? '#aaa' : '#1D9E75',
-                color: '#fff', border: 'none', borderRadius: 18, padding: '16px',
-                fontSize: 15, fontWeight: 900, cursor: saving ? 'not-allowed' : 'pointer',
-                marginTop: 4, boxShadow: '0 4px 16px rgba(29,158,117,0.3)',
-              }}
-            >
-              {saving ? '⏳ Enregistrement…' : '💾 Sauvegarder les modifications'}
-            </button>
-          </form>
+          </div>
         )}
       </div>
 
-      {/* ── LOGOUT CONFIRM MODAL ── */}
+      {/* Logout modal */}
       {showLogout && (
-        <div
-          onClick={() => setShowLogout(false)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 200,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 16,
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: '#fff', borderRadius: 24,
-              padding: '28px 24px 36px',
-              width: '100%', maxWidth: 400,
-              boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
-            }}
-          >
-            <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 48, marginBottom: 8 }}>👋</div>
-              <div style={{ fontWeight: 900, fontSize: 18, color: '#2C2C2A' }}>Se déconnecter ?</div>
-              <div style={{ fontSize: 13, color: '#888780', marginTop: 6 }}>
-                Vous devrez vous reconnecter pour accéder à votre espace.
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}
+          onClick={() => setShowLogout(false)}>
+          <div className="rounded-3xl p-6 w-full max-w-sm shadow-2xl" style={{ background: '#fff' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="text-center mb-5">
+              <div className="text-5xl mb-3">👋</div>
+              <h3 className="text-lg font-black" style={{ color: '#2C2C2A' }}>Se déconnecter ?</h3>
+              <p className="text-xs mt-2" style={{ color: '#888780' }}>Vous devrez vous reconnecter pour accéder à votre espace.</p>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button
-                onClick={handleLogout}
-                style={{
-                  background: '#E24B4A', color: '#fff',
-                  border: 'none', borderRadius: 16, padding: '15px',
-                  fontSize: 15, fontWeight: 900, cursor: 'pointer',
-                }}
-              >
+            <div className="flex flex-col gap-3">
+              <button onClick={handleLogout}
+                className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer"
+                style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
                 Oui, me déconnecter
               </button>
-              <button
-                onClick={() => setShowLogout(false)}
-                style={{
-                  background: '#F7F8F3', color: '#5F5E5A',
-                  border: '1.5px solid #E8E6DF', borderRadius: 16, padding: '15px',
-                  fontSize: 15, fontWeight: 700, cursor: 'pointer',
-                }}
-              >
+              <button onClick={() => setShowLogout(false)}
+                className="w-full rounded-2xl py-3 text-sm font-bold cursor-pointer"
+                style={{ background: '#F7F8F3', color: '#5F5E5A', border: '1.5px solid #E8E6DF' }}>
                 Annuler
               </button>
             </div>
           </div>
         </div>
       )}
+    </div>
+  )
+}
 
-      <BottomNav panierCount={0} />
+function PasswordChangeForm() {
+  const [mdp, setMdp] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  useEffect(() => { if (msg) setTimeout(() => setMsg(''), 3000) }, [msg])
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!mdp) return setMsg('⚠️ Entrez un nouveau mot de passe.')
+    if (mdp.length < 6) return setMsg('⚠️ Au moins 6 caractères.')
+    if (mdp !== confirm) return setMsg('⚠️ Les mots de passe ne correspondent pas.')
+    setSaving(true); setMsg('')
+    try {
+      const body = new FormData()
+      body.set('mot_de_passe', mdp)
+      body.set('mot_de_passe_confirmation', confirm)
+      await api.put('/auth/profile', body)
+      setMsg('✅ Mot de passe mis à jour.')
+      setMdp(''); setConfirm('')
+    } catch (e) { setMsg('❌ ' + e.message) }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      {msg && (
+        <div className="rounded-xl px-4 py-2.5 text-xs font-bold text-center"
+          style={{ background: msg.startsWith('✅') ? '#E1F5EE' : '#FDE8E2', color: msg.startsWith('✅') ? '#0F6E56' : '#D85A30' }}>
+          {msg}
+        </div>
+      )}
+      <Field label="Nouveau mot de passe" type="password" value={mdp} onChange={setMdp} />
+      <Field label="Confirmer" type="password" value={confirm} onChange={setConfirm} />
+      <button type="submit" disabled={saving}
+        className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer mt-1"
+        style={{ background: saving ? '#ccc' : '#1D9E75', color: '#fff', border: 'none' }}>
+        {saving ? '⏳' : '🔑 Mettre à jour'}
+      </button>
+    </form>
+  )
+}
+
+function InfoRow({ label, value, icon }) {
+  return (
+    <div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: '#F7F8F3' }}>
+      <span className="text-xs font-semibold" style={{ color: '#888780' }}>{icon} {label}</span>
+      <span className="text-sm font-bold" style={{ color: '#2C2C2A' }}>{value}</span>
+    </div>
+  )
+}
+
+function Field({ label, value, onChange, type = 'text' }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs font-semibold" style={{ color: '#888780' }}>{label}</label>
+      <input type={type} value={value} onChange={e => onChange(e.target.value)}
+        className="rounded-xl px-4 py-3 text-sm font-semibold outline-none border"
+        style={{ background: '#F7F8F3', borderColor: '#E8E6DF', color: '#2C2C2A' }} />
     </div>
   )
 }

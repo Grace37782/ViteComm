@@ -20,6 +20,7 @@ import {
   getMarketsAdmin
 } from '../controllers/adminController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { uploadAvatar, uploadMarketImage } from '../middleware/upload.js';
 
 const router = Router();
 
@@ -28,12 +29,12 @@ router.use(requireRole(['admin']));
 
 router.get('/dashboard', getAdminDashboard);
 router.get('/me', getAdminMe);
-router.put('/profile', updateAdminProfile);
+router.put('/profile', uploadAvatar, updateAdminProfile);
 
 // Market management by admin
 router.get('/markets', getMarketsAdmin);
-router.post('/markets', createMarket);
-router.put('/markets/:id', updateMarket);
+router.post('/markets', uploadMarketImage, createMarket);
+router.put('/markets/:id', uploadMarketImage, updateMarket);
 router.delete('/markets/:id', deleteMarket);
 
 // User management (RG12, RG13)

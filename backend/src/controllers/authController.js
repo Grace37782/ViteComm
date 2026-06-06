@@ -577,6 +577,9 @@ export const updateProfile = async (req, res) => {
       if (mot_de_passe) {
         baseData.mot_de_passe = await bcryptjs.hash(mot_de_passe, 12);
       }
+      if (req.file) {
+        baseData.photo_url = moveToPermanent(req.file.filename);
+      }
 
       if (Object.keys(baseData).length > 0) {
         await tx.utilisateur.update({

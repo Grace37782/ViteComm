@@ -16,6 +16,7 @@ import Profil from './pages/client/Profil'
 import SuiviCommande from './pages/client/SuiviCommande'
 import MarcheDetail from './pages/client/MarcheDetail'
 import MesCommandes from './pages/client/MesCommandes'
+import ClientLayout from './components/client/ClientLayout'
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
@@ -44,18 +45,21 @@ export default function App() {
         {/* Connexion admin cachée */}
         <Route path="/admin-connect" element={<Connexion />} />
 
-        {/* Pages temporaires */}
-        <Route path="/client/accueil" element={<AccueilClient />} />
-        <Route path="/client/market/:marketId" element={<MarcheDetail />} />
-        <Route path="/client/catalogue/:vendeurId" element={<Catalogue />} />
-        <Route path="/client/panier" element={<Panier />} />
-        <Route path="/client/selection-livreur" element={<SelectionLivreur />} />
-        <Route path="/client/suivi-commande" element={<SuiviCommande />} />
+        {/* Pages client */}
+        <Route path="/client" element={<ClientLayout />}>
+          <Route path="accueil" element={<AccueilClient />} />
+          <Route path="market/:marketId" element={<MarcheDetail />} />
+          <Route path="catalogue/:vendeurId" element={<Catalogue />} />
+          <Route path="panier" element={<Panier />} />
+          <Route path="selection-livreur" element={<SelectionLivreur />} />
+          <Route path="suivi-commande" element={<SuiviCommande />} />
+          <Route path="profil" element={<Profil />} />
+          <Route path="mes-commandes" element={<MesCommandes />} />
+        </Route>
+
         <Route path="/vendeur/dashboard" element={<Vendeur />} />
         <Route path="/livreur/dashboard" element={<Livreur />} />
         <Route path="/admin/dashboard" element={<Admin />} />
-        <Route path="/client/profil" element={<Profil />} />
-        <Route path="/client/mes-commandes" element={<MesCommandes />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/accueil" />} />

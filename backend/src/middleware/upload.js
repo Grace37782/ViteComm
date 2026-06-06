@@ -26,20 +26,37 @@ const fileFilter = (req, file, cb) => {
   else cb(new Error('Seules les images sont acceptées.'), false)
 }
 
-export const uploadAvatar = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }
-}).single('photo')
-
-export function moveToPermanent(filename) {
-  if (!filename) return null
-  const src = path.join(TEMP_DIR, filename)
-  const dest = path.join(PERM_DIR, filename)
-  if (fs.existsSync(src)) {
-    fs.mkdirSync(PERM_DIR, { recursive: true })
-    fs.renameSync(src, dest)
-    return `/uploads/avatars/${filename}`
+function makeUpload(fieldName, subDir) {
+  const temp = path.join(__dirname, `../../uploads/${subDir}/temp`)
+  const perm = path.join(__dirname, `../../uploads/${subDir}`)
+  return {
+    middleware: multer({
+      storage: multer.diskStorage({
+        destination: (req, file, cb) => { fs.mkdirSync(temp, { recursive: true }); cb(null, temp) },
+        filename: (req, file, cb) => {
+          const unique = Date.now() + '-' + Math.round(Math.random() * 1E9)
+          cb(null, unique + (path.extname(file.originalname) || '.jpg'))
+        }
+      }),
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) cb(null, true)
+        else cb(new Error('Seules les images sont acceptées.'), false)
+      },
+      limits: { fileSize: 5 * 1024 * 1024 }
+    }).single(fieldName),
+    moveToPermanent: (filename) => {
+      if (!filename) return null
+      const src = path.join(temp, filename)
+      const dest = path.join(perm, filename)
+      if (fs.existsSync(src)) {
+        fs.mkdirSync(perm, { recursive: true })
+        fs.renameSync(src, dest)
+        return `/uploads/${subDir}/${filename}`
+      }
+      return null
+    }
   }
-  return null
 }
+
+export const { middleware: uploadAvatar, moveToPermanent } = makeUpload('photo', 'avatars')
+export const { middleware: uploadMarketImage, moveToPermanent: moveMarketImage } = makeUpload('image', 'markets')

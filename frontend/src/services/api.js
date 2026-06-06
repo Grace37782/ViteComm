@@ -42,11 +42,16 @@ export const api = {
 }
 
 export async function login(credentials) {
-  const data = await request('/auth/login', {
+  const res = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials),
-    headers: {}
   })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Erreur de connexion.' }))
+    throw new Error(err.error || `Erreur ${res.status}`)
+  }
+  const data = await res.json()
   localStorage.setItem('vc_user', JSON.stringify(data.user))
   localStorage.setItem('vc_token', data.token)
   return data

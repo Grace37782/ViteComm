@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
-import BottomNav from '../../components/client/BottomNav'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -233,7 +232,6 @@ export default function MesCommandes() {
         )}
       </div>
 
-      <BottomNav panierCount={0} />
     </div>
   )
 }

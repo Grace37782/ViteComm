@@ -31,7 +31,7 @@ function messageErreur(err) {
 
 export default function Connexion() {
   const navigate = useNavigate()
-  const { login: updateAuthContext } = useAuth()
+  const { user, login: updateAuthContext } = useAuth()
 
   const [identifiant, setIdentifiant] = useState('')
   const [motDePasse,  setMdp]         = useState('')
@@ -40,6 +40,9 @@ export default function Connexion() {
   const [loading,     setLoading]     = useState(false)
 
   const typeIdent = detecterTypeIdentifiant(identifiant)
+
+  /* Vérifier si déjà connecté */
+  const alreadyLoggedIn = !!user && !!localStorage.getItem('vc_token')
 
   /* ── Validation ───────────────────────────────────── */
   function valider() {
@@ -236,6 +239,38 @@ export default function Connexion() {
                   </a>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ── Déjà connecté ── */}
+          {alreadyLoggedIn && (
+            <div
+              className="rounded-2xl px-4 py-3 text-sm font-medium border text-center"
+              style={{
+                background: 'rgba(255,193,7,0.15)',
+                borderColor: 'rgba(255,193,7,0.3)',
+                color: '#fff',
+              }}
+            >
+              🔒 Vous êtes déjà connecté en tant que <strong>{user.prenom} {user.nom}</strong>.
+              <div className="mt-2 flex gap-2 justify-center">
+                <button
+                  type="button"
+                  onClick={() => { localStorage.clear(); window.location.href = '/connect' }}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer"
+                  style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}
+                >
+                  Se déconnecter
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/client/accueil')}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer"
+                  style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}
+                >
+                  Mon espace
+                </button>
+              </div>
             </div>
           )}
 

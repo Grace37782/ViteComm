@@ -35,7 +35,7 @@ router.get('/markets', getMarkets);
 
 // Guide §1.4 - Profil (read & edit; score_reputation read-only per RG15)
 router.get('/profile', requireAuth, getProfile);
-router.put('/profile', requireAuth, updateProfile);
+router.put('/profile', requireAuth, uploadAvatar, updateProfile);
 
 // Guide §1.4 - Déconnexion (stateless JWT; client clears token on 200)
 router.delete('/logout', requireAuth, logout);

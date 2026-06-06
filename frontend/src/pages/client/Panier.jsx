@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
-import BottomNav from '../../components/client/BottomNav'
 
 const FRAIS_LIVRAISON = 1500
 const COMMISSION_RATE = 0.006
@@ -250,7 +249,7 @@ export default function Panier() {
         </div>
       )}
 
-      <BottomNav panierCount={panierCount} />
+
     </div>
   )
 }

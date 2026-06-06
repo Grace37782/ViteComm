@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import BottomNav from '../../components/client/BottomNav'
 
 const COMMANDE = {
   id: 1042,
@@ -266,7 +265,7 @@ export default function Inspection() {
         </button>
 
       </div>
-      <BottomNav panierCount={0} />
+
     </div>
   )
 }
