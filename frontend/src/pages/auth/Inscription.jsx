@@ -175,17 +175,6 @@ export default function Inscription() {
       if (photoFile) body.set('photo', photoFile)
 
       const res = await api.post('/auth/register', body)
-      // Telephone-only: created directly, no verification step
-      if (res.telephone_only) {
-        updateAuthContext(res.user, res.token)
-        const redirects = {
-          client:  '/client/accueil',
-          vendeur: '/vendeur/dashboard',
-          livreur: '/livreur/dashboard',
-        }
-        navigate(redirects[res.user?.role] || '/accueil')
-        return
-      }
       setVerifyToken(res.token)
       setVerifyEmail(form.email || form.telephone)
       setStep('verify')

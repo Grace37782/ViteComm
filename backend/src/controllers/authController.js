@@ -157,81 +157,10 @@ export const register = async (req, res) => {
       }
     }
 
-    // ── Telephone-only: create user directly (no email verification) ──
+    // ── Telephone-only is NOT allowed: email is required for verification ──
     if (!email && telephone) {
-      // Check telephone uniqueness
-      const existingPhone = await prisma.utilisateur.findFirst({ where: { telephone } });
-      if (existingPhone) {
-        return res.status(409).json({ error: 'Ce numéro de téléphone est déjà utilisé.' });
-      }
-
-      const photoFile = req.file?.filename;
-
-      const hashedPassword = await bcryptjs.hash(mot_de_passe, 12);
-
-      const newUser = await prisma.$transaction(async (tx) => {
-        const created = await tx.utilisateur.create({
-          data: {
-            nom, prenom, telephone,
-            email: '',
-            mot_de_passe: hashedPassword,
-            statut_compte: 'Actif',
-            est_admin: false,
-            photo_url: photoFile ? moveToPermanent(photoFile) : undefined,
-          }
-        });
-
-        if (role === 'client') {
-          await tx.client.create({
-            data: { id_user: created.id_user, adresse_livraison }
-          });
-          await tx.panier.create({ data: { id_user_client: created.id_user } });
-        } else if (role === 'vendeur') {
-          await tx.vendeur.create({
-            data: {
-              id_user: created.id_user,
-              nom_etablissement,
-              localisation_marche: localisation_marche || '',
-              id_marche: id_marche ? parseInt(id_marche, 10) : undefined,
-              score_reputation: 0.0,
-            }
-          });
-        } else if (role === 'livreur') {
-          await tx.livreur.create({
-            data: {
-              id_user: created.id_user,
-              type_vehicule,
-              immatriculation,
-              score_reputation: 0.0,
-            }
-          });
-          await tx.disponibiliteLivreur.create({
-            data: {
-              id_user_livreur: created.id_user,
-              est_disponible: true,
-              distance_marche: 0.0,
-              heure_debut_dispo: null,
-              heure_fin_dispo: null,
-            }
-          });
-        }
-
-        return created;
-      });
-
-      const fullUser = await findUserWithRole({ id_user: newUser.id_user });
-      const userPayload = await buildUserPayload(fullUser);
-      const jwtToken = jwt.sign(
-        { id_user: newUser.id_user, role },
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRES }
-      );
-
-      return res.status(201).json({
-        message: 'Compte créé avec succès.',
-        token: jwtToken,
-        user: userPayload,
-        telephone_only: true,
+      return res.status(400).json({
+        error: 'Une adresse email est requise pour vérifier votre compte.'
       });
     }
 
