@@ -290,6 +290,15 @@ model VerificationToken {
   created_at DateTime @default(now())
 }
 
+model PasswordResetToken {
+  id         Int      @id @default(autoincrement())
+  email      String
+  code       String
+  token      String   @unique
+  expires_at DateTime
+  created_at DateTime @default(now())
+}
+
 model BonDeLivraison {
   id_bon                Int      @id @default(autoincrement())
   date_emission         DateTime @default(now())

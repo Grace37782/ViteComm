@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import prisma from '../config/db.js';
-import { sendVerificationCode } from '../services/mail.js';
+import { sendVerificationCode, sendPasswordResetCode } from '../services/mail.js';
+import { moveToPermanent } from '../middleware/upload.js';
 
 const { JWT_SECRET, JWT_EXPIRES_IN } = process.env;
 if (!JWT_SECRET) {
@@ -164,6 +165,8 @@ export const register = async (req, res) => {
         return res.status(409).json({ error: 'Ce numéro de téléphone est déjà utilisé.' });
       }
 
+      const photoFile = req.file?.filename;
+
       const hashedPassword = await bcryptjs.hash(mot_de_passe, 12);
 
       const newUser = await prisma.$transaction(async (tx) => {
@@ -174,6 +177,7 @@ export const register = async (req, res) => {
             mot_de_passe: hashedPassword,
             statut_compte: 'Actif',
             est_admin: false,
+            photo_url: photoFile ? moveToPermanent(photoFile) : undefined,
           }
         });
 
@@ -236,10 +240,12 @@ export const register = async (req, res) => {
     const token = crypto.randomUUID();
 
     // Build payload as JSON
+    const photoFile = req.file?.filename;
     const payload = JSON.stringify({
       nom, prenom, telephone, email, mot_de_passe,
       adresse_livraison, nom_etablissement, localisation_marche,
-      type_vehicule, immatriculation
+      type_vehicule, immatriculation,
+      photo: photoFile || null,
     });
 
     // Store verification token (expires in 10 min)
@@ -306,6 +312,7 @@ export const verifyEmail = async (req, res) => {
 
     // ── Create user + specialization ──
     const newUser = await prisma.$transaction(async (tx) => {
+      const photoUrl = data.photo ? moveToPermanent(data.photo) : null;
       const created = await tx.utilisateur.create({
         data: {
           nom: data.nom,
@@ -315,6 +322,7 @@ export const verifyEmail = async (req, res) => {
           mot_de_passe: hashedPassword,
           statut_compte: 'Actif',
           est_admin: false,
+          photo_url: photoUrl,
         }
       });
 
@@ -409,6 +417,88 @@ export const resendCode = async (req, res) => {
     await sendVerificationCode(vt.email, newCode, data.prenom);
 
     return res.json({ message: 'Nouveau code envoyé par email.' });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// POST /auth/forgot-password
+// Envoie un code à 6 chiffres par email pour réinitialiser le mot de passe
+// Body: { email }
+// ────────────────────────────────────────────────────────────
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email requis.' });
+
+  try {
+    const user = await prisma.utilisateur.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ error: 'Aucun compte trouvé avec cet email.' });
+
+    const existing = await prisma.passwordResetToken.findFirst({
+      where: { email, expires_at: { gt: new Date() } }
+    });
+    if (existing) {
+      return res.status(429).json({
+        error: 'Un code a déjà été envoyé. Vérifiez vos spams ou attendez 10 minutes.',
+        pending: true
+      });
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const token = crypto.randomUUID();
+
+    await prisma.passwordResetToken.create({
+      data: { email, code, token, expires_at: new Date(Date.now() + 10 * 60 * 1000) }
+    });
+
+    await sendPasswordResetCode(email, code, user.prenom);
+
+    return res.json({ message: 'Code de réinitialisation envoyé par email.', token });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// POST /auth/reset-password
+// Valide le code et réinitialise le mot de passe
+// Body: { token, code, mot_de_passe, mot_de_passe_confirmation }
+// ────────────────────────────────────────────────────────────
+export const resetPassword = async (req, res) => {
+  const { token, code, mot_de_passe, mot_de_passe_confirmation } = req.body;
+
+  if (!token || !code || !mot_de_passe) {
+    return res.status(400).json({ error: 'Token, code et nouveau mot de passe requis.' });
+  }
+  if (mot_de_passe_confirmation !== undefined && mot_de_passe !== mot_de_passe_confirmation) {
+    return res.status(400).json({ error: 'Les mots de passe ne correspondent pas.' });
+  }
+  if (mot_de_passe.length < 8) return res.status(400).json({ error: 'Minimum 8 caractères.' });
+  if (!/[A-Z]/.test(mot_de_passe)) return res.status(400).json({ error: 'Une majuscule requise.' });
+  if (!/[a-z]/.test(mot_de_passe)) return res.status(400).json({ error: 'Une minuscule requise.' });
+  if (!/\d/.test(mot_de_passe)) return res.status(400).json({ error: 'Un chiffre requis.' });
+  if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'/`~]/.test(mot_de_passe))
+    return res.status(400).json({ error: 'Un caractère spécial requis.' });
+
+  try {
+    const rt = await prisma.passwordResetToken.findUnique({ where: { token } });
+    if (!rt) return res.status(404).json({ error: 'Token invalide.' });
+    if (new Date() > rt.expires_at) {
+      await prisma.passwordResetToken.delete({ where: { id: rt.id } });
+      return res.status(410).json({ error: 'Code expiré. Veuillez recommencer.' });
+    }
+    if (rt.code !== code) return res.status(400).json({ error: 'Code incorrect.' });
+
+    const hashedPassword = await bcryptjs.hash(mot_de_passe, 12);
+    await prisma.utilisateur.update({
+      where: { email: rt.email },
+      data: { mot_de_passe: hashedPassword }
+    });
+
+    await prisma.passwordResetToken.delete({ where: { id: rt.id } });
+
+    return res.json({ message: 'Mot de passe réinitialisé avec succès.' });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }

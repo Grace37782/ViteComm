@@ -6,7 +6,8 @@ function getToken() {
 
 async function request(endpoint, options = {}) {
   const token = getToken()
-  const headers = { 'Content-Type': 'application/json', ...options.headers }
+  const isFormData = options.body instanceof FormData
+  const headers = isFormData ? { ...options.headers } : { 'Content-Type': 'application/json', ...options.headers }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
   let res
@@ -31,7 +32,11 @@ async function request(endpoint, options = {}) {
 
 export const api = {
   get: (url) => request(url),
-  post: (url, data) => request(url, { method: 'POST', body: JSON.stringify(data) }),
+  post: (url, data) => request(url, {
+    method: 'POST',
+    body: data instanceof FormData ? data : JSON.stringify(data),
+    headers: data instanceof FormData ? {} : {},
+  }),
   put: (url, data) => request(url, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (url) => request(url, { method: 'DELETE' }),
 }

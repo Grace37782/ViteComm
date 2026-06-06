@@ -217,6 +217,7 @@ export default function Connexion() {
           <div className="flex justify-end -mt-2">
             <button
               type="button"
+              onClick={() => navigate('/forgot-password')}
               className="text-xs text-white/70 hover:text-white cursor-pointer"
               style={{ background: 'none', border: 'none' }}
             >

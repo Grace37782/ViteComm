@@ -115,6 +115,8 @@ export default function Inscription() {
   const [code, setCode]                   = useState('')
   const [error, setError]                 = useState('')
   const [success, setSuccess]             = useState('')
+  const [photoFile, setPhotoFile]         = useState(null)
+  const [photoPreview, setPhotoPreview]   = useState('')
 
   const [form, setForm] = useState({
     nom: '', prenom: '', email: '', telephone: '',
@@ -132,6 +134,16 @@ export default function Inscription() {
   function showError(msg) { setError(msg); setTimeout(() => setError(''), 4000) }
   function showSuccess(msg) { setSuccess(msg); setTimeout(() => setSuccess(''), 4000) }
 
+  /* ── Photo ── */
+  function handlePhotoChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    const reader = new FileReader()
+    reader.onload = () => setPhotoPreview(reader.result)
+    reader.readAsDataURL(file)
+  }
+
   /* ── Étape 1 : envoi du code ── */
   async function handleRegister(e) {
     e.preventDefault()
@@ -148,7 +160,12 @@ export default function Inscription() {
       return void (setLoading(false) || showError('Le mot de passe doit contenir au moins ' + PWD_RULES.map(r => r.label).join(', ') + '.'))
 
     try {
-      const res = await api.post('/auth/register', { ...form, role: profil })
+      const body = new FormData()
+      for (const [k, v] of Object.entries(form)) body.append(k, v)
+      body.set('role', profil)
+      if (photoFile) body.set('photo', photoFile)
+
+      const res = await api.post('/auth/register', body)
       // Telephone-only: created directly, no verification step
       if (res.telephone_only) {
         updateAuthContext(res.user, res.token)
@@ -283,6 +300,28 @@ export default function Inscription() {
 
             {/* ─── FORMULAIRE ─── */}
             <form onSubmit={handleRegister} className="flex flex-col gap-4">
+              {/* ─── Photo de profil ─── */}
+              <div className="flex justify-center">
+                <label className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-dashed cursor-pointer
+                               flex items-center justify-center transition-all hover:scale-105"
+                  style={{
+                    background: photoPreview ? 'transparent' : 'rgba(255,255,255,0.08)',
+                    borderColor: photoPreview ? '#1D9E75' : 'rgba(255,255,255,0.2)',
+                  }}>
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Aperçu" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-3xl text-white/40">📷</span>
+                  )}
+                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                  {photoPreview && (
+                    <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview('') }}
+                      className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold
+                                 flex items-center justify-center shadow-md"
+                    >✕</button>
+                  )}
+                </label>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-white/80">Nom</label>
