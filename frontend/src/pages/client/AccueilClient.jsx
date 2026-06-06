@@ -158,9 +158,7 @@ export default function AccueilClient() {
 
   const [recherche, setRecherche] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [geoLoading, setGeoLoading] = useState(false)
   const [geoPosition, setGeoPosition] = useState(null)
-  const [geoErreur, setGeoErreur] = useState('')
   
   const [mapCenter, setMapCenter] = useState([6.370, 2.430]) // Default Cotonou
   const [mapZoom, setMapZoom] = useState(13)
@@ -184,6 +182,7 @@ export default function AccueilClient() {
       }
     }
     loadData()
+    demanderPosition()
   }, [])
 
   // Auto-selection of market when exactly 1 market matches the search term
@@ -204,43 +203,16 @@ export default function AccueilClient() {
   }, [recherche, markets])
 
   function demanderPosition() {
-    if (!navigator.geolocation) {
-      setGeoErreur('Géolocalisation non disponible sur cet appareil.')
-      return
-    }
-    setGeoLoading(true)
-    setGeoErreur('')
+    if (!navigator.geolocation) return
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         setGeoPosition(coords)
         setMapCenter([coords.lat, coords.lng])
         setMapZoom(14)
-        setGeoLoading(false)
       },
-      () => {
-        setGeoErreur("Impossible d'obtenir votre position.")
-        setGeoLoading(false)
-      }
+      () => {}
     )
-  }
-
-  function setPositionMock(city) {
-    setGeoErreur('')
-    let coords = null
-    if (city === 'cotonou_dantokpa') {
-      coords = { lat: 6.3764, lng: 2.4430 }
-    } else if (city === 'cotonou_saintmichel') {
-      coords = { lat: 6.3685, lng: 2.4180 }
-    } else if (city === 'porto_novo') {
-      coords = { lat: 6.5120, lng: 2.6170 }
-    }
-    if (coords) {
-      setGeoPosition(coords)
-      setMapCenter([coords.lat, coords.lng])
-      setMapZoom(14)
-      setActiveMarket(null)
-    }
   }
 
   // Calculate distances
@@ -298,14 +270,11 @@ export default function AccueilClient() {
 
   return (
     <div className="w-full font-sans bg-gray-50 flex flex-col pb-6">
-      {/* Header Panel - Search & Filters */}
-      <div className="bg-emerald-800 text-white px-5 pt-4 pb-6 shadow-md relative overflow-hidden flex-shrink-0">
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-emerald-700/40 pointer-events-none" />
-        <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-emerald-700/40 pointer-events-none" />
-
-        {/* Search Suggestion wrapper */}
-        <div className="relative z-30">
-          <div className="flex items-center gap-2 bg-emerald-900/60 border border-emerald-700/80 px-4 py-3 rounded-2xl">
+      {/* Header Panel - Search */}
+      <div className="bg-emerald-800 text-white px-4 pt-3 pb-3 shadow-md flex-shrink-0">
+        {/* Search wrapper */}
+        <div className="relative">
+          <div className="flex items-center gap-2 bg-emerald-900/60 border border-emerald-700/80 px-4 py-2.5 rounded-2xl">
             <span className="text-gray-300">🔍</span>
             <input
               type="text"
@@ -350,48 +319,6 @@ export default function AccueilClient() {
                 </div>
               ))}
             </div>
-          )}
-        </div>
-
-        {/* Location selectors */}
-        <div className="relative z-10 mt-4 flex flex-wrap gap-2 items-center">
-          <button
-            onClick={demanderPosition}
-            disabled={geoLoading}
-            className="flex items-center gap-1 bg-emerald-700 hover:bg-emerald-600 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all disabled:opacity-50 cursor-pointer"
-          >
-            📍 {geoLoading ? 'Localisation...' : 'GPS Temps Réel'}
-          </button>
-
-          <button
-            onClick={() => setPositionMock('cotonou_dantokpa')}
-            className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-              geoPosition?.lat === 6.3764 ? 'bg-white text-emerald-800 shadow-sm' : 'bg-emerald-700/60 text-white hover:bg-emerald-700'
-            }`}
-          >
-            🏢 Cotonou (Dantokpa)
-          </button>
-
-          <button
-            onClick={() => setPositionMock('cotonou_saintmichel')}
-            className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-              geoPosition?.lat === 6.3685 ? 'bg-white text-emerald-800 shadow-sm' : 'bg-emerald-700/60 text-white hover:bg-emerald-700'
-            }`}
-          >
-            🏢 Cotonou (St Michel)
-          </button>
-
-          <button
-            onClick={() => setPositionMock('porto_novo')}
-            className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-              geoPosition?.lat === 6.5120 ? 'bg-white text-emerald-800 shadow-sm' : 'bg-emerald-700/60 text-white hover:bg-emerald-700'
-            }`}
-          >
-            🏢 Porto-Novo
-          </button>
-
-          {geoErreur && (
-            <p className="text-[10px] text-rose-300 w-full mt-1">⚠️ {geoErreur}</p>
           )}
         </div>
       </div>
