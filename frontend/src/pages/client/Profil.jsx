@@ -370,16 +370,17 @@ export default function Profil() {
           style={{
             position: 'fixed', inset: 0, zIndex: 200,
             background: 'rgba(0,0,0,0.5)',
-            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 16,
           }}
         >
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: '#fff', borderRadius: '24px 24px 0 0',
+              background: '#fff', borderRadius: 24,
               padding: '28px 24px 36px',
-              width: '100%', maxWidth: 480,
-              boxShadow: '0 -8px 40px rgba(0,0,0,0.15)',
+              width: '100%', maxWidth: 400,
+              boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
             }}
           >
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
