@@ -1,6 +1,7 @@
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import prisma from '../config/db.js';
 import { sendVerificationCode } from '../services/mail.js';
 
@@ -509,6 +510,84 @@ export const updateProfile = async (req, res) => {
     });
   } catch (error) {
     return res.status(400).json({ error: error.message });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// POST /auth/google
+// Google OAuth - reçoit un access_token, vérifie, connecte ou crée l'utilisateur
+// Body: { credential: access_token }
+// ────────────────────────────────────────────────────────────
+export const googleAuth = async (req, res) => {
+  const { credential } = req.body;
+  const { GOOGLE_CLIENT_ID } = process.env;
+
+  if (!credential) {
+    return res.status(400).json({ error: 'Token Google requis.' });
+  }
+
+  try {
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, given_name, family_name, sub } = payload;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email requis pour la connexion Google.' });
+    }
+
+    // Check if user exists
+    let user = await prisma.utilisateur.findUnique({
+      where: { email },
+      include: { client: true, vendeur: true, livreur: true },
+    });
+
+    if (!user) {
+      // Auto-create account as client with Google data
+      user = await prisma.$transaction(async (tx) => {
+        const created = await tx.utilisateur.create({
+          data: {
+            nom: family_name || sub,
+            prenom: given_name || 'Utilisateur',
+            telephone: '',
+            email,
+            mot_de_passe: await bcryptjs.hash(crypto.randomUUID(), 12),
+            statut_compte: 'Actif',
+            est_admin: false,
+          }
+        });
+        await tx.client.create({
+          data: { id_user: created.id_user, adresse_livraison: '' }
+        });
+        await tx.panier.create({ data: { id_user_client: created.id_user } });
+        return tx.utilisateur.findUnique({
+          where: { id_user: created.id_user },
+          include: { client: true, vendeur: true, livreur: true },
+        });
+      });
+    }
+
+    if (user.statut_compte !== 'Actif') {
+      return res.status(403).json({ error: 'Votre compte a été suspendu ou banni.' });
+    }
+
+    const role = deriveRole(user);
+    const token = jwt.sign(
+      { id_user: user.id_user, role },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES }
+    );
+
+    return res.json({
+      message: 'Connexion Google réussie.',
+      token,
+      user: await buildUserPayload(user),
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message || 'Échec de l\'authentification Google.' });
   }
 };
 

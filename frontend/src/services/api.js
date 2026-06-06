@@ -47,6 +47,17 @@ export async function login(credentials) {
   return data
 }
 
+export async function googleLogin(credential) {
+  const data = await request('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ credential }),
+    headers: {}
+  })
+  localStorage.setItem('vc_user', JSON.stringify(data.user))
+  localStorage.setItem('vc_token', data.token)
+  return data
+}
+
 export async function register(data) {
   const res = await request('/auth/register', {
     method: 'POST',

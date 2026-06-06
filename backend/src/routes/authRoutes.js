@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, verifyEmail, resendCode, login, getProfile, updateProfile, logout } from '../controllers/authController.js';
+import { register, verifyEmail, resendCode, login, googleAuth, getProfile, updateProfile, logout } from '../controllers/authController.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -15,6 +15,9 @@ router.post('/resend-code', resendCode);
 
 // Guide §1.2 - Connexion (email or telephone + password → role-based redirect)
 router.post('/login', login);
+
+// Google OAuth
+router.post('/google', googleAuth);
 
 // Guide §1.4 - Profil (read & edit; score_reputation read-only per RG15)
 router.get('/profile', requireAuth, getProfile);
