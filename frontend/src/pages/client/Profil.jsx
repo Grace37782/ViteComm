@@ -1,7 +1,19 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
+
+const ROLE_THEMES = {
+  client: { primary: '#1D9E75', dark: '#0F6E56', label: 'Client ViteComm', icon: '🛒' },
+  vendeur: { primary: '#BA7517', dark: '#854F0B', label: 'Vendeur ViteComm', icon: '📦' },
+  livreur: { primary: '#D85A30', dark: '#993C1D', label: 'Livreur ViteComm', icon: '🚲' },
+}
+
+function getRole(pathname) {
+  if (pathname.startsWith('/vendeur')) return 'vendeur'
+  if (pathname.startsWith('/livreur')) return 'livreur'
+  return 'client'
+}
 
 const TABS = [
   { id: 'infos', label: 'Mon Profil', icon: '👤' },
@@ -10,6 +22,7 @@ const TABS = [
 
 export default function Profil() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user: ctxUser, login: updateCtx, logout: ctxLogout } = useAuth()
   const [tab, setTab] = useState('infos')
   const [profile, setProfile] = useState(null)
@@ -21,6 +34,9 @@ export default function Profil() {
   const [photoPreview, setPhotoPreview] = useState('')
   const [toast, setToast] = useState(null)
   const [showLogout, setShowLogout] = useState(false)
+
+  const role = getRole(location.pathname)
+  const theme = ROLE_THEMES[role]
 
   useEffect(() => {
     api.get('/auth/profile').then(data => {
@@ -100,7 +116,7 @@ export default function Profil() {
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"
-          style={{ background: toast.type === 'ok' ? '#1D9E75' : '#D85A30' }}>
+          style={{ background: toast.type === 'ok' ? theme.primary : '#D85A30' }}>
           {toast.msg}
         </div>
       )}
@@ -113,7 +129,7 @@ export default function Profil() {
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
               style={{
                 background: tab === t.id ? '#fff' : 'transparent',
-                color: tab === t.id ? '#1D9E75' : '#888780',
+                color: tab === t.id ? theme.primary : '#888780',
                 border: tab === t.id ? '1px solid #E8E6DF' : 'none',
                 boxShadow: tab === t.id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
               }}>
@@ -135,7 +151,7 @@ export default function Profil() {
                     <img src={profile.photo_url} alt="" className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md" />
                   ) : (
                     <div className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black text-white shadow-md"
-                      style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)' }}>
+                      style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.dark})` }}>
                       {initials}
                     </div>
                   )}
@@ -143,7 +159,7 @@ export default function Profil() {
 
                 <div className="text-center mb-5">
                   <h2 className="text-xl font-black" style={{ color: '#2C2C2A' }}>{profile?.prenom} {profile?.nom}</h2>
-                  <p className="text-sm font-semibold mt-1" style={{ color: '#1D9E75' }}>🛒 Client ViteComm</p>
+                  <p className="text-sm font-semibold mt-1" style={{ color: theme.primary }}>{theme.icon} {theme.label}</p>
                 </div>
 
                 <div className="flex flex-col gap-3 mb-5">
@@ -157,7 +173,7 @@ export default function Profil() {
 
                 <button onClick={() => setEditing(true)}
                   className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
-                  style={{ background: '#1D9E75', color: '#fff', border: 'none' }}>
+                  style={{ background: theme.primary, color: '#fff', border: 'none' }}>
                   ✏️ Modifier mon profil
                 </button>
               </div>
@@ -169,7 +185,7 @@ export default function Profil() {
                     <label className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-dashed cursor-pointer flex items-center justify-center transition-all hover:scale-105"
                       style={{
                         background: photoPreview ? 'transparent' : '#F7F8F3',
-                        borderColor: photoPreview ? '#1D9E75' : '#E8E6DF',
+                        borderColor: photoPreview ? theme.primary : '#E8E6DF',
                       }}>
                       {photoPreview ? (
                         <img src={photoPreview} alt="Aperçu" className="w-full h-full object-cover" />
@@ -197,7 +213,7 @@ export default function Profil() {
                   <div className="flex gap-3 mt-2">
                     <button type="submit" disabled={saving}
                       className="flex-1 rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
-                      style={{ background: '#1D9E75', color: '#fff', border: 'none', opacity: saving ? 0.7 : 1 }}>
+                      style={{ background: theme.primary, color: '#fff', border: 'none', opacity: saving ? 0.7 : 1 }}>
                       {saving ? '⏳' : '💾 Enregistrer'}
                     </button>
                     <button type="button" onClick={() => {
@@ -223,7 +239,7 @@ export default function Profil() {
           <div className="flex flex-col gap-4">
             <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: '#E8E6DF' }}>
               <h3 className="text-sm font-black mb-4" style={{ color: '#2C2C2A' }}>🔑 Changer le mot de passe</h3>
-              <PasswordChangeForm />
+              <PasswordChangeForm theme={theme} />
             </div>
 
             <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: '#E8E6DF' }}>
@@ -269,7 +285,7 @@ export default function Profil() {
   )
 }
 
-function PasswordChangeForm() {
+function PasswordChangeForm({ theme }) {
   const [mdp, setMdp] = useState('')
   const [confirm, setConfirm] = useState('')
   const [saving, setSaving] = useState(false)
@@ -298,7 +314,7 @@ function PasswordChangeForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       {msg && (
         <div className="rounded-xl px-4 py-2.5 text-xs font-bold text-center"
-          style={{ background: msg.startsWith('✅') ? '#E1F5EE' : '#FDE8E2', color: msg.startsWith('✅') ? '#0F6E56' : '#D85A30' }}>
+          style={{ background: msg.startsWith('✅') ? '#E1F5EE' : '#FDE8E2', color: msg.startsWith('✅') ? (theme?.primary || '#0F6E56') : '#D85A30' }}>
           {msg}
         </div>
       )}
@@ -306,7 +322,7 @@ function PasswordChangeForm() {
       <Field label="Confirmer" type="password" value={confirm} onChange={setConfirm} />
       <button type="submit" disabled={saving}
         className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer mt-1"
-        style={{ background: saving ? '#ccc' : '#1D9E75', color: '#fff', border: 'none' }}>
+        style={{ background: saving ? '#ccc' : (theme?.primary || '#1D9E75'), color: '#fff', border: 'none' }}>
         {saving ? '⏳' : '🔑 Mettre à jour'}
       </button>
     </form>
