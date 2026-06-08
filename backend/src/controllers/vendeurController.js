@@ -335,7 +335,6 @@ export const getVendorOrders = async (req, res) => {
   try {
     const vendorId = req.user.id_user;
 
-    // Find commands that contain at least one product from this vendor
     const orders = await prisma.commande.findMany({
       where: {
         detailsCommande: {
@@ -351,7 +350,13 @@ export const getVendorOrders = async (req, res) => {
           },
           include: { produit: true }
         },
-        // All collection proofs for this command (vendor deduces own status via produit join)
+        livraison: {
+          include: {
+            livreur: {
+              include: { utilisateur: true }
+            }
+          }
+        },
         preuvesCollecte: {
           include: { medias: true }
         }
@@ -359,22 +364,79 @@ export const getVendorOrders = async (req, res) => {
       orderBy: { date_creation: 'desc' }
     });
 
-    return res.json(orders);
+    const formatted = orders.map((o) => {
+      // Determine statut_collecte from livraison + proofs
+      let statut_collecte = 'en_attente';
+      if (o.livraison) {
+        const hasPhotoProof = o.preuvesCollecte.some(
+          (p) => p.medias.length > 0 && p.statut_validation === 'Validee'
+        );
+        const allProofsValidated = o.preuvesCollecte.length > 0 &&
+          o.preuvesCollecte.every((p) => p.statut_validation === 'Validee');
+
+        if (allProofsValidated && o.statut !== 'En attente') {
+          statut_collecte = 'collecte';
+        } else if (hasPhotoProof) {
+          statut_collecte = 'code_saisi';
+        }
+      }
+
+      // Livreur info
+      const livreur = o.livraison?.livreur?.utilisateur
+        ? { nom: `${o.livraison.livreur.utilisateur.prenom} ${o.livraison.livreur.utilisateur.nom}`, telephone: o.livraison.livreur.utilisateur.telephone }
+        : { nom: 'Non assigné', telephone: '' };
+
+      // Photo indicator: any proof with media
+      const photo_collecte = o.preuvesCollecte.some((p) => p.medias.length > 0);
+
+      // Articles (vendor's products only)
+      const articles = o.detailsCommande.map((d) => ({
+        id: d.produit.id_produit,
+        emoji: d.produit.photo_url || '📦',
+        nom: d.produit.nom,
+        qte: d.quantite_commandee,
+        prix: d.prix_vente_applique,
+        unite: d.produit.unite || 'kg'
+      }));
+
+      return {
+        id: o.id_commande,
+        heure: formatHeure(o.date_creation),
+        statut_collecte,
+        livreur,
+        photo_collecte,
+        code_correct: o.code_verification,
+        articles
+      };
+    });
+
+    return res.json(formatted);
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors du chargement des commandes.' });
   }
 };
 
-// Vendor validates handover to driver by submitting code + photo proof (RG06, RG07)
+// Helper: format heure from date
+function formatHeure(date) {
+  const d = new Date(date);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffHours = diffMs / (1000 * 60 * 60);
+
+  if (diffHours < 24 && d.getDate() === now.getDate()) {
+    return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+  if (diffHours < 48) return 'Hier';
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+}
+
+// Vendor validates handover by entering driver's verification code (RG06)
 export const verifyHandover = async (req, res) => {
   const { id_commande } = req.params;
   const { code_verification } = req.body;
 
   if (!code_verification) {
     return res.status(400).json({ error: 'Le code de vérification est requis.' });
-  }
-  if (!req.file) {
-    return res.status(400).json({ error: 'La preuve photographique est obligatoire (RG07).' });
   }
 
   try {
@@ -389,7 +451,7 @@ export const verifyHandover = async (req, res) => {
     }
 
     await prisma.$transaction(async (tx) => {
-      // Create PREUVE_COLLECTE (linked only to commande - per MLD)
+      // Create PREUVE_COLLECTE (vendor validation proof)
       const preuve = await tx.preuveCollecte.create({
         data: {
           id_commande: commandId,
@@ -397,17 +459,18 @@ export const verifyHandover = async (req, res) => {
         }
       });
 
-      // Attach media to the proof (MEDIA_PREUVE - RG07)
-      await tx.mediaPreuve.create({
-        data: {
-          id_preuve: preuve.id_preuve,
-          url_media: `/uploads/${req.file.filename}`,
-          type_media: 'photo'
-        }
-      });
+      // Attach photo if provided (RG07)
+      if (req.file) {
+        await tx.mediaPreuve.create({
+          data: {
+            id_preuve: preuve.id_preuve,
+            url_media: `/uploads/${req.file.filename}`,
+            type_media: 'photo'
+          }
+        });
+      }
 
-      // Check if all vendors involved have submitted a proof
-      // Get distinct vendor IDs from the command's products
+      // Check if all vendors have submitted proofs
       const orderLines = await tx.detailCommande.findMany({
         where: { id_commande: commandId },
         include: { produit: true }
@@ -418,13 +481,18 @@ export const verifyHandover = async (req, res) => {
       });
 
       // Advance command status
+      const newStatut = totalProofs >= uniqueVendorIds.length ? 'En transit' : 'En collecte';
       await tx.commande.update({
         where: { id_commande: commandId },
-        data: { statut: totalProofs >= uniqueVendorIds.length ? 'En transit' : 'En collecte' }
+        data: { statut: newStatut }
       });
     });
 
-    return res.json({ message: 'Remise des articles validée et enregistrée avec succès.' });
+    return res.json({
+      message: 'Remise des articles validée et enregistrée avec succès.',
+      code_correct: command.code_verification,
+      statut_collecte: 'collecte'
+    });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
