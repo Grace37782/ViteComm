@@ -37,7 +37,11 @@ export const api = {
     body: data instanceof FormData ? data : JSON.stringify(data),
     headers: data instanceof FormData ? {} : {},
   }),
-  put: (url, data) => request(url, { method: 'PUT', body: JSON.stringify(data) }),
+  put: (url, data) => request(url, {
+    method: 'PUT',
+    body: data instanceof FormData ? data : JSON.stringify(data),
+    headers: data instanceof FormData ? {} : {},
+  }),
   delete: (url) => request(url, { method: 'DELETE' }),
 }
 

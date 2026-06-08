@@ -62,6 +62,7 @@ export default function VendeurProfil() {
       const body = new FormData()
       body.set('nom_etablissement', form.nom_etablissement)
       body.set('localisation_marche', form.localisation_marche)
+      if (photoFile) body.set('photo', photoFile)
       const res = await api.put('/vendor/profil', body)
       setProfile(p => ({ ...p, vendeur: res.vendeur }))
       showToast('✅ Profil mis à jour !', 'ok')

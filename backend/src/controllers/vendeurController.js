@@ -1314,7 +1314,6 @@ export const getVendorProfil = async (req, res) => {
       telephone: user.telephone,
       photo_url: user.photo_url,
       statut_compte: user.statut_compte,
-      created_at: user.created_at,
       vendeur: {
         nom_etablissement: user.vendeur.nom_etablissement,
         localisation_marche: user.vendeur.localisation_marche,
