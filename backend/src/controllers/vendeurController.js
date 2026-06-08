@@ -704,74 +704,363 @@ export const getVendorStatistiques = async (req, res) => {
 
 // --- 3.7. Factures & Paiements (RG25, RG26) ---
 
+function formatFacture(f) {
+  const vendorArticles = f.commande.detailsCommande.map((dc) => ({
+    id: dc.id_produit,
+    nom: dc.produit.nom,
+    emoji: safeEmoji(dc.produit.photo_url),
+    qte: dc.quantite_commandee,
+    prix: dc.prix_vente_applique,
+    unite: dc.produit.unite || 'kg',
+    statut: dc.statut_acceptation,
+    sous_total: dc.quantite_commandee * dc.prix_vente_applique
+  }));
+
+  const totalMarchandises = vendorArticles.reduce((s, a) => s + a.sous_total, 0);
+  const clientNom = f.commande.client
+    ? `${f.commande.client.utilisateur.prenom} ${f.commande.client.utilisateur.nom}`
+    : 'Client inconnu';
+  const clientTelephone = f.commande.client?.utilisateur?.telephone || null;
+
+  return {
+    id: `FAC-${new Date(f.date_emission).getFullYear()}-${String(f.id_facture).padStart(4, '0')}`,
+    id_facture: f.id_facture,
+    date: formatDate(f.date_emission),
+    date_raw: f.date_emission,
+    commandeId: f.commande.id_commande,
+    client: clientNom,
+    client_telephone: clientTelephone,
+    articles: vendorArticles,
+    nb_articles: vendorArticles.length,
+    nb_acceptes: vendorArticles.filter((a) => a.statut === 'Accepte').length,
+    nb_rejetes: vendorArticles.filter((a) => a.statut === 'Rejete').length,
+    total_marchandises: totalMarchandises,
+    frais_livraison: f.montant_frais_livraison,
+    commission: f.montant_commission,
+    frais_retour: f.montant_frais_retour,
+    montant_total_du: f.montant_total_du,
+    statut_paiement: f.statut_paiement === 'Paye' ? 'paye' : f.statut_paiement === 'Partiel' ? 'partiel' : 'en_attente',
+    mode_reglement: f.paiements[0]?.mode_reglement || null,
+    date_paiement: f.paiements[0]?.date_paiement ? formatDate(f.paiements[0].date_paiement) : null,
+    montant_recu: f.paiements[0]?.montant_percu || 0,
+    reste_a_payer: Math.max(0, f.montant_total_du - (f.paiements[0]?.montant_percu || 0))
+  };
+}
+
+const factureInclude = (vendorId) => ({
+  commande: {
+    include: {
+      detailsCommande: {
+        where: { produit: { id_user_vendeur: vendorId } },
+        include: { produit: true }
+      },
+      client: { include: { utilisateur: true } },
+      livraison: true
+    }
+  },
+  paiements: true
+});
+
 export const getVendorFactures = async (req, res) => {
   try {
     const vendorId = req.user.id_user;
 
-    // Find invoices for orders that contain this vendor's products
     const factures = await prisma.facture.findMany({
       where: {
         commande: {
           detailsCommande: {
-            some: {
-              produit: { id_user_vendeur: vendorId }
-            }
+            some: { produit: { id_user_vendeur: vendorId } }
           }
         }
       },
-      include: {
-        commande: {
-          include: {
-            detailsCommande: {
-              where: {
-                produit: { id_user_vendeur: vendorId }
-              },
-              include: { produit: true }
-            },
-            client: {
-              include: { utilisateur: true }
-            }
-          }
-        },
-        paiements: true
-      },
+      include: factureInclude(vendorId),
       orderBy: { date_emission: 'desc' }
     });
 
-    // Only include vendor's products in articles
-    const result = factures.map((f) => {
-      const vendorArticles = f.commande.detailsCommande.map((dc) => ({
-        nom: dc.produit.nom,
-        qte: dc.quantite_commandee,
-        prix: dc.prix_vente_applique
-      }));
+    return res.json(factures.map(formatFacture));
+  } catch (error) {
+    console.error('getVendorFactures error:', error);
+    return res.status(500).json({ error: 'Erreur lors du chargement des factures.' });
+  }
+};
 
-      const totalMarchandises = vendorArticles.reduce((s, a) => s + a.qte * a.prix, 0);
-      const clientNom = f.commande.client
-        ? `${f.commande.client.utilisateur.prenom} ${f.commande.client.utilisateur.nom}`
-        : 'Client inconnu';
+// --- 3.7a. Résumé financier (toutes les factures) ---
 
-      return {
-        id: `FAC-${new Date(f.date_emission).getFullYear()}-${String(f.id_facture).padStart(4, '0')}`,
-        date: formatDate(f.date_emission),
-        commandeId: f.commande.id_commande,
-        client: clientNom,
-        articles: vendorArticles,
-        total_marchandises: totalMarchandises,
-        frais_livraison: f.montant_frais_livraison,
-        commission: f.montant_commission,
-        frais_retour: f.montant_frais_retour,
-        montant_total_du: f.montant_total_du,
-        statut_paiement: f.statut_paiement === 'Paye' ? 'paye' : f.statut_paiement === 'Partiel' ? 'partiel' : 'en_attente',
-        mode_reglement: f.paiements[0]?.mode_reglement || null,
-        date_paiement: f.paiements[0]?.date_paiement ? formatDate(f.paiements[0].date_paiement) : null,
-        montant_recu: f.paiements[0]?.montant_percu || 0
-      };
+export const getVendorFactureSummary = async (req, res) => {
+  try {
+    const vendorId = req.user.id_user;
+
+    const factures = await prisma.facture.findMany({
+      where: {
+        commande: {
+          detailsCommande: {
+            some: { produit: { id_user_vendeur: vendorId } }
+          }
+        }
+      },
+      include: { paiements: true }
     });
 
-    return res.json(result);
+    let totalEnAttente = 0;
+    let totalPaye = 0;
+    let totalPartiel = 0;
+    let totalCommission = 0;
+    let totalFraisRetour = 0;
+    let countEnAttente = 0;
+    let countPaye = 0;
+    let countPartiel = 0;
+
+    for (const f of factures) {
+      totalCommission += f.montant_commission;
+      totalFraisRetour += f.montant_frais_retour;
+      const recu = f.paiements[0]?.montant_percu || 0;
+
+      if (f.statut_paiement === 'Paye') {
+        totalPaye += f.montant_total_du;
+        countPaye++;
+      } else if (f.statut_paiement === 'Partiel') {
+        totalPartiel += recu;
+        totalEnAttente += Math.max(0, f.montant_total_du - recu);
+        countPartiel++;
+      } else {
+        totalEnAttente += f.montant_total_du;
+        countEnAttente++;
+      }
+    }
+
+    return res.json({
+      total_factures: factures.length,
+      total_en_attente: totalEnAttente,
+      total_paye: totalPaye,
+      total_partiel: totalPartiel,
+      total_commission: totalCommission,
+      total_frais_retour: totalFraisRetour,
+      count_en_attente: countEnAttente,
+      count_paye: countPaye,
+      count_partiel: countPartiel
+    });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des factures.' });
+    console.error('getVendorFactureSummary error:', error);
+    return res.status(500).json({ error: 'Erreur lors du résumé des factures.' });
+  }
+};
+
+// --- 3.7b. Détail d'une facture ---
+
+export const getVendorFactureDetail = async (req, res) => {
+  try {
+    const vendorId = req.user.id_user;
+    const factureId = parseInt(req.params.id, 10);
+
+    if (isNaN(factureId)) {
+      return res.status(400).json({ error: 'ID de facture invalide.' });
+    }
+
+    const facture = await prisma.facture.findUnique({
+      where: { id_facture: factureId },
+      include: factureInclude(vendorId)
+    });
+
+    if (!facture) {
+      return res.status(404).json({ error: 'Facture introuvable.' });
+    }
+
+    // Verify vendor owns at least one product in this order
+    const vendorItems = facture.commande.detailsCommande.filter(
+      (dc) => dc.produit.id_user_vendeur === vendorId
+    );
+    if (vendorItems.length === 0) {
+      return res.status(403).json({ error: 'Facture non autorisée pour ce vendeur.' });
+    }
+
+    const formatted = formatFacture(facture);
+
+    // Include livraison info
+    const livraison = facture.commande.livraison;
+    formatted.livraison = livraison
+      ? {
+          id: livraison.id_livraison,
+          statut: livraison.statut_livraison,
+          date_prise_en_charge: formatDate(livraison.date_prise_en_charge),
+          date_fin: livraison.date_fin_reelle ? formatDate(livraison.date_fin_reelle) : null,
+          frais_retour: livraison.frais_retour_calcules
+        }
+      : null;
+
+    return res.json(formatted);
+  } catch (error) {
+    console.error('getVendorFactureDetail error:', error);
+    return res.status(500).json({ error: 'Erreur lors du chargement de la facture.' });
+  }
+};
+
+// --- 3.7c. Enregistrer un paiement COD (RG26) ---
+
+export const recordPayment = async (req, res) => {
+  try {
+    const vendorId = req.user.id_user;
+    const factureId = parseInt(req.params.id, 10);
+    const { montant_percu, mode_reglement, reference_transaction } = req.body;
+
+    if (isNaN(factureId)) {
+      return res.status(400).json({ error: 'ID de facture invalide.' });
+    }
+    if (!montant_percu || montant_percu <= 0) {
+      return res.status(400).json({ error: 'Le montant perçu doit être supérieur à 0.' });
+    }
+
+    const validModes = ['ESPECES', 'CARTE', 'MOBILE_MONEY', 'VIREMENT'];
+    const mode = (mode_reglement || 'ESPECES').toUpperCase();
+    if (!validModes.includes(mode)) {
+      return res.status(400).json({
+        error: `Mode de règlement invalide. Valeurs acceptées: ${validModes.join(', ')}`
+      });
+    }
+
+    const facture = await prisma.facture.findUnique({
+      where: { id_facture: factureId },
+      include: {
+        commande: {
+          include: {
+            detailsCommande: { include: { produit: true } }
+          }
+        },
+        paiements: true
+      }
+    });
+
+    if (!facture) {
+      return res.status(404).json({ error: 'Facture introuvable.' });
+    }
+
+    // Verify vendor owns products in this order
+    const vendorItems = facture.commande.detailsCommande.filter(
+      (dc) => dc.produit.id_user_vendeur === vendorId
+    );
+    if (vendorItems.length === 0) {
+      return res.status(403).json({ error: 'Facture non autorisée pour ce vendeur.' });
+    }
+
+    // RG26: un seul paiement par facture pour le MVP — update or create
+    const existingPayment = facture.paiements[0];
+
+    // Determine new status based on amount received
+    let newStatut;
+    if (montant_percu >= facture.montant_total_du) {
+      newStatut = 'Paye';
+    } else if (montant_percu > 0) {
+      newStatut = 'Partiel';
+    } else {
+      newStatut = 'En attente';
+    }
+
+    let paiement;
+    if (existingPayment) {
+      // Update existing payment — montant_percu is the new total received
+      paiement = await prisma.paiement.update({
+        where: { id_paiement: existingPayment.id_paiement },
+        data: {
+          montant_percu,
+          mode_reglement: mode,
+          reference_transaction: reference_transaction || existingPayment.reference_transaction,
+          date_paiement: new Date()
+        }
+      });
+    } else {
+      // Create new payment
+      paiement = await prisma.paiement.create({
+        data: {
+          id_facture: factureId,
+          montant_percu,
+          mode_reglement: mode,
+          reference_transaction: reference_transaction || null,
+          statut: 'Effectue'
+        }
+      });
+    }
+
+    // Update facture status
+    await prisma.facture.update({
+      where: { id_facture: factureId },
+      data: { statut_paiement: newStatut }
+    });
+
+    return res.json({
+      message: 'Paiement enregistré avec succès.',
+      paiement: {
+        id_paiement: paiement.id_paiement,
+        montant_percu: paiement.montant_percu,
+        mode_reglement: paiement.mode_reglement,
+        date_paiement: formatDate(paiement.date_paiement)
+      },
+      facture: {
+        id_facture: factureId,
+        montant_total_du: facture.montant_total_du,
+        statut_paiement: newStatut,
+        reste_a_payer: Math.max(0, facture.montant_total_du - montant_percu)
+      }
+    });
+  } catch (error) {
+    console.error('recordPayment error:', error);
+    return res.status(500).json({ error: "Erreur lors de l'enregistrement du paiement." });
+  }
+};
+
+// --- 3.7d. Modifier le statut de paiement ---
+
+export const updateFactureStatus = async (req, res) => {
+  try {
+    const vendorId = req.user.id_user;
+    const factureId = parseInt(req.params.id, 10);
+    const { statut_paiement } = req.body;
+
+    if (isNaN(factureId)) {
+      return res.status(400).json({ error: 'ID de facture invalide.' });
+    }
+
+    const validStatuses = ['En attente', 'Paye', 'Partiel'];
+    if (!statut_paiement || !validStatuses.includes(statut_paiement)) {
+      return res.status(400).json({
+        error: `Statut invalide. Valeurs acceptées: ${validStatuses.join(', ')}`
+      });
+    }
+
+    const facture = await prisma.facture.findUnique({
+      where: { id_facture: factureId },
+      include: {
+        commande: {
+          include: {
+            detailsCommande: { include: { produit: true } }
+          }
+        }
+      }
+    });
+
+    if (!facture) {
+      return res.status(404).json({ error: 'Facture introuvable.' });
+    }
+
+    // Verify vendor ownership
+    const vendorItems = facture.commande.detailsCommande.filter(
+      (dc) => dc.produit.id_user_vendeur === vendorId
+    );
+    if (vendorItems.length === 0) {
+      return res.status(403).json({ error: 'Facture non autorisée pour ce vendeur.' });
+    }
+
+    await prisma.facture.update({
+      where: { id_facture: factureId },
+      data: { statut_paiement }
+    });
+
+    return res.json({
+      message: 'Statut mis à jour.',
+      id_facture: factureId,
+      statut_paiement: statut_paiement === 'Paye' ? 'paye' : statut_paiement === 'Partiel' ? 'partiel' : 'en_attente'
+    });
+  } catch (error) {
+    console.error('updateFactureStatus error:', error);
+    return res.status(500).json({ error: 'Erreur lors de la mise à jour du statut.' });
   }
 };
 

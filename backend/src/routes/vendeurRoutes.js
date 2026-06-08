@@ -17,6 +17,10 @@ import {
   markReturnRecovered,
   getVendorStatistiques,
   getVendorFactures,
+  getVendorFactureSummary,
+  getVendorFactureDetail,
+  recordPayment,
+  updateFactureStatus,
   getVendorPriceHistory,
   getVendorSignalements,
   createSignalement,
@@ -81,8 +85,12 @@ router.put('/returns/:id_commande/:id_produit/recover', markReturnRecovered);
 // Statistiques
 router.get('/statistiques', getVendorStatistiques);
 
-// Factures & Paiements
+// Factures & Paiements (RG25, RG26)
 router.get('/factures', getVendorFactures);
+router.get('/factures/summary', getVendorFactureSummary);
+router.get('/factures/:id', getVendorFactureDetail);
+router.post('/factures/:id/payment', recordPayment);
+router.put('/factures/:id/status', updateFactureStatus);
 
 // Historique des Prix
 router.get('/price-history', getVendorPriceHistory);
