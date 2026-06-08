@@ -216,8 +216,8 @@ export default function Inscription() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
-      <div className="relative flex-1 flex items-center justify-center px-4 py-12 sm:py-0 overflow-hidden">
+    <div className="w-full" style={{ background: 'var(--bg)' }}>
+      <div className="relative flex items-center justify-center px-4 py-12 sm:py-16 overflow-hidden min-h-screen">
         {/* Decorative blobs — theme-aware */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full blur-[120px] opacity-30"
