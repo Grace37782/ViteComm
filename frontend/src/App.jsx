@@ -7,8 +7,13 @@ import AccueilClient from './pages/client/AccueilClient'
 import Catalogue from './pages/client/Catalogue'
 import Panier from './pages/client/Panier'
 import SelectionLivreur from './pages/client/SelectionLivreur'
-import Vendeur from './pages/vendeur/Commandes'
+import DashboardVendeur from './pages/vendeur/Dashboard'
+import CatalogueVendeur from './pages/vendeur/Catalogues'
+import CommandesVendeur from './pages/vendeur/Commandes'
+import RetourVendeur from './pages/vendeur/Retour'
 import Livreur from './pages/livreur/Livreur'
+import CommandesLivreur from './pages/livreur/Commandes'
+import RetourLivreur from './pages/livreur/Retours'
 import Admin from './pages/admin/Admin'
 import Inscription from './pages/auth/Inscription'
 import ForgotPassword from './pages/auth/ForgotPassword'
@@ -57,8 +62,13 @@ export default function App() {
           <Route path="mes-commandes" element={<MesCommandes />} />
         </Route>
 
-        <Route path="/vendeur/dashboard" element={<Vendeur />} />
+        <Route path="/vendeur/dashboard" element={<DashboardVendeur />} />
+        <Route path="/vendeur/catalogue" element={<CatalogueVendeur />} />
+        <Route path="/vendeur/commandes" element={<CommandesVendeur />} />
+        <Route path="/vendeur/retours" element={<RetourVendeur />} />
         <Route path="/livreur/dashboard" element={<Livreur />} />
+        <Route path="/livreur/commandes" element={<CommandesLivreur />} />
+        <Route path="/livreur/retours" element={<RetourLivreur />} />
         <Route path="/admin/dashboard" element={<Admin />} />
 
         {/* Fallback */}

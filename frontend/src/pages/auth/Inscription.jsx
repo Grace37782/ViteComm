@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 
@@ -104,10 +104,14 @@ function CodeInput({ value, onChange }) {
 
 export default function Inscription() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { login: updateAuthContext } = useAuth()
 
   const [step, setStep]                   = useState('form')  // form | verify
-  const [profil, setProfil]               = useState('client')
+  const [profil, setProfil]               = useState(() => {
+    const role = new URLSearchParams(location.search).get('role')
+    return role === 'vendeur' || role === 'livreur' ? role : 'client'
+  })
   const [showMdp, setShowMdp]             = useState(false)
   const [loading, setLoading]             = useState(false)
   const [verifyToken, setVerifyToken]     = useState('')
@@ -128,6 +132,13 @@ export default function Inscription() {
   })
 
   const [markets, setMarkets] = useState([])
+
+  useEffect(() => {
+    const role = new URLSearchParams(location.search).get('role')
+    if (role === 'vendeur' || role === 'livreur' || role === 'client') {
+      setProfil(role)
+    }
+  }, [location.search])
 
   useEffect(() => {
     if (profil !== 'vendeur') return
