@@ -83,7 +83,7 @@ export default function Historique() {
   }
 
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: '#F7F8F3', paddingBottom: 80 }}>
+    <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {/* ══ HEADER ══ */}
       <div className="relative overflow-hidden px-5 pt-5 pb-5"
@@ -107,15 +107,15 @@ export default function Historique() {
           const st = STATUT_STYLE[c.statut] || STATUT_STYLE['Entièrement acceptée']
           return (
             <div key={c.id} className="rounded-2xl overflow-hidden"
-              style={{ background: '#fff', border: '1.5px solid #E8E6DF', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+              style={{ background: '#fff', border: '1.5px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
 
               {/* En-tête commande */}
               <div className="px-4 py-3 flex items-start justify-between gap-2">
                 <div>
-                  <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>
+                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
                     Commande #{c.id}
                   </div>
-                  <div className="text-xs mt-0.5" style={{ color: '#888780' }}>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                     {new Date(c.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                     · {c.articles} articles · {c.etals} étals
                   </div>
@@ -133,7 +133,7 @@ export default function Historique() {
                   <span className="font-black text-base" style={{ color: '#1D9E75' }}>
                     {c.total.toLocaleString()} F
                   </span>
-                  <span className="text-xs ml-2" style={{ color: '#888780' }}>COD</span>
+                  <span className="text-xs ml-2" style={{ color: 'var(--text-muted)' }}>COD</span>
                 </div>
                 <div className="flex gap-2">
                   {/* Bouton signalement */}
@@ -175,14 +175,14 @@ export default function Historique() {
 
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full" style={{ background: '#E8E6DF' }} />
+              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
             </div>
 
             <div className="px-5 pb-8 pt-3">
-              <h2 className="font-black text-lg mb-1" style={{ color: '#2C2C2A' }}>
+              <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>
                 Laisser un avis
               </h2>
-              <p className="text-xs mb-4" style={{ color: '#888780' }}>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
                 Commande #{commande.id}
               </p>
 
@@ -192,9 +192,9 @@ export default function Historique() {
                   <button key={t} onClick={() => setTypeEval(t)}
                     className="flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all capitalize"
                     style={{
-                      background: typeEval === t ? '#1D9E75' : '#F7F8F3',
-                      color:      typeEval === t ? '#fff'    : '#5F5E5A',
-                      border: `1.5px solid ${typeEval === t ? '#1D9E75' : '#E8E6DF'}`,
+                      background: typeEval === t ? '#1D9E75' : 'var(--surface-alt)',
+                      color:      typeEval === t ? '#fff'    : 'var(--text-secondary)',
+                      border: `1.5px solid ${typeEval === t ? '#1D9E75' : 'var(--border)'}`,
                     }}>
                     {t === 'livreur' ? '🏍️ Livreur' : '🏪 Vendeur(s)'}
                   </button>
@@ -204,11 +204,11 @@ export default function Historique() {
               {/* Éval livreur */}
               {typeEval === 'livreur' && (
                 <div className="flex flex-col gap-4">
-                  <div className="rounded-2xl p-4" style={{ background: '#F7F8F3' }}>
-                    <div className="font-black text-sm mb-1" style={{ color: '#2C2C2A' }}>
+                  <div className="rounded-2xl p-4" style={{ background: 'var(--surface-alt)' }}>
+                    <div className="font-black text-sm mb-1" style={{ color: 'var(--text-primary)' }}>
                       {commande.livreur.nom}
                     </div>
-                    <div className="text-xs mb-3" style={{ color: '#888780' }}>
+                    <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
                       Note sur la livraison
                     </div>
                     <Etoiles note={noteL} onChange={setNoteL} />
@@ -216,7 +216,7 @@ export default function Historique() {
                   <textarea placeholder="Commentaire (optionnel)…"
                     value={commentL} onChange={(e) => setCommentL(e.target.value)}
                     rows={3} className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none"
-                    style={{ background: '#F7F8F3', border: '1.5px solid #E8E6DF', color: '#2C2C2A', fontFamily: 'inherit' }} />
+                    style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)', fontFamily: 'inherit' }} />
                 </div>
               )}
 
@@ -224,15 +224,15 @@ export default function Historique() {
               {typeEval === 'vendeur' && (
                 <div className="flex flex-col gap-3">
                   {commande.vendeurs.map((v) => (
-                    <div key={v.id} className="rounded-2xl p-4" style={{ background: '#F7F8F3' }}>
-                      <div className="font-black text-sm mb-1" style={{ color: '#2C2C2A' }}>{v.nom}</div>
-                      <div className="text-xs mb-3" style={{ color: '#888780' }}>Note sur les produits</div>
+                    <div key={v.id} className="rounded-2xl p-4" style={{ background: 'var(--surface-alt)' }}>
+                      <div className="font-black text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{v.nom}</div>
+                      <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Note sur les produits</div>
                       <Etoiles note={notesV[v.id] || 0} onChange={(n) => setNotesV((p) => ({ ...p, [v.id]: n }))} />
                       <textarea placeholder="Commentaire (optionnel)…"
                         value={commentsV[v.id] || ''}
                         onChange={(e) => setCommentsV((p) => ({ ...p, [v.id]: e.target.value }))}
                         rows={2} className="w-full px-3 py-2.5 rounded-xl text-xs outline-none resize-none mt-3"
-                        style={{ background: '#fff', border: '1.5px solid #E8E6DF', color: '#2C2C2A', fontFamily: 'inherit' }} />
+                        style={{ background: '#fff', border: '1.5px solid var(--border)', color: 'var(--text-primary)', fontFamily: 'inherit' }} />
                     </div>
                   ))}
                 </div>
@@ -261,18 +261,18 @@ export default function Historique() {
             style={{ background: '#fff' }}
             onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-center pt-1 pb-3">
-              <div className="w-10 h-1 rounded-full" style={{ background: '#E8E6DF' }} />
+              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
             </div>
-            <h2 className="font-black text-base mb-1" style={{ color: '#2C2C2A' }}>
+            <h2 className="font-black text-base mb-1" style={{ color: 'var(--text-primary)' }}>
               🚩 Signaler {signalement.nom}
             </h2>
-            <p className="text-xs mb-4" style={{ color: '#888780' }}>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
               Ce signalement sera traité par l'administrateur ViteComm.
             </p>
             <textarea placeholder="Décrivez le problème (comportement abusif, fraude…)"
               value={motifSig} onChange={(e) => setMotifSig(e.target.value)}
               rows={4} className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none mb-4"
-              style={{ background: '#F7F8F3', border: '1.5px solid #E8E6DF', color: '#2C2C2A', fontFamily: 'inherit' }} />
+              style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)', fontFamily: 'inherit' }} />
             <button onClick={soumettreSignalement}
               disabled={!motifSig.trim() || loading}
               className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer"

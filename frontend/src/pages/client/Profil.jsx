@@ -102,17 +102,17 @@ export default function Profil() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F7F8F3' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
           <div className="text-4xl mb-3">⏳</div>
-          <div className="font-bold text-sm" style={{ color: '#888780' }}>Chargement du profil…</div>
+          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Chargement du profil…</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="bg-[#F7F8F3] font-sans">
+    <div className="font-sans" style={{ background: 'var(--bg)' }}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"
@@ -129,8 +129,8 @@ export default function Profil() {
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
               style={{
                 background: tab === t.id ? '#fff' : 'transparent',
-                color: tab === t.id ? theme.primary : '#888780',
-                border: tab === t.id ? '1px solid #E8E6DF' : 'none',
+                color: tab === t.id ? theme.primary : 'var(--text-muted)',
+                border: tab === t.id ? '1px solid var(--border)' : 'none',
                 boxShadow: tab === t.id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
               }}>
               <span>{t.icon}</span> {t.label}
@@ -144,7 +144,7 @@ export default function Profil() {
         {tab === 'infos' && (
           <>
             {!editing ? (
-              <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: '#E8E6DF' }}>
+              <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
                 {/* Avatar */}
                 <div className="flex justify-center mb-5">
                   {profile?.photo_url ? (
@@ -158,7 +158,7 @@ export default function Profil() {
                 </div>
 
                 <div className="text-center mb-5">
-                  <h2 className="text-xl font-black" style={{ color: '#2C2C2A' }}>{profile?.prenom} {profile?.nom}</h2>
+                  <h2 className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>{profile?.prenom} {profile?.nom}</h2>
                   <p className="text-sm font-semibold mt-1" style={{ color: theme.primary }}>{theme.icon} {theme.label}</p>
                 </div>
 
@@ -178,21 +178,21 @@ export default function Profil() {
                 </button>
               </div>
             ) : (
-              <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: '#E8E6DF' }}>
+              <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
                 <form onSubmit={handleSave} className="flex flex-col gap-4">
                   {/* Photo upload */}
                   <div className="flex justify-center">
                     <label className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-dashed cursor-pointer flex items-center justify-center transition-all hover:scale-105"
                       style={{
-                        background: photoPreview ? 'transparent' : '#F7F8F3',
-                        borderColor: photoPreview ? theme.primary : '#E8E6DF',
+                        background: photoPreview ? 'transparent' : 'var(--surface-alt)',
+                        borderColor: photoPreview ? theme.primary : 'var(--border)',
                       }}>
                       {photoPreview ? (
                         <img src={photoPreview} alt="Aperçu" className="w-full h-full object-cover" />
                       ) : profile?.photo_url ? (
                         <img src={profile.photo_url} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-3xl" style={{ color: '#888780' }}>📷</span>
+                        <span className="text-3xl" style={{ color: 'var(--text-muted)' }}>📷</span>
                       )}
                       <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                       {(photoPreview || profile?.photo_url) && (
@@ -225,7 +225,7 @@ export default function Profil() {
                       }))
                     }}
                       className="rounded-2xl py-3 px-5 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
-                      style={{ background: '#F0EFEA', color: '#888780', border: 'none' }}>
+                      style={{ background: '#F0EFEA', color: 'var(--text-muted)', border: 'none' }}>
                       Annuler
                     </button>
                   </div>
@@ -237,14 +237,14 @@ export default function Profil() {
 
         {tab === 'securite' && (
           <div className="flex flex-col gap-4">
-            <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: '#E8E6DF' }}>
-              <h3 className="text-sm font-black mb-4" style={{ color: '#2C2C2A' }}>🔑 Changer le mot de passe</h3>
+            <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
+              <h3 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}>🔑 Changer le mot de passe</h3>
               <PasswordChangeForm theme={theme} />
             </div>
 
-            <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: '#E8E6DF' }}>
-              <h3 className="text-sm font-black mb-2" style={{ color: '#2C2C2A' }}>🚪 Session</h3>
-              <p className="text-xs mb-4" style={{ color: '#888780' }}>Déconnectez-vous de votre compte sur cet appareil.</p>
+            <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
+              <h3 className="text-sm font-black mb-2" style={{ color: 'var(--text-primary)' }}>🚪 Session</h3>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Déconnectez-vous de votre compte sur cet appareil.</p>
               <button onClick={() => setShowLogout(true)}
                 className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                 style={{ background: '#FDE8E2', color: '#D85A30', border: 'none' }}>
@@ -263,8 +263,8 @@ export default function Profil() {
             onClick={e => e.stopPropagation()}>
             <div className="text-center mb-5">
               <div className="text-5xl mb-3">👋</div>
-              <h3 className="text-lg font-black" style={{ color: '#2C2C2A' }}>Se déconnecter ?</h3>
-              <p className="text-xs mt-2" style={{ color: '#888780' }}>Vous devrez vous reconnecter pour accéder à votre espace.</p>
+              <h3 className="text-lg font-black" style={{ color: 'var(--text-primary)' }}>Se déconnecter ?</h3>
+              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Vous devrez vous reconnecter pour accéder à votre espace.</p>
             </div>
             <div className="flex flex-col gap-3">
               <button onClick={handleLogout}
@@ -274,7 +274,7 @@ export default function Profil() {
               </button>
               <button onClick={() => setShowLogout(false)}
                 className="w-full rounded-2xl py-3 text-sm font-bold cursor-pointer"
-                style={{ background: '#F7F8F3', color: '#5F5E5A', border: '1.5px solid #E8E6DF' }}>
+                style={{ background: 'var(--surface-alt)', color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}>
                 Annuler
               </button>
             </div>
@@ -331,9 +331,9 @@ function PasswordChangeForm({ theme }) {
 
 function InfoRow({ label, value, icon }) {
   return (
-    <div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: '#F7F8F3' }}>
-      <span className="text-xs font-semibold" style={{ color: '#888780' }}>{icon} {label}</span>
-      <span className="text-sm font-bold" style={{ color: '#2C2C2A' }}>{value}</span>
+    <div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: 'var(--surface-alt)' }}>
+      <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{icon} {label}</span>
+      <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{value}</span>
     </div>
   )
 }
@@ -341,10 +341,10 @@ function InfoRow({ label, value, icon }) {
 function Field({ label, value, onChange, type = 'text' }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-semibold" style={{ color: '#888780' }}>{label}</label>
+      <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{label}</label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)}
         className="rounded-xl px-4 py-3 text-sm font-semibold outline-none border"
-        style={{ background: '#F7F8F3', borderColor: '#E8E6DF', color: '#2C2C2A' }} />
+        style={{ background: 'var(--surface-alt)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
     </div>
   )
 }

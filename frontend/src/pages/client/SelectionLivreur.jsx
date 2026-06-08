@@ -63,17 +63,17 @@ export default function SelectionLivreur() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F8F3' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🏍️</div>
-          <div style={{ fontWeight: 700, color: '#888780', fontSize: 13 }}>Recherche des livreurs disponibles…</div>
+          <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>Recherche des livreurs disponibles…</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: '#F7F8F3', paddingBottom: 80 }}>
+    <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {/* TOAST */}
       {toast && (
@@ -128,13 +128,13 @@ export default function SelectionLivreur() {
         {drivers.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-5xl mb-3">😔</div>
-            <div className="font-bold text-sm" style={{ color: '#888780' }}>
+            <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
               Aucun livreur disponible pour le moment.<br />Réessayez dans quelques minutes.
             </div>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            <h2 className="font-black text-base" style={{ color: '#2C2C2A' }}>Livreurs disponibles</h2>
+            <h2 className="font-black text-base" style={{ color: 'var(--text-primary)' }}>Livreurs disponibles</h2>
 
             {drivers.map((drv) => {
               const sel = livreurId === drv.id_user
@@ -146,24 +146,24 @@ export default function SelectionLivreur() {
                   className="w-full text-left rounded-2xl p-4 cursor-pointer transition-all active:scale-98"
                   style={{
                     background: sel ? '#E1F5EE' : '#fff',
-                    border: `2px solid ${sel ? '#1D9E75' : '#E8E6DF'}`,
+                    border: `2px solid ${sel ? '#1D9E75' : 'var(--border)'}`,
                     boxShadow: sel ? '0 4px 16px rgba(29,158,117,0.2)' : '0 2px 8px rgba(0,0,0,0.04)',
                     transform: sel ? 'translateY(-1px)' : 'none',
                   }}
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-                      style={{ background: sel ? '#1D9E75' : '#F7F8F3' }}>🏍️</div>
+                      style={{ background: sel ? '#1D9E75' : 'var(--surface-alt)' }}>🏍️</div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                        <span className="font-black text-sm" style={{ color: '#2C2C2A' }}>{nom}</span>
+                        <span className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{nom}</span>
                       </div>
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        <span className="text-xs" style={{ color: '#888780' }}>
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                           ⭐ {drv.score_reputation.toFixed(1)} · {drv.type_vehicule}
                         </span>
-                        <span className="text-xs" style={{ color: '#888780' }}>📞 {drv.utilisateur.telephone}</span>
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>📞 {drv.utilisateur.telephone}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold px-2 py-1 rounded-lg"
@@ -178,7 +178,7 @@ export default function SelectionLivreur() {
                     </div>
 
                     <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
-                      style={{ background: sel ? '#1D9E75' : 'transparent', border: `2px solid ${sel ? '#1D9E75' : '#E8E6DF'}` }}>
+                      style={{ background: sel ? '#1D9E75' : 'transparent', border: `2px solid ${sel ? '#1D9E75' : 'var(--border)'}` }}>
                       {sel && <span style={{ color: '#fff', fontSize: 12, fontWeight: 900 }}>✓</span>}
                     </div>
                   </div>
@@ -190,19 +190,19 @@ export default function SelectionLivreur() {
 
         {/* RÉCAP */}
         {livreurSelected && (
-          <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
-            <h3 className="font-black text-sm mb-3" style={{ color: '#2C2C2A' }}>Récapitulatif final</h3>
+          <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+            <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Récapitulatif final</h3>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#888780' }}>Articles</span>
-                <span className="font-semibold" style={{ color: '#2C2C2A' }}>{formatPrice(sousTotal)}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Articles</span>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(sousTotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#888780' }}>Livraison — {livreurSelected.utilisateur.prenom}</span>
-                <span className="font-semibold" style={{ color: '#2C2C2A' }}>{formatPrice(FRAIS_LIVRAISON)}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Livraison — {livreurSelected.utilisateur.prenom}</span>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(FRAIS_LIVRAISON)}</span>
               </div>
-              <div className="flex justify-between pt-2 mt-1" style={{ borderTop: '1.5px solid #E8E6DF' }}>
-                <span className="font-black text-base" style={{ color: '#2C2C2A' }}>Total COD</span>
+              <div className="flex justify-between pt-2 mt-1" style={{ borderTop: '1.5px solid var(--border)' }}>
+                <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>Total COD</span>
                 <span className="font-black text-base" style={{ color: '#1D9E75' }}>{formatPrice(totalFinal)}</span>
               </div>
             </div>
@@ -228,7 +228,7 @@ export default function SelectionLivreur() {
             : 'Sélectionnez un livreur'}
         </button>
 
-        <p className="text-center text-xs pb-2" style={{ color: '#888780' }}>
+        <p className="text-center text-xs pb-2" style={{ color: 'var(--text-muted)' }}>
           💵 Vous payez {formatPrice(totalFinal)} en espèces à la réception
         </p>
       </div>

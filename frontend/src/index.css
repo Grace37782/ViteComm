@@ -29,6 +29,12 @@
   --shadow: rgba(0, 0, 0, 0.2);
 }
 
+html, body, #root {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
 /* ── Smooth theme transition ── */
 *,
 *::before,

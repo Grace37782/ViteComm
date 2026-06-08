@@ -68,17 +68,17 @@ export default function Panier() {
   /* ── Loading ─────────────────────────────────────────── */
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F8F3' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
-          <div style={{ fontWeight: 700, color: '#888780', fontSize: 13 }}>Chargement du panier…</div>
+          <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>Chargement du panier…</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: '#F7F8F3', paddingBottom: 80 }}>
+    <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {/* TOAST */}
       {toast && (
@@ -125,8 +125,8 @@ export default function Panier() {
       {details.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
           <div className="text-6xl mb-4">🛒</div>
-          <h2 className="font-black text-lg mb-2" style={{ color: '#2C2C2A' }}>Votre panier est vide</h2>
-          <p className="text-sm mb-6" style={{ color: '#888780' }}>
+          <h2 className="font-black text-lg mb-2" style={{ color: 'var(--text-primary)' }}>Votre panier est vide</h2>
+          <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
             Ajoutez des produits depuis les catalogues des marchés.
           </p>
           <button
@@ -143,11 +143,11 @@ export default function Panier() {
           {/* ARTICLES PAR ÉTAL */}
           {Object.entries(parVendeur).map(([vid, etal]) => (
             <div key={vid} className="rounded-2xl overflow-hidden"
-              style={{ background: '#fff', border: '1.5px solid #E8E6DF', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+              style={{ background: '#fff', border: '1.5px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
               <div className="flex items-center gap-2 px-4 py-3"
-                style={{ background: '#F7F8F3', borderBottom: '1px solid #E8E6DF' }}>
+                style={{ background: 'var(--surface-alt)', borderBottom: '1px solid var(--border)' }}>
                 <span className="text-lg">🏪</span>
-                <span className="font-black text-sm flex-1" style={{ color: '#2C2C2A' }}>{etal.nom}</span>
+                <span className="font-black text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{etal.nom}</span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
                   style={{ background: '#E1F5EE', color: '#0F6E56' }}>
                   {etal.items.length} article{etal.items.length > 1 ? 's' : ''}
@@ -158,12 +158,12 @@ export default function Panier() {
                 {etal.items.map((d) => (
                   <div key={d.id_produit} className="flex items-center gap-3 px-4 py-3">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-                      style={{ background: '#F7F8F3' }}>
+                      style={{ background: 'var(--surface-alt)' }}>
                       📦
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="font-black text-sm truncate" style={{ color: '#2C2C2A' }}>{d.produit.nom}</div>
+                      <div className="font-black text-sm truncate" style={{ color: 'var(--text-primary)' }}>{d.produit.nom}</div>
                       <div className="text-xs font-medium" style={{ color: '#1D9E75' }}>
                         {formatPrice(d.produit.prix_reference)} / unité
                       </div>
@@ -173,15 +173,15 @@ export default function Panier() {
                     <div className="flex items-center gap-1">
                       <button onClick={() => setQte(d.id_produit, d.quantite - 1)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center font-black cursor-pointer text-sm"
-                        style={{ background: '#F1EFE8', border: 'none', color: '#5F5E5A' }}>−</button>
-                      <span className="w-6 text-center font-black text-sm" style={{ color: '#2C2C2A' }}>{d.quantite}</span>
+                        style={{ background: '#F1EFE8', border: 'none', color: 'var(--text-secondary)' }}>−</button>
+                      <span className="w-6 text-center font-black text-sm" style={{ color: 'var(--text-primary)' }}>{d.quantite}</span>
                       <button onClick={() => setQte(d.id_produit, d.quantite + 1)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-sm cursor-pointer"
                         style={{ background: '#1D9E75', border: 'none', color: '#fff' }}>+</button>
                     </div>
 
                     <div className="text-right ml-2 flex-shrink-0">
-                      <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>
+                      <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
                         {formatPrice(d.produit.prix_reference * d.quantite)}
                       </div>
                       <button onClick={() => setQte(d.id_produit, 0)}
@@ -211,23 +211,23 @@ export default function Panier() {
           </div>
 
           {/* RÉCAPITULATIF */}
-          <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
-            <h3 className="font-black text-sm mb-3" style={{ color: '#2C2C2A' }}>Récapitulatif</h3>
+          <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+            <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Récapitulatif</h3>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#888780' }}>Sous-total ({panierCount} articles)</span>
-                <span className="font-semibold" style={{ color: '#2C2C2A' }}>{formatPrice(sousTotal)}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Sous-total ({panierCount} articles)</span>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(sousTotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#888780' }}>Frais de livraison</span>
-                <span className="font-semibold" style={{ color: '#2C2C2A' }}>{formatPrice(FRAIS_LIVRAISON)}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Frais de livraison</span>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(FRAIS_LIVRAISON)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#888780' }}>Commission plateforme (0,6%)</span>
-                <span className="font-semibold" style={{ color: '#2C2C2A' }}>{formatPrice(commission)}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Commission plateforme (0,6%)</span>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(commission)}</span>
               </div>
-              <div className="flex justify-between pt-2 mt-1" style={{ borderTop: '1.5px solid #E8E6DF' }}>
-                <span className="font-black text-base" style={{ color: '#2C2C2A' }}>Total à payer</span>
+              <div className="flex justify-between pt-2 mt-1" style={{ borderTop: '1.5px solid var(--border)' }}>
+                <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>Total à payer</span>
                 <span className="font-black text-base" style={{ color: '#1D9E75' }}>{formatPrice(total)}</span>
               </div>
             </div>
@@ -242,7 +242,7 @@ export default function Panier() {
             Choisir un livreur — {formatPrice(total)} →
           </button>
 
-          <p className="text-center text-xs pb-2" style={{ color: '#888780' }}>
+          <p className="text-center text-xs pb-2" style={{ color: 'var(--text-muted)' }}>
             🔒 Paiement sécurisé · Vous inspectez avant de payer
           </p>
 

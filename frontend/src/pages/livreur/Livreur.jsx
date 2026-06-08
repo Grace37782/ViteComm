@@ -83,17 +83,17 @@ export default function Livreur() {
 
       {/* ══ PROFIL & STATS ══ */}
       <div className="rounded-2xl p-4"
-        style={{ background: '#fff', border: '1.5px solid #E8E6DF', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+        style={{ background: '#fff', border: '1.5px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg flex-shrink-0"
             style={{ background: '#D85A30', color: '#fff' }}>
             {LIVREUR.prenom[0]}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>
+            <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
               {LIVREUR.prenom}
             </div>
-            <div className="text-xs" style={{ color: '#888780' }}>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
               {LIVREUR.type_vehicule} · {LIVREUR.immatriculation}
             </div>
           </div>
@@ -102,14 +102,14 @@ export default function Livreur() {
               <span className="font-black text-lg" style={{ color: '#BA7517' }}>{LIVREUR.score_reputation}</span>
               <span className="text-sm">⭐</span>
             </div>
-            <div className="text-xs" style={{ color: '#888780' }}>{LIVREUR.courses_terminees} courses</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{LIVREUR.courses_terminees} courses</div>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3">
           {STAT_CARD.map((card) => (
             <div key={card.label} className="rounded-xl p-3"
-              style={{ background: '#F7F8F3', border: '1.5px solid #E8E6DF' }}>
-              <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: '#888780' }}>{card.label}</div>
+              style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+              <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>{card.label}</div>
               <div className="font-black text-lg" style={{ color: card.accent }}>{card.value}</div>
             </div>
           ))}
@@ -117,110 +117,110 @@ export default function Livreur() {
       </div>
 
       {/* ══ DISPO ══ */}
-      <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+      <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-3">
           <div>
-            <div className="text-sm font-black" style={{ color: '#2C2C2A' }}>Disponibilité</div>
-            <div className="text-xs" style={{ color: '#888780' }}>Horaires et rayon d'action</div>
+            <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Disponibilité</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Horaires et rayon d'action</div>
           </div>
           <button onClick={() => setDisponible((prev) => !prev)}
             className="rounded-2xl px-5 py-2 font-black text-sm cursor-pointer"
             style={{
-              background: disponible ? '#D85A30' : '#E8E6DF',
-              color: disponible ? '#fff' : '#5F5E5A',
+              background: disponible ? '#D85A30' : 'var(--border)',
+              color: disponible ? '#fff' : 'var(--text-secondary)',
               border: 'none',
             }}>
             {disponible ? 'En ligne' : 'Hors ligne'}
           </button>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <label className="rounded-xl p-3" style={{ background: '#F7F8F3', border: '1.5px solid #E8E6DF' }}>
-            <div className="text-[10px] font-semibold" style={{ color: '#5F5E5A' }}>Début</div>
+          <label className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+            <div className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Début</div>
             <input type="time" value={horaireDebut} onChange={(e) => setHoraireDebut(e.target.value)}
-              className="mt-1 w-full bg-transparent outline-none text-sm font-black" style={{ color: '#2C2C2A' }} />
+              className="mt-1 w-full bg-transparent outline-none text-sm font-black" style={{ color: 'var(--text-primary)' }} />
           </label>
-          <label className="rounded-xl p-3" style={{ background: '#F7F8F3', border: '1.5px solid #E8E6DF' }}>
-            <div className="text-[10px] font-semibold" style={{ color: '#5F5E5A' }}>Fin</div>
+          <label className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+            <div className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Fin</div>
             <input type="time" value={horaireFin} onChange={(e) => setHoraireFin(e.target.value)}
-              className="mt-1 w-full bg-transparent outline-none text-sm font-black" style={{ color: '#2C2C2A' }} />
+              className="mt-1 w-full bg-transparent outline-none text-sm font-black" style={{ color: 'var(--text-primary)' }} />
           </label>
-          <label className="rounded-xl p-3" style={{ background: '#F7F8F3', border: '1.5px solid #E8E6DF' }}>
-            <div className="text-[10px] font-semibold" style={{ color: '#5F5E5A' }}>Rayon</div>
+          <label className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+            <div className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Rayon</div>
             <input type="number" min="1" value={distanceAction}
               onChange={(e) => setDistanceAction(Number(e.target.value))}
-              className="mt-1 w-full bg-transparent outline-none text-sm font-black" style={{ color: '#2C2C2A' }} />
-            <div className="text-[10px]" style={{ color: '#888780' }}>km</div>
+              className="mt-1 w-full bg-transparent outline-none text-sm font-black" style={{ color: 'var(--text-primary)' }} />
+            <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>km</div>
           </label>
         </div>
       </div>
 
       {/* ══ VÉHICULE & COURSES EN COURS ══ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+        <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <div className="text-sm font-black" style={{ color: '#2C2C2A' }}>Mon véhicule</div>
-              <div className="text-xs" style={{ color: '#888780' }}>Type et immatriculation</div>
+              <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Mon véhicule</div>
+              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Type et immatriculation</div>
             </div>
             <div className="text-xs font-bold" style={{ color: '#BA7517' }}>{LIVREUR.type_vehicule}</div>
           </div>
-          <div className="rounded-xl p-3" style={{ background: '#F7F8F3', border: '1.5px solid #E8E6DF' }}>
-            <div className="text-[10px]" style={{ color: '#5F5E5A' }}>Véhicule</div>
-            <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>{LIVREUR.type_vehicule}</div>
-            <div className="text-[10px] mt-2" style={{ color: '#5F5E5A' }}>Immatriculation</div>
-            <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>{LIVREUR.immatriculation}</div>
+          <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+            <div className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>Véhicule</div>
+            <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{LIVREUR.type_vehicule}</div>
+            <div className="text-[10px] mt-2" style={{ color: 'var(--text-secondary)' }}>Immatriculation</div>
+            <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{LIVREUR.immatriculation}</div>
           </div>
         </div>
 
-        <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
-          <div className="text-sm font-black mb-3" style={{ color: '#2C2C2A' }}>Courses en cours</div>
+        <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+          <div className="text-sm font-black mb-3" style={{ color: 'var(--text-primary)' }}>Courses en cours</div>
           <div className="space-y-3">
             {enCours.map((course) => (
-              <div key={course.id} className="rounded-xl p-3" style={{ background: '#F7F8F3', border: '1.5px solid #E8E6DF' }}>
+              <div key={course.id} className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>Commande #{course.id}</div>
+                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{course.id}</div>
                   <span className="text-xs font-bold" style={{ color: '#D85A30' }}>{course.statut}</span>
                 </div>
-                <div className="text-[10px]" style={{ color: '#5F5E5A' }}>Destination</div>
-                <div className="font-semibold text-sm" style={{ color: '#2C2C2A' }}>{course.destination}</div>
-                <div className="mt-2 flex items-center justify-between text-xs" style={{ color: '#888780' }}>
+                <div className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>Destination</div>
+                <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{course.destination}</div>
+                <div className="mt-2 flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
                   <span>{course.client}</span>
                   <span>{course.montant.toLocaleString()} F</span>
                 </div>
               </div>
             ))}
             {enCours.length === 0 && (
-              <div className="text-xs" style={{ color: '#888780' }}>Aucune course en cours.</div>
+              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Aucune course en cours.</div>
             )}
           </div>
         </div>
       </div>
 
       {/* ══ COURSES DISPONIBLES ══ */}
-      <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+      <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-sm font-black" style={{ color: '#2C2C2A' }}>Courses disponibles</div>
-            <div className="text-xs" style={{ color: '#888780' }}>Choisissez une course à prendre en charge.</div>
+            <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Courses disponibles</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Choisissez une course à prendre en charge.</div>
           </div>
-          <span className="text-xs" style={{ color: '#5F5E5A' }}>{courses.length} propositions</span>
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{courses.length} propositions</span>
         </div>
         <div className="flex flex-col gap-3">
           {courses.map((course) => (
-            <div key={course.id} className="rounded-2xl p-4" style={{ background: '#FAFAF7', border: '1.5px solid #E8E6DF' }}>
+            <div key={course.id} className="rounded-2xl p-4" style={{ background: '#FAFAF7', border: '1.5px solid var(--border)' }}>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>Course #{course.id}</div>
-                  <div className="text-xs mt-1" style={{ color: '#888780' }}>Marché {course.marche} → {course.destination}</div>
+                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Course #{course.id}</div>
+                  <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Marché {course.marche} → {course.destination}</div>
                 </div>
                 <div className="text-sm font-black" style={{ color: '#D85A30' }}>{course.frais.toLocaleString()} F</div>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-3 text-xs" style={{ color: '#5F5E5A' }}>
-                <div className="rounded-xl p-3" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+              <div className="mt-3 grid grid-cols-2 gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <div className="rounded-xl p-3" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
                   <div className="font-semibold">Étals</div>
                   <div>{course.etals.join(', ')}</div>
                 </div>
-                <div className="rounded-xl p-3" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+                <div className="rounded-xl p-3" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
                   <div className="font-semibold">Distance</div>
                   <div>{course.distance}</div>
                 </div>
@@ -233,7 +233,7 @@ export default function Livreur() {
             </div>
           ))}
           {courses.length === 0 && (
-            <div className="text-center text-sm py-10" style={{ color: '#888780' }}>Aucune course disponible pour le moment.</div>
+            <div className="text-center text-sm py-10" style={{ color: 'var(--text-muted)' }}>Aucune course disponible pour le moment.</div>
           )}
         </div>
       </div>

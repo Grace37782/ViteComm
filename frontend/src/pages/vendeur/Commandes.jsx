@@ -94,8 +94,8 @@ export default function CommandesVendeur() {
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer"
             style={{
               background:  filtre === f.id ? '#BA7517' : '#fff',
-              color:       filtre === f.id ? '#fff' : '#5F5E5A',
-              border:      `1.5px solid ${filtre === f.id ? '#BA7517' : '#E8E6DF'}`,
+              color:       filtre === f.id ? '#fff' : 'var(--text-secondary)',
+              border:      `1.5px solid ${filtre === f.id ? '#BA7517' : 'var(--border)'}`,
             }}>
             {f.label}
           </button>
@@ -105,7 +105,7 @@ export default function CommandesVendeur() {
       {liste.length === 0 && (
         <div className="text-center py-12">
           <div className="text-5xl mb-3">🛒</div>
-          <p className="font-bold text-sm" style={{ color: '#888780' }}>
+          <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
             Aucune commande dans cette catégorie
           </p>
         </div>
@@ -123,18 +123,18 @@ export default function CommandesVendeur() {
           <div key={cmd.id} className="rounded-2xl overflow-hidden"
             style={{
               background: '#fff',
-              border: `1.5px solid ${collecte ? '#9FE1CB' : '#E8E6DF'}`,
+              border: `1.5px solid ${collecte ? '#9FE1CB' : 'var(--border)'}`,
               boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
             }}>
 
             {/* En-tête commande */}
             <div className="flex items-center justify-between px-4 py-3"
-              style={{ background: collecte ? '#E1F5EE' : '#F7F8F3', borderBottom: '1px solid #E8E6DF' }}>
+              style={{ background: collecte ? '#E1F5EE' : 'var(--surface-alt)', borderBottom: '1px solid var(--border)' }}>
               <div>
-                <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>
+                <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
                   Commande #{cmd.id}
                 </div>
-                <div className="text-xs mt-0.5" style={{ color: '#888780' }}>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                   {cmd.heure} · Livreur: {cmd.livreur.nom}
                 </div>
               </div>
@@ -150,7 +150,7 @@ export default function CommandesVendeur() {
                 <div key={a.id} className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
                   style={{ background: '#FAFAF7' }}>
                   <span className="text-xl">{a.emoji}</span>
-                  <span className="text-xs font-semibold flex-1" style={{ color: '#2C2C2A' }}>
+                  <span className="text-xs font-semibold flex-1" style={{ color: 'var(--text-primary)' }}>
                     {a.nom} × {a.qte} {a.unite}
                   </span>
                   <span className="text-xs font-bold" style={{ color: '#BA7517' }}>
@@ -159,8 +159,8 @@ export default function CommandesVendeur() {
                 </div>
               ))}
               <div className="flex justify-between px-1 pt-1">
-                <span className="text-xs font-semibold" style={{ color: '#888780' }}>Total commande</span>
-                <span className="text-xs font-black" style={{ color: '#2C2C2A' }}>
+                <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Total commande</span>
+                <span className="text-xs font-black" style={{ color: 'var(--text-primary)' }}>
                   {total.toLocaleString()} F
                 </span>
               </div>
@@ -169,23 +169,23 @@ export default function CommandesVendeur() {
             {/* Zone validation (uniquement si pas encore collecté) */}
             {!collecte && (
               <div className="px-4 pb-4 flex flex-col gap-3"
-                style={{ borderTop: '1px solid #E8E6DF' }}>
+                style={{ borderTop: '1px solid var(--border)' }}>
                 <div className="pt-3" />
 
                 {/* Indicateur photo livreur */}
                 <div className="flex items-center gap-3 px-3 py-3 rounded-xl"
-                  style={{ background: cmd.photo_collecte ? '#E1F5EE' : '#F7F8F3' }}>
+                  style={{ background: cmd.photo_collecte ? '#E1F5EE' : 'var(--surface-alt)' }}>
                   <span className="text-xl flex-shrink-0">
                     {cmd.photo_collecte ? '📸' : '⏳'}
                   </span>
                   <div>
                     <div className="text-xs font-bold"
-                      style={{ color: cmd.photo_collecte ? '#0F6E56' : '#888780' }}>
+                      style={{ color: cmd.photo_collecte ? '#0F6E56' : 'var(--text-muted)' }}>
                       {cmd.photo_collecte
                         ? 'Photo de collecte prise par le livreur ✓'
                         : 'En attente de la photo du livreur…'}
                     </div>
-                    <div className="text-xs mt-0.5" style={{ color: '#888780' }}>
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                       {cmd.photo_collecte
                         ? 'Vous pouvez maintenant valider la remise'
                         : 'Le livreur doit photographier les articles'}
@@ -195,7 +195,7 @@ export default function CommandesVendeur() {
 
                 {/* Saisie code */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold" style={{ color: '#5F5E5A' }}>
+                  <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>
                     🔑 Code de vérification du livreur
                   </label>
                   <input
@@ -210,8 +210,8 @@ export default function CommandesVendeur() {
                     className="w-full px-4 py-3 rounded-xl text-sm font-black outline-none tracking-widest"
                     style={{
                       background:   '#FAFAF7',
-                      border:       `1.5px solid ${errCodes[cmd.id] ? '#E24B4A' : codeSaisi ? '#BA7517' : '#E8E6DF'}`,
-                      color:        '#2C2C2A',
+                      border:       `1.5px solid ${errCodes[cmd.id] ? '#E24B4A' : codeSaisi ? '#BA7517' : 'var(--border)'}`,
+                      color:        'var(--text-primary)',
                       fontFamily:   'monospace',
                       letterSpacing: '4px',
                     }}

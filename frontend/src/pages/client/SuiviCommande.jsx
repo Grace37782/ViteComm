@@ -10,7 +10,7 @@ export default function SuiviCommande() {
     : 'votre livreur'
 
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: '#F7F8F3', paddingBottom: 80 }}>
+    <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {/* HEADER */}
       <div style={{
@@ -38,7 +38,7 @@ export default function SuiviCommande() {
             padding: 24, textAlign: 'center',
             boxShadow: '0 4px 20px rgba(29,158,117,0.15)',
           }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#888780', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
               🔐 Code de vérification
             </div>
             <div style={{
@@ -47,7 +47,7 @@ export default function SuiviCommande() {
             }}>
               {code_verification}
             </div>
-            <div style={{ fontSize: 12, color: '#888780', marginTop: 4 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
               Communiquez ce code au livreur lors de la remise de vos articles.
             </div>
           </div>
@@ -57,7 +57,7 @@ export default function SuiviCommande() {
         {id_commande && (
           <div style={{
             background: '#fff', borderRadius: 20, padding: 16,
-            border: '1.5px solid #E8E6DF',
+            border: '1.5px solid var(--border)',
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
             <div style={{
@@ -66,8 +66,8 @@ export default function SuiviCommande() {
               fontSize: 20, flexShrink: 0,
             }}>📋</div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#888780' }}>Numéro de commande</div>
-              <div style={{ fontSize: 16, fontWeight: 900, color: '#2C2C2A' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>Numéro de commande</div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--text-primary)' }}>
                 #{String(id_commande).padStart(5, '0')}
               </div>
             </div>
@@ -75,8 +75,8 @@ export default function SuiviCommande() {
         )}
 
         {/* Étapes */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: 20, border: '1.5px solid #E8E6DF' }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#888780', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
+        <div style={{ background: '#fff', borderRadius: 20, padding: 20, border: '1.5px solid var(--border)' }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
             Prochaines étapes
           </div>
           {[
@@ -87,12 +87,12 @@ export default function SuiviCommande() {
             <div key={i} style={{ display: 'flex', gap: 12, marginBottom: i < 2 ? 16 : 0, alignItems: 'flex-start' }}>
               <div style={{
                 width: 40, height: 40, borderRadius: 12,
-                background: '#F7F8F3', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 18, flexShrink: 0,
               }}>{step.icon}</div>
               <div>
-                <div style={{ fontWeight: 800, fontSize: 13, color: '#2C2C2A' }}>{step.titre}</div>
-                <div style={{ fontSize: 12, color: '#888780', marginTop: 2 }}>{step.desc}</div>
+                <div style={{ fontWeight: 800, fontSize: 13, color: 'var(--text-primary)' }}>{step.titre}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{step.desc}</div>
               </div>
             </div>
           ))}

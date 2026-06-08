@@ -128,10 +128,10 @@ export default function Catalogue() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center" style={{ background: '#F7F8F3' }}>
+      <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
           <div className="text-4xl mb-3">⏳</div>
-          <div className="font-bold text-sm" style={{ color: '#888780' }}>Chargement…</div>
+          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Chargement…</div>
         </div>
       </div>
     )
@@ -139,10 +139,10 @@ export default function Catalogue() {
 
   if (!vendor) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center" style={{ background: '#F7F8F3' }}>
+      <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
           <div className="text-4xl mb-3">❌</div>
-          <div className="font-bold text-sm mb-4" style={{ color: '#888780' }}>Étal introuvable</div>
+          <div className="font-bold text-sm mb-4" style={{ color: 'var(--text-muted)' }}>Étal introuvable</div>
           <button onClick={() => navigate('/client/accueil')} className="text-sm font-bold cursor-pointer" style={{ color: '#1D9E75', background: 'none', border: 'none' }}>
             ← Retour à l'accueil
           </button>
@@ -152,7 +152,7 @@ export default function Catalogue() {
   }
 
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: '#F7F8F3', paddingBottom: 80 }}>
+    <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {/* ══ HEADER ══ */}
       <div
@@ -215,7 +215,7 @@ export default function Catalogue() {
 
       {/* ══ FILTRES CATÉGORIES ══ */}
       {categories.length > 0 && (
-        <div className="px-4 py-3 overflow-x-auto bg-white" style={{ borderBottom: '1px solid #E8E6DF' }}>
+        <div className="px-4 py-3 overflow-x-auto bg-white" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex gap-2" style={{ width: 'max-content' }}>
             {catList.map((cat) => (
               <button
@@ -223,9 +223,9 @@ export default function Catalogue() {
                 onClick={() => setCategorie(cat)}
                 className="px-4 py-2 rounded-full text-xs font-bold cursor-pointer whitespace-nowrap transition-all"
                 style={{
-                  background: categorie === cat ? '#1D9E75' : '#F7F8F3',
-                  color: categorie === cat ? '#fff' : '#5F5E5A',
-                  border: `1.5px solid ${categorie === cat ? '#1D9E75' : '#E8E6DF'}`,
+                  background: categorie === cat ? '#1D9E75' : 'var(--surface-alt)',
+                  color: categorie === cat ? '#fff' : 'var(--text-secondary)',
+                  border: `1.5px solid ${categorie === cat ? '#1D9E75' : 'var(--border)'}`,
                 }}
               >
                 {cat === 'Tout' ? '🏠 Tous' : `${CATEGORY_EMOJI[cat] || '📦'} ${cat}`}
@@ -240,7 +240,7 @@ export default function Catalogue() {
         {productsFiltered.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-5xl mb-3">🔍</div>
-            <p className="font-bold text-sm" style={{ color: '#888780' }}>
+            <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
               Aucun produit trouvé{recherche ? ` pour "${recherche}"` : ''}
             </p>
           </div>
@@ -254,13 +254,13 @@ export default function Catalogue() {
                 <div
                   key={prod.id_produit}
                   className="rounded-xl p-3 flex flex-col"
-                  style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}
+                  style={{ background: '#fff', border: '1.5px solid var(--border)' }}
                 >
                   {/* Emoji produit */}
                   <div className="text-4xl text-center mb-2">{productEmoji(prod.nom)}</div>
 
                   {/* Nom */}
-                  <div className="font-black text-xs mb-0.5 text-center" style={{ color: '#2C2C2A' }}>
+                  <div className="font-black text-xs mb-0.5 text-center" style={{ color: 'var(--text-primary)' }}>
                     {prod.nom}
                   </div>
 

@@ -22,7 +22,7 @@ const STATUS_LABELS = {
 }
 
 function getStatusConfig(statut) {
-  return STATUS_LABELS[statut] || { label: statut, color: '#888780', bg: '#F3F4F6' }
+  return STATUS_LABELS[statut] || { label: statut, color: 'var(--text-muted)', bg: '#F3F4F6' }
 }
 
 function copyCode(code) {
@@ -44,17 +44,17 @@ export default function MesCommandes() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F8F3' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
-          <div style={{ fontWeight: 700, color: '#888780', fontSize: 13 }}>Chargement de vos commandes…</div>
+          <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>Chargement de vos commandes…</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F7F8F3', fontFamily: 'sans-serif', paddingBottom: 80 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'sans-serif', paddingBottom: 80 }}>
 
       {/* HEADER */}
       <div style={{
@@ -81,10 +81,10 @@ export default function MesCommandes() {
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
         {orders.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', background: '#fff', borderRadius: 24, border: '1.5px solid #E8E6DF' }}>
+          <div style={{ textAlign: 'center', padding: '40px 20px', background: '#fff', borderRadius: 24, border: '1.5px solid var(--border)' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
-            <div style={{ fontWeight: 900, fontSize: 16, color: '#2C2C2A', marginBottom: 6 }}>Aucune commande</div>
-            <div style={{ fontSize: 13, color: '#888780', marginBottom: 20 }}>
+            <div style={{ fontWeight: 900, fontSize: 16, color: 'var(--text-primary)', marginBottom: 6 }}>Aucune commande</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
               Vous n'avez pas encore passé de commande.
             </div>
             <button
@@ -110,7 +110,7 @@ export default function MesCommandes() {
                 key={order.id_commande}
                 style={{
                   background: '#fff', borderRadius: 20,
-                  border: '1.5px solid #E8E6DF', overflow: 'hidden',
+                  border: '1.5px solid var(--border)', overflow: 'hidden',
                 }}
               >
                 {/* Status bar */}
@@ -120,7 +120,7 @@ export default function MesCommandes() {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 16 }}>📋</span>
-                    <span style={{ fontWeight: 900, fontSize: 13, color: '#2C2C2A' }}>
+                    <span style={{ fontWeight: 900, fontSize: 13, color: 'var(--text-primary)' }}>
                       #{String(order.id_commande).padStart(5, '0')}
                     </span>
                   </div>
@@ -137,12 +137,12 @@ export default function MesCommandes() {
                 <div style={{ padding: '14px 16px' }}>
                   {/* Code verification */}
                   <div style={{
-                    background: '#F7F8F3', borderRadius: 14,
+                    background: 'var(--surface-alt)', borderRadius: 14,
                     padding: '12px 14px', marginBottom: 12,
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   }}>
                     <div>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: '#888780', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                         🔐 Code de vérification
                       </div>
                       <div style={{
@@ -160,10 +160,10 @@ export default function MesCommandes() {
                       }}
                       style={{
                         background: copiedId === order.id_commande ? '#D1FAE5' : '#fff',
-                        border: `1.5px solid ${copiedId === order.id_commande ? '#1D9E75' : '#E8E6DF'}`,
+                        border: `1.5px solid ${copiedId === order.id_commande ? '#1D9E75' : 'var(--border)'}`,
                         borderRadius: 12, padding: '10px 14px',
                         fontSize: 12, fontWeight: 800, cursor: 'pointer',
-                        color: copiedId === order.id_commande ? '#1D9E75' : '#5F5E5A',
+                        color: copiedId === order.id_commande ? '#1D9E75' : 'var(--text-secondary)',
                         display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
                       }}
                     >
@@ -174,14 +174,14 @@ export default function MesCommandes() {
                   {/* Details */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, color: '#888780' }}>Date</span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#2C2C2A' }}>{formatDate(order.date_creation)}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Date</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{formatDate(order.date_creation)}</span>
                     </div>
 
                     {livreurNom && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: 12, color: '#888780' }}>🏍️ Livreur</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#2C2C2A' }}>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>🏍️ Livreur</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
                           {livreurNom}
                           {livreur?.utilisateur?.telephone && ` · ${livreur.utilisateur.telephone}`}
                         </span>
@@ -189,14 +189,14 @@ export default function MesCommandes() {
                     )}
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, color: '#888780' }}>Articles</span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#2C2C2A' }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Articles</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
                         {order.detailsCommande?.reduce((s, d) => s + d.quantite_commandee, 0)} produit(s)
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid #E8E6DF' }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: '#2C2C2A' }}>Total</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>Total</span>
                       <span style={{ fontSize: 14, fontWeight: 900, color: '#1D9E75' }}>
                         {formatPrice(order.total_marchandises + order.frais_livraison)}
                       </span>
@@ -206,7 +206,7 @@ export default function MesCommandes() {
 
                 {/* Footer action */}
                 <div style={{
-                  borderTop: '1px solid #E8E6DF', padding: '10px 16px',
+                  borderTop: '1px solid var(--border)', padding: '10px 16px',
                   display: 'flex', justifyContent: 'flex-end',
                 }}>
                   <button

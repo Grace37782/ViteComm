@@ -60,7 +60,7 @@ export default function Inspection() {
   }
 
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: '#F7F8F3', paddingBottom: 80 }}>
+    <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {/* ══ HEADER ══ */}
       <div
@@ -100,17 +100,17 @@ export default function Inspection() {
               <div key={a.id} className="rounded-2xl overflow-hidden"
                 style={{
                   background: '#fff',
-                  border: `2px solid ${st === 'accepte' ? '#9FE1CB' : st === 'rejete' ? '#F5C4B3' : '#E8E6DF'}`,
+                  border: `2px solid ${st === 'accepte' ? '#9FE1CB' : st === 'rejete' ? '#F5C4B3' : 'var(--border)'}`,
                   boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 }}>
 
                 {/* Infos article */}
                 <div className="flex items-center gap-3 px-4 py-3">
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-                    style={{ background: '#F7F8F3' }}>{a.emoji}</div>
+                    style={{ background: 'var(--surface-alt)' }}>{a.emoji}</div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>{a.nom}</div>
-                    <div className="text-xs" style={{ color: '#888780' }}>
+                    <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{a.nom}</div>
+                    <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                       {a.qte} {a.unite} · {(a.prix * a.qte).toLocaleString()} F · {a.etalNom}
                     </div>
                   </div>
@@ -121,18 +121,18 @@ export default function Inspection() {
                   <button onClick={() => setStatut(a.id, 'accepte')}
                     className="flex-1 py-2.5 rounded-xl text-sm font-black cursor-pointer transition-all"
                     style={{
-                      background: st === 'accepte' ? '#1D9E75' : '#F7F8F3',
-                      color:      st === 'accepte' ? '#fff'    : '#5F5E5A',
-                      border: `1.5px solid ${st === 'accepte' ? '#1D9E75' : '#E8E6DF'}`,
+                      background: st === 'accepte' ? '#1D9E75' : 'var(--surface-alt)',
+                      color:      st === 'accepte' ? '#fff'    : 'var(--text-secondary)',
+                      border: `1.5px solid ${st === 'accepte' ? '#1D9E75' : 'var(--border)'}`,
                     }}>
                     {st === 'accepte' ? '✓ Accepté' : '✓ Accepter'}
                   </button>
                   <button onClick={() => setStatut(a.id, 'rejete')}
                     className="flex-1 py-2.5 rounded-xl text-sm font-black cursor-pointer transition-all"
                     style={{
-                      background: st === 'rejete' ? '#D85A30' : '#F7F8F3',
-                      color:      st === 'rejete' ? '#fff'    : '#5F5E5A',
-                      border: `1.5px solid ${st === 'rejete' ? '#D85A30' : '#E8E6DF'}`,
+                      background: st === 'rejete' ? '#D85A30' : 'var(--surface-alt)',
+                      color:      st === 'rejete' ? '#fff'    : 'var(--text-secondary)',
+                      border: `1.5px solid ${st === 'rejete' ? '#D85A30' : 'var(--border)'}`,
                     }}>
                     {st === 'rejete' ? '✗ Rejeté' : '✗ Rejeter'}
                   </button>
@@ -150,7 +150,7 @@ export default function Inspection() {
                       style={{
                         background: '#FAECE7',
                         border: `1.5px solid ${motifs[a.id]?.trim() ? '#F5C4B3' : '#E24B4A'}`,
-                        color: '#2C2C2A',
+                        color: 'var(--text-primary)',
                         fontFamily: 'inherit',
                       }}
                     />
@@ -165,12 +165,12 @@ export default function Inspection() {
         </div>
 
         {/* ══ PREUVES PHOTOS (optionnel) ══ */}
-        <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+        <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="text-lg">📸</span>
-              <h3 className="font-black text-sm" style={{ color: '#2C2C2A' }}>
-                Photos de preuve <span style={{ color: '#888780', fontWeight: 400 }}>(optionnel)</span>
+              <h3 className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
+                Photos de preuve <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optionnel)</span>
               </h3>
             </div>
             <button onClick={() => fileRef.current?.click()}
@@ -183,8 +183,8 @@ export default function Inspection() {
           </div>
 
           {photos.length === 0 ? (
-            <div className="rounded-xl py-4 text-center" style={{ background: '#F7F8F3' }}>
-              <p className="text-xs" style={{ color: '#888780' }}>
+            <div className="rounded-xl py-4 text-center" style={{ background: 'var(--surface-alt)' }}>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 Ajoutez des photos si vous contestez la qualité des produits
               </p>
             </div>
@@ -204,21 +204,21 @@ export default function Inspection() {
           <div className="rounded-2xl p-4"
             style={{ background: tousRejetes ? '#FAECE7' : '#E1F5EE',
                      border: `1.5px solid ${tousRejetes ? '#F5C4B3' : '#9FE1CB'}` }}>
-            <h3 className="font-black text-sm mb-3" style={{ color: '#2C2C2A' }}>
+            <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>
               Récapitulatif de paiement
             </h3>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#5F5E5A' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>
                   Articles acceptés ({articlesAcceptes.length}/{COMMANDE.articles.length})
                 </span>
-                <span className="font-semibold" style={{ color: '#2C2C2A' }}>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {totalMarchandises.toLocaleString()} F
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#5F5E5A' }}>Frais de livraison</span>
-                <span className="font-semibold" style={{ color: '#2C2C2A' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Frais de livraison</span>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {COMMANDE.frais_livraison.toLocaleString()} F
                 </span>
               </div>
@@ -234,7 +234,7 @@ export default function Inspection() {
               )}
               <div className="flex justify-between pt-2 mt-1"
                 style={{ borderTop: `1.5px solid ${tousRejetes ? '#F5C4B3' : '#9FE1CB'}` }}>
-                <span className="font-black text-base" style={{ color: '#2C2C2A' }}>
+                <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>
                   {tousRejetes ? 'Frais de retour uniquement' : 'Total à payer maintenant'}
                 </span>
                 <span className="font-black text-base"

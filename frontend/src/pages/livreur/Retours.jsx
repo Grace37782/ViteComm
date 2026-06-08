@@ -60,8 +60,8 @@ export default function RetourLivreur() {
           { label: 'En cours', value: enCours, accent: '#1D9E75' },
         ].map((s) => (
           <div key={s.label} className="rounded-2xl p-3"
-            style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
-            <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: '#888780' }}>{s.label}</div>
+            style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+            <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
             <div className="font-black text-xl" style={{ color: s.accent }}>{s.value}</div>
           </div>
         ))}
@@ -71,40 +71,40 @@ export default function RetourLivreur() {
       {retours.map((retour) => {
         const style = STATUT_STYLE[retour.statut]
         return (
-          <div key={retour.id} className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+          <div key={retour.id} className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
             <div className="flex items-center justify-between gap-3 mb-3">
               <div>
-                <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>Retour #{retour.id}</div>
-                <div className="text-xs" style={{ color: '#888780' }}>Commande #{retour.commandeId} · {retour.client}</div>
+                <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Retour #{retour.id}</div>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Commande #{retour.commandeId} · {retour.client}</div>
               </div>
               <span className="rounded-2xl px-3 py-1 text-[11px] font-bold" style={{ background: style.bg, color: style.color }}>
                 {style.label}
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: '#5F5E5A' }}>
-              <div className="rounded-xl p-3" style={{ background: '#F7F8F3', border: '1.5px solid #E8E6DF' }}>
+            <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
+              <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="font-semibold">Point de collecte</div>
                 <div>{retour.origine}</div>
               </div>
-              <div className="rounded-xl p-3" style={{ background: '#F7F8F3', border: '1.5px solid #E8E6DF' }}>
+              <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="font-semibold">Destination</div>
                 <div>{retour.destination}</div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: '#5F5E5A' }}>
-              <div className="rounded-xl p-3" style={{ background: '#F7F8F3', border: '1.5px solid #E8E6DF' }}>
+            <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
+              <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="font-semibold">Articles</div>
                 <div>{retour.qte} article{retour.qte > 1 ? 's' : ''}</div>
               </div>
-              <div className="rounded-xl p-3" style={{ background: '#F7F8F3', border: '1.5px solid #E8E6DF' }}>
+              <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="font-semibold">Frais</div>
                 <div>{retour.montant.toLocaleString()} F</div>
               </div>
             </div>
 
-            <div className="text-sm mb-3" style={{ color: '#2C2C2A' }}>Motif: {retour.motif}</div>
+            <div className="text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Motif: {retour.motif}</div>
             <button onClick={() => changerStatut(retour.id)}
               className="w-full rounded-2xl py-3 font-black text-white"
               style={{ background: retour.statut === 'termine' ? '#888780' : '#D85A30', border: 'none' }}

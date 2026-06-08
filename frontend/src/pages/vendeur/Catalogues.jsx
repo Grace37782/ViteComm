@@ -40,8 +40,8 @@ function FormProduit({ initial, onSave, onCancel }) {
     onSave({ ...form, prix: +form.prix, stock: +form.stock })
   }
 
-  const base = { background: '#FAFAF7', border: '1.5px solid #E8E6DF', color: '#2C2C2A' }
-  const err  = { background: '#FAECE7', border: '1.5px solid #E24B4A', color: '#2C2C2A' }
+  const base = { background: '#FAFAF7', border: '1.5px solid var(--border)', color: 'var(--text-primary)' }
+  const err  = { background: '#FAECE7', border: '1.5px solid #E24B4A', color: 'var(--text-primary)' }
 
   return (
     <div className="rounded-2xl p-4 flex flex-col gap-3"
@@ -49,14 +49,14 @@ function FormProduit({ initial, onSave, onCancel }) {
 
       {/* Emoji */}
       <div>
-        <div className="text-xs font-bold mb-2" style={{ color: '#5F5E5A' }}>Icône du produit</div>
+        <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>Icône du produit</div>
         <div className="flex flex-wrap gap-2">
           {EMOJIS.map((e) => (
             <button key={e} type="button" onClick={() => set('emoji', e)}
               className="w-9 h-9 rounded-xl text-xl cursor-pointer transition-all"
               style={{
-                background:  form.emoji === e ? '#FAEEDA' : '#F7F8F3',
-                border:      `1.5px solid ${form.emoji === e ? '#BA7517' : '#E8E6DF'}`,
+                background:  form.emoji === e ? '#FAEEDA' : 'var(--surface-alt)',
+                border:      `1.5px solid ${form.emoji === e ? '#BA7517' : 'var(--border)'}`,
                 transform:   form.emoji === e ? 'scale(1.1)' : 'none',
               }}>
               {e}
@@ -67,7 +67,7 @@ function FormProduit({ initial, onSave, onCancel }) {
 
       {/* Nom */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-bold" style={{ color: '#5F5E5A' }}>Nom du produit *</label>
+        <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Nom du produit *</label>
         <input type="text" placeholder="Ex: Tomates fraîches"
           value={form.nom} onChange={(e) => set('nom', e.target.value)}
           className="px-4 py-3 rounded-xl text-sm outline-none"
@@ -77,7 +77,7 @@ function FormProduit({ initial, onSave, onCancel }) {
 
       {/* Description */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-bold" style={{ color: '#5F5E5A' }}>Description *</label>
+        <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Description *</label>
         <input type="text" placeholder="Courte description du produit"
           value={form.description} onChange={(e) => set('description', e.target.value)}
           className="px-4 py-3 rounded-xl text-sm outline-none"
@@ -88,7 +88,7 @@ function FormProduit({ initial, onSave, onCancel }) {
       {/* Prix / Stock / Unité */}
       <div className="grid grid-cols-3 gap-2">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold" style={{ color: '#5F5E5A' }}>Prix (F) *</label>
+          <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Prix (F) *</label>
           <input type="number" placeholder="250" value={form.prix} min={1}
             onChange={(e) => set('prix', e.target.value)}
             className="px-3 py-3 rounded-xl text-sm outline-none"
@@ -96,7 +96,7 @@ function FormProduit({ initial, onSave, onCancel }) {
           {erreurs.prix && <span className="text-xs" style={{ color: '#E24B4A' }}>⚠ {erreurs.prix}</span>}
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold" style={{ color: '#5F5E5A' }}>Stock *</label>
+          <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Stock *</label>
           <input type="number" placeholder="10" value={form.stock} min={0}
             onChange={(e) => set('stock', e.target.value)}
             className="px-3 py-3 rounded-xl text-sm outline-none"
@@ -104,7 +104,7 @@ function FormProduit({ initial, onSave, onCancel }) {
           {erreurs.stock && <span className="text-xs" style={{ color: '#E24B4A' }}>⚠ {erreurs.stock}</span>}
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold" style={{ color: '#5F5E5A' }}>Unité</label>
+          <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Unité</label>
           <select value={form.unite} onChange={(e) => set('unite', e.target.value)}
             className="px-3 py-3 rounded-xl text-sm outline-none cursor-pointer"
             style={base}>
@@ -122,7 +122,7 @@ function FormProduit({ initial, onSave, onCancel }) {
         </button>
         <button onClick={onCancel}
           className="px-4 py-3 rounded-xl text-sm font-semibold cursor-pointer"
-          style={{ background: '#F7F8F3', color: '#5F5E5A', border: '1.5px solid #E8E6DF' }}>
+          style={{ background: 'var(--surface-alt)', color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}>
           Annuler
         </button>
       </div>
@@ -168,8 +168,8 @@ export default function CatalogueVendeur() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
-            <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>Mon catalogue</div>
-            <div className="text-xs" style={{ color: '#888780' }}>{produits.length} produits</div>
+            <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Mon catalogue</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{produits.length} produits</div>
           </div>
           <button onClick={() => setMode('add')}
             className="px-4 py-2 rounded-full text-sm font-black cursor-pointer flex-shrink-0"
@@ -178,15 +178,15 @@ export default function CatalogueVendeur() {
           </button>
         </div>
         <div className="flex items-center gap-2 px-4 py-3 rounded-2xl"
-          style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+          style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
           <span className="text-base">🔍</span>
           <input type="text" placeholder="Rechercher un produit…"
             value={search} onChange={(e) => setSearch(e.target.value)}
             className="flex-1 bg-transparent outline-none text-sm font-medium"
-            style={{ color: '#2C2C2A' }} />
+            style={{ color: 'var(--text-primary)' }} />
           {search && (
             <button onClick={() => setSearch('')}
-              style={{ background: 'none', border: 'none', color: '#888780', cursor: 'pointer' }}>
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
               ✕
             </button>
           )}
@@ -202,7 +202,7 @@ export default function CatalogueVendeur() {
       {filtres.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-5xl mb-3">📦</div>
-          <p className="font-bold text-sm" style={{ color: '#888780' }}>
+          <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
             {search ? `Aucun produit pour "${search}"` : 'Aucun produit. Ajoutez-en un !'}
           </p>
         </div>
@@ -216,23 +216,23 @@ export default function CatalogueVendeur() {
               <div className="rounded-2xl p-4 transition-all"
                 style={{
                   background: '#fff',
-                  border: `1.5px solid ${p.stock <= 2 ? '#FAC775' : '#E8E6DF'}`,
+                   border: `1.5px solid ${p.stock <= 2 ? '#FAC775' : 'var(--border)'}`,
                   boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 }}>
                 <div className="flex items-start gap-3">
 
                   {/* Emoji */}
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
-                    style={{ background: p.stock <= 2 ? '#FAEEDA' : '#F7F8F3' }}>
+                    style={{ background: p.stock <= 2 ? '#FAEEDA' : 'var(--surface-alt)' }}>
                     {p.emoji}
                   </div>
 
                   {/* Infos */}
                   <div className="flex-1 min-w-0">
-                    <div className="font-black text-sm mb-0.5" style={{ color: '#2C2C2A' }}>
+                    <div className="font-black text-sm mb-0.5" style={{ color: 'var(--text-primary)' }}>
                       {p.nom}
                     </div>
-                    <div className="text-xs mb-2" style={{ color: '#888780' }}>
+                    <div className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
                       {p.description}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -282,7 +282,7 @@ export default function CatalogueVendeur() {
                   </button>
                   <button onClick={() => setConfirmSup(null)}
                     className="flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer"
-                    style={{ background: '#fff', color: '#5F5E5A', border: '1.5px solid #E8E6DF' }}>
+                    style={{ background: '#fff', color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}>
                     Annuler
                   </button>
                 </div>

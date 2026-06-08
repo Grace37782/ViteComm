@@ -75,14 +75,14 @@ export default function RetourVendeur() {
 
       {/* Résumé */}
       <div className="rounded-2xl p-4"
-        style={{ background: '#fff', border: '1.5px solid #E8E6DF', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+        style={{ background: '#fff', border: '1.5px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <div className="text-xs font-semibold" style={{ color: '#888780' }}>Retours</div>
-            <div className="font-black text-2xl" style={{ color: '#2C2C2A' }}>{totalRetours}</div>
+            <div className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Retours</div>
+            <div className="font-black text-2xl" style={{ color: 'var(--text-primary)' }}>{totalRetours}</div>
           </div>
           <div>
-            <div className="text-xs font-semibold" style={{ color: '#888780' }}>Pertes estimées</div>
+            <div className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Pertes estimées</div>
             <div className="font-black text-2xl" style={{ color: '#D85A30' }}>{totalPertes.toLocaleString()} F</div>
           </div>
         </div>
@@ -99,8 +99,8 @@ export default function RetourVendeur() {
             className="px-3 py-2 rounded-full text-xs font-bold cursor-pointer"
             style={{
               background: filtre === item.id ? '#BA7517' : '#fff',
-              color: filtre === item.id ? '#fff' : '#5F5E5A',
-              border: `1.5px solid ${filtre === item.id ? '#BA7517' : '#E8E6DF'}`,
+              color: filtre === item.id ? '#fff' : 'var(--text-secondary)',
+              border: `1.5px solid ${filtre === item.id ? '#BA7517' : 'var(--border)'}`,
             }}>
             {item.label}
           </button>
@@ -108,9 +108,9 @@ export default function RetourVendeur() {
       </div>
 
       {liste.length === 0 ? (
-        <div className="text-center py-16 rounded-3xl" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+        <div className="text-center py-16 rounded-3xl" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
           <div className="text-5xl mb-3">✔️</div>
-          <p className="font-black text-sm" style={{ color: '#888780' }}>
+          <p className="font-black text-sm" style={{ color: 'var(--text-muted)' }}>
             Aucun retour à afficher dans cette catégorie.
           </p>
         </div>
@@ -120,13 +120,13 @@ export default function RetourVendeur() {
             const st = STATUT_STYLE[retour.statut]
             return (
               <div key={retour.id} className="rounded-3xl overflow-hidden"
-                style={{ background: '#fff', border: '1.5px solid #E8E6DF', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                style={{ background: '#fff', border: '1.5px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
 
                 <div className="flex items-center justify-between gap-3 px-4 py-3"
-                  style={{ background: '#F7F8F3', borderBottom: '1px solid #E8E6DF' }}>
+                  style={{ background: 'var(--surface-alt)', borderBottom: '1px solid var(--border)' }}>
                   <div>
-                    <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>Retour #{retour.id}</div>
-                    <div className="text-xs mt-0.5" style={{ color: '#888780' }}>
+                    <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Retour #{retour.id}</div>
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                       Commande #{retour.commandeId} · {retour.date}
                     </div>
                   </div>
@@ -138,37 +138,37 @@ export default function RetourVendeur() {
 
                 <div className="px-4 py-3 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid #E8E6DF' }}>
-                      <div className="text-xs" style={{ color: '#5F5E5A' }}>Produit</div>
-                      <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>{retour.produit}</div>
+                    <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid var(--border)' }}>
+                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Produit</div>
+                      <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{retour.produit}</div>
                     </div>
-                    <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid #E8E6DF' }}>
-                      <div className="text-xs" style={{ color: '#5F5E5A' }}>Quantité</div>
-                      <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>
+                    <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid var(--border)' }}>
+                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Quantité</div>
+                      <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
                         {retour.qte} {retour.unite}
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid #E8E6DF' }}>
-                    <div className="text-xs" style={{ color: '#5F5E5A' }}>Motif du rejet</div>
-                    <div className="text-sm font-semibold" style={{ color: '#2C2C2A' }}>{retour.motif}</div>
+                  <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid var(--border)' }}>
+                    <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Motif du rejet</div>
+                    <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{retour.motif}</div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid #E8E6DF' }}>
-                      <div className="text-xs" style={{ color: '#5F5E5A' }}>Client</div>
-                      <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>{retour.client}</div>
+                    <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid var(--border)' }}>
+                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Client</div>
+                      <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{retour.client}</div>
                     </div>
-                    <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid #E8E6DF' }}>
-                      <div className="text-xs" style={{ color: '#5F5E5A' }}>Lieu de retour</div>
-                      <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>{retour.lieu}</div>
+                    <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid var(--border)' }}>
+                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Lieu de retour</div>
+                      <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{retour.lieu}</div>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <div className="text-xs" style={{ color: '#5F5E5A' }}>Perte estimée</div>
+                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Perte estimée</div>
                       <div className="font-black text-sm" style={{ color: '#D85A30' }}>{retour.perte.toLocaleString()} F</div>
                     </div>
                     {retour.statut === 'a_recuperer' ? (
