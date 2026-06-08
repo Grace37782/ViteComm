@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTheme } from '../../context/ThemeContext'
 
 /* ── Données statiques (remplacer par API) ───────────────── */
 const COMMANDES = [
@@ -40,18 +41,20 @@ const COMMANDES = [
   },
 ]
 
-const STATUT_STYLE = {
-  en_attente: { label: 'En attente livreur', bg: '#FAEEDA', color: '#854F0B' },
-  code_saisi: { label: 'Code en cours',      bg: '#E6F1FB', color: '#185FA5' },
-  collecte:   { label: 'Collecté ✓',         bg: '#E1F5EE', color: '#0F6E56' },
-}
-
 export default function CommandesVendeur() {
   const navigate = useNavigate()
-  const [codes,    setCodes]    = useState({})   // { cmdId: valeur saisie }
-  const [confirmes, setConfirmes] = useState({}) // { cmdId: true }
-  const [errCodes, setErrCodes] = useState({})   // { cmdId: message erreur }
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
+  const [codes,    setCodes]    = useState({})
+  const [confirmes, setConfirmes] = useState({})
+  const [errCodes, setErrCodes] = useState({})
   const [filtre,   setFiltre]   = useState('tous')
+
+  const STATUT_STYLE = {
+    en_attente: { label: 'En attente livreur', bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
+    code_saisi: { label: 'Code en cours',      bg: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5' },
+    collecte:   { label: 'Collecté ✓',         bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
+  }
 
   const filtres = {
     tous:       COMMANDES,
@@ -77,7 +80,6 @@ export default function CommandesVendeur() {
     }
     setErrCodes((p) => ({ ...p, [cmd.id]: '' }))
     setConfirmes((p) => ({ ...p, [cmd.id]: true }))
-    // TODO: PUT /api/vendeur/commandes/:id/confirmer-collecte { code }
   }
 
   return (
@@ -93,7 +95,7 @@ export default function CommandesVendeur() {
           <button key={f.id} onClick={() => setFiltre(f.id)}
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer"
             style={{
-              background:  filtre === f.id ? '#BA7517' : '#fff',
+              background:  filtre === f.id ? '#BA7517' : 'var(--surface)',
               color:       filtre === f.id ? '#fff' : 'var(--text-secondary)',
               border:      `1.5px solid ${filtre === f.id ? '#BA7517' : 'var(--border)'}`,
             }}>
@@ -123,13 +125,16 @@ export default function CommandesVendeur() {
           <div key={cmd.id} className="rounded-2xl overflow-hidden"
             style={{
               background: 'var(--surface)',
-              border: `1.5px solid ${collecte ? '#9FE1CB' : 'var(--border)'}`,
+              border: `1.5px solid ${collecte ? (isDark ? '#2DC491' : '#9FE1CB') : 'var(--border)'}`,
               boxShadow: 'var(--shadow)',
             }}>
 
             {/* En-tête commande */}
             <div className="flex items-center justify-between px-4 py-3"
-              style={{ background: collecte ? '#E1F5EE' : 'var(--surface-alt)', borderBottom: '1px solid var(--border)' }}>
+              style={{
+                background: collecte ? (isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE') : 'var(--surface-alt)',
+                borderBottom: '1px solid var(--border)',
+              }}>
               <div>
                 <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
                   Commande #{cmd.id}
@@ -174,13 +179,13 @@ export default function CommandesVendeur() {
 
                 {/* Indicateur photo livreur */}
                 <div className="flex items-center gap-3 px-3 py-3 rounded-xl"
-                  style={{ background: cmd.photo_collecte ? '#E1F5EE' : 'var(--surface-alt)' }}>
+                  style={{ background: cmd.photo_collecte ? (isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE') : 'var(--surface-alt)' }}>
                   <span className="text-xl flex-shrink-0">
                     {cmd.photo_collecte ? '📸' : '⏳'}
                   </span>
                   <div>
                     <div className="text-xs font-bold"
-                      style={{ color: cmd.photo_collecte ? '#0F6E56' : 'var(--text-muted)' }}>
+                      style={{ color: cmd.photo_collecte ? (isDark ? '#34D399' : '#0F6E56') : 'var(--text-muted)' }}>
                       {cmd.photo_collecte
                         ? 'Photo de collecte prise par le livreur ✓'
                         : 'En attente de la photo du livreur…'}
@@ -226,10 +231,11 @@ export default function CommandesVendeur() {
                 {/* Bouton confirmer */}
                 <button
                   onClick={() => confirmerRemise(cmd)}
-                  className="w-full py-3.5 rounded-xl text-white text-sm font-black transition-all"
+                  className="w-full py-3.5 rounded-xl text-sm font-black transition-all"
                   style={{
-                    background: peutValider ? '#BA7517' : '#D3D1C7',
+                    background: peutValider ? '#BA7517' : (isDark ? 'var(--border)' : '#D3D1C7'),
                     border:     'none',
+                    color:      peutValider ? '#fff' : (isDark ? 'var(--text-muted)' : '#7A7972'),
                     cursor:     peutValider ? 'pointer' : 'not-allowed',
                     boxShadow:  peutValider ? '0 4px 16px rgba(186,117,23,0.3)' : 'none',
                   }}>
@@ -246,9 +252,9 @@ export default function CommandesVendeur() {
             {collecte && (
               <div className="px-4 pb-4 pt-2">
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
-                  style={{ background: '#E1F5EE' }}>
+                  style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
                   <span className="text-lg">✅</span>
-                  <span className="text-xs font-black" style={{ color: '#0F6E56' }}>
+                  <span className="text-xs font-black" style={{ color: isDark ? '#34D399' : '#0F6E56' }}>
                     Remise confirmée — Articles collectés par le livreur
                   </span>
                 </div>
