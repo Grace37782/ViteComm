@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useTheme } from '../../context/ThemeContext'
 
 /* ── Données statiques (remplacer par API) ───────────────── */
 const VENDEUR = {
@@ -31,14 +32,16 @@ const COMMANDES_RECENTES = [
   { id: 1039, heure: 'Hier',  articles: 4, total: 2200, statut: 'livre'      },
 ]
 
-const STATUT_STYLE = {
-  en_attente: { label: 'En attente', bg: '#FAEEDA', color: '#854F0B' },
-  collecte:   { label: 'Collecté',   bg: '#E1F5EE', color: '#0F6E56' },
-  livre:      { label: 'Livré',      bg: '#E6F1FB', color: '#185FA5' },
-}
-
 export default function DashboardVendeur() {
   const navigate = useNavigate()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
+
+  const STATUT_STYLE = {
+    en_attente: { label: 'En attente', bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
+    collecte:   { label: 'Collecté',   bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
+    livre:      { label: 'Livré',      bg: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5' },
+  }
 
   return (
     <div className="px-4 py-4 flex flex-col gap-4">
@@ -77,9 +80,9 @@ export default function DashboardVendeur() {
         <div className="grid grid-cols-2 gap-3">
           {[
             { label: 'Revenu brut',     val: FINANCES.revenu_brut,    color: 'var(--text-primary)', bg: 'var(--surface)',    border: 'var(--border)' },
-            { label: 'Gains nets',      val: FINANCES.gains_nets,     color: '#0F6E56', bg: '#E1F5EE', border: '#9FE1CB' },
-            { label: 'Commission 0,6%', val: -FINANCES.commission,    color: '#D85A30', bg: '#FAECE7', border: '#F5C4B3' },
-            { label: 'Pertes rejets',   val: -FINANCES.pertes_rejets, color: '#D85A30', bg: '#FAECE7', border: '#F5C4B3' },
+            { label: 'Gains nets',      val: FINANCES.gains_nets,     color: isDark ? '#2DC491' : '#0F6E56', bg: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', border: isDark ? '#2DC491' : '#9FE1CB' },
+            { label: 'Commission 0,6%', val: -FINANCES.commission,    color: isDark ? '#E87D55' : '#D85A30', bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3' },
+            { label: 'Pertes rejets',   val: -FINANCES.pertes_rejets, color: isDark ? '#E87D55' : '#D85A30', bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3' },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl p-4"
               style={{ background: s.bg, border: `1.5px solid ${s.border}` }}>
@@ -97,19 +100,22 @@ export default function DashboardVendeur() {
       {/* ══ ALERTES STOCK ══ */}
       {ALERTES_STOCK.length > 0 && (
         <div className="rounded-2xl p-4"
-          style={{ background: '#FAEEDA', border: '1.5px solid #FAC775' }}>
+          style={{
+            background: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA',
+            border: `1.5px solid ${isDark ? '#BA7517' : '#FAC775'}`,
+          }}>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-lg">⚠️</span>
-            <h3 className="font-black text-sm" style={{ color: '#854F0B' }}>
+            <h3 className="font-black text-sm" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>
               Stock faible — action requise
             </h3>
           </div>
           <div className="flex flex-col gap-2 mb-3">
             {ALERTES_STOCK.map((a) => (
               <div key={a.id} className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.55)' }}>
+                style={{ background: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.55)' }}>
                 <span className="text-xl">{a.emoji}</span>
-                <span className="text-sm font-semibold flex-1" style={{ color: '#854F0B' }}>
+                <span className="text-sm font-semibold flex-1" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>
                   {a.nom}
                 </span>
                 <span className="font-black text-xs px-2.5 py-1 rounded-full"
