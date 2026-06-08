@@ -82,10 +82,10 @@ export default function Footer() {
       {/* Decorative top gradient */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#1D9E75] via-[#BA7517] to-[#D85A30]" />
 
-      <div className="max-w-6xl mx-auto px-6 pt-10 pb-6">
+      <div className="max-w-5xl mx-auto px-5 pt-8 pb-5">
 
         {/* ── Top section: Brand + Links + Role-specific third column ── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
 
           {/* Brand */}
           <div>
@@ -97,11 +97,11 @@ export default function Footer() {
                 V
               </div>
               <div>
-                <div className="text-lg font-black" style={{ color: 'var(--text-primary)' }}>ViteComm</div>
-                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Marché en ligne · Cotonou</div>
+                <div className="text-base font-black" style={{ color: 'var(--text-primary)' }}>ViteComm</div>
+                <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Marché en ligne · Cotonou</div>
               </div>
             </div>
-            <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--text-secondary)' }}>
               Commandez à Dantokpa, Missèbo et Akpakpa.
               Livraison rapide par zemidjan, paiement à la livraison.
             </p>
@@ -116,8 +116,8 @@ export default function Footer() {
 
           {/* Quick Links — role-specific */}
           <div>
-            <h4 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}>{nav.title}</h4>
-            <div className="flex flex-col gap-2">
+            <h4 className="text-xs font-black mb-3 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{nav.title}</h4>
+            <div className="flex flex-col gap-1.5">
               {nav.links.map(link => (
                 link.path ? (
                   <button key={link.label} onClick={() => navigate(link.path)}
@@ -144,13 +144,13 @@ export default function Footer() {
           <div>
             {!user ? (
               <>
-                <h4 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}>Rejoignez ViteComm</h4>
-                <div className="flex flex-col gap-2">
+                <h4 className="text-xs font-black mb-3 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Rejoignez ViteComm</h4>
+                <div className="flex flex-col gap-1.5">
                   {ROLE_CARDS.map(card => (
                     <button key={card.role} onClick={() => navigate(`/register?role=${card.role}`)}
-                      className="flex items-center gap-3 p-3 rounded-xl text-left cursor-pointer"
+                      className="flex items-center gap-2.5 p-2.5 rounded-xl text-left cursor-pointer"
                       style={{ background: card.bg, border: `1px solid ${card.border}` }}>
-                      <span className="text-xl">{card.emoji}</span>
+                      <span className="text-lg">{card.emoji}</span>
                       <div>
                         <div className="text-xs font-black" style={{ color: card.color }}>{card.label}</div>
                         <div className="text-[11px]" style={{ color: card.color, opacity: 0.7 }}>{card.desc}</div>
@@ -161,8 +161,8 @@ export default function Footer() {
               </>
             ) : (
               <>
-                <h4 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}>À propos</h4>
-                <div className="flex flex-col gap-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <h4 className="text-xs font-black mb-3 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>À propos</h4>
+                <div className="flex flex-col gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                   <p>Marketplace alimentaire connectant marchands, clients et livreurs à Cotonou.</p>
                   <div className="flex flex-col gap-1.5">
                     <a href="mailto:support@vitecomm.bj" className="text-xs font-medium"
@@ -180,7 +180,7 @@ export default function Footer() {
         </div>
 
         {/* ── Divider ── */}
-        <div className="h-px mb-6" style={{ background: 'var(--border)' }} />
+        <div className="h-px mb-5" style={{ background: 'var(--border)' }} />
 
         {/* ── Bottom section: Theme toggle + Copyright ── */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
