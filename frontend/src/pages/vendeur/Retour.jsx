@@ -1,59 +1,34 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
-
-const RETOURS_INIT = [
-  {
-    id: 501,
-    date: '07 juin 2026',
-    commandeId: 1042,
-    produit: 'Oignons rouges',
-    qte: 2,
-    unite: 'kg',
-    motif: 'Légumes abîmés à la livraison',
-    client: 'Mme Adja',
-    statut: 'a_recuperer',
-    lieu: 'Marché Dantokpa',
-    perte: 360,
-  },
-  {
-    id: 502,
-    date: '05 juin 2026',
-    commandeId: 1039,
-    produit: 'Gombo frais',
-    qte: 1,
-    unite: 'tas',
-    motif: 'Feuilles trop jaunes',
-    client: 'M. Kofi',
-    statut: 'recupere',
-    lieu: 'Point de collecte B',
-    perte: 300,
-  },
-  {
-    id: 503,
-    date: '03 juin 2026',
-    commandeId: 1028,
-    produit: 'Piments frais',
-    qte: 1,
-    unite: 'tas',
-    motif: 'Produit trop mûr / non consommable',
-    client: 'Mme Aïcha',
-    statut: 'a_recuperer',
-    lieu: 'Marché Dantokpa',
-    perte: 150,
-  },
-]
+import { api } from '../../services/api'
 
 export default function RetourVendeur() {
-  const navigate = useNavigate()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
-  const [retours, setRetours] = useState(RETOURS_INIT)
+  const [retours, setRetours] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [filtre, setFiltre] = useState('tous')
+
+  useEffect(() => {
+    fetchReturns()
+  }, [])
+
+  async function fetchReturns() {
+    try {
+      setLoading(true)
+      const data = await api.get('/vendor/returns')
+      setRetours(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const STATUT_STYLE = {
     a_recuperer: { label: 'À récupérer', bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
-    recupere:    { label: 'Récupéré',    bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
+    recupere: { label: 'Récupéré', bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
   }
 
   const filtres = {
@@ -67,10 +42,36 @@ export default function RetourVendeur() {
   const totalPertes = retours.reduce((sum, r) => sum + r.perte, 0)
   const enAttente = filtres.a_recuperer.length
 
-  function marquerRecupere(id) {
-    setRetours((prev) => prev.map((r) =>
-      r.id === id ? { ...r, statut: 'recupere' } : r
-    ))
+  if (loading) {
+    return (
+      <div className="px-4 py-4 flex flex-col gap-4">
+        <div className="rounded-2xl p-4 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <div className="grid grid-cols-2 gap-3">
+            <div><div className="h-3 rounded w-16 mb-2" style={{ background: 'var(--border)' }} /><div className="h-7 rounded w-12" style={{ background: 'var(--border)' }} /></div>
+            <div><div className="h-3 rounded w-20 mb-2" style={{ background: 'var(--border)' }} /><div className="h-7 rounded w-20" style={{ background: 'var(--border)' }} /></div>
+          </div>
+        </div>
+        {[1, 2].map((i) => (
+          <div key={i} className="rounded-3xl h-48 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />
+        ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="px-4 py-4">
+        <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <div className="text-4xl mb-3">⚠️</div>
+          <p className="font-bold text-sm" style={{ color: '#E24B4A' }}>{error}</p>
+          <button onClick={fetchReturns}
+            className="mt-3 px-4 py-2 rounded-xl text-xs font-bold"
+            style={{ background: '#BA7517', color: '#fff' }}>
+            Réessayer
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -175,11 +176,7 @@ export default function RetourVendeur() {
                       <div className="font-black text-sm" style={{ color: '#D85A30' }}>{retour.perte.toLocaleString()} F</div>
                     </div>
                     {retour.statut === 'a_recuperer' ? (
-                      <button onClick={() => marquerRecupere(retour.id)}
-                        className="px-4 py-3 rounded-2xl text-sm font-black cursor-pointer"
-                        style={{ background: '#BA7517', color: '#fff', border: 'none' }}>
-                        Marquer récupéré
-                      </button>
+                      <div className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>En attente</div>
                     ) : (
                       <div className="text-xs font-bold" style={{ color: isDark ? '#34D399' : '#0F6E56' }}>Récupération confirmée</div>
                     )}

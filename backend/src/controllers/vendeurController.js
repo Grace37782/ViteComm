@@ -511,15 +511,41 @@ export const getVendorReturns = async (req, res) => {
       },
       include: {
         produit: true,
-        litige: true
+        litige: true,
+        commande: {
+          include: {
+            client: { include: { utilisateur: true } }
+          }
+        }
       }
     });
 
-    return res.json(returnedLines);
+    const formatted = returnedLines.map((r) => ({
+      id: r.id_commande * 1000 + r.id_produit,
+      date: formatDate(r.commande.date_creation),
+      commandeId: r.id_commande,
+      produit: r.produit.nom,
+      qte: r.quantite_commandee,
+      unite: r.produit.unite || 'kg',
+      motif: r.litige?.description || 'Produit rejeté par le client',
+      client: r.commande.client?.utilisateur
+        ? `${r.commande.client.utilisateur.prenom} ${r.commande.client.utilisateur.nom}`
+        : 'Client inconnu',
+      statut: 'a_recuperer',
+      lieu: r.litige?.decision_admin || 'Point de collecte',
+      perte: r.prix_vente_applique * r.quantite_commandee
+    }));
+
+    return res.json(formatted);
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors du chargement des retours.' });
   }
 };
+
+function formatDate(date) {
+  const d = new Date(date);
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
 
 // --- 3.5. Commandes récentes pour le dashboard ---
 
