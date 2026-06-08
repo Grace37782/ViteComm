@@ -75,7 +75,7 @@ export default function RetourVendeur() {
 
       {/* Résumé */}
       <div className="rounded-2xl p-4"
-        style={{ background: '#fff', border: '1.5px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+        style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow)' }}>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <div className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Retours</div>
@@ -108,7 +108,7 @@ export default function RetourVendeur() {
       </div>
 
       {liste.length === 0 ? (
-        <div className="text-center py-16 rounded-3xl" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+        <div className="text-center py-16 rounded-3xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="text-5xl mb-3">✔️</div>
           <p className="font-black text-sm" style={{ color: 'var(--text-muted)' }}>
             Aucun retour à afficher dans cette catégorie.
@@ -120,7 +120,7 @@ export default function RetourVendeur() {
             const st = STATUT_STYLE[retour.statut]
             return (
               <div key={retour.id} className="rounded-3xl overflow-hidden"
-                style={{ background: '#fff', border: '1.5px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow)' }}>
 
                 <div className="flex items-center justify-between gap-3 px-4 py-3"
                   style={{ background: 'var(--surface-alt)', borderBottom: '1px solid var(--border)' }}>
@@ -138,11 +138,11 @@ export default function RetourVendeur() {
 
                 <div className="px-4 py-3 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid var(--border)' }}>
+                    <div className="rounded-2xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                       <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Produit</div>
                       <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{retour.produit}</div>
                     </div>
-                    <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid var(--border)' }}>
+                    <div className="rounded-2xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                       <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Quantité</div>
                       <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
                         {retour.qte} {retour.unite}
@@ -150,17 +150,17 @@ export default function RetourVendeur() {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid var(--border)' }}>
+                  <div className="rounded-2xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                     <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Motif du rejet</div>
                     <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{retour.motif}</div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid var(--border)' }}>
+                    <div className="rounded-2xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                       <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Client</div>
                       <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{retour.client}</div>
                     </div>
-                    <div className="rounded-2xl p-3" style={{ background: '#FAFAF7', border: '1.5px solid var(--border)' }}>
+                    <div className="rounded-2xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                       <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Lieu de retour</div>
                       <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{retour.lieu}</div>
                     </div>

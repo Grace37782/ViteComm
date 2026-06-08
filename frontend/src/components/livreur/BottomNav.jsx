@@ -12,8 +12,8 @@ export default function BottomNavLivreur() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-white flex z-50"
-      style={{ borderTop: '1px solid #E8E6DF', boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}
+      className="fixed bottom-0 left-0 right-0 flex z-50"
+      style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}
     >
       {ITEMS.map((item) => {
         const actif = pathname.startsWith(item.route)

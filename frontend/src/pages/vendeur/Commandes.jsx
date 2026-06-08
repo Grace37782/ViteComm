@@ -122,9 +122,9 @@ export default function CommandesVendeur() {
         return (
           <div key={cmd.id} className="rounded-2xl overflow-hidden"
             style={{
-              background: '#fff',
+              background: 'var(--surface)',
               border: `1.5px solid ${collecte ? '#9FE1CB' : 'var(--border)'}`,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+              boxShadow: 'var(--shadow)',
             }}>
 
             {/* En-tête commande */}
@@ -148,7 +148,7 @@ export default function CommandesVendeur() {
             <div className="px-4 py-3 flex flex-col gap-2">
               {cmd.articles.map((a) => (
                 <div key={a.id} className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
-                  style={{ background: '#FAFAF7' }}>
+                  style={{ background: 'var(--surface-alt)' }}>
                   <span className="text-xl">{a.emoji}</span>
                   <span className="text-xs font-semibold flex-1" style={{ color: 'var(--text-primary)' }}>
                     {a.nom} × {a.qte} {a.unite}
@@ -209,7 +209,7 @@ export default function CommandesVendeur() {
                     maxLength={6}
                     className="w-full px-4 py-3 rounded-xl text-sm font-black outline-none tracking-widest"
                     style={{
-                      background:   '#FAFAF7',
+                      background:   'var(--surface-alt)',
                       border:       `1.5px solid ${errCodes[cmd.id] ? '#E24B4A' : codeSaisi ? '#BA7517' : 'var(--border)'}`,
                       color:        'var(--text-primary)',
                       fontFamily:   'monospace',

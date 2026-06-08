@@ -143,7 +143,7 @@ export default function Panier() {
           {/* ARTICLES PAR ÉTAL */}
           {Object.entries(parVendeur).map(([vid, etal]) => (
             <div key={vid} className="rounded-2xl overflow-hidden"
-              style={{ background: '#fff', border: '1.5px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+              style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow)' }}>
               <div className="flex items-center gap-2 px-4 py-3"
                 style={{ background: 'var(--surface-alt)', borderBottom: '1px solid var(--border)' }}>
                 <span className="text-lg">🏪</span>
@@ -154,7 +154,7 @@ export default function Panier() {
                 </span>
               </div>
 
-              <div className="flex flex-col divide-y" style={{ borderColor: '#F1EFE8' }}>
+              <div className="flex flex-col divide-y" style={{ borderColor: 'var(--border-light)' }}>
                 {etal.items.map((d) => (
                   <div key={d.id_produit} className="flex items-center gap-3 px-4 py-3">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
@@ -173,7 +173,7 @@ export default function Panier() {
                     <div className="flex items-center gap-1">
                       <button onClick={() => setQte(d.id_produit, d.quantite - 1)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center font-black cursor-pointer text-sm"
-                        style={{ background: '#F1EFE8', border: 'none', color: 'var(--text-secondary)' }}>−</button>
+                        style={{ background: 'var(--border-light)', border: 'none', color: 'var(--text-secondary)' }}>−</button>
                       <span className="w-6 text-center font-black text-sm" style={{ color: 'var(--text-primary)' }}>{d.quantite}</span>
                       <button onClick={() => setQte(d.id_produit, d.quantite + 1)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-sm cursor-pointer"
@@ -211,7 +211,7 @@ export default function Panier() {
           </div>
 
           {/* RÉCAPITULATIF */}
-          <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+          <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
             <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Récapitulatif</h3>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between text-sm">

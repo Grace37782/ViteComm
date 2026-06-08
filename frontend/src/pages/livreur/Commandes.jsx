@@ -101,49 +101,49 @@ export default function CommandesLivreur() {
           { label: 'Historique', value: historique.length, accent: '#1D9E75' },
         ].map((s) => (
           <div key={s.label} className="rounded-2xl p-3"
-            style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
-            <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: '#888780' }}>{s.label}</div>
+            style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+            <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
             <div className="font-black text-xl" style={{ color: s.accent }}>{s.value}</div>
           </div>
         ))}
       </div>
 
       {/* ══ COURSES ACTIVES ══ */}
-      <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+      <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-sm font-black" style={{ color: '#2C2C2A' }}>Mes courses actives</div>
-            <div className="text-xs" style={{ color: '#888780' }}>Pilotez votre journée livreur.</div>
+            <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Mes courses actives</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Pilotez votre journée livreur.</div>
           </div>
-          <span className="text-xs" style={{ color: '#5F5E5A' }}>{coursesActives.length} en cours</span>
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{coursesActives.length} en cours</span>
         </div>
         <div className="space-y-3">
           {coursesActives.length === 0 && (
-            <div className="text-sm" style={{ color: '#888780' }}>Aucune course active. Acceptez une mission ci-dessous.</div>
+            <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Aucune course active. Acceptez une mission ci-dessous.</div>
           )}
           {coursesActives.map((course) => (
-            <div key={course.id} className="rounded-2xl p-4" style={{ background: '#FAFAF7', border: '1.5px solid #E8E6DF' }}>
+            <div key={course.id} className="rounded-2xl p-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-black" style={{ color: '#2C2C2A' }}>Commande #{course.id}</div>
-                  <div className="text-xs" style={{ color: '#888780' }}>Destination {course.destination}</div>
+                  <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Commande #{course.id}</div>
+                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Destination {course.destination}</div>
                 </div>
                 <span className="uppercase text-[10px] font-bold" style={{ color: STATUS_COLOR[course.statut] || '#BA7517' }}>
                   {STATUS_LABEL[course.statut] || course.statut}
                 </span>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-3 text-xs" style={{ color: '#5F5E5A' }}>
-                <div className="rounded-xl p-3" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+              <div className="mt-3 grid grid-cols-2 gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <div className="rounded-xl p-3" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                   <div className="font-semibold">Client</div>
                   <div>{course.client}</div>
                 </div>
-                <div className="rounded-xl p-3" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+                <div className="rounded-xl p-3" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                   <div className="font-semibold">Montant</div>
                   <div>{course.frais.toLocaleString()} F</div>
                 </div>
               </div>
               <div className="mt-4 flex items-center justify-between gap-3">
-                <div className="text-xs" style={{ color: '#888780' }}>{course.temps}</div>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{course.temps}</div>
                 <button onClick={() => avancerStatut(course.id)}
                   className="rounded-2xl px-4 py-3 font-black text-white"
                   style={{ background: '#D85A30', border: 'none' }}>
@@ -156,33 +156,33 @@ export default function CommandesLivreur() {
       </div>
 
       {/* ══ COURSES À PRENDRE ══ */}
-      <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+      <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-sm font-black" style={{ color: '#2C2C2A' }}>Courses à prendre</div>
-            <div className="text-xs" style={{ color: '#888780' }}>Choisissez une mission compatible avec votre zone.</div>
+            <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Courses à prendre</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Choisissez une mission compatible avec votre zone.</div>
           </div>
-          <span className="text-xs" style={{ color: '#5F5E5A' }}>{coursesDisponibles.length} propositions</span>
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{coursesDisponibles.length} propositions</span>
         </div>
         <div className="flex flex-col gap-3">
           {coursesDisponibles.length === 0 && (
-            <div className="text-sm py-10" style={{ color: '#888780' }}>Aucune nouvelle proposition pour le moment.</div>
+            <div className="text-sm py-10" style={{ color: 'var(--text-muted)' }}>Aucune nouvelle proposition pour le moment.</div>
           )}
           {coursesDisponibles.map((course) => (
-            <div key={course.id} className="rounded-2xl p-4" style={{ background: '#FAFAF7', border: '1.5px solid #E8E6DF' }}>
+            <div key={course.id} className="rounded-2xl p-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>Course #{course.id}</div>
-                  <div className="text-xs mt-1" style={{ color: '#888780' }}>{course.marche} → {course.destination}</div>
+                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Course #{course.id}</div>
+                  <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{course.marche} → {course.destination}</div>
                 </div>
                 <div className="text-sm font-black" style={{ color: '#D85A30' }}>{course.frais.toLocaleString()} F</div>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-3 text-xs" style={{ color: '#5F5E5A' }}>
-                <div className="rounded-xl p-3" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+              <div className="mt-3 grid grid-cols-2 gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <div className="rounded-xl p-3" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                   <div className="font-semibold">Étals</div>
                   <div>{course.etals.join(', ')}</div>
                 </div>
-                <div className="rounded-xl p-3" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+                <div className="rounded-xl p-3" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                   <div className="font-semibold">Distance</div>
                   <div>{course.distance}</div>
                 </div>

@@ -262,7 +262,7 @@ export default function MarcheDetail() {
 
       {/* Search + Filters */}
       <div className="px-5 mt-4 flex-shrink-0">
-        <div className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2.5 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-2 border border-gray-200 px-4 py-2.5 rounded-2xl shadow-sm" style={{ background: 'var(--surface)' }}>
           <span className="text-gray-400 text-sm">🔍</span>
           <input
             type="text"
@@ -288,7 +288,7 @@ export default function MarcheDetail() {
               style={{
                 background: selectedCategory === cat ? '#059669' : '#fff',
                 color: selectedCategory === cat ? '#fff' : '#5F5E5A',
-                border: `1.5px solid ${selectedCategory === cat ? '#059669' : '#E8E6DF'}`,
+                border: `1.5px solid ${selectedCategory === cat ? '#059669' : 'var(--border)'}`,
               }}
             >
               {cat === 'Tout' ? '🏠 Tout' : `${catEmoji(cat)} ${cat}`}
@@ -307,7 +307,7 @@ export default function MarcheDetail() {
         </h3>
 
         {vendorsFiltered.length === 0 ? (
-          <div className="text-center py-5 bg-white rounded-2xl border border-gray-150">
+          <div className="text-center py-5 rounded-2xl border border-gray-150" style={{ background: 'var(--surface)' }}>
             <p className="text-[10px] font-bold text-gray-400">Aucun étal trouvé.</p>
           </div>
         ) : (
@@ -316,7 +316,8 @@ export default function MarcheDetail() {
               <div
                 key={v.id_user}
                 onClick={() => goToVendorCatalogue(v.id_user)}
-                className="flex-shrink-0 w-36 bg-white border border-gray-150 hover:border-amber-400 p-3 rounded-2xl cursor-pointer shadow-sm transition-all hover:shadow-md"
+                className="flex-shrink-0 w-36 border border-gray-150 hover:border-amber-400 p-3 rounded-2xl cursor-pointer shadow-sm transition-all hover:shadow-md"
+                style={{ background: 'var(--surface)' }}
               >
                 <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-black text-base mb-2">
                   {v.nom_etablissement.charAt(0).toUpperCase()}
@@ -343,7 +344,7 @@ export default function MarcheDetail() {
         </h3>
 
         {productsFiltered.length === 0 ? (
-          <div className="text-center py-10 bg-white rounded-2xl border border-gray-150 shadow-sm">
+          <div className="text-center py-10 rounded-2xl border border-gray-150 shadow-sm" style={{ background: 'var(--surface)' }}>
             <span className="text-3xl">🔍</span>
             <p className="text-[10px] font-bold text-gray-400 mt-2">Aucun produit disponible dans ce marché.</p>
           </div>
@@ -353,7 +354,8 @@ export default function MarcheDetail() {
               <div
                 key={p.id_produit}
                 onClick={() => goToVendorCatalogue(p.vendeur.id_user)}
-                className="bg-white border border-gray-150 p-2.5 rounded-2xl cursor-pointer shadow-sm hover:shadow-md hover:border-amber-300 transition-all flex flex-col justify-between"
+                className="border border-gray-150 p-2.5 rounded-2xl cursor-pointer shadow-sm hover:shadow-md hover:border-amber-300 transition-all flex flex-col justify-between"
+                style={{ background: 'var(--surface)' }}
               >
                 <div className="text-center">
                   <div className="text-3xl mb-1.5">{productEmoji(p.nom)}</div>

@@ -215,7 +215,7 @@ export default function Catalogue() {
 
       {/* ══ FILTRES CATÉGORIES ══ */}
       {categories.length > 0 && (
-        <div className="px-4 py-3 overflow-x-auto bg-white" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="px-4 py-3 overflow-x-auto" style={{ background: "var(--surface)" }} style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex gap-2" style={{ width: 'max-content' }}>
             {catList.map((cat) => (
               <button
@@ -254,7 +254,7 @@ export default function Catalogue() {
                 <div
                   key={prod.id_produit}
                   className="rounded-xl p-3 flex flex-col"
-                  style={{ background: '#fff', border: '1.5px solid var(--border)' }}
+                  style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
                 >
                   {/* Emoji produit */}
                   <div className="text-4xl text-center mb-2">{productEmoji(prod.nom)}</div>

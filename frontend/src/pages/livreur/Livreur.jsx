@@ -83,7 +83,7 @@ export default function Livreur() {
 
       {/* ══ PROFIL & STATS ══ */}
       <div className="rounded-2xl p-4"
-        style={{ background: '#fff', border: '1.5px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+        style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow)' }}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg flex-shrink-0"
             style={{ background: '#D85A30', color: '#fff' }}>
@@ -117,7 +117,7 @@ export default function Livreur() {
       </div>
 
       {/* ══ DISPO ══ */}
-      <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+      <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-3">
           <div>
             <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Disponibilité</div>
@@ -156,7 +156,7 @@ export default function Livreur() {
 
       {/* ══ VÉHICULE & COURSES EN COURS ══ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="flex items-center justify-between mb-3">
             <div>
               <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Mon véhicule</div>
@@ -172,7 +172,7 @@ export default function Livreur() {
           </div>
         </div>
 
-        <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="text-sm font-black mb-3" style={{ color: 'var(--text-primary)' }}>Courses en cours</div>
           <div className="space-y-3">
             {enCours.map((course) => (
@@ -197,7 +197,7 @@ export default function Livreur() {
       </div>
 
       {/* ══ COURSES DISPONIBLES ══ */}
-      <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+      <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Courses disponibles</div>
@@ -207,7 +207,7 @@ export default function Livreur() {
         </div>
         <div className="flex flex-col gap-3">
           {courses.map((course) => (
-            <div key={course.id} className="rounded-2xl p-4" style={{ background: '#FAFAF7', border: '1.5px solid var(--border)' }}>
+            <div key={course.id} className="rounded-2xl p-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Course #{course.id}</div>
@@ -216,11 +216,11 @@ export default function Livreur() {
                 <div className="text-sm font-black" style={{ color: '#D85A30' }}>{course.frais.toLocaleString()} F</div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                <div className="rounded-xl p-3" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+                <div className="rounded-xl p-3" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                   <div className="font-semibold">Étals</div>
                   <div>{course.etals.join(', ')}</div>
                 </div>
-                <div className="rounded-xl p-3" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+                <div className="rounded-xl p-3" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                   <div className="font-semibold">Distance</div>
                   <div>{course.distance}</div>
                 </div>

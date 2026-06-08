@@ -60,7 +60,7 @@ export default function RetourLivreur() {
           { label: 'En cours', value: enCours, accent: '#1D9E75' },
         ].map((s) => (
           <div key={s.label} className="rounded-2xl p-3"
-            style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+            style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
             <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
             <div className="font-black text-xl" style={{ color: s.accent }}>{s.value}</div>
           </div>
@@ -71,7 +71,7 @@ export default function RetourLivreur() {
       {retours.map((retour) => {
         const style = STATUT_STYLE[retour.statut]
         return (
-          <div key={retour.id} className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+          <div key={retour.id} className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
             <div className="flex items-center justify-between gap-3 mb-3">
               <div>
                 <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Retour #{retour.id}</div>

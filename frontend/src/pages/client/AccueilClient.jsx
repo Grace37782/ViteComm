@@ -304,7 +304,8 @@ export default function AccueilClient() {
 
           {/* Autocomplete Dropdown */}
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 text-gray-805">
+            <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 text-gray-805"
+              style={{ background: 'var(--surface)' }}>
               {suggestions.map((m) => (
                 <div
                   key={m.id_marche}
@@ -421,7 +422,7 @@ export default function AccueilClient() {
         </h3>
 
         {marketsFiltered.length === 0 ? (
-          <div className="text-center py-10 bg-white rounded-3xl border border-gray-150 shadow-sm">
+          <div className="text-center py-10 rounded-3xl border border-gray-150 shadow-sm" style={{ background: 'var(--surface)' }}>
             <span className="text-4xl">🏜️</span>
             <p className="text-xs font-bold text-gray-400 mt-2">Aucun marché ne correspond à ce secteur.</p>
           </div>
@@ -433,9 +434,10 @@ export default function AccueilClient() {
                 <div
                   key={m.id_marche}
                   onClick={() => handleSelectMarket(m)}
-                  className={`flex items-center gap-3 p-3 bg-white rounded-2xl border transition-all shadow-sm cursor-pointer ${
+                  className={`flex items-center gap-3 p-3 rounded-2xl border transition-all shadow-sm cursor-pointer ${
                     isSelected ? 'border-amber-400 ring-2 ring-amber-200' : 'border-gray-150 hover:border-emerald-300'
                   }`}
+                  style={{ background: 'var(--surface)' }}
                 >
                   <img
                     src={m.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=150&q=80'}

@@ -86,7 +86,7 @@ function Header({ admin, onLogout, tab, onTabChange }) {
 
 function StatCard({ label, value, icon, color }) {
   return (
-    <div className="rounded-2xl p-5 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
+    <div className="rounded-2xl p-5 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style={{ background: `${color}18` }}>{icon}</div>
         <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{label}</span>
@@ -139,7 +139,7 @@ function LeaderboardSection({ data }) {
 function LeaderboardCard({ title, items, valueKey, unit, color }) {
   if (!items || items.length === 0) return null
   return (
-    <div className="rounded-2xl p-5 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
+    <div className="rounded-2xl p-5 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
       <h3 className="font-black text-sm mb-4" style={{ color: 'var(--text-primary)' }}>{title}</h3>
       <div className="flex flex-col gap-2.5">
         {items.slice(0, 5).map((item, i) => (
@@ -163,7 +163,7 @@ function LeaderboardCard({ title, items, valueKey, unit, color }) {
 function ProductRanking({ title, items, color }) {
   if (!items || items.length === 0) return null
   return (
-    <div className="rounded-2xl p-5 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
+    <div className="rounded-2xl p-5 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
       <h3 className="font-black text-sm mb-4" style={{ color: 'var(--text-primary)' }}>{title}</h3>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
@@ -176,7 +176,7 @@ function ProductRanking({ title, items, color }) {
           </tr></thead>
           <tbody>
             {items.map(p => (
-              <tr key={p.id_produit} className="border-t" style={{ borderColor: '#F1EFE8' }}>
+              <tr key={p.id_produit} className="border-t" style={{ borderColor: 'var(--border-light)' }}>
                 <td className="py-2.5 pr-3 font-bold" style={{ color: 'var(--text-primary)' }}>{p.nom}</td>
                 <td className="py-2.5 pr-3" style={{ color: 'var(--text-secondary)' }}>{p.vendeur?.nom_etablissement || '-'}</td>
                 <td className="py-2.5 pr-3" style={{ color: 'var(--text-secondary)' }}>{p.vendeur?.localisation_marche || '-'}</td>
@@ -250,13 +250,13 @@ function UsersTab() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row gap-3">
         <input type="text" placeholder="Rechercher un utilisateur..." value={search} onChange={e => setSearch(e.target.value)}
-          className="flex-1 rounded-2xl px-4 py-3 text-sm outline-none border" style={{ background: '#fff', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+          className="flex-1 rounded-2xl px-4 py-3 text-sm outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
         <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
-          className="rounded-2xl px-4 py-3 text-sm font-semibold outline-none border" style={{ background: '#fff', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+          className="rounded-2xl px-4 py-3 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
           {roles.map(r => <option key={r} value={r}>{r === 'tous' ? 'Tous les rôles' : r}</option>)}
         </select>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          className="rounded-2xl px-4 py-3 text-sm font-semibold outline-none border" style={{ background: '#fff', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+          className="rounded-2xl px-4 py-3 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
           {statuses.map(s => <option key={s} value={s}>{s === 'tous' ? 'Tous les statuts' : s}</option>)}
         </select>
       </div>
@@ -275,7 +275,7 @@ function UsersTab() {
                   style={{ background: isSelected ? '#E1F5EE' : '#fff', borderColor: isSelected ? '#9FE1CB' : 'var(--border)' }}>
                  <div className="flex items-center gap-3">
                    <div className="w-10 h-10 rounded-xl bg-cover bg-center flex-shrink-0 flex items-center justify-center text-lg"
-                     style={photoUrl ? { backgroundImage: `url(${photoUrl})` } : { background: '#F1EFE8' }}>
+                     style={photoUrl ? { backgroundImage: `url(${photoUrl})` } : { background: 'var(--border-light)' }}>
                      {!photoUrl && getRoleIcon(u)}
                    </div>
                    <div className="flex-1 min-w-0">
@@ -354,49 +354,49 @@ function UserDetailsPanel({ details, onUpdateStatus, onDelete }) {
       {roleData && roleData.type !== 'admin' && (
         <div className="grid grid-cols-3 gap-2 mb-4">
           {roleData.score_reputation !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: '#fff' }}>
+            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
               <div className="text-lg font-black" style={{ color: '#1D9E75' }}>{roleData.score_reputation.toFixed(1)}</div>
               <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Réputation</div>
             </div>
           )}
           {roleData.total_commandes !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: '#fff' }}>
+            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
               <div className="text-lg font-black" style={{ color: '#1D9E75' }}>{roleData.total_commandes}</div>
               <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Commandes</div>
             </div>
           )}
           {roleData.total_depense !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: '#fff' }}>
+            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
               <div className="text-lg font-black" style={{ color: '#1D9E75' }}>{(roleData.total_depense || 0).toLocaleString()} F</div>
               <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Dépenses</div>
             </div>
           )}
           {roleData.total_ventes !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: '#fff' }}>
+            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
               <div className="text-lg font-black" style={{ color: '#BA7517' }}>{roleData.total_ventes}</div>
               <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Ventes</div>
             </div>
           )}
           {roleData.total_revenu !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: '#fff' }}>
+            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
               <div className="text-lg font-black" style={{ color: '#BA7517' }}>{(roleData.total_revenu || 0).toLocaleString()} F</div>
               <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Revenu</div>
             </div>
           )}
           {roleData.total_livraisons !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: '#fff' }}>
+            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
               <div className="text-lg font-black" style={{ color: '#D85A30' }}>{roleData.total_livraisons}</div>
               <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Livraisons</div>
             </div>
           )}
           {roleData.volume_total !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: '#fff' }}>
+            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
               <div className="text-lg font-black" style={{ color: '#D85A30' }}>{(roleData.volume_total || 0).toLocaleString()} F</div>
               <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Volume</div>
             </div>
           )}
           {roleData.est_disponible !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: '#fff' }}>
+            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
               <div className="text-lg font-black" style={{ color: roleData.est_disponible ? '#1D9E75' : '#D85A30' }}>{roleData.est_disponible ? 'Disponible' : 'Indisponible'}</div>
               <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Statut livreur</div>
             </div>
@@ -409,7 +409,7 @@ function UserDetailsPanel({ details, onUpdateStatus, onDelete }) {
           <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Avis récents ({feedbacks.length})</div>
           <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
             {feedbacks.map(f => (
-              <div key={f.id_feedback} className="rounded-xl p-3" style={{ background: '#fff' }}>
+              <div key={f.id_feedback} className="rounded-xl p-3" style={{ background: 'var(--surface)' }}>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{'★'.repeat(f.note)}{'☆'.repeat(5 - f.note)}</span>
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{f.type_feedback}</span>
@@ -494,11 +494,11 @@ function ProductsTab() {
   return (
     <div className="flex flex-col gap-4">
       <input type="text" placeholder="Rechercher un produit..." value={search} onChange={e => setSearch(e.target.value)}
-        className="rounded-2xl px-4 py-3 text-sm outline-none border" style={{ background: '#fff', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+        className="rounded-2xl px-4 py-3 text-sm outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
 
       {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div> :
        <div className="overflow-x-auto rounded-2xl border" style={{ borderColor: 'var(--border)' }}>
-         <table className="w-full text-xs" style={{ background: '#fff' }}>
+         <table className="w-full text-xs" style={{ background: 'var(--surface)' }}>
            <thead><tr className="text-left" style={{ background: 'var(--surface-alt)', color: 'var(--text-muted)' }}>
              <th className="p-3 font-semibold">Produit</th>
              <th className="p-3 font-semibold">Vendeur</th>
@@ -510,7 +510,7 @@ function ProductsTab() {
            </tr></thead>
            <tbody>
              {filtered.map(p => (
-               <tr key={p.id_produit} className="border-t" style={{ borderColor: '#F1EFE8' }}>
+               <tr key={p.id_produit} className="border-t" style={{ borderColor: 'var(--border-light)' }}>
                  <td className="p-3 font-bold" style={{ color: 'var(--text-primary)' }}>{p.nom}</td>
                  <td className="p-3" style={{ color: 'var(--text-secondary)' }}>{p.vendeur?.nom_etablissement || '-'}</td>
                  <td className="p-3" style={{ color: 'var(--text-secondary)' }}>{p.vendeur?.localisation_marche || '-'}</td>
@@ -580,7 +580,7 @@ function SignalementsTab() {
       {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div> :
        signalements.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun signalement</div> :
        signalements.map(s => (
-         <div key={s.id_signalement} className="rounded-2xl p-4 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
+         <div key={s.id_signalement} className="rounded-2xl p-4 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
            <div className="flex items-start justify-between mb-2">
              <div>
                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: `${col(s)}18`, color: col(s) }}>{s.statut_traitement}</span>
@@ -679,7 +679,7 @@ function ProfilTab({ admin: initialAdmin, onLogout }) {
         </div>
       )}
 
-      <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
+      <div className="rounded-2xl p-6 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
         {!edit ? (
           <>
             {/* Avatar */}
@@ -821,7 +821,7 @@ function LitigesTab() {
       {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div> :
        litiges.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun litige</div> :
        litiges.map(l => (
-         <div key={l.id_litige} className="rounded-2xl p-4 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
+         <div key={l.id_litige} className="rounded-2xl p-4 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
            <div className="flex items-start justify-between mb-2">
              <div>
                <span className="text-xs font-bold px-2 py-0.5 rounded-full"
@@ -845,7 +845,7 @@ function LitigesTab() {
            {l.detailsCommande && l.detailsCommande.length > 0 && (
              <div className="flex flex-wrap gap-1.5 mb-3">
                {l.detailsCommande.map(d => (
-                 <span key={`${d.id_commande}-${d.id_produit}`} className="text-[10px] px-2 py-0.5 rounded-lg" style={{ background: '#F1EFE8', color: 'var(--text-secondary)' }}>
+                 <span key={`${d.id_commande}-${d.id_produit}`} className="text-[10px] px-2 py-0.5 rounded-lg" style={{ background: 'var(--border-light)', color: 'var(--text-secondary)' }}>
                    {d.produit?.nom} ×{d.quantite_commandee}
                  </span>
                ))}
@@ -879,7 +879,7 @@ function ResolveForm({ litige, onResolve, onCancel }) {
   return (
     <div className="rounded-xl p-4 mt-2" style={{ background: 'var(--surface-alt)' }}>
       <select value={decision} onChange={e => setDecision(e.target.value)}
-        className="w-full rounded-xl px-4 py-3 text-sm font-semibold outline-none border mb-2" style={{ background: '#fff', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+        className="w-full rounded-xl px-4 py-3 text-sm font-semibold outline-none border mb-2" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
         <option value="">Sélectionner une décision</option>
         <option value="Remboursement total">Remboursement total</option>
         <option value="Remboursement partiel">Remboursement partiel</option>
@@ -887,7 +887,7 @@ function ResolveForm({ litige, onResolve, onCancel }) {
         <option value="Annulation commande">Annulation commande</option>
       </select>
       <input type="number" placeholder="Montant remboursé (F)" value={montant} onChange={e => setMontant(e.target.value)}
-        className="w-full rounded-xl px-4 py-3 text-sm outline-none border mb-2" style={{ background: '#fff', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+        className="w-full rounded-xl px-4 py-3 text-sm outline-none border mb-2" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
       <div className="flex gap-2">
         <button onClick={() => onResolve(litige.id_litige, decision, montant)} disabled={!decision}
           className="flex-1 text-xs font-bold py-2.5 rounded-xl cursor-pointer border-none" style={{ background: !decision ? '#ccc' : '#1D9E75', color: '#fff' }}>
@@ -1051,7 +1051,7 @@ function MarketsTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}
           onClick={() => setShowForm(false)}>
           <div className="rounded-3xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
-            style={{ background: '#fff' }}
+            style={{ background: 'var(--surface)' }}
             onClick={e => e.stopPropagation()}>
 
             <div className="flex items-center justify-between mb-5">
@@ -1229,7 +1229,7 @@ function MarketsTab() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {markets.map(m => (
             <div key={m.id_marche} className="rounded-2xl border overflow-hidden shadow-sm hover:shadow-md transition-all"
-              style={{ background: '#fff', borderColor: 'var(--border)' }}>
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
 
               {/* Market Image */}
               <div className="relative h-36 overflow-hidden" style={{ background: 'var(--surface-alt)' }}>

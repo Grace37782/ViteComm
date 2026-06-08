@@ -40,12 +40,12 @@ function FormProduit({ initial, onSave, onCancel }) {
     onSave({ ...form, prix: +form.prix, stock: +form.stock })
   }
 
-  const base = { background: '#FAFAF7', border: '1.5px solid var(--border)', color: 'var(--text-primary)' }
+  const base = { background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)' }
   const err  = { background: '#FAECE7', border: '1.5px solid #E24B4A', color: 'var(--text-primary)' }
 
   return (
     <div className="rounded-2xl p-4 flex flex-col gap-3"
-      style={{ background: '#fff', border: '2px solid #BA7517' }}>
+      style={{ background: 'var(--surface)', border: '2px solid #BA7517' }}>
 
       {/* Emoji */}
       <div>
@@ -178,7 +178,7 @@ export default function CatalogueVendeur() {
           </button>
         </div>
         <div className="flex items-center gap-2 px-4 py-3 rounded-2xl"
-          style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <span className="text-base">🔍</span>
           <input type="text" placeholder="Rechercher un produit…"
             value={search} onChange={(e) => setSearch(e.target.value)}
@@ -215,9 +215,9 @@ export default function CatalogueVendeur() {
             ) : (
               <div className="rounded-2xl p-4 transition-all"
                 style={{
-                  background: '#fff',
+                  background: 'var(--surface)',
                    border: `1.5px solid ${p.stock <= 2 ? '#FAC775' : 'var(--border)'}`,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  boxShadow: 'var(--shadow)',
                 }}>
                 <div className="flex items-start gap-3">
 
@@ -282,7 +282,7 @@ export default function CatalogueVendeur() {
                   </button>
                   <button onClick={() => setConfirmSup(null)}
                     className="flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer"
-                    style={{ background: '#fff', color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}>
+                    style={{ background: 'var(--surface)', color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}>
                     Annuler
                   </button>
                 </div>

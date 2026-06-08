@@ -128,7 +128,7 @@ export default function Accueil() {
       </div>
 
       {/*Cartes rôles*/}
-      <div className="flex-1 bg-white px-6 py-10">
+      <div className="flex-1 px-6 py-10" style={{ background: "var(--surface)" }}>
         <div className="text-center mb-8">
           <h1
             className="text-3xl md:text-4xl font-bold uppercase tracking-widest mb-2"
@@ -138,11 +138,11 @@ export default function Accueil() {
           </h1>
           <h2
             className="text-2xl md:text-3xl font-black mb-2"
-            style={{ color: '#2C2C2A' }}
+            style={{ color: 'var(--text-primary)' }}
           >
             Choisissez votre profil
           </h2>
-          <p className="text-sm leading-relaxed" style={{ color: '#888780' }}>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
             Première visite ? Créez votre compte gratuit en moins d'une minute.
           </p>
         </div>
@@ -175,14 +175,14 @@ export default function Accueil() {
               </p>
 
               {/* Description */}
-              <p className="text-xs leading-relaxed mb-3 flex-1" style={{ color: '#5F5E5A' }}>
+              <p className="text-xs leading-relaxed mb-3 flex-1" style={{ color: 'var(--text-secondary)' }}>
                 {r.desc}
               </p>
 
               {/* Features */}
               <div className="flex flex-col gap-1 mb-4">
                 {r.features.map((f) => (
-                  <span key={f} className="text-xs font-medium" style={{ color: '#5F5E5A' }}>
+                  <span key={f} className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
                     ✓ {f}
                   </span>
                 ))}

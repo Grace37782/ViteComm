@@ -190,7 +190,7 @@ export default function SelectionLivreur() {
 
         {/* RÉCAP */}
         {livreurSelected && (
-          <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+          <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
             <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Récapitulatif final</h3>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between text-sm">

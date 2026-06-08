@@ -107,7 +107,7 @@ export default function Historique() {
           const st = STATUT_STYLE[c.statut] || STATUT_STYLE['Entièrement acceptée']
           return (
             <div key={c.id} className="rounded-2xl overflow-hidden"
-              style={{ background: '#fff', border: '1.5px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+              style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow)' }}>
 
               {/* En-tête commande */}
               <div className="px-4 py-3 flex items-start justify-between gap-2">
@@ -128,7 +128,7 @@ export default function Historique() {
 
               {/* Total + actions */}
               <div className="px-4 pb-3 flex items-center justify-between gap-2"
-                style={{ borderTop: '1px solid #F1EFE8' }}>
+                style={{ borderTop: '1px solid var(--border-light)' }}>
                 <div>
                   <span className="font-black text-base" style={{ color: '#1D9E75' }}>
                     {c.total.toLocaleString()} F
@@ -170,7 +170,7 @@ export default function Historique() {
           style={{ background: 'rgba(0,0,0,0.5)' }}
           onClick={() => setEvalOpen(null)}>
           <div className="w-full max-w-lg rounded-t-[28px] overflow-y-auto"
-            style={{ background: '#fff', maxHeight: '85vh' }}
+            style={{ background: 'var(--surface)', maxHeight: '85vh' }}
             onClick={(e) => e.stopPropagation()}>
 
             {/* Handle */}
@@ -232,7 +232,7 @@ export default function Historique() {
                         value={commentsV[v.id] || ''}
                         onChange={(e) => setCommentsV((p) => ({ ...p, [v.id]: e.target.value }))}
                         rows={2} className="w-full px-3 py-2.5 rounded-xl text-xs outline-none resize-none mt-3"
-                        style={{ background: '#fff', border: '1.5px solid var(--border)', color: 'var(--text-primary)', fontFamily: 'inherit' }} />
+                        style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-primary)', fontFamily: 'inherit' }} />
                     </div>
                   ))}
                 </div>
@@ -258,7 +258,7 @@ export default function Historique() {
           style={{ background: 'rgba(0,0,0,0.5)' }}
           onClick={() => setSignalement(null)}>
           <div className="w-full max-w-lg rounded-t-[28px] p-5"
-            style={{ background: '#fff' }}
+            style={{ background: 'var(--surface)' }}
             onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-center pt-1 pb-3">
               <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />

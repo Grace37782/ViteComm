@@ -144,7 +144,7 @@ export default function Profil() {
         {tab === 'infos' && (
           <>
             {!editing ? (
-              <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
+              <div className="rounded-2xl p-6 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
                 {/* Avatar */}
                 <div className="flex justify-center mb-5">
                   {profile?.photo_url ? (
@@ -178,7 +178,7 @@ export default function Profil() {
                 </button>
               </div>
             ) : (
-              <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
+              <div className="rounded-2xl p-6 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
                 <form onSubmit={handleSave} className="flex flex-col gap-4">
                   {/* Photo upload */}
                   <div className="flex justify-center">
@@ -237,12 +237,12 @@ export default function Profil() {
 
         {tab === 'securite' && (
           <div className="flex flex-col gap-4">
-            <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
+            <div className="rounded-2xl p-6 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
               <h3 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}>🔑 Changer le mot de passe</h3>
               <PasswordChangeForm theme={theme} />
             </div>
 
-            <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: 'var(--border)' }}>
+            <div className="rounded-2xl p-6 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
               <h3 className="text-sm font-black mb-2" style={{ color: 'var(--text-primary)' }}>🚪 Session</h3>
               <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Déconnectez-vous de votre compte sur cet appareil.</p>
               <button onClick={() => setShowLogout(true)}
@@ -259,7 +259,7 @@ export default function Profil() {
       {showLogout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}
           onClick={() => setShowLogout(false)}>
-          <div className="rounded-3xl p-6 w-full max-w-sm shadow-2xl" style={{ background: '#fff' }}
+          <div className="rounded-3xl p-6 w-full max-w-sm shadow-2xl" style={{ background: 'var(--surface)' }}
             onClick={e => e.stopPropagation()}>
             <div className="text-center mb-5">
               <div className="text-5xl mb-3">👋</div>

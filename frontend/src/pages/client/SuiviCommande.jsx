@@ -34,7 +34,7 @@ export default function SuiviCommande() {
         {/* Code verification */}
         {code_verification && (
           <div style={{
-            background: '#fff', border: '2px solid #1D9E75', borderRadius: 24,
+            background: 'var(--surface)', border: '2px solid #1D9E75', borderRadius: 24,
             padding: 24, textAlign: 'center',
             boxShadow: '0 4px 20px rgba(29,158,117,0.15)',
           }}>
@@ -56,7 +56,7 @@ export default function SuiviCommande() {
         {/* Numéro commande */}
         {id_commande && (
           <div style={{
-            background: '#fff', borderRadius: 20, padding: 16,
+            background: 'var(--surface)', borderRadius: 20, padding: 16,
             border: '1.5px solid var(--border)',
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
@@ -75,7 +75,7 @@ export default function SuiviCommande() {
         )}
 
         {/* Étapes */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: 20, border: '1.5px solid var(--border)' }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 20, padding: 20, border: '1.5px solid var(--border)' }}>
           <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
             Prochaines étapes
           </div>

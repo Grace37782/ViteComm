@@ -45,17 +45,17 @@ export default function DashboardVendeur() {
 
       {/* ══ PROFIL & RÉPUTATION ══ */}
       <div className="rounded-2xl p-4"
-        style={{ background: '#fff', border: '1.5px solid #E8E6DF', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+        style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow)' }}>
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg flex-shrink-0"
             style={{ background: '#BA7517', color: '#fff' }}>
             {VENDEUR.prenom[0]}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>
+            <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
               {VENDEUR.prenom}
             </div>
-            <div className="text-xs" style={{ color: '#888780' }}>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
               {VENDEUR.etal} · {VENDEUR.marche}
             </div>
           </div>
@@ -64,26 +64,26 @@ export default function DashboardVendeur() {
               <span className="font-black text-lg" style={{ color: '#BA7517' }}>{REPUTATION.score}</span>
               <span className="text-sm">⭐</span>
             </div>
-            <div className="text-xs" style={{ color: '#888780' }}>{REPUTATION.nb_avis} avis</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{REPUTATION.nb_avis} avis</div>
           </div>
         </div>
       </div>
 
       {/* ══ BILAN FINANCIER ══ */}
       <div>
-        <h2 className="font-black text-sm mb-3" style={{ color: '#2C2C2A' }}>
+        <h2 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>
           Bilan financier
         </h2>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: 'Revenu brut',     val: FINANCES.revenu_brut,    color: '#2C2C2A', bg: '#fff',    border: '#E8E6DF' },
+            { label: 'Revenu brut',     val: FINANCES.revenu_brut,    color: 'var(--text-primary)', bg: 'var(--surface)',    border: 'var(--border)' },
             { label: 'Gains nets',      val: FINANCES.gains_nets,     color: '#0F6E56', bg: '#E1F5EE', border: '#9FE1CB' },
             { label: 'Commission 0,6%', val: -FINANCES.commission,    color: '#D85A30', bg: '#FAECE7', border: '#F5C4B3' },
             { label: 'Pertes rejets',   val: -FINANCES.pertes_rejets, color: '#D85A30', bg: '#FAECE7', border: '#F5C4B3' },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl p-4"
               style={{ background: s.bg, border: `1.5px solid ${s.border}` }}>
-              <div className="text-xs font-semibold mb-1" style={{ color: '#888780' }}>
+              <div className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
                 {s.label}
               </div>
               <div className="font-black text-lg" style={{ color: s.color }}>
@@ -130,7 +130,7 @@ export default function DashboardVendeur() {
       {/* ══ COMMANDES RÉCENTES ══ */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-black text-sm" style={{ color: '#2C2C2A' }}>
+          <h2 className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
             Commandes récentes
           </h2>
           <button onClick={() => navigate('/vendeur/commandes')}
@@ -146,16 +146,16 @@ export default function DashboardVendeur() {
               <button key={c.id}
                 onClick={() => navigate('/vendeur/commandes')}
                 className="w-full text-left rounded-2xl px-4 py-3 flex items-center gap-3 cursor-pointer transition-all active:scale-98"
-                style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+                style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                 <div className="flex-1">
-                  <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>
+                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
                     Commande #{c.id}
                   </div>
-                  <div className="text-xs mt-0.5" style={{ color: '#888780' }}>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                     {c.heure} · {c.articles} articles
                   </div>
                 </div>
-                <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>
+                <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
                   {c.total.toLocaleString()} F
                 </div>
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
@@ -178,10 +178,10 @@ export default function DashboardVendeur() {
         ].map((a) => (
           <button key={a.label} onClick={() => navigate(a.route)}
             className="rounded-2xl p-4 text-left cursor-pointer transition-all hover:shadow-md active:scale-98"
-            style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
+            style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
             <div className="text-2xl mb-2">{a.icon}</div>
-            <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>{a.label}</div>
-            <div className="text-xs mt-0.5" style={{ color: '#888780' }}>{a.sub}</div>
+            <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{a.label}</div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{a.sub}</div>
           </button>
         ))}
       </div>

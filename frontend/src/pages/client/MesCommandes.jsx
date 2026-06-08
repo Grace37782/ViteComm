@@ -81,7 +81,7 @@ export default function MesCommandes() {
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
         {orders.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', background: '#fff', borderRadius: 24, border: '1.5px solid var(--border)' }}>
+          <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--surface)', borderRadius: 24, border: '1.5px solid var(--border)' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
             <div style={{ fontWeight: 900, fontSize: 16, color: 'var(--text-primary)', marginBottom: 6 }}>Aucune commande</div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
@@ -109,7 +109,7 @@ export default function MesCommandes() {
               <div
                 key={order.id_commande}
                 style={{
-                  background: '#fff', borderRadius: 20,
+                  background: 'var(--surface)', borderRadius: 20,
                   border: '1.5px solid var(--border)', overflow: 'hidden',
                 }}
               >

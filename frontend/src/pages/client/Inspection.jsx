@@ -99,9 +99,9 @@ export default function Inspection() {
             return (
               <div key={a.id} className="rounded-2xl overflow-hidden"
                 style={{
-                  background: '#fff',
+                  background: 'var(--surface)',
                   border: `2px solid ${st === 'accepte' ? '#9FE1CB' : st === 'rejete' ? '#F5C4B3' : 'var(--border)'}`,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  boxShadow: 'var(--shadow)',
                 }}>
 
                 {/* Infos article */}
@@ -165,7 +165,7 @@ export default function Inspection() {
         </div>
 
         {/* ══ PREUVES PHOTOS (optionnel) ══ */}
-        <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid var(--border)' }}>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="text-lg">📸</span>
