@@ -4,17 +4,18 @@ import { useNavigate } from 'react-router-dom'
 /* ── Constantes ──────────────────────────────────────────── */
 const EMOJIS = ['🍅','🧅','🥬','🌶️','🍌','🐟','🥚','🌽','🫘','🥕','🍆','🧄','🫑','🥦','🍊']
 const UNITES = ['kg', 'tas', 'pièce', 'régime', 'litre', 'paquet', 'boîte']
+const CATEGORIES_INIT = ['Légumes', 'Fruits', 'Poissons', 'Épices', 'Céréales', 'Laitiers', 'Viandes', 'Boissons']
 
 const PRODUITS_INIT = [
-  { id: 101, emoji: '🍅', nom: 'Tomates fraîches',  description: 'Tomates mûres du jour',  prix: 250,  stock: 7,  unite: 'kg'  },
-  { id: 102, emoji: '🧅', nom: 'Oignons rouges',    description: 'Oignons locaux frais',   prix: 180,  stock: 1,  unite: 'kg'  },
-  { id: 103, emoji: '🥬', nom: 'Gombo frais',       description: 'Gombo tendre de saison', prix: 300,  stock: 5,  unite: 'tas' },
-  { id: 104, emoji: '🌶️', nom: 'Piments frais',     description: 'Piment fort local',      prix: 150,  stock: 2,  unite: 'tas' },
+  { id: 101, emoji: '🍅', nom: 'Tomates fraîches',  description: 'Tomates mûres du jour',  prix: 250,  stock: 7,  unite: 'kg',  categorie: 'Légumes' },
+  { id: 102, emoji: '🧅', nom: 'Oignons rouges',    description: 'Oignons locaux frais',   prix: 180,  stock: 1,  unite: 'kg',  categorie: 'Légumes' },
+  { id: 103, emoji: '🥬', nom: 'Gombo frais',       description: 'Gombo tendre de saison', prix: 300,  stock: 5,  unite: 'tas', categorie: 'Légumes' },
+  { id: 104, emoji: '🌶️', nom: 'Piments frais',     description: 'Piment fort local',      prix: 150,  stock: 2,  unite: 'tas', categorie: 'Épices' },
 ]
 
 /* ── Formulaire ajout / modification ─────────────────────── */
 function FormProduit({ initial, onSave, onCancel }) {
-  const vide = { emoji: '🍅', nom: '', description: '', prix: '', stock: '', unite: 'kg' }
+  const vide = { emoji: '🍅', nom: '', description: '', prix: '', stock: '', unite: 'kg', categorie: 'Légumes' }
   const [form, setForm]       = useState(initial || vide)
   const [erreurs, setErreurs] = useState({})
 
@@ -85,8 +86,8 @@ function FormProduit({ initial, onSave, onCancel }) {
         {erreurs.description && <span className="text-xs" style={{ color: '#E24B4A' }}>⚠ {erreurs.description}</span>}
       </div>
 
-      {/* Prix / Stock / Unité */}
-      <div className="grid grid-cols-3 gap-2">
+      {/* Prix / Stock / Unité / Catégorie */}
+      <div className="grid grid-cols-2 gap-2">
         <div className="flex flex-col gap-1">
           <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Prix (F) *</label>
           <input type="number" placeholder="250" value={form.prix} min={1}
@@ -109,6 +110,14 @@ function FormProduit({ initial, onSave, onCancel }) {
             className="px-3 py-3 rounded-xl text-sm outline-none cursor-pointer"
             style={base}>
             {UNITES.map((u) => <option key={u} value={u}>{u}</option>)}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Catégorie</label>
+          <select value={form.categorie} onChange={(e) => set('categorie', e.target.value)}
+            className="px-3 py-3 rounded-xl text-sm outline-none cursor-pointer"
+            style={base}>
+            {CATEGORIES_INIT.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
       </div>
@@ -137,11 +146,16 @@ export default function CatalogueVendeur() {
   const [mode,     setMode]         = useState(null) // null | 'add' | { edit: prod }
   const [search,   setSearch]       = useState('')
   const [confirmSup, setConfirmSup] = useState(null)
+  const [filtreCategorie, setFiltreCategorie] = useState('Toutes')
 
-  const filtres = produits.filter((p) =>
-    p.nom.toLowerCase().includes(search.toLowerCase()) ||
-    p.description.toLowerCase().includes(search.toLowerCase())
-  )
+  const categoriesDisponibles = ['Toutes', ...new Set(produits.map(p => p.categorie).filter(Boolean))]
+
+  const filtres = produits.filter((p) => {
+    const matchSearch = p.nom.toLowerCase().includes(search.toLowerCase()) ||
+      p.description.toLowerCase().includes(search.toLowerCase())
+    const matchCategorie = filtreCategorie === 'Toutes' || p.categorie === filtreCategorie
+    return matchSearch && matchCategorie
+  })
 
   function ajouter(data) {
     setProduits((p) => [...p, { ...data, id: Date.now() }])
@@ -193,6 +207,23 @@ export default function CatalogueVendeur() {
         </div>
       </div>
 
+      {/* Filtres catégories */}
+      {categoriesDisponibles.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto scrollbar-none">
+          {categoriesDisponibles.map(c => (
+            <button key={c} onClick={() => setFiltreCategorie(c)}
+              className="px-3 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap cursor-pointer"
+              style={{
+                background: filtreCategorie === c ? '#BA7517' : 'var(--surface)',
+                color: filtreCategorie === c ? '#fff' : 'var(--text-muted)',
+                border: `1.5px solid ${filtreCategorie === c ? '#BA7517' : 'var(--border)'}`,
+              }}>
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Formulaire ajout */}
       {mode === 'add' && (
         <FormProduit onSave={ajouter} onCancel={() => setMode(null)} />
@@ -240,6 +271,12 @@ export default function CatalogueVendeur() {
                         style={{ background: '#FAEEDA', color: '#BA7517' }}>
                         {p.prix.toLocaleString()} F/{p.unite}
                       </span>
+                      {p.categorie && (
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                          style={{ background: '#E6F1FB', color: '#2B6CB0' }}>
+                          📂 {p.categorie}
+                        </span>
+                      )}
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
                         style={{
                           background: p.stock <= 2 ? '#FAEEDA' : '#E1F5EE',
