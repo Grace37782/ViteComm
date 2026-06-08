@@ -1,5 +1,11 @@
 import prisma from '../config/db.js';
 
+// Shared helper: extract emoji from photo_url (handles URLs from seed data)
+function safeEmoji(photoUrl) {
+  if (!photoUrl || photoUrl.startsWith('http') || photoUrl.startsWith('/uploads')) return '📦';
+  return photoUrl;
+}
+
 // --- 3.1. Tableau de bord Vendeur (RG02, RG08, RG16) ---
 
 export const getVendorDashboard = async (req, res) => {
@@ -59,7 +65,7 @@ export const getVendorDashboard = async (req, res) => {
       },
       alertes_stock: lowStockAlerts.map((a) => ({
         id: a.id_produit,
-        emoji: a.photo_url || '📦',
+        emoji: safeEmoji(a.photo_url),
         nom: a.nom,
         stock: a.stock_disponible
       }))
@@ -92,8 +98,6 @@ async function resolveCategoryId(categoryName) {
 
 // Helper: format product for frontend
 function formatProduct(p) {
-  // If photo_url is a real URL, use '📦' as emoji fallback; otherwise treat as emoji
-  const isUrl = p.photo_url && p.photo_url.startsWith('http');
   return {
     id: p.id_produit,
     nom: p.nom,
@@ -101,8 +105,8 @@ function formatProduct(p) {
     prix: p.prix_reference,
     stock: p.stock_disponible,
     unite: p.unite || 'kg',
-    emoji: isUrl ? '📦' : (p.photo_url || '📦'),
-    photo_url: isUrl ? p.photo_url : null,
+    emoji: safeEmoji(p.photo_url),
+    photo_url: (p.photo_url && p.photo_url.startsWith('http')) ? p.photo_url : null,
     categorie: p.categorie?.nom_categorie || null,
     id_categorie: p.id_categorie,
     created_at: p.created_at,
@@ -410,7 +414,7 @@ export const getVendorOrders = async (req, res) => {
       // Articles (vendor's products only)
       const articles = o.detailsCommande.map((d) => ({
         id: d.produit.id_produit,
-        emoji: d.produit.photo_url || '📦',
+        emoji: safeEmoji(d.produit.photo_url),
         nom: d.produit.nom,
         qte: d.quantite_commandee,
         prix: d.prix_vente_applique,
@@ -646,7 +650,7 @@ export const getVendorStatistiques = async (req, res) => {
 
       return {
         id: product.id_produit,
-        emoji: product.photo_url || '📦',
+        emoji: safeEmoji(product.photo_url),
         nom: product.nom,
         unite: product.unite || 'kg',
         stock: product.stock_disponible,
@@ -752,7 +756,7 @@ export const getVendorPriceHistory = async (req, res) => {
 
     const result = products.map((p) => ({
       id: p.id_produit,
-      emoji: p.photo_url || '📦',
+      emoji: safeEmoji(p.photo_url),
       nom: p.nom,
       unite: p.unite || 'kg',
       prix_actuel: p.prix_reference,
