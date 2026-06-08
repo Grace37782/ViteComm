@@ -1,14 +1,55 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 
 const HIDDEN_ROUTES = ['/connect', '/register', '/forgot-password', '/admin-connect']
 
-const QUICK_LINKS = [
-  { label: 'Accueil', path: '/accueil' },
-  { label: 'Marchés', path: '/client/accueil' },
-  { label: 'Contact', href: 'mailto:support@vitecomm.bj' },
-  { label: 'Aide', href: 'mailto:support@vitecomm.bj' },
-]
+const ROLE_LINKS = {
+  guest: {
+    title: 'Liens rapides',
+    links: [
+      { label: 'Accueil', path: '/accueil' },
+      { label: 'Marchés', path: '/client/accueil' },
+      { label: 'Contact', href: 'mailto:support@vitecomm.bj' },
+      { label: 'Aide', href: 'mailto:support@vitecomm.bj' },
+    ],
+  },
+  client: {
+    title: 'Mon espace client',
+    links: [
+      { label: 'Accueil', path: '/client/accueil' },
+      { label: 'Panier', path: '/client/panier' },
+      { label: 'Mes commandes', path: '/client/mes-commandes' },
+      { label: 'Profil', path: '/client/profil' },
+    ],
+  },
+  vendeur: {
+    title: 'Mon espace vendeur',
+    links: [
+      { label: 'Dashboard', path: '/vendeur/dashboard' },
+      { label: 'Catalogue', path: '/vendeur/catalogue' },
+      { label: 'Commandes', path: '/vendeur/commandes' },
+      { label: 'Retours', path: '/vendeur/retours' },
+      { label: 'Profil', path: '/vendeur/profil' },
+    ],
+  },
+  livreur: {
+    title: 'Mon espace livreur',
+    links: [
+      { label: 'Dashboard', path: '/livreur/dashboard' },
+      { label: 'Commandes', path: '/livreur/commandes' },
+      { label: 'Retours', path: '/livreur/retours' },
+      { label: 'Profil', path: '/livreur/profil' },
+    ],
+  },
+  admin: {
+    title: 'Mon espace admin',
+    links: [
+      { label: 'Dashboard', path: '/admin/dashboard' },
+      { label: 'Contact support', href: 'mailto:support@vitecomm.bj' },
+    ],
+  },
+}
 
 const ROLE_CARDS = [
   { role: 'client', emoji: '🛒', label: 'Client', desc: 'Commandez vos produits frais', bg: '#E1F5EE', color: '#0F6E56', border: '#9FE1CB' },
@@ -25,9 +66,13 @@ const THEME_OPTIONS = [
 export default function Footer() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { user } = useAuth()
   const { theme, setTheme } = useTheme()
 
   if (HIDDEN_ROUTES.some(r => location.pathname.startsWith(r))) return null
+
+  const role = user?.role || 'guest'
+  const nav = ROLE_LINKS[role] || ROLE_LINKS.guest
 
   return (
     <footer
@@ -39,7 +84,7 @@ export default function Footer() {
 
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-6">
 
-        {/* ── Top section: Brand + Links + Roles ── */}
+        {/* ── Top section: Brand + Links + Role-specific third column ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
 
           {/* Brand */}
@@ -69,11 +114,11 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Quick Links — role-specific */}
           <div>
-            <h4 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}>Liens rapides</h4>
+            <h4 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}>{nav.title}</h4>
             <div className="flex flex-col gap-2">
-              {QUICK_LINKS.map(link => (
+              {nav.links.map(link => (
                 link.path ? (
                   <button key={link.label} onClick={() => navigate(link.path)}
                     className="text-sm text-left font-medium cursor-pointer"
@@ -95,22 +140,42 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Role Cards */}
+          {/* Third column: role cards (guest only) or ViteComm info (logged in) */}
           <div>
-            <h4 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}>Rejoignez ViteComm</h4>
-            <div className="flex flex-col gap-2">
-              {ROLE_CARDS.map(card => (
-                <button key={card.role} onClick={() => navigate(`/register?role=${card.role}`)}
-                  className="flex items-center gap-3 p-3 rounded-xl text-left cursor-pointer"
-                  style={{ background: card.bg, border: `1px solid ${card.border}` }}>
-                  <span className="text-xl">{card.emoji}</span>
-                  <div>
-                    <div className="text-xs font-black" style={{ color: card.color }}>{card.label}</div>
-                    <div className="text-[11px]" style={{ color: card.color, opacity: 0.7 }}>{card.desc}</div>
+            {!user ? (
+              <>
+                <h4 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}>Rejoignez ViteComm</h4>
+                <div className="flex flex-col gap-2">
+                  {ROLE_CARDS.map(card => (
+                    <button key={card.role} onClick={() => navigate(`/register?role=${card.role}`)}
+                      className="flex items-center gap-3 p-3 rounded-xl text-left cursor-pointer"
+                      style={{ background: card.bg, border: `1px solid ${card.border}` }}>
+                      <span className="text-xl">{card.emoji}</span>
+                      <div>
+                        <div className="text-xs font-black" style={{ color: card.color }}>{card.label}</div>
+                        <div className="text-[11px]" style={{ color: card.color, opacity: 0.7 }}>{card.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <h4 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}>À propos</h4>
+                <div className="flex flex-col gap-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <p>Marketplace alimentaire connectant marchands, clients et livreurs à Cotonou.</p>
+                  <div className="flex flex-col gap-1.5">
+                    <a href="mailto:support@vitecomm.bj" className="text-xs font-medium"
+                      style={{ color: 'var(--accent)' }}>✉️ Contacter le support</a>
+                    <button onClick={() => navigate('/accueil')}
+                      className="text-xs font-medium text-left cursor-pointer"
+                      style={{ color: 'var(--accent)', background: 'none', border: 'none' }}>
+                      🏠 Page d'accueil
+                    </button>
                   </div>
-                </button>
-              ))}
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
