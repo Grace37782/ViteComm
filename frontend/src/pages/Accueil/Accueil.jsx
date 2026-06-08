@@ -179,7 +179,7 @@ export default function Accueil() {
       </div>
 
       {/* Cartes rôles */}
-      <div className="flex-1 px-6 py-10" style={{ background: 'var(--surface)' }}>
+      <div className="px-6 py-12 sm:py-16" style={{ background: 'var(--surface)' }}>
         <div className="text-center mb-8">
           <h1
             className="text-3xl md:text-4xl font-bold uppercase tracking-widest mb-2"
@@ -199,7 +199,7 @@ export default function Accueil() {
         </div>
 
         {/* 3 cartes côte à côte — empilées sur mobile */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
           {roles.map((r) => {
             const t = getRoleTheme(r.id, isDark)
             return (
@@ -262,7 +262,7 @@ export default function Accueil() {
 
       {/* Footer */}
       <div
-        className="relative overflow-hidden px-6 py-8"
+        className="relative overflow-hidden px-6 py-10 sm:py-12"
         style={{
           background: isDark
             ? 'linear-gradient(135deg, #141613 0%, #4D2113 100%)'
