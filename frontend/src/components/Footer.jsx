@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 
-const HIDDEN_ROUTES = ['/connect', '/register', '/forgot-password', '/admin-connect']
+const HIDDEN_ROUTES = ['/forgot-password', '/admin-connect']
 
 const ROLE_LINKS = {
   guest: {
@@ -52,9 +52,9 @@ const ROLE_LINKS = {
 }
 
 const ROLE_CARDS = [
-  { role: 'client', emoji: '🛒', label: 'Client', desc: 'Commandez vos produits frais', bg: '#E1F5EE', color: '#0F6E56', border: '#9FE1CB' },
-  { role: 'vendeur', emoji: '🏪', label: 'Vendeur', desc: 'Vendez sans livraison', bg: '#FAEEDA', color: '#854F0B', border: '#FAC775' },
-  { role: 'livreur', emoji: '🏍️', label: 'Livreur', desc: 'Gagnez à chaque course', bg: '#FAECE7', color: '#993C1D', border: '#F5C4B3' },
+  { role: 'client', emoji: '🛒', label: 'Client', desc: 'Commandez vos produits frais', light: { bg: '#E1F5EE', color: '#0F6E56', border: '#9FE1CB' }, dark: { bg: 'rgba(29,158,117,0.12)', color: '#2DC491', border: 'rgba(45,196,145,0.2)' } },
+  { role: 'vendeur', emoji: '🏪', label: 'Vendeur', desc: 'Vendez sans livraison', light: { bg: '#FAEEDA', color: '#854F0B', border: '#FAC775' }, dark: { bg: 'rgba(186,117,23,0.12)', color: '#BA7517', border: 'rgba(186,117,23,0.2)' } },
+  { role: 'livreur', emoji: '🏍️', label: 'Livreur', desc: 'Gagnez à chaque course', light: { bg: '#FAECE7', color: '#993C1D', border: '#F5C4B3' }, dark: { bg: 'rgba(216,90,48,0.12)', color: '#D85A30', border: 'rgba(216,90,48,0.2)' } },
 ]
 
 const THEME_OPTIONS = [
@@ -67,7 +67,8 @@ export default function Footer() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, resolved } = useTheme()
+  const isDark = resolved === 'dark'
 
   if (HIDDEN_ROUTES.some(r => location.pathname.startsWith(r))) return null
 
@@ -146,17 +147,20 @@ export default function Footer() {
               <>
                 <h4 className="text-xs font-black mb-3 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Rejoignez ViteComm</h4>
                 <div className="flex flex-col gap-1.5">
-                  {ROLE_CARDS.map(card => (
-                    <button key={card.role} onClick={() => navigate(`/register?role=${card.role}`)}
-                      className="flex items-center gap-2.5 p-2.5 rounded-xl text-left cursor-pointer"
-                      style={{ background: card.bg, border: `1px solid ${card.border}` }}>
-                      <span className="text-lg">{card.emoji}</span>
-                      <div>
-                        <div className="text-xs font-black" style={{ color: card.color }}>{card.label}</div>
-                        <div className="text-[11px]" style={{ color: card.color, opacity: 0.7 }}>{card.desc}</div>
-                      </div>
-                    </button>
-                  ))}
+                  {ROLE_CARDS.map(card => {
+                    const colors = isDark ? card.dark : card.light
+                    return (
+                      <button key={card.role} onClick={() => navigate(`/register?role=${card.role}`)}
+                        className="flex items-center gap-2.5 p-2.5 rounded-xl text-left cursor-pointer"
+                        style={{ background: colors.bg, border: `1px solid ${colors.border}` }}>
+                        <span className="text-lg">{card.emoji}</span>
+                        <div>
+                          <div className="text-xs font-black" style={{ color: colors.color }}>{card.label}</div>
+                          <div className="text-[11px]" style={{ color: colors.color, opacity: 0.7 }}>{card.desc}</div>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               </>
             ) : (

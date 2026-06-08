@@ -2,16 +2,15 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login as apiLogin } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
 import GoogleSignInButton from '../../components/GoogleSignInButton'
 
-/* Détecte si la saisie est un email ou un téléphone */
 function detecterTypeIdentifiant(valeur) {
   if (valeur.includes('@')) return 'email'
   if (/^\d/.test(valeur))   return 'telephone'
   return null
 }
 
-/* Messages d'erreur selon le type de problème */
 function messageErreur(err) {
   const msg = err.message?.toLowerCase() || ''
   if (msg === 'network_error')
@@ -29,9 +28,18 @@ function messageErreur(err) {
   return { texte: 'Identifiant ou mot de passe incorrect.', type: 'erreur' }
 }
 
+const erreurStyles = {
+  erreur:  { bg: 'rgba(255,80,80,0.12)',  border: 'rgba(255,100,100,0.25)', icon: '⚠️' },
+  suspend: { bg: 'rgba(186,117,23,0.15)', border: 'rgba(186,117,23,0.35)', icon: '🔒' },
+  ban:     { bg: 'rgba(216,90,48,0.15)',  border: 'rgba(216,90,48,0.35)',  icon: '🚫' },
+  network: { bg: 'rgba(255,80,80,0.12)',  border: 'rgba(255,100,100,0.25)', icon: '🌐' },
+}
+
 export default function Connexion() {
   const navigate = useNavigate()
   const { user, login: updateAuthContext } = useAuth()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
 
   const [identifiant, setIdentifiant] = useState('')
   const [motDePasse,  setMdp]         = useState('')
@@ -40,11 +48,8 @@ export default function Connexion() {
   const [loading,     setLoading]     = useState(false)
 
   const typeIdent = detecterTypeIdentifiant(identifiant)
-
-  /* Vérifier si déjà connecté */
   const alreadyLoggedIn = !!user && !!localStorage.getItem('vc_token')
 
-  /* ── Validation ───────────────────────────────────── */
   function valider() {
     if (!identifiant.trim())
       return 'Entrez votre email ou numéro de téléphone.'
@@ -57,27 +62,18 @@ export default function Connexion() {
     return null
   }
 
-  /* ── Soumission ───────────────────────────────────── */
   async function handleConnexion(e) {
     e.preventDefault()
     setErreur(null)
-
     const errValidation = valider()
     if (errValidation) return setErreur({ texte: errValidation, type: 'erreur' })
-
     setLoading(true)
     try {
-      // Envoie email ou telephone selon ce que l'utilisateur a tapé
       const payload = typeIdent === 'email'
         ? { email: identifiant, mot_de_passe: motDePasse }
         : { telephone: identifiant, mot_de_passe: motDePasse }
-
       const data = await apiLogin(payload)
-
-      // Met à jour le contexte global d'authentification React
       updateAuthContext(data.user, data.token)
-
-      // Redirection automatique selon le rôle renvoyé par le backend
       const role = data.user?.role || data.role
       const redirects = {
         admin:   '/admin/dashboard',
@@ -86,7 +82,6 @@ export default function Connexion() {
         livreur: '/livreur/dashboard',
       }
       navigate(redirects[role] || '/accueil')
-
     } catch (err) {
       setErreur(messageErreur(err))
     } finally {
@@ -94,222 +89,272 @@ export default function Connexion() {
     }
   }
 
-  /* ── Styles erreur selon type ─────────────────────── */
-  const erreurStyles = {
-    erreur:  { bg: 'rgba(255,80,80,0.15)',  border: 'rgba(255,100,100,0.3)', icon: '⚠️' },
-    suspend: { bg: 'rgba(186,117,23,0.2)',  border: 'rgba(186,117,23,0.4)', icon: '🔒' },
-    ban:     { bg: 'rgba(216,90,48,0.2)',   border: 'rgba(216,90,48,0.4)',  icon: '🚫' },
-    network: { bg: 'rgba(255,80,80,0.15)',  border: 'rgba(255,100,100,0.3)', icon: '🌐' },
-  }
   const styleErreur = erreur ? (erreurStyles[erreur.type] || erreurStyles.erreur) : null
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #1D9E75 0%, #15795A 55%, #0F5B44 100%)' }}
-    >
-      {/* Décor */}
-      <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-[#A8EDCA]/20 blur-3xl pointer-events-none" />
-
-      {/* Retour */}
-      <button
-        onClick={() => navigate('/accueil')}
-        className="absolute top-6 left-6 z-50 px-4 py-2 rounded-full text-sm font-semibold text-white backdrop-blur-xl border cursor-pointer"
-        style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}
-      >
-        ← Accueil
-      </button>
-
-      {/* Carte */}
-      <div
-        className="relative w-full max-w-sm rounded-[32px] p-8 backdrop-blur-xl border"
-        style={{
-          background:  'rgba(255,255,255,0.12)',
-          borderColor: 'rgba(255,255,255,0.18)',
-          boxShadow:   '0 10px 40px rgba(0,0,0,0.18)',
-        }}
-      >
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
+      {/* Hero section */}
+      <div className="relative flex-1 flex items-center justify-center px-4 py-12 sm:py-0 overflow-hidden">
+        {/* Decorative background elements — theme-aware */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black mb-4"
-            style={{ background: '#fff', color: '#1D9E75' }}
-          >
-            V
-          </div>
-          <h1 className="text-3xl font-black text-white tracking-tight">ViteComm</h1>
-          <p className="text-white/70 text-sm mt-2 text-center leading-relaxed">
-            Connectez-vous à votre espace
-          </p>
+            className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full blur-[120px] opacity-30"
+            style={{ background: isDark ? '#1FA876' : '#1D9E75' }}
+          />
+          <div
+            className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full blur-[100px] opacity-20"
+            style={{ background: isDark ? '#BA7517' : '#BA7517' }}
+          />
+          {/* Subtle grid pattern */}
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage: `radial-gradient(${isDark ? '#fff' : '#000'} 1px, transparent 1px)`,
+              backgroundSize: '32px 32px',
+            }}
+          />
         </div>
 
-        {/* Formulaire */}
-        <form onSubmit={handleConnexion} className="flex flex-col gap-5" noValidate>
+        {/* Back button */}
+        <button
+          onClick={() => navigate('/accueil')}
+          className="absolute top-5 left-5 z-20 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold cursor-pointer backdrop-blur-md"
+          style={{
+            background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+            color: 'var(--text-secondary)',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+          }}
+        >
+          <span className="text-base">←</span> Accueil
+        </button>
 
-          {/* ── Identifiant : email OU téléphone ── */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-white/80">
-              Email ou numéro de téléphone
-            </label>
+        {/* Main card */}
+        <div
+          className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10"
+          style={{
+            background: 'var(--surface)',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+            boxShadow: isDark
+              ? '0 25px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03)'
+              : '0 25px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.02)',
+          }}
+        >
+          {/* Green accent bar at top */}
+          <div
+            className="absolute top-0 left-8 right-8 h-[3px] rounded-b-full"
+            style={{ background: 'linear-gradient(90deg, #1D9E75, #2DC491, #1D9E75)' }}
+          />
+
+          {/* Logo + title */}
+          <div className="flex flex-col items-center mb-8">
             <div
-              className="flex items-center rounded-2xl overflow-hidden border transition-all"
-              style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}
+              className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black mb-4"
+              style={{
+                background: 'linear-gradient(135deg, #1D9E75, #0F6E56)',
+                color: '#fff',
+                boxShadow: '0 8px 24px rgba(29,158,117,0.25)',
+              }}
             >
-              {/* Icône change selon le type détecté */}
-              <span className="px-4 text-sm select-none">
-                {typeIdent === 'telephone' ? '📱' : '✉️'}
-              </span>
-              <input
-                type="text"
-                placeholder="exemple@gmail.com ou 97000000"
-                value={identifiant}
-                onChange={(e) => { setIdentifiant(e.target.value); setErreur(null) }}
-                autoComplete="username"
-                className="flex-1 bg-transparent px-2 py-4 text-sm text-white placeholder:text-white/40 outline-none"
-              />
-              {/* Badge type détecté */}
-              {typeIdent && (
-                <span
-                  className="px-3 mr-2 py-1 rounded-full text-xs font-bold flex-shrink-0"
-                  style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}
-                >
-                  {typeIdent === 'email' ? 'Email' : 'Tél.'}
-                </span>
-              )}
+              V
             </div>
+            <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>
+              ViteComm
+            </h1>
+            <p className="text-sm mt-1.5 text-center" style={{ color: 'var(--text-muted)' }}>
+              Connectez-vous à votre espace
+            </p>
           </div>
 
-          {/* ── Mot de passe ── */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-white/80">Mot de passe</label>
-            <div
-              className="flex items-center rounded-2xl overflow-hidden border"
-              style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}
-            >
-              <input
-                type={showMdp ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={motDePasse}
-                onChange={(e) => { setMdp(e.target.value); setErreur(null) }}
-                autoComplete="current-password"
-                className="flex-1 bg-transparent px-4 py-4 text-sm text-white placeholder:text-white/40 outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => setShowMdp(!showMdp)}
-                className="px-4 text-lg cursor-pointer"
-                style={{ background: 'none', border: 'none' }}
+          {/* Formulaire */}
+          <form onSubmit={handleConnexion} className="flex flex-col gap-5" noValidate>
+            {/* Identifiant */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                Email ou téléphone
+              </label>
+              <div
+                className="flex items-center rounded-xl overflow-hidden transition-all"
+                style={{
+                  background: 'var(--surface-alt)',
+                  border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                }}
               >
-                {showMdp ? '🙈' : '👁️'}
-              </button>
-            </div>
-          </div>
-
-          {/* Mot de passe oublié */}
-          <div className="flex justify-end -mt-2">
-            <button
-              type="button"
-              onClick={() => navigate('/forgot-password')}
-              className="text-xs text-white/70 hover:text-white cursor-pointer"
-              style={{ background: 'none', border: 'none' }}
-            >
-              Mot de passe oublié ?
-            </button>
-          </div>
-
-          {/* ── Message erreur différencié ── */}
-          {erreur && (
-            <div
-              className="rounded-2xl px-4 py-3 text-sm font-medium border"
-              style={{
-                background:  styleErreur.bg,
-                borderColor: styleErreur.border,
-                color: '#fff',
-              }}
-            >
-              {styleErreur.icon} {erreur.texte}
-              {(erreur.type === 'suspend' || erreur.type === 'ban') && (
-                <div className="mt-1.5">
-                  <a
-                    href="mailto:support@vitecomm.bj"
-                    className="text-xs underline underline-offset-2 text-white/80 hover:text-white"
+                <span className="pl-4 text-sm select-none">
+                  {typeIdent === 'telephone' ? '📱' : '✉️'}
+                </span>
+                <input
+                  type="text"
+                  placeholder="exemple@gmail.com ou 97000000"
+                  value={identifiant}
+                  onChange={(e) => { setIdentifiant(e.target.value); setErreur(null) }}
+                  autoComplete="username"
+                  className="flex-1 bg-transparent px-3 py-3.5 text-sm outline-none"
+                  style={{ color: 'var(--text-primary)' }}
+                />
+                {typeIdent && (
+                  <span
+                    className="px-2.5 mr-2 py-1 rounded-lg text-[10px] font-bold flex-shrink-0"
+                    style={{ background: 'var(--accent)', color: '#fff', opacity: 0.9 }}
                   >
-                    Contacter le support →
-                  </a>
-                </div>
-              )}
+                    {typeIdent === 'email' ? 'Email' : 'Tél.'}
+                  </span>
+                )}
+              </div>
             </div>
-          )}
 
-          {/* ── Déjà connecté ── */}
-          {alreadyLoggedIn && (
-            <div
-              className="rounded-2xl px-4 py-3 text-sm font-medium border text-center"
-              style={{
-                background: 'rgba(255,193,7,0.15)',
-                borderColor: 'rgba(255,193,7,0.3)',
-                color: '#fff',
-              }}
-            >
-              🔒 Vous êtes déjà connecté en tant que <strong>{user.prenom} {user.nom}</strong>.
-              <div className="mt-2 flex gap-2 justify-center">
+            {/* Mot de passe */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                Mot de passe
+              </label>
+              <div
+                className="flex items-center rounded-xl overflow-hidden transition-all"
+                style={{
+                  background: 'var(--surface-alt)',
+                  border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                }}
+              >
+                <span className="pl-4 text-sm select-none">🔒</span>
+                <input
+                  type={showMdp ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={motDePasse}
+                  onChange={(e) => { setMdp(e.target.value); setErreur(null) }}
+                  autoComplete="current-password"
+                  className="flex-1 bg-transparent px-3 py-3.5 text-sm outline-none"
+                  style={{ color: 'var(--text-primary)' }}
+                />
                 <button
                   type="button"
-                  onClick={() => { localStorage.clear(); window.location.href = '/connect' }}
-                  className="text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer"
-                  style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}
+                  onClick={() => setShowMdp(!showMdp)}
+                  className="px-4 text-base cursor-pointer"
+                  style={{ background: 'none', border: 'none' }}
                 >
-                  Se déconnecter
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const r = user?.role
-                    const map = { vendeur: '/vendeur/dashboard', livreur: '/livreur/dashboard', admin: '/admin/dashboard' }
-                    navigate(map[r] || '/client/accueil')
-                  }}
-                  className="text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer"
-                  style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}
-                >
-                  Mon espace
+                  {showMdp ? '🙈' : '👁️'}
                 </button>
               </div>
             </div>
-          )}
 
-          {/* Bouton */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-2 rounded-2xl py-4 text-base font-black bg-white text-[#1D9E75] hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
-            style={{ opacity: loading ? 0.75 : 1 }}
-          >
-            {loading ? '⏳ Connexion…' : 'Se connecter →'}
-          </button>
+            {/* Mot de passe oublié */}
+            <div className="flex justify-end -mt-2">
+              <button
+                type="button"
+                onClick={() => navigate('/forgot-password')}
+                className="text-xs font-semibold cursor-pointer"
+                style={{ background: 'none', border: 'none', color: 'var(--accent)' }}
+              >
+                Mot de passe oublié ?
+              </button>
+            </div>
 
-        </form>
+            {/* Message erreur */}
+            {erreur && (
+              <div
+                className="rounded-xl px-4 py-3 text-sm font-medium border"
+                style={{
+                  background: styleErreur.bg,
+                  borderColor: styleErreur.border,
+                  color: 'var(--text-primary)',
+                }}
+              >
+                {styleErreur.icon} {erreur.texte}
+                {(erreur.type === 'suspend' || erreur.type === 'ban') && (
+                  <div className="mt-1.5">
+                    <a
+                      href="mailto:support@vitecomm.bj"
+                      className="text-xs underline underline-offset-2"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      Contacter le support →
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
 
-        <div className="mt-3">
+            {/* Déjà connecté */}
+            {alreadyLoggedIn && (
+              <div
+                className="rounded-xl px-4 py-3 text-sm font-medium border text-center"
+                style={{
+                  background: isDark ? 'rgba(255,193,7,0.08)' : 'rgba(255,193,7,0.12)',
+                  borderColor: isDark ? 'rgba(255,193,7,0.2)' : 'rgba(255,193,7,0.3)',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                🔒 Vous êtes déjà connecté en tant que <strong>{user.prenom} {user.nom}</strong>.
+                <div className="mt-2.5 flex gap-2 justify-center">
+                  <button
+                    type="button"
+                    onClick={() => { localStorage.clear(); window.location.href = '/connect' }}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer"
+                    style={{
+                      background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                      color: 'var(--text-primary)',
+                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'}`,
+                    }}
+                  >
+                    Se déconnecter
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const r = user?.role
+                      const map = { vendeur: '/vendeur/dashboard', livreur: '/livreur/dashboard', admin: '/admin/dashboard' }
+                      navigate(map[r] || '/client/accueil')
+                    }}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer"
+                    style={{ background: 'var(--accent)', color: '#fff', border: 'none' }}
+                  >
+                    Mon espace
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Bouton connexion */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-1 rounded-xl py-3.5 text-sm font-black transition-all cursor-pointer"
+              style={{
+                background: 'linear-gradient(135deg, #1D9E75, #0F6E56)',
+                color: '#fff',
+                border: 'none',
+                opacity: loading ? 0.7 : 1,
+                boxShadow: loading ? 'none' : '0 4px 16px rgba(29,158,117,0.3)',
+              }}
+            >
+              {loading ? '⏳ Connexion…' : 'Se connecter →'}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>ou</span>
+            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+          </div>
+
+          {/* Google */}
           <GoogleSignInButton
             onError={(msg) => setErreur({ texte: msg, type: 'erreur' })}
             onStart={() => setErreur(null)}
             disabled={loading}
           />
-        </div>
 
-        {/* Inscription */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-white/65">Pas encore de compte ?</p>
-          <button
-            onClick={() => navigate('/register')}
-            className="mt-2 text-sm font-bold text-white underline underline-offset-4 cursor-pointer"
-            style={{ background: 'none', border: 'none' }}
-          >
-            Créer un compte
-          </button>
+          {/* Inscription */}
+          <div className="mt-6 text-center">
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Pas encore de compte ?</p>
+            <button
+              onClick={() => navigate('/register')}
+              className="mt-1.5 text-sm font-bold cursor-pointer"
+              style={{ background: 'none', border: 'none', color: 'var(--accent)' }}
+            >
+              Créer un compte
+            </button>
+          </div>
         </div>
-
       </div>
     </div>
   )
