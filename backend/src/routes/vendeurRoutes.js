@@ -24,6 +24,7 @@ import {
   getVendorPriceHistory,
   getVendorSignalements,
   createSignalement,
+  deleteSignalement,
   getVendorProfil,
   updateVendorProfil
 } from '../controllers/vendeurController.js';
@@ -98,9 +99,10 @@ router.get('/price-history', getVendorPriceHistory);
 // Signalements
 router.get('/signalements', getVendorSignalements);
 router.post('/signalements', createSignalement);
+router.delete('/signalements/:id', deleteSignalement);
 
 // Profil
 router.get('/profil', getVendorProfil);
-router.put('/profil', updateVendorProfil);
+router.put('/profil', upload.single('photo'), updateVendorProfil);
 
 export default router;

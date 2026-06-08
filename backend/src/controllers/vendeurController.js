@@ -1110,26 +1110,37 @@ export const getVendorSignalements = async (req, res) => {
       where: { id_auteur: req.user.id_user },
       include: {
         cible: {
-          select: { nom: true, prenom: true }
+          select: { nom: true, prenom: true, email: true, telephone: true }
         }
       },
       orderBy: { date_heure: 'desc' }
     });
 
-    const result = signalements.map((s) => ({
-      id: s.id_signalement,
-      cible: `${s.cible.prenom} ${s.cible.nom}`,
-      type: s.type_cible_cible,
-      motif: s.motif.split(':')[0] || s.motif,
-      description: s.motif.includes(':') ? s.motif.split(':').slice(1).join(':').trim() : s.motif,
-      statut: s.statut_traitement === 'En attente' ? 'en_attente'
-            : s.statut_traitement === 'En cours' ? 'en_cours'
-            : 'traite',
-      date: s.date_heure
-    }));
+    const result = signalements.map((s) => {
+      // Parse stored motif: "MOTIF|||DESCRIPTION"
+      const parts = s.motif.split('|||');
+      const motif = parts[0] || s.motif;
+      const description = parts[1] || '';
+
+      return {
+        id: s.id_signalement,
+        cible: `${s.cible.prenom} ${s.cible.nom}`,
+        cible_email: s.cible.email,
+        cible_telephone: s.cible.telephone,
+        type: s.type_cible_cible,
+        motif,
+        description,
+        statut: s.statut_traitement === 'En attente' ? 'en_attente'
+              : s.statut_traitement === 'En cours' ? 'en_cours'
+              : 'traite',
+        statut_raw: s.statut_traitement,
+        date: s.date_heure
+      };
+    });
 
     return res.json(result);
   } catch (error) {
+    console.error('getVendorSignalements error:', error);
     return res.status(500).json({ error: 'Erreur lors du chargement des signalements.' });
   }
 };
@@ -1137,28 +1148,66 @@ export const getVendorSignalements = async (req, res) => {
 export const createSignalement = async (req, res) => {
   const { motif, type_cible, cible, description } = req.body;
 
-  if (!motif || !cible) {
-    return res.status(400).json({ error: 'Motif et cible requis.' });
+  if (!motif) {
+    return res.status(400).json({ error: 'Le motif est requis.' });
+  }
+  if (!cible || !cible.trim()) {
+    return res.status(400).json({ error: 'Le nom de la personne signalée est requis.' });
+  }
+  if (!description || !description.trim()) {
+    return res.status(400).json({ error: 'La description est requise.' });
   }
 
-  try {
-    // Find target user by name (partial match)
-    const targetUser = await prisma.utilisateur.findFirst({
-      where: {
-        OR: [
-          { nom: { contains: cible } },
-          { prenom: { contains: cible } }
-        ]
-      }
-    });
-    if (!targetUser) return res.status(404).json({ error: 'Cible introuvable. Vérifiez le nom.' });
+  const validTypes = ['client', 'vendeur', 'livreur'];
+  const cibleType = validTypes.includes(type_cible) ? type_cible : 'client';
 
-    const fullMotif = description ? `${motif}: ${description}` : motif;
+  try {
+    // Search target user: try full name match first, then partial on nom/prenom/email/telephone
+    const searchTerms = cible.trim().split(/\s+/);
+    let targetUser = null;
+
+    if (searchTerms.length >= 2) {
+      // Full name search: prenom + nom
+      targetUser = await prisma.utilisateur.findFirst({
+        where: {
+          AND: [
+            { OR: [{ prenom: { contains: searchTerms[0] } }, { nom: { contains: searchTerms[0] } }] },
+            { OR: [{ prenom: { contains: searchTerms.slice(1).join(' ') } }, { nom: { contains: searchTerms.slice(1).join(' ') } }] }
+          ]
+        }
+      });
+    }
+
+    // Fallback: search by single name, email, or telephone
+    if (!targetUser) {
+      targetUser = await prisma.utilisateur.findFirst({
+        where: {
+          OR: [
+            { nom: { contains: cible.trim() } },
+            { prenom: { contains: cible.trim() } },
+            { email: { contains: cible.trim() } },
+            { telephone: { contains: cible.trim() } }
+          ]
+        }
+      });
+    }
+
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Utilisateur introuvable. Vérifiez le nom, email ou téléphone.' });
+    }
+
+    // Prevent self-reporting
+    if (targetUser.id_user === req.user.id_user) {
+      return res.status(400).json({ error: 'Vous ne pouvez pas vous signaler vous-même.' });
+    }
+
+    // Store motif + description with ||| separator
+    const fullMotif = `${motif.trim()}|||${description.trim()}`;
 
     const signalement = await prisma.signalement.create({
       data: {
         motif: fullMotif,
-        type_cible_cible: type_cible || 'client',
+        type_cible_cible: cibleType,
         id_auteur: req.user.id_user,
         id_cible: targetUser.id_user,
         statut_traitement: 'En attente'
@@ -1170,7 +1219,45 @@ export const createSignalement = async (req, res) => {
       id_signalement: signalement.id_signalement
     });
   } catch (error) {
+    console.error('createSignalement error:', error);
     return res.status(500).json({ error: 'Erreur lors du signalement.' });
+  }
+};
+
+export const deleteSignalement = async (req, res) => {
+  try {
+    const vendorId = req.user.id_user;
+    const signalementId = parseInt(req.params.id, 10);
+
+    if (isNaN(signalementId)) {
+      return res.status(400).json({ error: 'ID de signalement invalide.' });
+    }
+
+    const signalement = await prisma.signalement.findUnique({
+      where: { id_signalement: signalementId }
+    });
+
+    if (!signalement) {
+      return res.status(404).json({ error: 'Signalement introuvable.' });
+    }
+
+    if (signalement.id_auteur !== vendorId) {
+      return res.status(403).json({ error: 'Ce signalement ne vous appartient pas.' });
+    }
+
+    // Only allow deletion if still "En attente"
+    if (signalement.statut_traitement !== 'En attente') {
+      return res.status(400).json({ error: 'Impossible de supprimer un signalement déjà en cours de traitement.' });
+    }
+
+    await prisma.signalement.delete({
+      where: { id_signalement: signalementId }
+    });
+
+    return res.json({ message: 'Signalement supprimé.' });
+  } catch (error) {
+    console.error('deleteSignalement error:', error);
+    return res.status(500).json({ error: 'Erreur lors de la suppression.' });
   }
 };
 
@@ -1192,7 +1279,7 @@ export const getVendorProfil = async (req, res) => {
       where: { id_user_vendeur: req.user.id_user }
     });
 
-    // Count completed orders
+    // Count completed orders (delivered or returned)
     const orderCount = await prisma.detailCommande.count({
       where: {
         produit: { id_user_vendeur: req.user.id_user },
@@ -1214,6 +1301,11 @@ export const getVendorProfil = async (req, res) => {
       ? parseFloat((feedbacks.reduce((s, f) => s + f.note, 0) / feedbacks.length).toFixed(1))
       : 0;
 
+    // Count reports made by this vendor
+    const signalementCount = await prisma.signalement.count({
+      where: { id_auteur: req.user.id_user }
+    });
+
     return res.json({
       id_user: user.id_user,
       nom: user.nom,
@@ -1222,6 +1314,7 @@ export const getVendorProfil = async (req, res) => {
       telephone: user.telephone,
       photo_url: user.photo_url,
       statut_compte: user.statut_compte,
+      created_at: user.created_at,
       vendeur: {
         nom_etablissement: user.vendeur.nom_etablissement,
         localisation_marche: user.vendeur.localisation_marche,
@@ -1231,10 +1324,12 @@ export const getVendorProfil = async (req, res) => {
         productCount,
         orderCount,
         feedbackCount,
+        signalementCount,
         avgNote
       }
     });
   } catch (error) {
+    console.error('getVendorProfil error:', error);
     return res.status(500).json({ error: 'Erreur lors du chargement du profil.' });
   }
 };
@@ -1243,21 +1338,39 @@ export const updateVendorProfil = async (req, res) => {
   const { nom_etablissement, localisation_marche, latitude, longitude } = req.body;
 
   try {
-    const updated = await prisma.vendeur.update({
-      where: { id_user: req.user.id_user },
-      data: {
-        nom_etablissement: nom_etablissement ?? undefined,
-        localisation_marche: localisation_marche ?? undefined,
-        latitude: latitude !== undefined ? parseFloat(latitude) : undefined,
-        longitude: longitude !== undefined ? parseFloat(longitude) : undefined
-      }
-    });
+    // Update vendeur-specific fields
+    const vendeurData = {};
+    if (nom_etablissement !== undefined) vendeurData.nom_etablissement = nom_etablissement || null;
+    if (localisation_marche !== undefined) vendeurData.localisation_marche = localisation_marche || null;
+    if (latitude !== undefined) vendeurData.latitude = latitude ? parseFloat(latitude) : null;
+    if (longitude !== undefined) vendeurData.longitude = longitude ? parseFloat(longitude) : null;
+
+    let updated;
+    if (Object.keys(vendeurData).length > 0) {
+      updated = await prisma.vendeur.update({
+        where: { id_user: req.user.id_user },
+        data: vendeurData
+      });
+    } else {
+      updated = await prisma.vendeur.findUnique({
+        where: { id_user: req.user.id_user }
+      });
+    }
+
+    // Handle photo upload if present
+    if (req.file) {
+      await prisma.utilisateur.update({
+        where: { id_user: req.user.id_user },
+        data: { photo_url: `/uploads/${req.file.filename}` }
+      });
+    }
 
     return res.json({
       message: 'Profil vendeur mis à jour.',
       vendeur: updated
     });
   } catch (error) {
+    console.error('updateVendorProfil error:', error);
     return res.status(500).json({ error: 'Erreur lors de la mise à jour du profil.' });
   }
 };
