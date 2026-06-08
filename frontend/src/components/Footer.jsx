@@ -82,7 +82,7 @@ export default function Footer() {
       {/* Decorative top gradient */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#1D9E75] via-[#BA7517] to-[#D85A30]" />
 
-      <div className="max-w-5xl mx-auto px-5 pt-8 pb-5">
+      <div className="mx-auto px-4 sm:px-8 pt-8 pb-5" style={{ maxWidth: '90rem' }}>
 
         {/* ── Top section: Brand + Links + Role-specific third column ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
