@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
 
 const ROLE_THEMES = {
@@ -24,6 +25,8 @@ export default function Profil() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user: ctxUser, login: updateCtx, logout: ctxLogout } = useAuth()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
   const [tab, setTab] = useState('infos')
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -116,7 +119,7 @@ export default function Profil() {
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"
-          style={{ background: toast.type === 'ok' ? theme.primary : '#D85A30' }}>
+          style={{ background: toast.type === 'ok' ? theme.primary : (isDark ? '#E87D55' : '#D85A30') }}>
           {toast.msg}
         </div>
       )}
@@ -128,7 +131,7 @@ export default function Profil() {
             <button key={t.id} onClick={() => setTab(t.id)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
               style={{
-                background: tab === t.id ? '#fff' : 'transparent',
+                background: tab === t.id ? (isDark ? 'rgba(255,255,255,0.08)' : '#fff') : 'transparent',
                 color: tab === t.id ? theme.primary : 'var(--text-muted)',
                 border: tab === t.id ? '1px solid var(--border)' : 'none',
                 boxShadow: tab === t.id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
@@ -225,7 +228,7 @@ export default function Profil() {
                       }))
                     }}
                       className="rounded-2xl py-3 px-5 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
-                      style={{ background: '#F0EFEA', color: 'var(--text-muted)', border: 'none' }}>
+                      style={{ background: isDark ? 'rgba(255,255,255,0.06)' : '#F0EFEA', color: 'var(--text-muted)', border: 'none' }}>
                       Annuler
                     </button>
                   </div>
@@ -239,7 +242,7 @@ export default function Profil() {
           <div className="flex flex-col gap-4">
             <div className="rounded-2xl p-6 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
               <h3 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}>🔑 Changer le mot de passe</h3>
-              <PasswordChangeForm theme={theme} />
+              <PasswordChangeForm theme={theme} isDark={isDark} />
             </div>
 
             <div className="rounded-2xl p-6 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
@@ -247,7 +250,7 @@ export default function Profil() {
               <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Déconnectez-vous de votre compte sur cet appareil.</p>
               <button onClick={() => setShowLogout(true)}
                 className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
-                style={{ background: '#FDE8E2', color: '#D85A30', border: 'none' }}>
+                style={{ background: isDark ? 'rgba(232,125,85,0.12)' : '#FDE8E2', color: isDark ? '#E87D55' : '#D85A30', border: 'none' }}>
                 🚪 Se déconnecter
               </button>
             </div>
@@ -269,7 +272,7 @@ export default function Profil() {
             <div className="flex flex-col gap-3">
               <button onClick={handleLogout}
                 className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer"
-                style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
+                style={{ background: isDark ? '#E87D55' : '#D85A30', color: '#fff', border: 'none' }}>
                 Oui, me déconnecter
               </button>
               <button onClick={() => setShowLogout(false)}
@@ -285,7 +288,7 @@ export default function Profil() {
   )
 }
 
-function PasswordChangeForm({ theme }) {
+function PasswordChangeForm({ theme, isDark }) {
   const [mdp, setMdp] = useState('')
   const [confirm, setConfirm] = useState('')
   const [saving, setSaving] = useState(false)
@@ -314,7 +317,7 @@ function PasswordChangeForm({ theme }) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       {msg && (
         <div className="rounded-xl px-4 py-2.5 text-xs font-bold text-center"
-          style={{ background: msg.startsWith('✅') ? '#E1F5EE' : '#FDE8E2', color: msg.startsWith('✅') ? (theme?.primary || '#0F6E56') : '#D85A30' }}>
+          style={{ background: msg.startsWith('✅') ? (isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE') : (isDark ? 'rgba(232,125,85,0.12)' : '#FDE8E2'), color: msg.startsWith('✅') ? (isDark ? '#2DC491' : (theme?.primary || '#0F6E56')) : (isDark ? '#E87D55' : '#D85A30') }}>
           {msg}
         </div>
       )}
@@ -322,7 +325,7 @@ function PasswordChangeForm({ theme }) {
       <Field label="Confirmer" type="password" value={confirm} onChange={setConfirm} />
       <button type="submit" disabled={saving}
         className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer mt-1"
-        style={{ background: saving ? '#ccc' : (theme?.primary || '#1D9E75'), color: '#fff', border: 'none' }}>
+        style={{ background: saving ? (isDark ? 'rgba(255,255,255,0.08)' : '#ccc') : (theme?.primary || '#1D9E75'), color: '#fff', border: 'none' }}>
         {saving ? '⏳' : '🔑 Mettre à jour'}
       </button>
     </form>

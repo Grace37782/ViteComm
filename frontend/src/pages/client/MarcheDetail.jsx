@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../../services/api'
+import { useTheme } from '../../context/ThemeContext'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -61,6 +62,8 @@ function MapRecenter({ center }) {
 export default function MarcheDetail() {
   const navigate = useNavigate()
   const { marketId } = useParams()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
 
   const [market, setMarket] = useState(null)
   const [categories, setCategories] = useState([])
@@ -141,10 +144,10 @@ export default function MarcheDetail() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
           <div className="text-4xl mb-3 animate-spin">⏳</div>
-          <div className="font-bold text-sm text-gray-500">Chargement de l'étal virtuel…</div>
+          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Chargement de l'étal virtuel…</div>
         </div>
       </div>
     )
@@ -152,10 +155,10 @@ export default function MarcheDetail() {
 
   if (!market) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
           <div className="text-4xl mb-3">❌</div>
-          <div className="font-bold text-sm mb-4 text-gray-500">Marché introuvable</div>
+          <div className="font-bold text-sm mb-4" style={{ color: 'var(--text-muted)' }}>Marché introuvable</div>
           <button onClick={() => navigate('/client/accueil')} className="text-sm font-bold text-emerald-600 cursor-pointer">
             ← Retour à l'accueil
           </button>
@@ -165,7 +168,8 @@ export default function MarcheDetail() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 flex flex-col pb-20">
+    <div className="w-full min-h-screen flex flex-col pb-20" style={{ background: 'var(--bg)' }}>
+      <style>{`#marche-search::placeholder { color: var(--text-muted); opacity: 0.7; }`}</style>
 
       {/* Top Banner */}
       <div className="relative h-44 w-full overflow-hidden flex-shrink-0">
@@ -193,7 +197,7 @@ export default function MarcheDetail() {
       </div>
 
       {/* 🗺️ Market Stalls Map */}
-      <div className="w-full h-64 relative shadow-inner border-b border-gray-200 flex-shrink-0">
+      <div className="w-full h-64 relative shadow-inner border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
         <MapContainer
           center={[market.latitude, market.longitude]}
           zoom={16}
@@ -229,23 +233,24 @@ export default function MarcheDetail() {
 
         {/* Vendor Popup Card on map tap */}
         {activeVendor && (
-          <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-2xl p-3 shadow-xl z-20 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 font-black text-base flex-shrink-0">
+          <div className="absolute bottom-4 left-4 right-4 backdrop-blur-md rounded-2xl p-3 shadow-xl z-20 flex items-center gap-3" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-base flex-shrink-0" style={{ background: isDark ? 'rgba(243,168,59,0.12)' : '#FEF3C7', color: isDark ? '#F3A83B' : '#D97706' }}>
               {activeVendor.nom_etablissement.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-extrabold text-xs text-gray-800 truncate">{activeVendor.nom_etablissement}</p>
-              <p className="text-[9px] text-gray-400 truncate">{activeVendor.localisation_marche}</p>
+              <p className="font-extrabold text-xs truncate" style={{ color: 'var(--text-primary)' }}>{activeVendor.nom_etablissement}</p>
+              <p className="text-[9px] truncate" style={{ color: 'var(--text-muted)' }}>{activeVendor.localisation_marche}</p>
               <div className="flex gap-2 mt-0.5 text-[9px] font-bold">
                 <span className="text-amber-600">⭐ {activeVendor.score_reputation.toFixed(1)}</span>
-                <span className="text-gray-400">•</span>
-                <span className="text-gray-500">📦 {activeVendor._count?.produits || 0} articles</span>
+                <span style={{ color: 'var(--text-muted)' }}>•</span>
+                <span style={{ color: 'var(--text-muted)' }}>📦 {activeVendor._count?.produits || 0} articles</span>
               </div>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <button
                 onClick={() => setActiveVendor(null)}
-                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 text-xs cursor-pointer"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs cursor-pointer"
+                style={{ background: isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6', color: 'var(--text-muted)' }}
               >
                 ✕
               </button>
@@ -262,17 +267,19 @@ export default function MarcheDetail() {
 
       {/* Search + Filters */}
       <div className="px-5 mt-4 flex-shrink-0">
-        <div className="flex items-center gap-2 border border-gray-200 px-4 py-2.5 rounded-2xl shadow-sm" style={{ background: 'var(--surface)' }}>
-          <span className="text-gray-400 text-sm">🔍</span>
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>🔍</span>
           <input
+            id="marche-search"
             type="text"
             placeholder="Filtrer étals ou produits dans ce marché..."
             value={recherche}
             onChange={e => setRecherche(e.target.value)}
-            className="flex-1 bg-transparent outline-none text-xs text-gray-700 font-medium placeholder-gray-400"
+            className="flex-1 bg-transparent outline-none text-xs font-medium"
+            style={{ color: 'var(--text-secondary)' }}
           />
           {recherche && (
-            <button onClick={() => setRecherche('')} className="text-gray-400 hover:text-gray-600 text-xs cursor-pointer">✕</button>
+            <button onClick={() => setRecherche('')} className="text-xs cursor-pointer" style={{ color: 'var(--text-muted)' }}>✕</button>
           )}
         </div>
       </div>
@@ -286,8 +293,8 @@ export default function MarcheDetail() {
               onClick={() => setSelectedCategory(cat)}
               className="px-4 py-1.5 rounded-full text-[10px] font-bold cursor-pointer whitespace-nowrap transition-all"
               style={{
-                background: selectedCategory === cat ? '#059669' : '#fff',
-                color: selectedCategory === cat ? '#fff' : '#5F5E5A',
+                background: selectedCategory === cat ? '#059669' : (isDark ? 'rgba(255,255,255,0.06)' : '#fff'),
+                color: selectedCategory === cat ? '#fff' : (isDark ? '#9CA3AF' : '#5F5E5A'),
                 border: `1.5px solid ${selectedCategory === cat ? '#059669' : 'var(--border)'}`,
               }}
             >
@@ -299,16 +306,16 @@ export default function MarcheDetail() {
 
       {/* === Vendor Stalls Horizontal Scroll === */}
       <div className="px-5 mt-5">
-        <h3 className="font-black text-gray-800 text-[11px] uppercase tracking-widest mb-2.5 flex items-center justify-between">
+        <h3 className="font-black text-[11px] uppercase tracking-widest mb-2.5 flex items-center justify-between" style={{ color: 'var(--text-primary)' }}>
           <span>Étals dans ce marché</span>
-          <span className="font-bold text-[10px] text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full normal-case">
+          <span className="font-bold text-[10px] text-emerald-600 px-2.5 py-0.5 rounded-full normal-case" style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#ECFDF5' }}>
             {vendorsFiltered.length} étals actifs
           </span>
         </h3>
 
         {vendorsFiltered.length === 0 ? (
-          <div className="text-center py-5 rounded-2xl border border-gray-150" style={{ background: 'var(--surface)' }}>
-            <p className="text-[10px] font-bold text-gray-400">Aucun étal trouvé.</p>
+          <div className="text-center py-5 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <p className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>Aucun étal trouvé.</p>
           </div>
         ) : (
           <div className="flex gap-3 overflow-x-auto pb-2">
@@ -316,19 +323,19 @@ export default function MarcheDetail() {
               <div
                 key={v.id_user}
                 onClick={() => goToVendorCatalogue(v.id_user)}
-                className="flex-shrink-0 w-36 border border-gray-150 hover:border-amber-400 p-3 rounded-2xl cursor-pointer shadow-sm transition-all hover:shadow-md"
-                style={{ background: 'var(--surface)' }}
+                className="flex-shrink-0 w-36 hover:border-amber-400 p-3 rounded-2xl cursor-pointer shadow-sm transition-all hover:shadow-md"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
               >
-                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-black text-base mb-2">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-base mb-2" style={{ background: isDark ? 'rgba(243,168,59,0.12)' : '#FEF3C7', color: isDark ? '#F3A83B' : '#D97706' }}>
                   {v.nom_etablissement.charAt(0).toUpperCase()}
                 </div>
-                <h4 className="font-extrabold text-[11px] text-gray-800 truncate leading-tight">{v.nom_etablissement}</h4>
-                <p className="text-[9px] text-gray-400 truncate mt-0.5">
+                <h4 className="font-extrabold text-[11px] truncate leading-tight" style={{ color: 'var(--text-primary)' }}>{v.nom_etablissement}</h4>
+                <p className="text-[9px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
                   {v.utilisateur.prenom} {v.utilisateur.nom}
                 </p>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 text-[9px] font-bold">
+                <div className="flex items-center justify-between mt-2 pt-2 text-[9px] font-bold" style={{ borderTop: '1px solid var(--border)' }}>
                   <span className="text-amber-600">⭐ {v.score_reputation.toFixed(1)}</span>
-                  <span className="text-gray-400">{v._count?.produits || 0} art.</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{v._count?.produits || 0} art.</span>
                 </div>
               </div>
             ))}
@@ -338,15 +345,15 @@ export default function MarcheDetail() {
 
       {/* === Market Products Grid === */}
       <div className="px-5 mt-6">
-        <h3 className="font-black text-gray-800 text-[11px] uppercase tracking-widest mb-2.5 flex items-center justify-between">
+        <h3 className="font-black text-[11px] uppercase tracking-widest mb-2.5 flex items-center justify-between" style={{ color: 'var(--text-primary)' }}>
           <span>Catalogue du Marché</span>
-          <span className="font-bold text-[10px] text-gray-500 normal-case">{productsFiltered.length} article{productsFiltered.length !== 1 ? 's' : ''}</span>
+          <span className="font-bold text-[10px] normal-case" style={{ color: 'var(--text-muted)' }}>{productsFiltered.length} article{productsFiltered.length !== 1 ? 's' : ''}</span>
         </h3>
 
         {productsFiltered.length === 0 ? (
-          <div className="text-center py-10 rounded-2xl border border-gray-150 shadow-sm" style={{ background: 'var(--surface)' }}>
+          <div className="text-center py-10 rounded-2xl shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <span className="text-3xl">🔍</span>
-            <p className="text-[10px] font-bold text-gray-400 mt-2">Aucun produit disponible dans ce marché.</p>
+            <p className="text-[10px] font-bold mt-2" style={{ color: 'var(--text-muted)' }}>Aucun produit disponible dans ce marché.</p>
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-3">
@@ -354,21 +361,21 @@ export default function MarcheDetail() {
               <div
                 key={p.id_produit}
                 onClick={() => goToVendorCatalogue(p.vendeur.id_user)}
-                className="border border-gray-150 p-2.5 rounded-2xl cursor-pointer shadow-sm hover:shadow-md hover:border-amber-300 transition-all flex flex-col justify-between"
-                style={{ background: 'var(--surface)' }}
+                className="p-2.5 rounded-2xl cursor-pointer shadow-sm hover:shadow-md hover:border-amber-300 transition-all flex flex-col justify-between"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
               >
                 <div className="text-center">
                   <div className="text-3xl mb-1.5">{productEmoji(p.nom)}</div>
-                  <h4 className="font-extrabold text-[10px] text-gray-800 line-clamp-2 leading-tight">{p.nom}</h4>
-                  <p className="text-[8px] text-gray-400 truncate mt-0.5">{p.vendeur?.nom_etablissement}</p>
+                  <h4 className="font-extrabold text-[10px] line-clamp-2 leading-tight" style={{ color: 'var(--text-primary)' }}>{p.nom}</h4>
+                  <p className="text-[8px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{p.vendeur?.nom_etablissement}</p>
                 </div>
 
-                <div className="mt-2 text-center pt-1.5 border-t border-gray-100">
+                <div className="mt-2 text-center pt-1.5" style={{ borderTop: '1px solid var(--border)' }}>
                   <span className="text-[10px] font-black text-emerald-600 block">
                     {p.prix_reference.toLocaleString()} F
                   </span>
                   {p.categorie && (
-                    <span className="text-[8px] text-gray-400 block">{catEmoji(p.categorie.nom_categorie)} {p.categorie.nom_categorie}</span>
+                    <span className="text-[8px] block" style={{ color: 'var(--text-muted)' }}>{catEmoji(p.categorie.nom_categorie)} {p.categorie.nom_categorie}</span>
                   )}
                 </div>
               </div>

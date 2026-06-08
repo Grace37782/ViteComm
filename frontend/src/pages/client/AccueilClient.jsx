@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
@@ -151,6 +152,8 @@ function MapRecenter({ center, zoomLevel }) {
 export default function AccueilClient() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
 
   const [markets, setMarkets] = useState([])
   const [cart, setCart] = useState(null)
@@ -259,17 +262,17 @@ export default function AccueilClient() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
           <div className="text-4xl mb-3 animate-spin">⏳</div>
-          <div className="font-bold text-sm text-gray-500">Chargement de la carte et des marchés…</div>
+          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Chargement de la carte et des marchés…</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="w-full font-sans bg-gray-50 flex flex-col pb-6">
+    <div className="w-full font-sans flex flex-col pb-6" style={{ background: 'var(--bg)' }}>
       {/* Header Panel - Search */}
       <div className="bg-emerald-800 text-white px-4 pt-3 pb-3 shadow-md flex-shrink-0">
         {/* Search wrapper */}
@@ -304,17 +307,22 @@ export default function AccueilClient() {
 
           {/* Autocomplete Dropdown */}
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 text-gray-805"
-              style={{ background: 'var(--surface)' }}>
+            <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-xl border overflow-hidden z-50"
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
               {suggestions.map((m) => (
                 <div
                   key={m.id_marche}
                   onClick={() => handleSelectMarket(m)}
-                  className="px-4 py-3 hover:bg-gray-100 cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-b-0 text-gray-800"
+                  className="px-4 py-3 cursor-pointer flex items-center justify-between border-b last:border-b-0"
+                  style={{
+                    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                    borderColor: 'var(--border-light)',
+                    color: 'var(--text-primary)',
+                  }}
                 >
                   <div>
                     <p className="font-bold text-xs">{m.nom}</p>
-                    <p className="text-[10px] text-gray-400 truncate max-w-xs">{m.description}</p>
+                    <p className="text-[10px] truncate max-w-xs" style={{ color: 'var(--text-muted)' }}>{m.description}</p>
                   </div>
                   <span className="text-xs">🏪</span>
                 </div>
@@ -325,7 +333,8 @@ export default function AccueilClient() {
       </div>
 
       {/* 🗺️ Interactive Map Container with absolute selection drawer overlay */}
-      <div className="w-full h-96 relative shadow-inner border-b border-gray-200 flex-shrink-0">
+      <div className="w-full h-96 relative shadow-inner flex-shrink-0"
+        style={{ borderBottom: `1px solid ${isDark ? 'var(--border)' : '#e5e7eb'}` }}>
         <MapContainer center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%', zIndex: 10 }}>
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -369,7 +378,8 @@ export default function AccueilClient() {
 
         {/* 🌟 Premium Selected Market Map Overlay Card */}
         {activeMarket && (
-          <div className="absolute bottom-5 left-4 right-4 bg-white/90 backdrop-blur-md border border-gray-200 rounded-3xl p-4 shadow-2xl z-20 transition-all duration-300 animate-slide-up flex gap-3 items-center">
+          <div className="absolute bottom-5 left-4 right-4 backdrop-blur-md rounded-3xl p-4 shadow-2xl z-20 transition-all duration-300 animate-slide-up flex gap-3 items-center"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <img
               src={activeMarket.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=120&q=80'}
               alt={activeMarket.nom}
@@ -377,25 +387,27 @@ export default function AccueilClient() {
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-1">
-                <h4 className="font-extrabold text-sm text-gray-800 truncate">{activeMarket.nom}</h4>
+                <h4 className="font-extrabold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{activeMarket.nom}</h4>
                 <button
                   onClick={() => {
                     setActiveMarket(null)
                     setRecherche('')
                   }}
-                  className="text-gray-400 hover:text-gray-600 text-xs w-5 h-5 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer"
+                  className="text-xs w-5 h-5 rounded-full flex items-center justify-center cursor-pointer"
+                  style={{ color: 'var(--text-muted)' }}
                 >
                   ✕
                 </button>
               </div>
-              <p className="text-[10px] text-gray-500 line-clamp-1 mt-0.5">{activeMarket.description}</p>
+              <p className="text-[10px] line-clamp-1 mt-0.5" style={{ color: 'var(--text-muted)' }}>{activeMarket.description}</p>
               
               <div className="flex items-center gap-3 mt-2">
-                <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                <span className="text-[9px] font-bold text-emerald-700 px-2 py-0.5 rounded-full"
+                  style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#D1FAE5' }}>
                   🏪 {activeMarket._count?.vendeurs || 0} étals actifs
                 </span>
                 {geoPosition && (
-                  <span className="text-[9px] font-bold text-gray-500">
+                  <span className="text-[9px] font-bold" style={{ color: 'var(--text-muted)' }}>
                     📏 {getDistanceKm(geoPosition.lat, geoPosition.lng, activeMarket.latitude, activeMarket.longitude).toFixed(1)} km
                   </span>
                 )}
@@ -414,17 +426,18 @@ export default function AccueilClient() {
 
       {/* List Section */}
       <div className="px-5 mt-6 flex-1">
-        <h3 className="font-black text-gray-850 text-base mb-3 flex items-center justify-between">
+        <h3 className="font-black text-base mb-3 flex items-center justify-between" style={{ color: 'var(--text-primary)' }}>
           <span>Marchés Disponibles</span>
-          <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+          <span className="text-xs font-semibold text-emerald-600 px-2.5 py-1 rounded-full"
+            style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#D1FAE5' }}>
             {marketsFiltered.length} localmarts
           </span>
         </h3>
 
         {marketsFiltered.length === 0 ? (
-          <div className="text-center py-10 rounded-3xl border border-gray-150 shadow-sm" style={{ background: 'var(--surface)' }}>
+          <div className="text-center py-10 rounded-3xl shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <span className="text-4xl">🏜️</span>
-            <p className="text-xs font-bold text-gray-400 mt-2">Aucun marché ne correspond à ce secteur.</p>
+            <p className="text-xs font-bold mt-2" style={{ color: 'var(--text-muted)' }}>Aucun marché ne correspond à ce secteur.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
@@ -434,10 +447,13 @@ export default function AccueilClient() {
                 <div
                   key={m.id_marche}
                   onClick={() => handleSelectMarket(m)}
-                  className={`flex items-center gap-3 p-3 rounded-2xl border transition-all shadow-sm cursor-pointer ${
-                    isSelected ? 'border-amber-400 ring-2 ring-amber-200' : 'border-gray-150 hover:border-emerald-300'
+                  className={`flex items-center gap-3 p-3 rounded-2xl transition-all shadow-sm cursor-pointer ${
+                    isSelected ? 'border-amber-400 ring-2 ring-amber-200' : 'border-emerald-300'
                   }`}
-                  style={{ background: 'var(--surface)' }}
+                  style={{
+                    background: 'var(--surface)',
+                    borderColor: isSelected ? undefined : 'var(--border)',
+                  }}
                 >
                   <img
                     src={m.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=150&q=80'}
@@ -447,7 +463,7 @@ export default function AccueilClient() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
-                      <h4 className="font-extrabold text-sm text-gray-800 truncate">{m.nom}</h4>
+                      <h4 className="font-extrabold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{m.nom}</h4>
                       {m.distance !== null && (
                         <span className="text-[10px] font-bold text-emerald-600 flex-shrink-0">
                           📏 {m.distance.toFixed(1)} km
@@ -455,10 +471,11 @@ export default function AccueilClient() {
                       )}
                     </div>
                     
-                    <p className="text-[10px] text-gray-400 line-clamp-2 mt-0.5 leading-normal">{m.description}</p>
+                    <p className="text-[10px] line-clamp-2 mt-0.5 leading-normal" style={{ color: 'var(--text-muted)' }}>{m.description}</p>
                     
                     <div className="flex items-center justify-between mt-2">
-                      <span className="text-[10px] font-bold text-gray-450 bg-gray-100 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ color: 'var(--text-muted)', background: isDark ? 'rgba(255,255,255,0.06)' : '#F3F4F6' }}>
                         🏪 {m._count?.vendeurs || 0} étals actifs
                       </span>
                       <button

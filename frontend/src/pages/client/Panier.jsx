@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
 
 const FRAIS_LIVRAISON = 1500
 const COMMISSION_RATE = 0.006
@@ -11,6 +12,8 @@ function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 export default function Panier() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
 
   const [cart, setCart]       = useState(null)
   const [loading, setLoading] = useState(true)
@@ -84,7 +87,7 @@ export default function Panier() {
       {toast && (
         <div style={{
           position: 'fixed', top: 16, left: 16, right: 16, zIndex: 100,
-          background: '#2C2C2A', color: '#fff', borderRadius: 16,
+          background: isDark ? '#1a1a18' : '#2C2C2A', color: '#fff', borderRadius: 16,
           padding: '14px 20px', fontWeight: 700, fontSize: 14, textAlign: 'center',
           boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
         }}>{toast}</div>
@@ -149,7 +152,7 @@ export default function Panier() {
                 <span className="text-lg">🏪</span>
                 <span className="font-black text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{etal.nom}</span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: '#E1F5EE', color: '#0F6E56' }}>
+                  style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56' }}>
                   {etal.items.length} article{etal.items.length > 1 ? 's' : ''}
                 </span>
               </div>
@@ -195,13 +198,13 @@ export default function Panier() {
           ))}
 
           {/* MODE PAIEMENT */}
-          <div className="rounded-2xl p-4" style={{ background: '#FAEEDA', border: '1.5px solid #FAC775' }}>
+          <div className="rounded-2xl p-4" style={{ background: isDark ? 'rgba(186,117,23,0.08)' : '#FAEEDA', border: `1.5px solid ${isDark ? 'rgba(243,168,59,0.2)' : '#FAC775'}` }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
                 style={{ background: '#BA7517' }}>💵</div>
               <div>
-                <div className="font-black text-sm" style={{ color: '#854F0B' }}>Paiement à la livraison</div>
-                <div className="text-xs" style={{ color: '#854F0B' }}>Vous payez en espèces quand vous recevez vos articles</div>
+                <div className="font-black text-sm" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Paiement à la livraison</div>
+                <div className="text-xs" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Vous payez en espèces quand vous recevez vos articles</div>
               </div>
               <div className="ml-auto w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
                 style={{ background: '#BA7517' }}>

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
+import { useTheme } from '../../context/ThemeContext'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
 export default function SelectionLivreur() {
+  const { resolved } = useTheme(); const isDark = resolved === 'dark'
   const navigate = useNavigate()
   const location = useLocation()
   const { cart, total: totalMarchandises, sousTotal } = location.state || {}
@@ -145,7 +147,7 @@ export default function SelectionLivreur() {
                   onClick={() => setLivreurId(drv.id_user)}
                   className="w-full text-left rounded-2xl p-4 cursor-pointer transition-all active:scale-98"
                   style={{
-                    background: sel ? '#E1F5EE' : '#fff',
+                    background: sel ? (isDark ? 'rgba(45,196,145,0.08)' : '#E1F5EE') : (isDark ? 'rgba(255,255,255,0.03)' : '#fff'),
                     border: `2px solid ${sel ? '#1D9E75' : 'var(--border)'}`,
                     boxShadow: sel ? '0 4px 16px rgba(29,158,117,0.2)' : '0 2px 8px rgba(0,0,0,0.04)',
                     transform: sel ? 'translateY(-1px)' : 'none',
@@ -167,13 +169,13 @@ export default function SelectionLivreur() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold px-2 py-1 rounded-lg"
-                          style={{ background: '#FAEEDA', color: '#854F0B' }}>
-                          💵 {formatPrice(FRAIS_LIVRAISON)} livraison
-                        </span>
-                        <span className="text-xs font-semibold px-2 py-1 rounded-lg"
-                          style={{ background: '#E1F5EE', color: '#0F6E56' }}>
-                          🚗 {drv.immatriculation}
-                        </span>
+                          style={{ background: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' }}>
+                           💵 {formatPrice(FRAIS_LIVRAISON)} livraison
+                         </span>
+                         <span className="text-xs font-semibold px-2 py-1 rounded-lg"
+                           style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56' }}>
+                           🚗 {drv.immatriculation}
+                         </span>
                       </div>
                     </div>
 
@@ -215,7 +217,7 @@ export default function SelectionLivreur() {
           disabled={!livreurId || placing}
           className="w-full py-4 rounded-2xl text-white font-black text-base cursor-pointer transition-all active:scale-98"
           style={{
-            background: livreurId ? '#1D9E75' : '#D3D1C7',
+            background: livreurId ? '#1D9E75' : (isDark ? 'rgba(255,255,255,0.08)' : '#D3D1C7'),
             border: 'none',
             boxShadow: livreurId ? '0 6px 24px rgba(29,158,117,0.4)' : 'none',
             opacity: placing ? 0.8 : 1,

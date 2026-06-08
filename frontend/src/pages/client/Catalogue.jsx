@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
+import { useTheme } from '../../context/ThemeContext'
 
 const CATEGORY_EMOJI = {
   'Légumes': '🥬',
@@ -33,6 +34,8 @@ export default function Catalogue() {
   const navigate = useNavigate()
   const location = useLocation()
   const { vendeurId } = useParams()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
 
   // If navigated from a market, we can go back to it
   const fromMarket = location.state?.fromMarket
@@ -271,7 +274,7 @@ export default function Catalogue() {
 
                   {/* Catégorie */}
                   <div className="text-center mb-1">
-                    <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#E1F5EE', color: '#0F6E56' }}>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56' }}>
                       {prod.categorie?.nom_categorie || ''}
                     </span>
                   </div>
@@ -279,7 +282,7 @@ export default function Catalogue() {
                   {/* Stock faible */}
                   {stockFaible && (
                     <div className="text-center mb-1">
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#FAEEDA', color: '#854F0B' }}>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: isDark ? 'rgba(243,168,59,0.12)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' }}>
                         ⚠️ {prod.stock_disponible} restant{prod.stock_disponible !== 1 ? 's' : ''}
                       </span>
                     </div>
@@ -299,7 +302,7 @@ export default function Catalogue() {
                       <button
                         onClick={() => retirerDuPanier(prod)}
                         className="w-8 h-8 flex items-center justify-center text-lg font-black cursor-pointer"
-                        style={{ background: '#E1F5EE', border: 'none', color: '#0F6E56' }}
+                        style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', border: 'none', color: isDark ? '#2DC491' : '#0F6E56' }}
                       >
                         −
                       </button>
@@ -352,7 +355,7 @@ export default function Catalogue() {
       {toast && (
         <div
           className="fixed top-4 left-4 right-4 z-50 px-4 py-3 rounded-2xl text-white text-sm font-bold text-center"
-          style={{ background: '#2C2C2A', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}
+          style={{ background: isDark ? 'rgba(255,255,255,0.12)' : '#2C2C2A', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}
         >
           {toast}
         </div>
