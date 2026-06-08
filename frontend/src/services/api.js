@@ -1,4 +1,4 @@
-const API_BASE = '/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 function getToken() {
   return localStorage.getItem('vc_token')
@@ -6,7 +6,8 @@ function getToken() {
 
 async function request(endpoint, options = {}) {
   const token = getToken()
-  const headers = { 'Content-Type': 'application/json', ...options.headers }
+  const isFormData = options.body instanceof FormData
+  const headers = isFormData ? { ...options.headers } : { 'Content-Type': 'application/json', ...options.headers }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
   let res
@@ -31,15 +32,35 @@ async function request(endpoint, options = {}) {
 
 export const api = {
   get: (url) => request(url),
-  post: (url, data) => request(url, { method: 'POST', body: JSON.stringify(data) }),
+  post: (url, data) => request(url, {
+    method: 'POST',
+    body: data instanceof FormData ? data : JSON.stringify(data),
+    headers: data instanceof FormData ? {} : {},
+  }),
   put: (url, data) => request(url, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (url) => request(url, { method: 'DELETE' }),
 }
 
 export async function login(credentials) {
-  const data = await request('/auth/login', {
+  const res = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Erreur de connexion.' }))
+    throw new Error(err.error || `Erreur ${res.status}`)
+  }
+  const data = await res.json()
+  localStorage.setItem('vc_user', JSON.stringify(data.user))
+  localStorage.setItem('vc_token', data.token)
+  return data
+}
+
+export async function googleLogin(credential) {
+  const data = await request('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ credential }),
     headers: {}
   })
   localStorage.setItem('vc_user', JSON.stringify(data.user))

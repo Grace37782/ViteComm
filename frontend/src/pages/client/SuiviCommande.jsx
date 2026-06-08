@@ -1,5 +1,4 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import BottomNav from '../../components/client/BottomNav'
 
 export default function SuiviCommande() {
   const navigate = useNavigate()
@@ -113,7 +112,7 @@ export default function SuiviCommande() {
 
       </div>
 
-      <BottomNav panierCount={0} />
+
     </div>
   )
 }

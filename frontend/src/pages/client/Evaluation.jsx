@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import BottomNav from '../../components/client/BottomNav'
 
 const COMMANDES = [
   {
@@ -287,7 +286,7 @@ export default function Historique() {
         </div>
       )}
 
-      <BottomNav panierCount={0} />
+
     </div>
   )
 }

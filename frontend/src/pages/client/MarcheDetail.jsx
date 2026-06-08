@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../../services/api'
-import BottomNav from '../../components/client/BottomNav'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -376,7 +375,7 @@ export default function MarcheDetail() {
         )}
       </div>
 
-      <BottomNav panierCount={panierCount} />
+
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from './context/AuthContext'
 import Accueil from './pages/Accueil/Accueil'
 import Connexion from './pages/auth/Connexion'
@@ -10,12 +11,25 @@ import Vendeur from './pages/vendeur/Vendeur'
 import Livreur from './pages/livreur/Livreur'
 import Admin from './pages/admin/Admin'
 import Inscription from './pages/auth/Inscription'
+import ForgotPassword from './pages/auth/ForgotPassword'
 import Profil from './pages/client/Profil'
 import SuiviCommande from './pages/client/SuiviCommande'
 import MarcheDetail from './pages/client/MarcheDetail'
 import MesCommandes from './pages/client/MesCommandes'
+import ClientLayout from './components/client/ClientLayout'
+
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+
+function AppProviders({ children }) {
+  if (googleClientId) {
+    return <GoogleOAuthProvider clientId={googleClientId}>{children}</GoogleOAuthProvider>
+  }
+  return children
+}
+
 export default function App() {
   return (
+    <AppProviders>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -27,20 +41,25 @@ export default function App() {
         {/* Connexions */}
         <Route path="/connect" element={<Connexion />} />
         <Route path="/register" element={<Inscription />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         {/* Connexion admin cachée */}
         <Route path="/admin-connect" element={<Connexion />} />
 
-        {/* Pages temporaires */}
-        <Route path="/client/accueil" element={<AccueilClient />} />
-        <Route path="/client/market/:marketId" element={<MarcheDetail />} />
-        <Route path="/client/catalogue/:vendeurId" element={<Catalogue />} />
-        <Route path="/client/panier" element={<Panier />} />
-        <Route path="/client/selection-livreur" element={<SelectionLivreur />} />
-        <Route path="/client/suivi-commande" element={<SuiviCommande />} />
+        {/* Pages client */}
+        <Route path="/client" element={<ClientLayout />}>
+          <Route path="accueil" element={<AccueilClient />} />
+          <Route path="market/:marketId" element={<MarcheDetail />} />
+          <Route path="catalogue/:vendeurId" element={<Catalogue />} />
+          <Route path="panier" element={<Panier />} />
+          <Route path="selection-livreur" element={<SelectionLivreur />} />
+          <Route path="suivi-commande" element={<SuiviCommande />} />
+          <Route path="profil" element={<Profil />} />
+          <Route path="mes-commandes" element={<MesCommandes />} />
+        </Route>
+
         <Route path="/vendeur/dashboard" element={<Vendeur />} />
         <Route path="/livreur/dashboard" element={<Livreur />} />
         <Route path="/admin/dashboard" element={<Admin />} />
-        <Route path="/client/profil" element={<Profil />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/accueil" />} />
@@ -48,5 +67,6 @@ export default function App() {
       </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </AppProviders>
   )
 }

@@ -1,9 +1,16 @@
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import prisma from '../config/db.js';
+import { sendVerificationCode, sendPasswordResetCode } from '../services/mail.js';
+import { moveToPermanent } from '../middleware/upload.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-vitecomm-2026-academic-mvp';
-const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || '7d';
+const { JWT_SECRET, JWT_EXPIRES_IN } = process.env;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in environment variables.');
+}
+const JWT_EXPIRES = JWT_EXPIRES_IN || '7d';
 
 // Derive role from user specialization rows (RG17)
 const deriveRole = (user) => {
@@ -70,6 +77,8 @@ const findUserWithRole = (where) =>
 // ────────────────────────────────────────────────────────────
 // POST /auth/register
 // Guide §1.3 - Écran d'Inscription
+// Étape 1 : valide les champs, génère un code, envoie l'email,
+//            stocke un VerificationToken (pas d'utilisateur en DB)
 // Body: { nom, prenom, telephone, email, mot_de_passe,
 //         mot_de_passe_confirmation, role,
 //         /* client */ adresse_livraison,
@@ -81,39 +90,39 @@ export const register = async (req, res) => {
     nom, prenom, telephone, email,
     mot_de_passe, mot_de_passe_confirmation,
     role,
-    // Client
     adresse_livraison,
-    // Vendeur
-    nom_etablissement, localisation_marche,
-    // Livreur
+    nom_etablissement, localisation_marche, id_marche,
     type_vehicule, immatriculation
   } = req.body;
 
   // ── Validate common required fields ──────────────────────
-  if (!nom || !prenom || !telephone || !email || !mot_de_passe) {
+  if (!nom || !prenom || !mot_de_passe) {
     return res.status(400).json({
-      error: 'Champs obligatoires manquants : nom, prenom, telephone, email, mot_de_passe.'
+      error: 'Champs obligatoires manquants : nom, prenom, mot_de_passe.'
     });
   }
 
-  // Email format check
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ error: 'Format de l\'adresse email invalide.' });
+  if (!email && !telephone) {
+    return res.status(400).json({
+      error: 'Email ou téléphone obligatoire.'
+    });
   }
 
-  // Password confirmation (guide §1.3 - validation en temps réel)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (email && !emailRegex.test(email)) {
+    return res.status(400).json({ error: "Format de l'adresse email invalide." });
+  }
+
   if (mot_de_passe_confirmation !== undefined && mot_de_passe !== mot_de_passe_confirmation) {
     return res.status(400).json({ error: 'Les mots de passe ne correspondent pas.' });
   }
 
   if (!['client', 'vendeur', 'livreur'].includes(role)) {
     return res.status(400).json({
-      error: "Le rôle doit être 'client', 'vendeur' ou 'livreur'. Les administrateurs sont créés manuellement."
+      error: "Le rôle doit être 'client', 'vendeur' ou 'livreur'."
     });
   }
 
-  // ── Validate role-specific required fields ────────────────
   if (role === 'client' && !adresse_livraison) {
     return res.status(400).json({ error: "L'adresse de livraison est obligatoire pour les clients." });
   }
@@ -129,63 +138,155 @@ export const register = async (req, res) => {
   }
 
   try {
-    // Check email uniqueness
-    const existingUser = await prisma.utilisateur.findUnique({ where: { email } });
+    // Check if email already has an active user (only if email provided)
+    if (email) {
+      const existingUser = await prisma.utilisateur.findUnique({ where: { email } });
+      if (existingUser) {
+        return res.status(409).json({ error: 'Cette adresse email est déjà utilisée.' });
+      }
+
+      // Check for existing pending verification for this email
+      const existingPending = await prisma.verificationToken.findFirst({
+        where: { email, expires_at: { gt: new Date() } }
+      });
+      if (existingPending) {
+        return res.status(429).json({
+          error: 'Un code de vérification a déjà été envoyé à cet email. Vérifiez vos spams ou attendez 10 minutes.',
+          pending: true
+        });
+      }
+    }
+
+    // ── Telephone-only is NOT allowed: email is required for verification ──
+    if (!email && telephone) {
+      return res.status(400).json({
+        error: 'Une adresse email est requise pour vérifier votre compte.'
+      });
+    }
+
+    // ── Email provided: send verification code ──
+    // Generate 6-digit code and unique token
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const token = crypto.randomUUID();
+
+    // Build payload as JSON
+    const photoFile = req.file?.filename;
+    const payload = JSON.stringify({
+      nom, prenom, telephone, email, mot_de_passe,
+      adresse_livraison, nom_etablissement, localisation_marche, id_marche,
+      type_vehicule, immatriculation,
+      photo: photoFile || null,
+    });
+
+    // Store verification token (expires in 10 min)
+    await prisma.verificationToken.create({
+      data: {
+        email,
+        code,
+        token,
+        data: payload,
+        role,
+        expires_at: new Date(Date.now() + 10 * 60 * 1000),
+      }
+    });
+
+    // Send email
+    await sendVerificationCode(email, code, prenom);
+
+    return res.status(200).json({
+      message: 'Code de vérification envoyé par email.',
+      token, // frontend uses this to verify later
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// POST /auth/verify-email
+// Étape 2 : vérifie le code, crée l'utilisateur en DB, connecte
+// Body: { token, code }
+// ────────────────────────────────────────────────────────────
+export const verifyEmail = async (req, res) => {
+  const { token, code } = req.body;
+
+  if (!token || !code) {
+    return res.status(400).json({ error: 'Token et code requis.' });
+  }
+
+  try {
+    const vt = await prisma.verificationToken.findUnique({ where: { token } });
+
+    if (!vt) {
+      return res.status(404).json({ error: 'Token de vérification invalide.' });
+    }
+
+    if (new Date() > vt.expires_at) {
+      await prisma.verificationToken.delete({ where: { id: vt.id } });
+      return res.status(410).json({ error: 'Code expiré. Veuillez recommencer l\'inscription.' });
+    }
+
+    if (vt.code !== code) {
+      return res.status(400).json({ error: 'Code incorrect.' });
+    }
+
+    // Check email still free (defensive)
+    const existingUser = await prisma.utilisateur.findUnique({ where: { email: vt.email } });
     if (existingUser) {
+      await prisma.verificationToken.delete({ where: { id: vt.id } });
       return res.status(409).json({ error: 'Cette adresse email est déjà utilisée.' });
     }
 
-    const hashedPassword = await bcryptjs.hash(mot_de_passe, 12);
+    const data = JSON.parse(vt.data);
+    const hashedPassword = await bcryptjs.hash(data.mot_de_passe, 12);
 
-    // ── Create user + specialization in one transaction ──────
+    // ── Create user + specialization ──
     const newUser = await prisma.$transaction(async (tx) => {
+      const photoUrl = data.photo ? moveToPermanent(data.photo) : null;
       const created = await tx.utilisateur.create({
         data: {
-          nom,
-          prenom,
-          telephone,
-          email,
+          nom: data.nom,
+          prenom: data.prenom,
+          telephone: data.telephone,
+          email: vt.email,
           mot_de_passe: hashedPassword,
-          statut_compte: 'Actif',  // Guide §1.3 - default value
-          est_admin: false
+          statut_compte: 'Actif',
+          est_admin: false,
+          photo_url: photoUrl,
         }
       });
 
-      if (role === 'client') {
+      if (vt.role === 'client') {
         await tx.client.create({
-          data: { id_user: created.id_user, adresse_livraison }
+          data: { id_user: created.id_user, adresse_livraison: data.adresse_livraison }
         });
-
-        // Auto-create empty cart for new client (RG22)
         await tx.panier.create({ data: { id_user_client: created.id_user } });
-
-      } else if (role === 'vendeur') {
+      } else if (vt.role === 'vendeur') {
         await tx.vendeur.create({
           data: {
             id_user: created.id_user,
-            nom_etablissement,
-            localisation_marche,
-            score_reputation: 0.0  // Guide §1.3 - initialised to 0
+            nom_etablissement: data.nom_etablissement,
+            localisation_marche: data.localisation_marche || '',
+            id_marche: data.id_marche ? parseInt(data.id_marche, 10) : undefined,
+            score_reputation: 0.0,
           }
         });
-
-      } else if (role === 'livreur') {
+      } else if (vt.role === 'livreur') {
         await tx.livreur.create({
           data: {
             id_user: created.id_user,
-            type_vehicule,
-            immatriculation,
-            score_reputation: 0.0
+            type_vehicule: data.type_vehicule,
+            immatriculation: data.immatriculation,
+            score_reputation: 0.0,
           }
         });
-        // Create initial availability record (RG29)
         await tx.disponibiliteLivreur.create({
           data: {
             id_user_livreur: created.id_user,
             est_disponible: true,
             distance_marche: 0.0,
             heure_debut_dispo: null,
-            heure_fin_dispo: null
+            heure_fin_dispo: null,
           }
         });
       }
@@ -193,22 +294,142 @@ export const register = async (req, res) => {
       return created;
     });
 
-    // Fetch full user for response
+    // Clean up used token
+    await prisma.verificationToken.delete({ where: { id: vt.id } });
+
+    // Issue JWT
     const fullUser = await findUserWithRole({ id_user: newUser.id_user });
     const userPayload = await buildUserPayload(fullUser);
-
-    // Issue JWT immediately (guide §1.3 - connexion automatique option)
-    const token = jwt.sign(
-      { id_user: newUser.id_user, role },
+    const jwtToken = jwt.sign(
+      { id_user: newUser.id_user, role: vt.role },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES }
     );
 
     return res.status(201).json({
-      message: 'Inscription réussie.',
-      token,
-      user: userPayload
+      message: 'Compte créé avec succès.',
+      token: jwtToken,
+      user: userPayload,
     });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// POST /auth/resend-code
+// Body: { token }
+// ────────────────────────────────────────────────────────────
+export const resendCode = async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ error: 'Token requis.' });
+  }
+
+  try {
+    const vt = await prisma.verificationToken.findUnique({ where: { token } });
+    if (!vt) {
+      return res.status(404).json({ error: 'Token invalide ou inscription expirée.' });
+    }
+
+    // Generate new code, extend expiry
+    const newCode = String(Math.floor(100000 + Math.random() * 900000));
+    const data = JSON.parse(vt.data);
+
+    await prisma.verificationToken.update({
+      where: { id: vt.id },
+      data: {
+        code: newCode,
+        expires_at: new Date(Date.now() + 10 * 60 * 1000),
+      }
+    });
+
+    await sendVerificationCode(vt.email, newCode, data.prenom);
+
+    return res.json({ message: 'Nouveau code envoyé par email.' });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// POST /auth/forgot-password
+// Envoie un code à 6 chiffres par email pour réinitialiser le mot de passe
+// Body: { email }
+// ────────────────────────────────────────────────────────────
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email requis.' });
+
+  try {
+    const user = await prisma.utilisateur.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ error: 'Aucun compte trouvé avec cet email.' });
+
+    const existing = await prisma.passwordResetToken.findFirst({
+      where: { email, expires_at: { gt: new Date() } }
+    });
+    if (existing) {
+      return res.status(429).json({
+        error: 'Un code a déjà été envoyé. Vérifiez vos spams ou attendez 10 minutes.',
+        pending: true
+      });
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const token = crypto.randomUUID();
+
+    await prisma.passwordResetToken.create({
+      data: { email, code, token, expires_at: new Date(Date.now() + 10 * 60 * 1000) }
+    });
+
+    await sendPasswordResetCode(email, code, user.prenom);
+
+    return res.json({ message: 'Code de réinitialisation envoyé par email.', token });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// POST /auth/reset-password
+// Valide le code et réinitialise le mot de passe
+// Body: { token, code, mot_de_passe, mot_de_passe_confirmation }
+// ────────────────────────────────────────────────────────────
+export const resetPassword = async (req, res) => {
+  const { token, code, mot_de_passe, mot_de_passe_confirmation } = req.body;
+
+  if (!token || !code || !mot_de_passe) {
+    return res.status(400).json({ error: 'Token, code et nouveau mot de passe requis.' });
+  }
+  if (mot_de_passe_confirmation !== undefined && mot_de_passe !== mot_de_passe_confirmation) {
+    return res.status(400).json({ error: 'Les mots de passe ne correspondent pas.' });
+  }
+  if (mot_de_passe.length < 8) return res.status(400).json({ error: 'Minimum 8 caractères.' });
+  if (!/[A-Z]/.test(mot_de_passe)) return res.status(400).json({ error: 'Une majuscule requise.' });
+  if (!/[a-z]/.test(mot_de_passe)) return res.status(400).json({ error: 'Une minuscule requise.' });
+  if (!/\d/.test(mot_de_passe)) return res.status(400).json({ error: 'Un chiffre requis.' });
+  if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'/`~]/.test(mot_de_passe))
+    return res.status(400).json({ error: 'Un caractère spécial requis.' });
+
+  try {
+    const rt = await prisma.passwordResetToken.findUnique({ where: { token } });
+    if (!rt) return res.status(404).json({ error: 'Token invalide.' });
+    if (new Date() > rt.expires_at) {
+      await prisma.passwordResetToken.delete({ where: { id: rt.id } });
+      return res.status(410).json({ error: 'Code expiré. Veuillez recommencer.' });
+    }
+    if (rt.code !== code) return res.status(400).json({ error: 'Code incorrect.' });
+
+    const hashedPassword = await bcryptjs.hash(mot_de_passe, 12);
+    await prisma.utilisateur.update({
+      where: { email: rt.email },
+      data: { mot_de_passe: hashedPassword }
+    });
+
+    await prisma.passwordResetToken.delete({ where: { id: rt.id } });
+
+    return res.json({ message: 'Mot de passe réinitialisé avec succès.' });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
@@ -272,7 +493,23 @@ export const login = async (req, res) => {
       user: userPayload
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la connexion.' });
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// GET /auth/markets
+// Public — liste des marchés disponibles (pour le select d'inscription)
+// ────────────────────────────────────────────────────────────
+export const getMarkets = async (req, res) => {
+  try {
+    const markets = await prisma.marche.findMany({
+      select: { id_marche: true, nom: true },
+      orderBy: { nom: 'asc' }
+    });
+    return res.json(markets);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -340,6 +577,9 @@ export const updateProfile = async (req, res) => {
       if (mot_de_passe) {
         baseData.mot_de_passe = await bcryptjs.hash(mot_de_passe, 12);
       }
+      if (req.file) {
+        baseData.photo_url = moveToPermanent(req.file.filename);
+      }
 
       if (Object.keys(baseData).length > 0) {
         await tx.utilisateur.update({
@@ -393,6 +633,84 @@ export const updateProfile = async (req, res) => {
     });
   } catch (error) {
     return res.status(400).json({ error: error.message });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// POST /auth/google
+// Google OAuth - reçoit un access_token, vérifie, connecte ou crée l'utilisateur
+// Body: { credential: access_token }
+// ────────────────────────────────────────────────────────────
+export const googleAuth = async (req, res) => {
+  const { credential } = req.body;
+  const { GOOGLE_CLIENT_ID } = process.env;
+
+  if (!credential) {
+    return res.status(400).json({ error: 'Token Google requis.' });
+  }
+
+  try {
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, given_name, family_name, sub } = payload;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email requis pour la connexion Google.' });
+    }
+
+    // Check if user exists
+    let user = await prisma.utilisateur.findUnique({
+      where: { email },
+      include: { client: true, vendeur: true, livreur: true },
+    });
+
+    if (!user) {
+      // Auto-create account as client with Google data
+      user = await prisma.$transaction(async (tx) => {
+        const created = await tx.utilisateur.create({
+          data: {
+            nom: family_name || sub,
+            prenom: given_name || 'Utilisateur',
+            telephone: '',
+            email,
+            mot_de_passe: await bcryptjs.hash(crypto.randomUUID(), 12),
+            statut_compte: 'Actif',
+            est_admin: false,
+          }
+        });
+        await tx.client.create({
+          data: { id_user: created.id_user, adresse_livraison: '' }
+        });
+        await tx.panier.create({ data: { id_user_client: created.id_user } });
+        return tx.utilisateur.findUnique({
+          where: { id_user: created.id_user },
+          include: { client: true, vendeur: true, livreur: true },
+        });
+      });
+    }
+
+    if (user.statut_compte !== 'Actif') {
+      return res.status(403).json({ error: 'Votre compte a été suspendu ou banni.' });
+    }
+
+    const role = deriveRole(user);
+    const token = jwt.sign(
+      { id_user: user.id_user, role },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES }
+    );
+
+    return res.json({
+      message: 'Connexion Google réussie.',
+      token,
+      user: await buildUserPayload(user),
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message || 'Échec de l\'authentification Google.' });
   }
 };
 

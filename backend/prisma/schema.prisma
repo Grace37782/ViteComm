@@ -279,6 +279,26 @@ model Paiement {
   facture Facture @relation(fields: [id_facture], references: [id_facture], onDelete: Cascade)
 }
 
+model VerificationToken {
+  id         Int      @id @default(autoincrement())
+  email      String
+  code       String
+  token      String   @unique
+  data       String   // JSON: full registration payload
+  role       String   // client | vendeur | livreur
+  expires_at DateTime
+  created_at DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id         Int      @id @default(autoincrement())
+  email      String
+  code       String
+  token      String   @unique
+  expires_at DateTime
+  created_at DateTime @default(now())
+}
+
 model BonDeLivraison {
   id_bon                Int      @id @default(autoincrement())
   date_emission         DateTime @default(now())

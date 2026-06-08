@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
-import BottomNav from '../../components/client/BottomNav'
 
 const CATEGORY_EMOJI = {
   'Légumes': '🥬',
@@ -359,7 +358,6 @@ export default function Catalogue() {
         </div>
       )}
 
-      <BottomNav panierCount={panierCount} />
     </div>
   )
 }

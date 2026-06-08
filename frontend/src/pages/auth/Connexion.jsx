@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login as apiLogin } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import GoogleSignInButton from '../../components/GoogleSignInButton'
 
 /* Détecte si la saisie est un email ou un téléphone */
 function detecterTypeIdentifiant(valeur) {
@@ -30,7 +31,7 @@ function messageErreur(err) {
 
 export default function Connexion() {
   const navigate = useNavigate()
-  const { login: updateAuthContext } = useAuth()
+  const { user, login: updateAuthContext } = useAuth()
 
   const [identifiant, setIdentifiant] = useState('')
   const [motDePasse,  setMdp]         = useState('')
@@ -39,6 +40,9 @@ export default function Connexion() {
   const [loading,     setLoading]     = useState(false)
 
   const typeIdent = detecterTypeIdentifiant(identifiant)
+
+  /* Vérifier si déjà connecté */
+  const alreadyLoggedIn = !!user && !!localStorage.getItem('vc_token')
 
   /* ── Validation ───────────────────────────────────── */
   function valider() {
@@ -206,6 +210,7 @@ export default function Connexion() {
           <div className="flex justify-end -mt-2">
             <button
               type="button"
+              onClick={() => navigate('/forgot-password')}
               className="text-xs text-white/70 hover:text-white cursor-pointer"
               style={{ background: 'none', border: 'none' }}
             >
@@ -237,6 +242,38 @@ export default function Connexion() {
             </div>
           )}
 
+          {/* ── Déjà connecté ── */}
+          {alreadyLoggedIn && (
+            <div
+              className="rounded-2xl px-4 py-3 text-sm font-medium border text-center"
+              style={{
+                background: 'rgba(255,193,7,0.15)',
+                borderColor: 'rgba(255,193,7,0.3)',
+                color: '#fff',
+              }}
+            >
+              🔒 Vous êtes déjà connecté en tant que <strong>{user.prenom} {user.nom}</strong>.
+              <div className="mt-2 flex gap-2 justify-center">
+                <button
+                  type="button"
+                  onClick={() => { localStorage.clear(); window.location.href = '/connect' }}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer"
+                  style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}
+                >
+                  Se déconnecter
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/client/accueil')}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer"
+                  style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}
+                >
+                  Mon espace
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Bouton */}
           <button
             type="submit"
@@ -248,6 +285,14 @@ export default function Connexion() {
           </button>
 
         </form>
+
+        <div className="mt-3">
+          <GoogleSignInButton
+            onError={(msg) => setErreur({ texte: msg, type: 'erreur' })}
+            onStart={() => setErreur(null)}
+            disabled={loading}
+          />
+        </div>
 
         {/* Inscription */}
         <div className="mt-6 text-center">

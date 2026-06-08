@@ -1,4 +1,5 @@
 import prisma from '../config/db.js';
+import { moveToPermanent, moveMarketImage } from '../middleware/upload.js';
 
 // --- 5.1. Tableau de bord Administrateur (RG08, RG12) ---
 
@@ -394,7 +395,7 @@ export const getAdminMe = async (req, res) => {
 
 // Admin update their own profile
 export const updateAdminProfile = async (req, res) => {
-  const { nom, prenom, telephone, email, photo_url } = req.body;
+  const { nom, prenom, telephone, email, photo_url, mot_de_passe } = req.body;
   const adminId = req.user.id_user;
 
   if (!nom || !prenom || !telephone || !email) {
@@ -402,9 +403,24 @@ export const updateAdminProfile = async (req, res) => {
   }
 
   try {
+    const data = { nom, prenom, telephone, email };
+
+    // Handle uploaded photo
+    if (req.file) {
+      data.photo_url = moveToPermanent(req.file.filename);
+    } else if (photo_url !== undefined) {
+      data.photo_url = photo_url || null;
+    }
+
+    // Handle password change
+    if (mot_de_passe) {
+      const bcryptjs = await import('bcryptjs');
+      data.mot_de_passe = await bcryptjs.hash(mot_de_passe, 12);
+    }
+
     const updated = await prisma.utilisateur.update({
       where: { id_user: adminId },
-      data: { nom, prenom, telephone, email, photo_url: photo_url || null },
+      data,
       select: {
         id_user: true, nom: true, prenom: true, telephone: true,
         email: true, photo_url: true, est_admin: true, statut_compte: true
@@ -617,15 +633,20 @@ export const createMarket = async (req, res) => {
   }
 
   try {
-    const market = await prisma.marche.create({
-      data: {
-        nom,
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
-        image_url,
-        description
-      }
-    });
+    const data = {
+      nom,
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      description
+    };
+
+    if (req.file) {
+      data.image_url = moveMarketImage(req.file.filename);
+    } else if (image_url) {
+      data.image_url = image_url;
+    }
+
+    const market = await prisma.marche.create({ data });
     return res.status(201).json(market);
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors de la création du marché: ' + error.message });
@@ -641,8 +662,12 @@ export const updateMarket = async (req, res) => {
     if (nom) data.nom = nom;
     if (latitude !== undefined) data.latitude = parseFloat(latitude);
     if (longitude !== undefined) data.longitude = parseFloat(longitude);
-    if (image_url !== undefined) data.image_url = image_url;
     if (description !== undefined) data.description = description;
+    if (image_url !== undefined) data.image_url = image_url;
+
+    if (req.file) {
+      data.image_url = moveMarketImage(req.file.filename);
+    }
 
     const market = await prisma.marche.update({
       where: { id_marche: parseInt(id, 10) },

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
-import BottomNav from '../../components/client/BottomNav'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -211,7 +210,7 @@ export default function MesCommandes() {
                   display: 'flex', justifyContent: 'flex-end',
                 }}>
                   <button
-                    onClick={() => navigate('/client/suivi', {
+                    onClick={() => navigate('/client/suivi-commande', {
                       state: {
                         id_commande: order.id_commande,
                         code_verification: order.code_verification,
@@ -233,7 +232,6 @@ export default function MesCommandes() {
         )}
       </div>
 
-      <BottomNav panierCount={0} />
     </div>
   )
 }

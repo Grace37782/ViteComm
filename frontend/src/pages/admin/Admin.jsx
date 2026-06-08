@@ -9,6 +9,7 @@ const TABS = [
   { id: 'marchés', label: 'Marchés', icon: '🗺️' },
   { id: 'signalements', label: 'Signalements', icon: '🚩' },
   { id: 'litiges', label: 'Litiges', icon: '⚖️' },
+  { id: 'profil', label: 'Mon Profil', icon: '👤' },
 ]
 
 const STATUS_COLORS = { Actif: '#1D9E75', Suspendu: '#BA7517', Banni: '#D85A30' }
@@ -37,18 +38,28 @@ export default function Admin() {
         {tab === 'marchés' && <MarketsTab />}
         {tab === 'signalements' && <SignalementsTab />}
         {tab === 'litiges' && <LitigesTab />}
+        {tab === 'profil' && <ProfilTab admin={admin} onLogout={() => { localStorage.clear(); navigate('/accueil') }} />}
       </main>
     </div>
   )
 }
 
 function Header({ admin, onLogout, tab, onTabChange }) {
+  const initials = (admin.prenom?.[0] || '') + (admin.nom?.[0] || '')
   return (
     <div className="sticky top-0 z-50" style={{ background: 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-lg font-black text-[#1D9E75]">V</div>
+            <button onClick={() => onTabChange('profil')} className="cursor-pointer">
+              {admin.photo_url ? (
+                <img src={admin.photo_url} alt="" className="w-9 h-9 rounded-xl object-cover border-2" style={{ borderColor: 'rgba(255,255,255,0.3)' }} />
+              ) : (
+                <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-sm font-black text-[#1D9E75]">
+                  {initials}
+                </div>
+              )}
+            </button>
             <div>
               <div className="text-white font-black text-sm">Console de Supervision Globale</div>
               <div className="text-white/60 text-xs">
@@ -597,6 +608,194 @@ function SignalementsTab() {
   )
 }
 
+/* ─── PROFIL TAB ─── */
+function ProfilTab({ admin: initialAdmin, onLogout }) {
+  const [profile, setProfile] = useState(null)
+  const [edit, setEdit] = useState(false)
+  const [form, setForm] = useState({ nom: '', prenom: '', email: '', telephone: '', mot_de_passe: '', confirm: '' })
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [err, setErr] = useState('')
+
+  useEffect(() => {
+    api.get('/admin/me').then(d => {
+      setProfile(d)
+      setForm({ nom: d.nom, prenom: d.prenom, email: d.email, telephone: d.telephone || '', mot_de_passe: '', confirm: '' })
+    }).catch(e => setErr(e.message))
+  }, [])
+
+  function show(msg, isErr) {
+    const fn = isErr ? setErr : setMsg
+    fn(msg); setTimeout(() => fn(''), 4000)
+  }
+
+  function handlePhotoChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    const reader = new FileReader()
+    reader.onload = () => setPhotoPreview(reader.result)
+    reader.readAsDataURL(file)
+  }
+
+  async function handleSave(e) {
+    e.preventDefault()
+    if (!form.nom || !form.prenom || !form.email) return show('Nom, prénom et email requis.', true)
+    if (form.mot_de_passe && form.mot_de_passe !== form.confirm) return show('Les mots de passe ne correspondent pas.', true)
+    if (form.mot_de_passe && form.mot_de_passe.length < 8) return show('Le mot de passe doit faire au moins 8 caractères.', true)
+    setSaving(true); setErr('')
+    try {
+      const body = new FormData()
+      body.set('nom', form.nom)
+      body.set('prenom', form.prenom)
+      body.set('email', form.email)
+      body.set('telephone', form.telephone)
+      if (photoFile) body.set('photo', photoFile)
+      if (form.mot_de_passe) body.set('mot_de_passe', form.mot_de_passe)
+
+      const res = await api.put('/admin/profile', body)
+      setProfile(res)
+      localStorage.setItem('vc_user', JSON.stringify(res))
+      setEdit(false)
+      setPhotoFile(null)
+      setPhotoPreview('')
+      show('Profil mis à jour.')
+    } catch (e) { show(e.message, true) }
+    finally { setSaving(false) }
+  }
+
+  if (err) return <div className="text-center py-12 text-sm font-semibold" style={{ color: '#D85A30' }}>⚠️ {err}</div>
+  if (!profile) return <div className="text-center py-12 text-sm text-[#888780]">Chargement...</div>
+
+  const initials = (profile.prenom?.[0] || '') + (profile.nom?.[0] || '')
+
+  return (
+    <div className="max-w-lg mx-auto">
+      {msg && (
+        <div className="mb-4 rounded-2xl px-4 py-3 text-sm font-bold text-white text-center" style={{ background: '#1D9E75' }}>
+          ✅ {msg}
+        </div>
+      )}
+
+      <div className="rounded-2xl p-6 border" style={{ background: '#fff', borderColor: '#E8E6DF' }}>
+        {!edit ? (
+          <>
+            {/* Avatar */}
+            <div className="flex justify-center mb-5">
+              {profile.photo_url ? (
+                <img src={profile.photo_url} alt="" className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md" />
+              ) : (
+                <div className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black text-white shadow-md"
+                  style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)' }}>
+                  {initials}
+                </div>
+              )}
+            </div>
+
+            <div className="text-center mb-5">
+              <h2 className="text-xl font-black" style={{ color: '#2C2C2A' }}>{profile.prenom} {profile.nom}</h2>
+              <p className="text-sm font-semibold mt-1" style={{ color: '#1D9E75' }}>Administrateur</p>
+            </div>
+
+            <div className="flex flex-col gap-3 mb-5">
+              <InfoRow label="Email" value={profile.email} icon="✉️" />
+              <InfoRow label="Téléphone" value={profile.telephone || '—'} icon="📱" />
+              <InfoRow label="Statut" value={profile.statut_compte} icon="🔒" />
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setEdit(true)}
+                className="flex-1 rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
+                style={{ background: '#1D9E75', color: '#fff', border: 'none' }}>
+                ✏️ Modifier
+              </button>
+              <button onClick={onLogout}
+                className="rounded-2xl py-3 px-5 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
+                style={{ background: '#FDE8E2', color: '#D85A30', border: 'none' }}>
+                🚪
+              </button>
+            </div>
+          </>
+        ) : (
+          <form onSubmit={handleSave} className="flex flex-col gap-4">
+            {/* Photo upload */}
+            <div className="flex justify-center">
+              <label className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-dashed cursor-pointer flex items-center justify-center transition-all hover:scale-105"
+                style={{
+                  background: photoPreview ? 'transparent' : '#F7F8F3',
+                  borderColor: photoPreview ? '#1D9E75' : '#E8E6DF',
+                }}>
+                {photoPreview ? (
+                  <img src={photoPreview} alt="Aperçu" className="w-full h-full object-cover" />
+                ) : profile.photo_url ? (
+                  <img src={profile.photo_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-3xl" style={{ color: '#888780' }}>📷</span>
+                )}
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                {(photoPreview || profile.photo_url) && (
+                  <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview('') }}
+                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-md">✕</button>
+                )}
+              </label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Nom" value={form.nom} onChange={v => setForm(p => ({ ...p, nom: v }))} />
+              <Field label="Prénom" value={form.prenom} onChange={v => setForm(p => ({ ...p, prenom: v }))} />
+            </div>
+            <Field label="Email" type="email" value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} />
+            <Field label="Téléphone" value={form.telephone} onChange={v => setForm(p => ({ ...p, telephone: v }))} />
+
+            <hr className="border-t my-1" style={{ borderColor: '#E8E6DF' }} />
+            <p className="text-xs font-semibold" style={{ color: '#888780' }}>🔑 Changer le mot de passe (optionnel)</p>
+            <Field label="Nouveau mot de passe" type="password" value={form.mot_de_passe} onChange={v => setForm(p => ({ ...p, mot_de_passe: v }))} />
+            <Field label="Confirmer le mot de passe" type="password" value={form.confirm} onChange={v => setForm(p => ({ ...p, confirm: v }))} />
+
+            <div className="flex gap-3 mt-2">
+              <button type="submit" disabled={saving}
+                className="flex-1 rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
+                style={{ background: '#1D9E75', color: '#fff', border: 'none', opacity: saving ? 0.7 : 1 }}>
+                {saving ? '⏳' : '💾 Enregistrer'}
+              </button>
+              <button type="button" onClick={() => {
+                setEdit(false); setPhotoFile(null); setPhotoPreview('')
+                setForm({ nom: profile.nom, prenom: profile.prenom, email: profile.email, telephone: profile.telephone || '', mot_de_passe: '', confirm: '' })
+              }}
+                className="rounded-2xl py-3 px-5 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
+                style={{ background: '#F0EFEA', color: '#888780', border: 'none' }}>
+                Annuler
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function InfoRow({ label, value, icon }) {
+  return (
+    <div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: '#F7F8F3' }}>
+      <span className="text-xs font-semibold" style={{ color: '#888780' }}>{icon} {label}</span>
+      <span className="text-sm font-bold" style={{ color: '#2C2C2A' }}>{value}</span>
+    </div>
+  )
+}
+
+function Field({ label, value, onChange, type = 'text' }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs font-semibold" style={{ color: '#888780' }}>{label}</label>
+      <input type={type} value={value} onChange={e => onChange(e.target.value)}
+        className="rounded-xl px-4 py-3 text-sm font-semibold outline-none border"
+        style={{ background: '#F7F8F3', borderColor: '#E8E6DF', color: '#2C2C2A' }} />
+    </div>
+  )
+}
+
 function LitigesTab() {
   const [litiges, setLitiges] = useState([])
   const [resolving, setResolving] = useState(null)
@@ -711,10 +910,12 @@ function MarketsTab() {
   const [markets, setMarkets] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(EMPTY_FORM)
-  const [editId, setEditId] = useState(null)  // null = create mode, number = edit mode
+  const [editId, setEditId] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState('')
 
   function flash(msg) {
     setToast(msg)
@@ -731,6 +932,8 @@ function MarketsTab() {
   function openCreate() {
     setForm(EMPTY_FORM)
     setEditId(null)
+    setImageFile(null)
+    setImagePreview('')
     setShowForm(true)
   }
 
@@ -743,7 +946,20 @@ function MarketsTab() {
       description: m.description || ''
     })
     setEditId(m.id_marche)
+    setImageFile(null)
+    setImagePreview('')
     setShowForm(true)
+  }
+
+  function handleImageChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageFile(file)
+    const reader = new FileReader()
+    reader.onload = () => setImagePreview(reader.result)
+    reader.readAsDataURL(file)
+    // Clear URL when file is selected
+    setForm(f => ({ ...f, image_url: '' }))
   }
 
   async function handleSave() {
@@ -753,13 +969,27 @@ function MarketsTab() {
     }
     setSaving(true)
     try {
-      if (editId) {
-        await api.put(`/admin/markets/${editId}`, form)
-        flash('✅ Marché mis à jour.')
+      let res
+      if (imageFile) {
+        const body = new FormData()
+        body.set('nom', form.nom)
+        body.set('latitude', form.latitude)
+        body.set('longitude', form.longitude)
+        body.set('description', form.description || '')
+        body.set('image', imageFile)
+        if (editId) {
+          res = await api.put(`/admin/markets/${editId}`, body)
+        } else {
+          res = await api.post('/admin/markets', body)
+        }
       } else {
-        await api.post('/admin/markets', form)
-        flash('✅ Marché créé avec succès.')
+        if (editId) {
+          res = await api.put(`/admin/markets/${editId}`, form)
+        } else {
+          res = await api.post('/admin/markets', form)
+        }
       }
+      flash(`✅ Marché ${editId ? 'mis à jour' : 'créé avec succès'}.`)
       setShowForm(false)
       fetchMarkets()
     } catch (e) {
@@ -893,15 +1123,46 @@ function MarketsTab() {
               )}
 
               <div>
-                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: '#888780' }}>URL de l'image (optionnel)</label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={form.image_url}
-                  onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
-                  className="w-full mt-1 px-4 py-3 rounded-xl text-sm outline-none border"
-                  style={{ borderColor: '#E8E6DF', color: '#2C2C2A' }}
-                />
+                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: '#888780' }}>Image du marché</label>
+                <div className="flex flex-col gap-2 mt-1">
+                  {/* File upload */}
+                  <label className="flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all hover:bg-gray-50"
+                    style={{ borderColor: imagePreview ? '#1D9E75' : '#E8E6DF', background: imagePreview ? '#F0FDF6' : 'transparent' }}>
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                    ) : form.image_url ? (
+                      <img src={form.image_url} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                    ) : (
+                      <span className="text-lg">📷</span>
+                    )}
+                    <span className="text-xs font-semibold flex-1" style={{ color: '#888780' }}>
+                      {imagePreview ? 'Image sélectionnée' : form.image_url ? 'URL définie' : 'Choisir une image depuis l\'appareil'}
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-1 rounded-lg" style={{ background: '#E1F5EE', color: '#0F6E56' }}>
+                      {imagePreview ? '1 fichier' : 'Parcourir'}
+                    </span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                    {(imagePreview || form.image_url) && (
+                      <button type="button" onClick={() => { setImageFile(null); setImagePreview('') }}
+                        className="text-xs text-red-500 font-bold cursor-pointer">✕</button>
+                    )}
+                  </label>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-px" style={{ background: '#E8E6DF' }} />
+                    <span className="text-[10px] font-semibold" style={{ color: '#888780' }}>OU</span>
+                    <div className="flex-1 h-px" style={{ background: '#E8E6DF' }} />
+                  </div>
+
+                  <input
+                    type="url"
+                    placeholder="https://images.unsplash.com/..."
+                    value={imageFile ? '' : form.image_url}
+                    onChange={e => { setImageFile(null); setImagePreview(''); setForm(f => ({ ...f, image_url: e.target.value })) }}
+                    className="w-full px-4 py-3 rounded-xl text-sm outline-none border"
+                    style={{ borderColor: '#E8E6DF', color: '#2C2C2A' }}
+                  />
+                </div>
               </div>
 
               <div>
