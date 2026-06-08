@@ -22,6 +22,8 @@ import SuiviCommande from './pages/client/SuiviCommande'
 import MarcheDetail from './pages/client/MarcheDetail'
 import MesCommandes from './pages/client/MesCommandes'
 import ClientLayout from './components/client/ClientLayout'
+import VendeurLayout from './components/vendeur/VendeurLayout'
+import LivreurLayout from './components/livreur/LivreurLayout'
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
@@ -62,13 +64,17 @@ export default function App() {
           <Route path="mes-commandes" element={<MesCommandes />} />
         </Route>
 
-        <Route path="/vendeur/dashboard" element={<DashboardVendeur />} />
-        <Route path="/vendeur/catalogue" element={<CatalogueVendeur />} />
-        <Route path="/vendeur/commandes" element={<CommandesVendeur />} />
-        <Route path="/vendeur/retours" element={<RetourVendeur />} />
-        <Route path="/livreur/dashboard" element={<Livreur />} />
-        <Route path="/livreur/commandes" element={<CommandesLivreur />} />
-        <Route path="/livreur/retours" element={<RetourLivreur />} />
+        <Route path="/vendeur" element={<VendeurLayout />}>
+          <Route path="dashboard" element={<DashboardVendeur />} />
+          <Route path="catalogue" element={<CatalogueVendeur />} />
+          <Route path="commandes" element={<CommandesVendeur />} />
+          <Route path="retours" element={<RetourVendeur />} />
+        </Route>
+        <Route path="/livreur" element={<LivreurLayout />}>
+          <Route path="dashboard" element={<Livreur />} />
+          <Route path="commandes" element={<CommandesLivreur />} />
+          <Route path="retours" element={<RetourLivreur />} />
+        </Route>
         <Route path="/admin/dashboard" element={<Admin />} />
 
         {/* Fallback */}
