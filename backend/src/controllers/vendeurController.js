@@ -53,40 +53,93 @@ export const getVendorDashboard = async (req, res) => {
   }
 };
 
-// --- 3.2. Catalogue de Produits (CRUD - RG03, RG24) ---
+// --- 3.2. Catalogue de Produits (CRUD - RG03, RG24, RG30, RG31) ---
+
+// Helper: resolve category name to id_categorie (RG30)
+async function resolveCategoryId(categoryName) {
+  if (!categoryName) return null;
+  const cat = await prisma.categorie.findFirst({
+    where: { nom_categorie: categoryName }
+  });
+  if (!cat) {
+    // Auto-create category if not found (RG31)
+    const created = await prisma.categorie.create({
+      data: {
+        nom_categorie: categoryName,
+        description_categorie: `Catégorie: ${categoryName}`
+      }
+    });
+    return created.id_categorie;
+  }
+  return cat.id_categorie;
+}
+
+// Helper: format product for frontend
+function formatProduct(p) {
+  return {
+    id: p.id_produit,
+    nom: p.nom,
+    description: p.description,
+    prix: p.prix_reference,
+    stock: p.stock_disponible,
+    unite: p.unite || 'kg',
+    emoji: p.photo_url || '📦',
+    categorie: p.categorie?.nom_categorie || null,
+    id_categorie: p.id_categorie,
+    photo_url: p.photo_url,
+    created_at: p.created_at,
+    historiques: p.historiques
+  };
+}
 
 export const getMyProducts = async (req, res) => {
   try {
     const products = await prisma.produit.findMany({
       where: { id_user_vendeur: req.user.id_user },
-      include: { historiques: { orderBy: { date_modification: 'asc' } } }
+      include: {
+        categorie: true,
+        historiques: { orderBy: { date_modification: 'asc' } }
+      }
     });
-    return res.json(products);
+    return res.json(products.map(formatProduct));
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors du chargement des produits.' });
   }
 };
 
 export const createProduct = async (req, res) => {
-  const { nom, description, prix_reference, stock_disponible, id_categorie } = req.body;
+  const { nom, description, prix, stock, unite, emoji, categorie, id_categorie } = req.body;
 
-  if (!nom || !description || prix_reference === undefined || stock_disponible === undefined || !id_categorie) {
+  if (!nom || !description || prix === undefined || stock === undefined) {
     return res.status(400).json({ error: 'Tous les champs requis doivent être fournis.' });
   }
-  if (parseFloat(prix_reference) < 0 || parseInt(stock_disponible, 10) < 0) {
+  if (parseFloat(prix) < 0 || parseInt(stock, 10) < 0) {
     return res.status(400).json({ error: 'Le prix et le stock doivent être des valeurs positives.' });
   }
 
   try {
+    // Resolve category: accept either id_categorie or categorie name (RG30/RG31)
+    let resolvedCategoryId = id_categorie ? parseInt(id_categorie, 10) : null;
+    if (!resolvedCategoryId && categorie) {
+      resolvedCategoryId = await resolveCategoryId(categorie);
+    }
+    if (!resolvedCategoryId) {
+      // Fallback to first available category
+      const defaultCat = await prisma.categorie.findFirst();
+      resolvedCategoryId = defaultCat?.id_categorie || 1;
+    }
+
     const product = await prisma.$transaction(async (tx) => {
       const newProduct = await tx.produit.create({
         data: {
           nom,
           description,
-          prix_reference: parseFloat(prix_reference),
-          stock_disponible: parseInt(stock_disponible, 10),
+          prix_reference: parseFloat(prix),
+          stock_disponible: parseInt(stock, 10),
+          unite: unite || 'kg',
+          photo_url: emoji || null,
           id_user_vendeur: req.user.id_user,
-          id_categorie: parseInt(id_categorie, 10)
+          id_categorie: resolvedCategoryId
         }
       });
 
@@ -101,7 +154,13 @@ export const createProduct = async (req, res) => {
       return newProduct;
     });
 
-    return res.status(201).json(product);
+    // Fetch full product with categorie for response
+    const full = await prisma.produit.findUnique({
+      where: { id_produit: product.id_produit },
+      include: { categorie: true }
+    });
+
+    return res.status(201).json(formatProduct(full));
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors de la création du produit.' });
   }
@@ -109,7 +168,7 @@ export const createProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   const { id } = req.params;
-  const { nom, description, prix_reference, stock_disponible } = req.body;
+  const { nom, description, prix, stock, unite, emoji, categorie, id_categorie } = req.body;
 
   try {
     const productId = parseInt(id, 10);
@@ -119,8 +178,16 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ error: 'Produit introuvable.' });
     }
 
-    const newPrice = prix_reference !== undefined ? parseFloat(prix_reference) : undefined;
+    const newPrice = prix !== undefined ? parseFloat(prix) : undefined;
     const priceChanged = newPrice !== undefined && newPrice !== existing.prix_reference;
+
+    // Resolve category if changed
+    let resolvedCategoryId = undefined;
+    if (id_categorie !== undefined) {
+      resolvedCategoryId = parseInt(id_categorie, 10);
+    } else if (categorie !== undefined) {
+      resolvedCategoryId = await resolveCategoryId(categorie);
+    }
 
     const updated = await prisma.$transaction(async (tx) => {
       const updatedProduct = await tx.produit.update({
@@ -129,7 +196,10 @@ export const updateProduct = async (req, res) => {
           nom: nom ?? undefined,
           description: description ?? undefined,
           prix_reference: newPrice,
-          stock_disponible: stock_disponible !== undefined ? parseInt(stock_disponible, 10) : undefined
+          stock_disponible: stock !== undefined ? parseInt(stock, 10) : undefined,
+          unite: unite ?? undefined,
+          photo_url: emoji !== undefined ? emoji : undefined,
+          id_categorie: resolvedCategoryId
         }
       });
 
@@ -143,7 +213,13 @@ export const updateProduct = async (req, res) => {
       return updatedProduct;
     });
 
-    return res.json(updated);
+    // Fetch full product with categorie for response
+    const full = await prisma.produit.findUnique({
+      where: { id_produit: updated.id_produit },
+      include: { categorie: true }
+    });
+
+    return res.json(formatProduct(full));
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors de la mise à jour.' });
   }
@@ -164,6 +240,92 @@ export const deleteProduct = async (req, res) => {
     return res.json({ message: 'Produit supprimé avec succès.' });
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors de la suppression.' });
+  }
+};
+
+// --- 3.2b. Catégories (RG30, RG31) ---
+
+export const getVendorCategories = async (req, res) => {
+  try {
+    const categories = await prisma.categorie.findMany({
+      include: {
+        _count: {
+          select: { produits: { where: { id_user_vendeur: req.user.id_user } } }
+        }
+      },
+      orderBy: { nom_categorie: 'asc' }
+    });
+
+    return res.json(categories.map((c) => ({
+      id: c.id_categorie,
+      nom: c.nom_categorie,
+      description: c.description_categorie,
+      nb_produits: c._count.produits
+    })));
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement des catégories.' });
+  }
+};
+
+export const createCategory = async (req, res) => {
+  const { nom, description } = req.body;
+
+  if (!nom || !nom.trim()) {
+    return res.status(400).json({ error: 'Le nom de la catégorie est requis.' });
+  }
+
+  try {
+    // Check if category already exists
+    const existing = await prisma.categorie.findFirst({
+      where: { nom_categorie: nom.trim() }
+    });
+    if (existing) {
+      return res.status(409).json({ error: 'Cette catégorie existe déjà.', id: existing.id_categorie });
+    }
+
+    const category = await prisma.categorie.create({
+      data: {
+        nom_categorie: nom.trim(),
+        description_categorie: description || `Catégorie: ${nom.trim()}`
+      }
+    });
+
+    return res.status(201).json({
+      id: category.id_categorie,
+      nom: category.nom_categorie,
+      description: category.description_categorie,
+      nb_produits: 0
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors de la création de la catégorie.' });
+  }
+};
+
+// --- 3.2c. Upload photo produit ---
+
+export const uploadProductPhoto = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const productId = parseInt(id, 10);
+    const existing = await prisma.produit.findUnique({ where: { id_produit: productId } });
+
+    if (!existing || existing.id_user_vendeur !== req.user.id_user) {
+      return res.status(404).json({ error: 'Produit introuvable.' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucun fichier image fourni.' });
+    }
+
+    const updated = await prisma.produit.update({
+      where: { id_produit: productId },
+      data: { photo_url: `/uploads/products/${req.file.filename}` }
+    });
+
+    return res.json({ photo_url: updated.photo_url });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors de l\'upload de la photo.' });
   }
 };
 

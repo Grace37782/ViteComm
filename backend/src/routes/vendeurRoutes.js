@@ -8,6 +8,9 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  uploadProductPhoto,
+  getVendorCategories,
+  createCategory,
   getVendorOrders,
   verifyHandover,
   getVendorReturns,
@@ -21,7 +24,7 @@ import {
 } from '../controllers/vendeurController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
-// Configure Multer for proof photo uploads (RG07)
+// Configure Multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -42,7 +45,8 @@ const upload = multer({
       return cb(null, true);
     }
     cb(new Error('Seules les images (jpeg, jpg, png, webp) sont autorisées.'));
-  }
+  },
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB max
 });
 
 const router = Router();
@@ -59,6 +63,11 @@ router.get('/products', getMyProducts);
 router.post('/products', createProduct);
 router.put('/products/:id', updateProduct);
 router.delete('/products/:id', deleteProduct);
+router.post('/products/:id/photo', upload.single('photo'), uploadProductPhoto);
+
+// Catégories (RG30, RG31)
+router.get('/categories', getVendorCategories);
+router.post('/categories', createCategory);
 
 // Commandes
 router.get('/orders', getVendorOrders);

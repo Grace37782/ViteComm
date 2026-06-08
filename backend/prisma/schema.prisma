@@ -97,9 +97,11 @@ model Produit {
   description      String
   prix_reference   Float
   stock_disponible Int
+  unite            String @default("kg")
   id_user_vendeur  Int
   id_categorie     Int
   photo_url        String?
+  created_at       DateTime @default(now())
 
   vendeur         Vendeur          @relation(fields: [id_user_vendeur], references: [id_user], onDelete: Cascade)
   categorie       Categorie        @relation(fields: [id_categorie], references: [id_categorie], onDelete: Restrict)
