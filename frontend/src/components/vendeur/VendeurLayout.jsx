@@ -7,6 +7,9 @@ const NAV_TABS = [
   { icon: '📦', label: 'Catalogue', path: '/vendeur/catalogue' },
   { icon: '🛒', label: 'Commandes', path: '/vendeur/commandes' },
   { icon: '↩️', label: 'Retours', path: '/vendeur/retours' },
+  { icon: '📈', label: 'Stats', path: '/vendeur/statistiques' },
+  { icon: '💰', label: 'Factures', path: '/vendeur/factures' },
+  { icon: '⚠️', label: 'Signaler', path: '/vendeur/signalement' },
   { icon: '👤', label: 'Profil', path: '/vendeur/profil' },
 ]
 

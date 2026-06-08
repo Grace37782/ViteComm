@@ -13,6 +13,10 @@ import DashboardVendeur from './pages/vendeur/Dashboard'
 import CatalogueVendeur from './pages/vendeur/Catalogues'
 import CommandesVendeur from './pages/vendeur/Commandes'
 import RetourVendeur from './pages/vendeur/Retour'
+import StatistiquesVendeur from './pages/vendeur/Statistiques'
+import FacturesVendeur from './pages/vendeur/Factures'
+import SignalementVendeur from './pages/vendeur/Signalement'
+import VendeurProfil from './pages/vendeur/VendeurProfil'
 import Livreur from './pages/livreur/Livreur'
 import CommandesLivreur from './pages/livreur/Commandes'
 import RetourLivreur from './pages/livreur/Retours'
@@ -72,7 +76,10 @@ export default function App() {
           <Route path="catalogue" element={<CatalogueVendeur />} />
           <Route path="commandes" element={<CommandesVendeur />} />
           <Route path="retours" element={<RetourVendeur />} />
-          <Route path="profil" element={<Profil />} />
+          <Route path="statistiques" element={<StatistiquesVendeur />} />
+          <Route path="factures" element={<FacturesVendeur />} />
+          <Route path="signalement" element={<SignalementVendeur />} />
+          <Route path="profil" element={<VendeurProfil />} />
         </Route>
         <Route path="/livreur" element={<LivreurLayout />}>
           <Route path="dashboard" element={<Livreur />} />
