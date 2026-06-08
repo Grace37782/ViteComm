@@ -264,7 +264,11 @@ export default function Connexion() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate('/client/accueil')}
+                  onClick={() => {
+                    const r = user?.role
+                    const map = { vendeur: '/vendeur/dashboard', livreur: '/livreur/dashboard', admin: '/admin/dashboard' }
+                    navigate(map[r] || '/client/accueil')
+                  }}
                   className="text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer"
                   style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}
                 >

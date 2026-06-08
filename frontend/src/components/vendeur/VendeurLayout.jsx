@@ -16,7 +16,9 @@ export default function VendeurLayout() {
   const { user, logout } = useAuth()
 
   useEffect(() => {
-    if (!user) navigate('/connect', { replace: true })
+    if (!user) return navigate('/connect', { replace: true })
+    if (user.role === 'client') return navigate('/client/accueil', { replace: true })
+    if (user.role === 'livreur') return navigate('/livreur/dashboard', { replace: true })
   }, [user, navigate])
 
   const initials = ((user?.prenom?.[0] || '') + (user?.nom?.[0] || '')).toUpperCase() || '?'

@@ -15,7 +15,9 @@ export default function ClientLayout() {
   const { user, logout } = useAuth()
 
   useEffect(() => {
-    if (!user) navigate('/connect', { replace: true })
+    if (!user) return navigate('/connect', { replace: true })
+    if (user.role === 'vendeur') return navigate('/vendeur/dashboard', { replace: true })
+    if (user.role === 'livreur') return navigate('/livreur/dashboard', { replace: true })
   }, [user, navigate])
 
   const initials = ((user?.prenom?.[0] || '') + (user?.nom?.[0] || '')).toUpperCase() || '?'
