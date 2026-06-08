@@ -7,7 +7,7 @@ const NAV_TABS = [
   { icon: '📦', label: 'Catalogue', path: '/vendeur/catalogue' },
   { icon: '🛒', label: 'Commandes', path: '/vendeur/commandes' },
   { icon: '↩️', label: 'Retours', path: '/vendeur/retours' },
-  { icon: '👤', label: 'Profil', path: '/client/profil' },
+  { icon: '👤', label: 'Profil', path: '/vendeur/profil' },
 ]
 
 export default function VendeurLayout() {

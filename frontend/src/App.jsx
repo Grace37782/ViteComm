@@ -69,11 +69,13 @@ export default function App() {
           <Route path="catalogue" element={<CatalogueVendeur />} />
           <Route path="commandes" element={<CommandesVendeur />} />
           <Route path="retours" element={<RetourVendeur />} />
+          <Route path="profil" element={<Profil />} />
         </Route>
         <Route path="/livreur" element={<LivreurLayout />}>
           <Route path="dashboard" element={<Livreur />} />
           <Route path="commandes" element={<CommandesLivreur />} />
           <Route path="retours" element={<RetourLivreur />} />
+          <Route path="profil" element={<Profil />} />
         </Route>
         <Route path="/admin/dashboard" element={<Admin />} />
 

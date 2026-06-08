@@ -6,7 +6,7 @@ const NAV_TABS = [
   { icon: '📊', label: 'Accueil', path: '/livreur/dashboard' },
   { icon: '🛒', label: 'Commandes', path: '/livreur/commandes' },
   { icon: '↩️', label: 'Retours', path: '/livreur/retours' },
-  { icon: '👤', label: 'Profil', path: '/client/profil' },
+  { icon: '👤', label: 'Profil', path: '/livreur/profil' },
 ]
 
 export default function LivreurLayout() {
