@@ -14,6 +14,7 @@ import {
   getVendorOrders,
   verifyHandover,
   getVendorReturns,
+  markReturnRecovered,
   getVendorStatistiques,
   getVendorFactures,
   getVendorPriceHistory,
@@ -75,6 +76,7 @@ router.post('/orders/:id_commande/verify-handover', upload.single('photo'), veri
 
 // Retours
 router.get('/returns', getVendorReturns);
+router.put('/returns/:id_commande/:id_produit/recover', markReturnRecovered);
 
 // Statistiques
 router.get('/statistiques', getVendorStatistiques);

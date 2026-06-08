@@ -9,6 +9,7 @@ export default function RetourVendeur() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [filtre, setFiltre] = useState('tous')
+  const [updating, setUpdating] = useState(null)
 
   useEffect(() => {
     fetchReturns()
@@ -23,6 +24,20 @@ export default function RetourVendeur() {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function marquerRecupere(retour) {
+    try {
+      setUpdating(retour.id)
+      await api.put(`/vendor/returns/${retour.id_commande}/${retour.id_produit}/recover`)
+      setRetours((prev) => prev.map((r) =>
+        r.id === retour.id ? { ...r, statut: 'recupere' } : r
+      ))
+    } catch (err) {
+      console.error('Erreur récupération:', err.message)
+    } finally {
+      setUpdating(null)
     }
   }
 
@@ -121,7 +136,8 @@ export default function RetourVendeur() {
       ) : (
         <div className="flex flex-col gap-3">
           {liste.map((retour) => {
-            const st = STATUT_STYLE[retour.statut]
+            const st = STATUT_STYLE[retour.statut] || STATUT_STYLE.a_recuperer
+            const isUpdating = updating === retour.id
             return (
               <div key={retour.id} className="rounded-3xl overflow-hidden"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow)' }}>
@@ -129,7 +145,7 @@ export default function RetourVendeur() {
                 <div className="flex items-center justify-between gap-3 px-4 py-3"
                   style={{ background: 'var(--surface-alt)', borderBottom: '1px solid var(--border)' }}>
                   <div>
-                    <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Retour #{retour.id}</div>
+                    <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Retour #{retour.id_commande}-{retour.id_produit}</div>
                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                       Commande #{retour.commandeId} · {retour.date}
                     </div>
@@ -176,9 +192,19 @@ export default function RetourVendeur() {
                       <div className="font-black text-sm" style={{ color: '#D85A30' }}>{retour.perte.toLocaleString()} F</div>
                     </div>
                     {retour.statut === 'a_recuperer' ? (
-                      <div className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>En attente</div>
+                      <button onClick={() => marquerRecupere(retour)}
+                        disabled={isUpdating}
+                        className="px-4 py-3 rounded-2xl text-sm font-black cursor-pointer"
+                        style={{
+                          background: isUpdating ? '#999' : '#BA7517',
+                          color: '#fff',
+                          border: 'none',
+                          opacity: isUpdating ? 0.7 : 1,
+                        }}>
+                        {isUpdating ? '...' : 'Marquer récupéré'}
+                      </button>
                     ) : (
-                      <div className="text-xs font-bold" style={{ color: isDark ? '#34D399' : '#0F6E56' }}>Récupération confirmée</div>
+                      <div className="text-xs font-bold" style={{ color: isDark ? '#34D399' : '#0F6E56' }}>✓ Récupération confirmée</div>
                     )}
                   </div>
                 </div>

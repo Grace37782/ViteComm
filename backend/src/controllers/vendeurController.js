@@ -536,14 +536,17 @@ export const getVendorReturns = async (req, res) => {
         litige: true,
         commande: {
           include: {
-            client: { include: { utilisateur: true } }
+            client: { include: { utilisateur: true } },
+            livraison: true
           }
         }
       }
     });
 
     const formatted = returnedLines.map((r) => ({
-      id: r.id_commande * 1000 + r.id_produit,
+      id: `${r.id_commande}-${r.id_produit}`,
+      id_commande: r.id_commande,
+      id_produit: r.id_produit,
       date: formatDate(r.commande.date_creation),
       commandeId: r.id_commande,
       produit: r.produit.nom,
@@ -553,14 +556,47 @@ export const getVendorReturns = async (req, res) => {
       client: r.commande.client?.utilisateur
         ? `${r.commande.client.utilisateur.prenom} ${r.commande.client.utilisateur.nom}`
         : 'Client inconnu',
-      statut: 'a_recuperer',
-      lieu: r.litige?.decision_admin || 'Point de collecte',
+      statut: r.litige?.statut_retour || 'a_recuperer',
+      lieu: r.commande.livraison?.statut_livraison === 'Retourne'
+        ? 'Marché / Point de collecte'
+        : (r.litige?.decision_admin || 'Point de collecte'),
       perte: r.prix_vente_applique * r.quantite_commandee
     }));
 
     return res.json(formatted);
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors du chargement des retours.' });
+  }
+};
+
+export const markReturnRecovered = async (req, res) => {
+  const { id_commande, id_produit } = req.params;
+  const vendorId = req.user.id_user;
+
+  try {
+    const cmdId = parseInt(id_commande, 10);
+    const prodId = parseInt(id_produit, 10);
+
+    // Find the litige linked to this order line
+    const detail = await prisma.detailCommande.findUnique({
+      where: { id_commande_id_produit: { id_commande: cmdId, id_produit: prodId } },
+      include: { litige: true, produit: true }
+    });
+
+    if (!detail) return res.status(404).json({ error: 'Ligne de commande introuvable.' });
+    if (detail.produit.id_user_vendeur !== vendorId) return res.status(403).json({ error: 'Accès refusé.' });
+    if (!detail.id_litige || !detail.litige) {
+      return res.status(400).json({ error: 'Aucun litige associé à cette ligne.' });
+    }
+
+    await prisma.litige.update({
+      where: { id_litige: detail.id_litige },
+      data: { statut_retour: 'recupere' }
+    });
+
+    return res.json({ message: 'Retour marqué comme récupéré.' });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors de la mise à jour du retour.' });
   }
 };
 

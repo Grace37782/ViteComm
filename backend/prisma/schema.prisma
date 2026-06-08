@@ -206,6 +206,7 @@ model Litige {
   description       String
   date_ouverture    DateTime @default(now())
   statut            String   @default("Ouvert")
+  statut_retour     String   @default("a_recuperer")
   decision_admin    String?
   montant_rembourse Float    @default(0.0)
   id_preuve         Int?
