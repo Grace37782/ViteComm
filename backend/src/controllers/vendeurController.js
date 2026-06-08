@@ -291,10 +291,236 @@ export const getVendorReturns = async (req, res) => {
   }
 };
 
-// --- 3.5. Signalement (RG14) ---
+// --- 3.5. Commandes récentes pour le dashboard ---
+
+export const getVendorRecentOrders = async (req, res) => {
+  try {
+    const vendorId = req.user.id_user;
+
+    const orders = await prisma.commande.findMany({
+      where: {
+        detailsCommande: {
+          some: {
+            produit: { id_user_vendeur: vendorId }
+          }
+        }
+      },
+      include: {
+        detailsCommande: {
+          where: {
+            produit: { id_user_vendeur: vendorId }
+          },
+          include: { produit: true }
+        },
+        client: {
+          include: { utilisateur: true }
+        }
+      },
+      orderBy: { date_creation: 'desc' },
+      take: 5
+    });
+
+    return res.json(orders);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement des commandes récentes.' });
+  }
+};
+
+// --- 3.6. Statistiques Produits (RG12) ---
+
+export const getVendorStatistiques = async (req, res) => {
+  try {
+    const vendorId = req.user.id_user;
+
+    const products = await prisma.produit.findMany({
+      where: { id_user_vendeur: vendorId },
+      include: {
+        detailsCommande: {
+          include: { commande: true }
+        }
+      }
+    });
+
+    const stats = products.map((product) => {
+      let vendus = 0;
+      let rejets = 0;
+      let revenu = 0;
+
+      product.detailsCommande.forEach((dc) => {
+        if (dc.statut_acceptation === 'Accepte' || dc.statut_acceptation === 'En attente') {
+          vendus += dc.quantite_commandee;
+          revenu += dc.quantite_commandee * dc.prix_vente_applique;
+        }
+        if (dc.statut_acceptation === 'Rejete') {
+          rejets += dc.quantite_commandee;
+        }
+      });
+
+      return {
+        id_produit: product.id_produit,
+        nom: product.nom,
+        description: product.description,
+        stock: product.stock_disponible,
+        prix: product.prix_reference,
+        vendus,
+        rejets,
+        revenu
+      };
+    });
+
+    return res.json(stats);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du calcul des statistiques.' });
+  }
+};
+
+// --- 3.7. Factures & Paiements (RG25, RG26) ---
+
+export const getVendorFactures = async (req, res) => {
+  try {
+    const vendorId = req.user.id_user;
+
+    // Find invoices for orders that contain this vendor's products
+    const factures = await prisma.facture.findMany({
+      where: {
+        commande: {
+          detailsCommande: {
+            some: {
+              produit: { id_user_vendeur: vendorId }
+            }
+          }
+        }
+      },
+      include: {
+        commande: {
+          include: {
+            detailsCommande: {
+              where: {
+                produit: { id_user_vendeur: vendorId }
+              },
+              include: { produit: true }
+            },
+            client: {
+              include: { utilisateur: true }
+            }
+          }
+        },
+        paiements: true
+      },
+      orderBy: { date_emission: 'desc' }
+    });
+
+    // Only include vendor's products in articles
+    const result = factures.map((f) => {
+      const vendorArticles = f.commande.detailsCommande.map((dc) => ({
+        nom: dc.produit.nom,
+        qte: dc.quantite_commandee,
+        prix: dc.prix_vente_applique
+      }));
+
+      const totalMarchandises = vendorArticles.reduce((s, a) => s + a.qte * a.prix, 0);
+      const clientNom = f.commande.client
+        ? `${f.commande.client.utilisateur.prenom} ${f.commande.client.utilisateur.nom}`
+        : 'Client inconnu';
+
+      return {
+        id_facture: f.id_facture,
+        reference: `FAC-${new Date(f.date_emission).getFullYear()}-${String(f.id_facture).padStart(4, '0')}`,
+        date: f.date_emission,
+        commandeId: f.commande.id_commande,
+        client: clientNom,
+        articles: vendorArticles,
+        total_marchandises: totalMarchandises,
+        frais_livraison: f.montant_frais_livraison,
+        commission: f.montant_commission,
+        frais_retour: f.montant_frais_retour,
+        montant_total_du: f.montant_total_du,
+        statut_paiement: f.statut_paiement === 'Paye' ? 'paye' : f.statut_paiement === 'Partiel' ? 'partiel' : 'en_attente',
+        paiements: f.paiements.map((p) => ({
+          montant_percu: p.montant_percu,
+          mode_reglement: p.mode_reglement,
+          date_paiement: p.date_paiement,
+          reference_transaction: p.reference_transaction
+        }))
+      };
+    });
+
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement des factures.' });
+  }
+};
+
+// --- 3.8. Historique des Prix (RG24) ---
+
+export const getVendorPriceHistory = async (req, res) => {
+  try {
+    const vendorId = req.user.id_user;
+
+    const products = await prisma.produit.findMany({
+      where: { id_user_vendeur: vendorId },
+      include: {
+        historiques: {
+          orderBy: { date_modification: 'desc' }
+        }
+      }
+    });
+
+    const result = products.map((p) => ({
+      id_produit: p.id_produit,
+      nom: p.nom,
+      prix_actuel: p.prix_reference,
+      historique: p.historiques.map((h, i) => {
+        const prev = p.historiques[i + 1]; // next in desc = previous in time
+        return {
+          id_historique: h.id_historique,
+          date: h.date_modification,
+          ancien: prev ? prev.prix : h.prix,
+          nouveau: h.prix
+        };
+      })
+    }));
+
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement de l\'historique.' });
+  }
+};
+
+// --- 3.9. Signalements du vendeur (RG14) ---
+
+export const getVendorSignalements = async (req, res) => {
+  try {
+    const signalements = await prisma.signalement.findMany({
+      where: { id_auteur: req.user.id_user },
+      include: {
+        cible: {
+          select: { nom: true, prenom: true }
+        }
+      },
+      orderBy: { date_heure: 'desc' }
+    });
+
+    const result = signalements.map((s) => ({
+      id: s.id_signalement,
+      cible: `${s.cible.prenom} ${s.cible.nom}`,
+      type: s.type_cible_cible,
+      motif: s.motif,
+      description: s.motif, // Using motif as description since schema has no separate description field
+      statut: s.statut_traitement === 'En attente' ? 'en_attente'
+            : s.statut_traitement === 'En cours' ? 'en_cours'
+            : 'traite',
+      date: s.date_heure
+    }));
+
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement des signalements.' });
+  }
+};
 
 export const createSignalement = async (req, res) => {
-  const { motif, type_cible_cible, id_cible } = req.body;
+  const { motif, type_cible_cible, id_cible, description } = req.body;
 
   if (!motif || !type_cible_cible || !id_cible) {
     return res.status(400).json({ error: 'Motif et cible requis.' });
@@ -306,7 +532,7 @@ export const createSignalement = async (req, res) => {
 
     const signalement = await prisma.signalement.create({
       data: {
-        motif,
+        motif: description ? `${motif}: ${description}` : motif,
         type_cible_cible,
         id_auteur: req.user.id_user,
         id_cible: parseInt(id_cible, 10),
@@ -320,5 +546,93 @@ export const createSignalement = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors du signalement.' });
+  }
+};
+
+// --- 3.10. Profil Vendeur ---
+
+export const getVendorProfil = async (req, res) => {
+  try {
+    const user = await prisma.utilisateur.findUnique({
+      where: { id_user: req.user.id_user },
+      include: { vendeur: true }
+    });
+
+    if (!user || !user.vendeur) {
+      return res.status(404).json({ error: 'Profil vendeur introuvable.' });
+    }
+
+    // Count products
+    const productCount = await prisma.produit.count({
+      where: { id_user_vendeur: req.user.id_user }
+    });
+
+    // Count completed orders
+    const orderCount = await prisma.detailCommande.count({
+      where: {
+        produit: { id_user_vendeur: req.user.id_user },
+        statut_acceptation: { in: ['Accepte', 'Rejete'] }
+      }
+    });
+
+    // Count feedbacks received
+    const feedbackCount = await prisma.feedback.count({
+      where: { id_user_vendeur: req.user.id_user }
+    });
+
+    // Calculate average note
+    const feedbacks = await prisma.feedback.findMany({
+      where: { id_user_vendeur: req.user.id_user },
+      select: { note: true }
+    });
+    const avgNote = feedbacks.length > 0
+      ? parseFloat((feedbacks.reduce((s, f) => s + f.note, 0) / feedbacks.length).toFixed(1))
+      : 0;
+
+    return res.json({
+      id_user: user.id_user,
+      nom: user.nom,
+      prenom: user.prenom,
+      email: user.email,
+      telephone: user.telephone,
+      photo_url: user.photo_url,
+      statut_compte: user.statut_compte,
+      vendeur: {
+        nom_etablissement: user.vendeur.nom_etablissement,
+        localisation_marche: user.vendeur.localisation_marche,
+        score_reputation: user.vendeur.score_reputation,
+        latitude: user.vendeur.latitude,
+        longitude: user.vendeur.longitude,
+        productCount,
+        orderCount,
+        feedbackCount,
+        avgNote
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors du chargement du profil.' });
+  }
+};
+
+export const updateVendorProfil = async (req, res) => {
+  const { nom_etablissement, localisation_marche, latitude, longitude } = req.body;
+
+  try {
+    const updated = await prisma.vendeur.update({
+      where: { id_user: req.user.id_user },
+      data: {
+        nom_etablissement: nom_etablissement ?? undefined,
+        localisation_marche: localisation_marche ?? undefined,
+        latitude: latitude !== undefined ? parseFloat(latitude) : undefined,
+        longitude: longitude !== undefined ? parseFloat(longitude) : undefined
+      }
+    });
+
+    return res.json({
+      message: 'Profil vendeur mis à jour.',
+      vendeur: updated
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors de la mise à jour du profil.' });
   }
 };

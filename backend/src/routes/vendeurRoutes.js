@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import {
   getVendorDashboard,
+  getVendorRecentOrders,
   getMyProducts,
   createProduct,
   updateProduct,
@@ -10,7 +11,13 @@ import {
   getVendorOrders,
   verifyHandover,
   getVendorReturns,
-  createSignalement
+  getVendorStatistiques,
+  getVendorFactures,
+  getVendorPriceHistory,
+  getVendorSignalements,
+  createSignalement,
+  getVendorProfil,
+  updateVendorProfil
 } from '../controllers/vendeurController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
@@ -43,15 +50,38 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireRole(['vendeur']));
 
+// Dashboard
 router.get('/dashboard', getVendorDashboard);
+router.get('/recent-orders', getVendorRecentOrders);
+
+// Catalogue (CRUD)
 router.get('/products', getMyProducts);
 router.post('/products', createProduct);
 router.put('/products/:id', updateProduct);
 router.delete('/products/:id', deleteProduct);
+
+// Commandes
 router.get('/orders', getVendorOrders);
 router.post('/orders/:id_commande/verify-handover', upload.single('photo'), verifyHandover);
+
+// Retours
 router.get('/returns', getVendorReturns);
-router.post('/signalements', createSignalement);  // RG14
+
+// Statistiques
+router.get('/statistiques', getVendorStatistiques);
+
+// Factures & Paiements
+router.get('/factures', getVendorFactures);
+
+// Historique des Prix
+router.get('/price-history', getVendorPriceHistory);
+
+// Signalements
+router.get('/signalements', getVendorSignalements);
+router.post('/signalements', createSignalement);
+
+// Profil
+router.get('/profil', getVendorProfil);
+router.put('/profil', updateVendorProfil);
 
 export default router;
-
