@@ -614,6 +614,250 @@ async function main() {
     data: { id_litige: litige2.id_litige }
   });
 
+  // === Orders for Jean Kamga (vendeur3) — Ganhi Primeurs ===
+  console.log('Création des commandes pour Jean Kamga...');
+
+  // Order 3: Jean — Delivered, all accepted
+  const order3 = await prisma.commande.create({
+    data: {
+      id_user_client: client1.id_user,
+      date_creation: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      statut: 'Livree',
+      code_verification: 'J3AN1',
+      total_marchandises: 17600,
+      frais_livraison: 1500,
+      commission: 17600 * 0.006,
+      detailsCommande: {
+        createMany: {
+          data: [
+            { id_produit: prod5.id_produit, quantite_commandee: 12, prix_vente_applique: 800, statut_acceptation: 'Accepte' },
+            { id_produit: prod6.id_produit, quantite_commandee: 4, prix_vente_applique: 2000, statut_acceptation: 'Accepte' }
+          ]
+        }
+      }
+    }
+  });
+  const delivery3 = await prisma.livraison.create({
+    data: {
+      id_commande: order3.id_commande,
+      id_user_livreur: livreur1.id_user,
+      statut_livraison: 'Livree',
+      date_prise_en_charge: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      date_fin_reelle: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 35 * 60 * 1000),
+      frais_retour_calcules: 0
+    }
+  });
+  const facture3 = await prisma.facture.create({
+    data: {
+      id_commande: order3.id_commande,
+      montant_marchandises: 17600,
+      montant_frais_livraison: 1500,
+      montant_frais_retour: 0,
+      montant_commission: 17600 * 0.006,
+      montant_total_du: 17600 + 1500,
+      statut_paiement: 'Paye'
+    }
+  });
+  await prisma.paiement.create({
+    data: { id_facture: facture3.id_facture, montant_percu: 19100, mode_reglement: 'ESPECES', statut: 'Effectue' }
+  });
+  await prisma.bonDeLivraison.create({
+    data: {
+      id_livraison: delivery3.id_livraison, statut_bon: 'SIGNE',
+      date_signature_client: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000),
+      observations_livreur: 'Tout est bon.'
+    }
+  });
+
+  // Order 4: Jean — Delivered, 1 rejected (return)
+  const order4 = await prisma.commande.create({
+    data: {
+      id_user_client: client2.id_user,
+      date_creation: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      statut: 'Livree',
+      code_verification: 'J4EAN',
+      total_marchandises: 9600,
+      frais_livraison: 2000,
+      commission: 9600 * 0.006,
+      detailsCommande: {
+        createMany: {
+          data: [
+            { id_produit: prod5.id_produit, quantite_commandee: 8, prix_vente_applique: 800, statut_acceptation: 'Accepte' },
+            { id_produit: prod6.id_produit, quantite_commandee: 1, prix_vente_applique: 2000, statut_acceptation: 'Rejete' }
+          ]
+        }
+      }
+    }
+  });
+  const delivery4 = await prisma.livraison.create({
+    data: {
+      id_commande: order4.id_commande,
+      id_user_livreur: livreur2.id_user,
+      statut_livraison: 'Retourne',
+      date_prise_en_charge: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      frais_retour_calcules: 500
+    }
+  });
+  // Collect proof for rejected items
+  const collectProof4 = await prisma.preuveCollecte.create({
+    data: { id_commande: order4.id_commande, statut_validation: 'Validee' }
+  });
+  await prisma.mediaPreuve.create({
+    data: { id_preuve: collectProof4.id_preuve, url_media: '/uploads/bananes_abimees.jpg', type_media: 'photo' }
+  });
+  // Litige for rejected bananas
+  const litige4 = await prisma.litige.create({
+    data: {
+      id_livraison: delivery4.id_livraison,
+      id_preuve: collectProof4.id_preuve,
+      description: 'Bananes trop mûres, noircies à la réception.',
+      statut: 'Ouvert',
+      statut_retour: 'a_recuperer',
+      montant_rembourse: 0
+    }
+  });
+  await prisma.detailCommande.updateMany({
+    where: { id_commande: order4.id_commande, id_produit: prod6.id_produit },
+    data: { id_litige: litige4.id_litige }
+  });
+  const facture4 = await prisma.facture.create({
+    data: {
+      id_commande: order4.id_commande,
+      montant_marchandises: 9600,
+      montant_frais_livraison: 2000,
+      montant_frais_retour: 500,
+      montant_commission: 9600 * 0.006,
+      montant_total_du: 9600 + 2000 - 2000,
+      statut_paiement: 'Paye'
+    }
+  });
+  await prisma.paiement.create({
+    data: { id_facture: facture4.id_facture, montant_percu: 9600, mode_reglement: 'MOBILE_MONEY', statut: 'Effectue' }
+  });
+
+  // Order 5: Jean — En attente (no delivery yet)
+  const order5 = await prisma.commande.create({
+    data: {
+      id_user_client: client1.id_user,
+      date_creation: new Date(Date.now() - 6 * 60 * 60 * 1000),
+      statut: 'En attente',
+      code_verification: 'K5L8M',
+      total_marchandises: 6400,
+      frais_livraison: 1500,
+      commission: 6400 * 0.006,
+      detailsCommande: {
+        createMany: {
+          data: [
+            { id_produit: prod5.id_produit, quantite_commandee: 5, prix_vente_applique: 800, statut_acceptation: 'En attente' },
+            { id_produit: prod6.id_produit, quantite_commandee: 1, prix_vente_applique: 2000, statut_acceptation: 'En attente' }
+          ]
+        }
+      }
+    }
+  });
+  await prisma.livraison.create({
+    data: {
+      id_commande: order5.id_commande,
+      id_user_livreur: livreur1.id_user,
+      statut_livraison: 'En cours de collecte',
+      date_prise_en_charge: new Date(Date.now() - 3 * 60 * 60 * 1000),
+      frais_retour_calcules: 0
+    }
+  });
+
+  // Order 6: Jean — Delivered, both rejected (2 returns)
+  const order6 = await prisma.commande.create({
+    data: {
+      id_user_client: client2.id_user,
+      date_creation: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      statut: 'Livree',
+      code_verification: 'R6T7Y',
+      total_marchandises: 12000,
+      frais_livraison: 2000,
+      commission: 12000 * 0.006,
+      detailsCommande: {
+        createMany: {
+          data: [
+            { id_produit: prod5.id_produit, quantite_commandee: 10, prix_vente_applique: 800, statut_acceptation: 'Rejete' },
+            { id_produit: prod6.id_produit, quantite_commandee: 2, prix_vente_applique: 2000, statut_acceptation: 'Rejete' }
+          ]
+        }
+      }
+    }
+  });
+  const delivery6 = await prisma.livraison.create({
+    data: {
+      id_commande: order6.id_commande,
+      id_user_livreur: livreur2.id_user,
+      statut_livraison: 'Retourne',
+      date_prise_en_charge: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      frais_retour_calcules: 800
+    }
+  });
+  const collectProof6 = await prisma.preuveCollecte.create({
+    data: { id_commande: order6.id_commande, statut_validation: 'Validee' }
+  });
+  await prisma.mediaPreuve.create({
+    data: { id_preuve: collectProof6.id_preuve, url_media: '/uploads/gombo_abime.jpg', type_media: 'photo' }
+  });
+  const litige6a = await prisma.litige.create({
+    data: {
+      id_livraison: delivery6.id_livraison,
+      id_preuve: collectProof6.id_preuve,
+      description: 'Gombo mouillé et sent mauvais.',
+      statut: 'Ouvert',
+      statut_retour: 'a_recuperer',
+      montant_rembourse: 0
+    }
+  });
+  const litige6b = await prisma.litige.create({
+    data: {
+      id_livraison: delivery6.id_livraison,
+      description: 'Bananes écrasées dans le sac.',
+      statut: 'Ouvert',
+      statut_retour: 'recupere',
+      montant_rembourse: 0
+    }
+  });
+  await prisma.detailCommande.updateMany({
+    where: { id_commande: order6.id_commande, id_produit: prod5.id_produit },
+    data: { id_litige: litige6a.id_litige }
+  });
+  await prisma.detailCommande.updateMany({
+    where: { id_commande: order6.id_commande, id_produit: prod6.id_produit },
+    data: { id_litige: litige6b.id_litige }
+  });
+
+  // Order 7: Jean — En transit
+  const order7 = await prisma.commande.create({
+    data: {
+      id_user_client: client1.id_user,
+      date_creation: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      statut: 'En transit',
+      code_verification: 'Z9X0W',
+      total_marchandises: 4800,
+      frais_livraison: 1500,
+      commission: 4800 * 0.006,
+      detailsCommande: {
+        createMany: {
+          data: [
+            { id_produit: prod6.id_produit, quantite_commandee: 2, prix_vente_applique: 2000, statut_acceptation: 'Accepte' },
+            { id_produit: prod5.id_produit, quantite_commandee: 1, prix_vente_applique: 800, statut_acceptation: 'Accepte' }
+          ]
+        }
+      }
+    }
+  });
+  await prisma.livraison.create({
+    data: {
+      id_commande: order7.id_commande,
+      id_user_livreur: livreur1.id_user,
+      statut_livraison: 'En cours',
+      date_prise_en_charge: new Date(Date.now() - 12 * 60 * 60 * 1000),
+      frais_retour_calcules: 0
+    }
+  });
+
   // 4. Create Signalements
   console.log('Création des signalements de démonstration...');
   
@@ -644,6 +888,7 @@ async function main() {
   console.log('  - Admin : admin@vitecomm.com (admin123)');
   console.log('  - Client : immaculee@gmail.com (password123)');
   console.log('  - Vendeur : samuel.eto@boutique.com (password123)');
+  console.log('  - Vendeur : jean.kamga@shop.com (password123)');
   console.log('  - Livreur : vincent.aboubakar@express.com (password123)');
 }
 
