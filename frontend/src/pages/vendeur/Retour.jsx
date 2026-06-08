@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTheme } from '../../context/ThemeContext'
 
 const RETOURS_INIT = [
   {
@@ -43,15 +44,17 @@ const RETOURS_INIT = [
   },
 ]
 
-const STATUT_STYLE = {
-  a_recuperer: { label: 'À récupérer', bg: '#FAEEDA', color: '#854F0B' },
-  recupere:    { label: 'Récupéré',    bg: '#E1F5EE', color: '#0F6E56' },
-}
-
 export default function RetourVendeur() {
   const navigate = useNavigate()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
   const [retours, setRetours] = useState(RETOURS_INIT)
   const [filtre, setFiltre] = useState('tous')
+
+  const STATUT_STYLE = {
+    a_recuperer: { label: 'À récupérer', bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
+    recupere:    { label: 'Récupéré',    bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
+  }
 
   const filtres = {
     tous: retours,
@@ -98,7 +101,7 @@ export default function RetourVendeur() {
           <button key={item.id} onClick={() => setFiltre(item.id)}
             className="px-3 py-2 rounded-full text-xs font-bold cursor-pointer"
             style={{
-              background: filtre === item.id ? '#BA7517' : '#fff',
+              background: filtre === item.id ? '#BA7517' : 'var(--surface)',
               color: filtre === item.id ? '#fff' : 'var(--text-secondary)',
               border: `1.5px solid ${filtre === item.id ? '#BA7517' : 'var(--border)'}`,
             }}>
@@ -178,7 +181,7 @@ export default function RetourVendeur() {
                         Marquer récupéré
                       </button>
                     ) : (
-                      <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>Récupération confirmée</div>
+                      <div className="text-xs font-bold" style={{ color: isDark ? '#34D399' : '#0F6E56' }}>Récupération confirmée</div>
                     )}
                   </div>
                 </div>
