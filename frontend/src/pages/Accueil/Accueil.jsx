@@ -323,7 +323,7 @@ export default function Accueil() {
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 text-xs font-semibold px-4 py-1.5 rounded-full mb-6"
             style={{ background: isDark ? 'rgba(45,196,145,0.12)' : 'rgba(255,255,255,0.16)', border: `1px solid ${isDark ? 'rgba(45,196,145,0.2)' : 'rgba(255,255,255,0.3)'}`, color: '#fff' }}>
-            ✨ La première marketplace alimentaire locale au Bénin
+            ✨ La première marketplace locale au Bénin
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tight">

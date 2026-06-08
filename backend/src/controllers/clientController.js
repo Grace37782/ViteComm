@@ -480,6 +480,123 @@ export const createSignalement = async (req, res) => {
   }
 };
 
+// --- 2.5. Inspection à la livraison (RG07, RG09, RG21, RG25, RG27) ---
+
+export const inspectionOrder = async (req, res) => {
+  const { id_commande } = req.params;
+  const { statuts, motifs } = req.body;
+  // statuts: { [id_produit]: 'accepte' | 'rejete' }
+  // motifs:  { [id_produit]: string } (required for rejected items)
+
+  if (!statuts || typeof statuts !== 'object') {
+    return res.status(400).json({ error: 'statuts requis (objet id_produit -> accepte/rejete).' });
+  }
+
+  try {
+    const commande = await prisma.commande.findUnique({
+      where: { id_commande: parseInt(id_commande, 10) },
+      include: {
+        detailsCommande: true,
+        livraison: true,
+      }
+    });
+
+    if (!commande) return res.status(404).json({ error: 'Commande introuvable.' });
+    if (commande.id_user_client !== req.user.id_user) {
+      return res.status(403).json({ error: 'Accès interdit.' });
+    }
+    if (!commande.livraison) {
+      return res.status(400).json({ error: 'Aucune livraison associée à cette commande.' });
+    }
+
+    // Validate all items have a status
+    for (const detail of commande.detailsCommande) {
+      if (!statuts[detail.id_produit]) {
+        return res.status(400).json({ error: `Article ${detail.id_produit} non inspecté.` });
+      }
+      if (statuts[detail.id_produit] === 'rejete' && (!motifs || !motifs[detail.id_produit]?.trim())) {
+        return res.status(400).json({ error: `Motif de rejet requis pour l'article ${detail.id_produit}.` });
+      }
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      let fraisRetour = 0;
+      const FRAIS_RETOUR_PAR_ARTICLE = 500; // RG28
+
+      for (const detail of commande.detailsCommande) {
+        const statut = statuts[detail.id_produit];
+
+        if (statut === 'accepte') {
+          // Update detail line to accepted
+          await tx.detailCommande.update({
+            where: { id_commande_id_produit: { id_commande: commande.id_commande, id_produit: detail.id_produit } },
+            data: { statut_acceptation: 'Accepte' }
+          });
+        } else {
+          // Rejected — create litige (RG09, RG21)
+          const litige = await tx.litige.create({
+            data: {
+              description: motifs[detail.id_produit] || 'Article rejeté par le client',
+              id_livraison: commande.livraison.id_livraison,
+              statut: 'Ouvert',
+              montant_rembourse: detail.prix_vente_applique * detail.quantite_commandee,
+            }
+          });
+
+          // Link detail to litige
+          await tx.detailCommande.update({
+            where: { id_commande_id_produit: { id_commande: commande.id_commande, id_produit: detail.id_produit } },
+            data: { statut_acceptation: 'Rejete', id_litige: litige.id_litige }
+          });
+
+          fraisRetour += FRAIS_RETOUR_PAR_ARTICLE;
+        }
+      }
+
+      // Update delivery with return fees (RG28)
+      await tx.livraison.update({
+        where: { id_livraison: commande.livraison.id_livraison },
+        data: { frais_retour_calcules: fraisRetour }
+      });
+
+      // Update order statut
+      await tx.commande.update({
+        where: { id_commande: commande.id_commande },
+        data: { statut: 'Inspectee' }
+      });
+
+      // Generate facture (RG25) — only after inspection
+      const acceptedDetails = commande.detailsCommande.filter(d => statuts[d.id_produit] === 'accepte');
+      const totalMarchandises = acceptedDetails.reduce((s, d) => s + d.prix_vente_applique * d.quantite_commandee, 0);
+      const fraisLivraison = commande.frais_livraison;
+      const commission = parseFloat((totalMarchandises * 0.006).toFixed(2));
+      const montantTotalDu = totalMarchandises + fraisLivraison + fraisRetour;
+
+      await tx.facture.create({
+        data: {
+          montant_marchandises: totalMarchandises,
+          montant_frais_livraison: fraisLivraison,
+          montant_frais_retour: fraisRetour,
+          montant_commission: commission,
+          montant_total_du: montantTotalDu,
+          statut_paiement: 'En attente',
+          id_commande: commande.id_commande,
+        }
+      });
+
+      return { fraisRetour, totalFinal: montantTotalDu };
+    });
+
+    return res.json({
+      message: 'Inspection enregistrée.',
+      frais_retour: result.fraisRetour,
+      total_final: result.totalFinal,
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
 // --- 2.8. Marchés (Localmarts) ---
 
 export const getMarkets = async (req, res) => {

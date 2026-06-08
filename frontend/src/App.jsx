@@ -30,6 +30,8 @@ import MesCommandes from './pages/client/MesCommandes'
 import ClientLayout from './components/client/ClientLayout'
 import VendeurLayout from './components/vendeur/VendeurLayout'
 import LivreurLayout from './components/livreur/LivreurLayout'
+import Evaluation from './pages/client/Evaluation'
+import Inspection from './pages/client/Inspection'
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
@@ -69,6 +71,8 @@ export default function App() {
           <Route path="suivi-commande" element={<SuiviCommande />} />
           <Route path="profil" element={<Profil />} />
           <Route path="mes-commandes" element={<MesCommandes />} />
+          <Route path="evaluation" element={<Evaluation />} />
+          <Route path="inspection" element={<Inspection />} />
         </Route>
 
         <Route path="/vendeur" element={<VendeurLayout />}>
