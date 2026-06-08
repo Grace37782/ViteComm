@@ -1,27 +1,50 @@
-import { useState } from 'react'
-
-const PRODUITS = [
-  { id: 101, emoji: '🍅', nom: 'Tomates fraîches', unite: 'kg', stock: 7, vendus: 142, rejets: 8, revenu: 35500 },
-  { id: 102, emoji: '🧅', nom: 'Oignons rouges', unite: 'kg', stock: 1, vendus: 89, rejets: 3, revenu: 16020 },
-  { id: 103, emoji: '🥬', nom: 'Gombo frais', unite: 'tas', stock: 5, vendus: 67, rejets: 12, revenu: 20100 },
-  { id: 104, emoji: '🌶️', nom: 'Piments frais', unite: 'tas', stock: 2, vendus: 118, rejets: 5, revenu: 17700 },
-]
-
-const TOP_VENDUS = [...PRODUITS].sort((a, b) => b.vendus - a.vendus)
-const TOP_REJETES = [...PRODUITS].sort((a, b) => b.rejets - a.rejets)
+import { useState, useEffect } from 'react'
+import { api } from '../../services/api'
 
 export default function Statistiques() {
   const [onglet, setOnglet] = useState('apercu')
+  const [produits, setProduits] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const totalVendus = PRODUITS.reduce((s, p) => s + p.vendus, 0)
-  const totalRejets = PRODUITS.reduce((s, p) => s + p.rejets, 0)
-  const totalRevenu = PRODUITS.reduce((s, p) => s + p.revenu, 0)
+  useEffect(() => {
+    api.get('/vendor/statistiques')
+      .then(setProduits)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const totalVendus = produits.reduce((s, p) => s + p.vendus, 0)
+  const totalRejets = produits.reduce((s, p) => s + p.rejets, 0)
+  const totalRevenu = produits.reduce((s, p) => s + p.revenu, 0)
   const tauxRejet = totalVendus > 0 ? ((totalRejets / totalVendus) * 100).toFixed(1) : 0
+
+  const TOP_VENDUS = [...produits].sort((a, b) => b.vendus - a.vendus)
+  const TOP_REJETES = [...produits].sort((a, b) => b.rejets - a.rejets)
+
+  if (loading) {
+    return (
+      <div className="px-4 py-4 flex flex-col gap-4">
+        <div className="flex gap-2">{[1, 2, 3].map((i) => <div key={i} className="h-8 rounded-full w-24 animate-pulse" style={{ background: 'var(--border)' }} />)}</div>
+        <div className="grid grid-cols-2 gap-3">{[1, 2, 3, 4].map((i) => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />)}</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="px-4 py-4">
+        <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <div className="text-4xl mb-3">⚠️</div>
+          <p className="font-bold text-sm" style={{ color: '#E24B4A' }}>{error}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="px-4 py-4 flex flex-col gap-4">
 
-      {/* Onglets */}
       <div className="flex gap-2">
         {[
           { id: 'apercu', label: '📊 Aperçu' },
@@ -47,7 +70,7 @@ export default function Statistiques() {
               { label: 'Total vendus', val: totalVendus, accent: '#1D9E75', sub: 'unités' },
               { label: 'Taux de rejet', val: `${tauxRejet}%`, accent: '#D85A30', sub: `${totalRejets} articles` },
               { label: 'Revenu brut', val: `${totalRevenu.toLocaleString()} F`, accent: '#BA7517', sub: 'tous produits' },
-              { label: 'Produits actifs', val: PRODUITS.length, accent: 'var(--text-primary)', sub: 'en catalogue' },
+              { label: 'Produits actifs', val: produits.length, accent: 'var(--text-primary)', sub: 'en catalogue' },
             ].map((s) => (
               <div key={s.label} className="rounded-2xl p-4"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
@@ -58,18 +81,15 @@ export default function Statistiques() {
             ))}
           </div>
 
-          {/* Détail par produit */}
           <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Détail par produit</div>
-          {PRODUITS.map((p) => {
+          {produits.map((p) => {
             const pctVentes = totalVendus > 0 ? (p.vendus / totalVendus * 100).toFixed(0) : 0
             return (
               <div key={p.id} className="rounded-2xl p-4"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                    style={{ background: 'var(--surface-alt)' }}>
-                    {p.emoji}
-                  </div>
+                    style={{ background: 'var(--surface-alt)' }}>{p.emoji}</div>
                   <div className="flex-1 min-w-0">
                     <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{p.nom}</div>
                     <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Stock: {p.stock} {p.unite}</div>

@@ -25,7 +25,7 @@ export default function VendeurProfil() {
   const [tab, setTab] = useState('profil')
 
   useEffect(() => {
-    api.get('/auth/profile').then(data => {
+    api.get('/vendor/profil').then(data => {
       setProfile(data)
       setForm(f => ({
         ...f,
@@ -60,16 +60,10 @@ export default function VendeurProfil() {
     setSaving(true)
     try {
       const body = new FormData()
-      body.set('nom', form.nom)
-      body.set('prenom', form.prenom)
-      body.set('email', form.email)
-      body.set('telephone', form.telephone)
       body.set('nom_etablissement', form.nom_etablissement)
       body.set('localisation_marche', form.localisation_marche)
-      if (photoFile) body.set('photo', photoFile)
-      const res = await api.put('/auth/profile', body)
-      setProfile(res.user)
-      updateCtx(res.user, localStorage.getItem('vc_token'))
+      const res = await api.put('/vendor/profil', body)
+      setProfile(p => ({ ...p, vendeur: res.vendeur }))
       showToast('✅ Profil mis à jour !', 'ok')
       setEditing(false)
       setPhotoFile(null)

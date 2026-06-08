@@ -643,11 +643,11 @@ export const getVendorStatistiques = async (req, res) => {
       });
 
       return {
-        id_produit: product.id_produit,
+        id: product.id_produit,
+        emoji: product.photo_url || '📦',
         nom: product.nom,
-        description: product.description,
+        unite: product.unite || 'kg',
         stock: product.stock_disponible,
-        prix: product.prix_reference,
         vendus,
         rejets,
         revenu
@@ -710,9 +710,8 @@ export const getVendorFactures = async (req, res) => {
         : 'Client inconnu';
 
       return {
-        id_facture: f.id_facture,
-        reference: `FAC-${new Date(f.date_emission).getFullYear()}-${String(f.id_facture).padStart(4, '0')}`,
-        date: f.date_emission,
+        id: `FAC-${new Date(f.date_emission).getFullYear()}-${String(f.id_facture).padStart(4, '0')}`,
+        date: formatDate(f.date_emission),
         commandeId: f.commande.id_commande,
         client: clientNom,
         articles: vendorArticles,
@@ -722,12 +721,9 @@ export const getVendorFactures = async (req, res) => {
         frais_retour: f.montant_frais_retour,
         montant_total_du: f.montant_total_du,
         statut_paiement: f.statut_paiement === 'Paye' ? 'paye' : f.statut_paiement === 'Partiel' ? 'partiel' : 'en_attente',
-        paiements: f.paiements.map((p) => ({
-          montant_percu: p.montant_percu,
-          mode_reglement: p.mode_reglement,
-          date_paiement: p.date_paiement,
-          reference_transaction: p.reference_transaction
-        }))
+        mode_reglement: f.paiements[0]?.mode_reglement || null,
+        date_paiement: f.paiements[0]?.date_paiement ? formatDate(f.paiements[0].date_paiement) : null,
+        montant_recu: f.paiements[0]?.montant_percu || 0
       };
     });
 
@@ -753,14 +749,16 @@ export const getVendorPriceHistory = async (req, res) => {
     });
 
     const result = products.map((p) => ({
-      id_produit: p.id_produit,
+      id: p.id_produit,
+      emoji: p.photo_url || '📦',
       nom: p.nom,
+      unite: p.unite || 'kg',
       prix_actuel: p.prix_reference,
       historique: p.historiques.map((h, i) => {
-        const prev = p.historiques[i + 1]; // next in desc = previous in time
+        const prev = p.historiques[i + 1];
         return {
-          id_historique: h.id_historique,
-          date: h.date_modification,
+          id: h.id_historique,
+          date: formatDate(h.date_modification),
           ancien: prev ? prev.prix : h.prix,
           nouveau: h.prix
         };
@@ -791,8 +789,8 @@ export const getVendorSignalements = async (req, res) => {
       id: s.id_signalement,
       cible: `${s.cible.prenom} ${s.cible.nom}`,
       type: s.type_cible_cible,
-      motif: s.motif,
-      description: s.motif, // Using motif as description since schema has no separate description field
+      motif: s.motif.split(':')[0] || s.motif,
+      description: s.motif.includes(':') ? s.motif.split(':').slice(1).join(':').trim() : s.motif,
       statut: s.statut_traitement === 'En attente' ? 'en_attente'
             : s.statut_traitement === 'En cours' ? 'en_cours'
             : 'traite',
@@ -806,22 +804,32 @@ export const getVendorSignalements = async (req, res) => {
 };
 
 export const createSignalement = async (req, res) => {
-  const { motif, type_cible_cible, id_cible, description } = req.body;
+  const { motif, type_cible, cible, description } = req.body;
 
-  if (!motif || !type_cible_cible || !id_cible) {
+  if (!motif || !cible) {
     return res.status(400).json({ error: 'Motif et cible requis.' });
   }
 
   try {
-    const targetUser = await prisma.utilisateur.findUnique({ where: { id_user: parseInt(id_cible, 10) } });
-    if (!targetUser) return res.status(404).json({ error: 'Cible introuvable.' });
+    // Find target user by name (partial match)
+    const targetUser = await prisma.utilisateur.findFirst({
+      where: {
+        OR: [
+          { nom: { contains: cible } },
+          { prenom: { contains: cible } }
+        ]
+      }
+    });
+    if (!targetUser) return res.status(404).json({ error: 'Cible introuvable. Vérifiez le nom.' });
+
+    const fullMotif = description ? `${motif}: ${description}` : motif;
 
     const signalement = await prisma.signalement.create({
       data: {
-        motif: description ? `${motif}: ${description}` : motif,
-        type_cible_cible,
+        motif: fullMotif,
+        type_cible_cible: type_cible || 'client',
         id_auteur: req.user.id_user,
-        id_cible: parseInt(id_cible, 10),
+        id_cible: targetUser.id_user,
         statut_traitement: 'En attente'
       }
     });

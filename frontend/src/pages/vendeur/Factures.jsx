@@ -1,62 +1,6 @@
-import { useState } from 'react'
-
-const FACTURES_INIT = [
-  {
-    id: 'FAC-2026-0089',
-    date: '07 juin 2026',
-    commandeId: 1042,
-    client: 'Mme Adja',
-    articles: [
-      { nom: 'Tomates fraîches', qte: 2, prix: 250 },
-      { nom: 'Gombo frais', qte: 1, prix: 300 },
-    ],
-    total_marchandises: 800,
-    frais_livraison: 1500,
-    commission: 5,
-    frais_retour: 360,
-    montant_total_du: 1935,
-    statut_paiement: 'en_attente',
-    mode_reglement: null,
-  },
-  {
-    id: 'FAC-2026-0085',
-    date: '05 juin 2026',
-    commandeId: 1039,
-    client: 'M. Kofi',
-    articles: [
-      { nom: 'Gombo frais', qte: 2, prix: 300 },
-      { nom: 'Piments frais', qte: 1, prix: 150 },
-    ],
-    total_marchandises: 750,
-    frais_livraison: 1500,
-    commission: 5,
-    frais_retour: 0,
-    montant_total_du: 2245,
-    statut_paiement: 'paye',
-    mode_reglement: 'ESPECES',
-    date_paiement: '05 juin 2026',
-    montant_recu: 2245,
-  },
-  {
-    id: 'FAC-2026-0078',
-    date: '01 juin 2026',
-    commandeId: 1028,
-    client: 'Mme Aïcha',
-    articles: [
-      { nom: 'Tomates fraîches', qte: 3, prix: 250 },
-      { nom: 'Oignons rouges', qte: 2, prix: 180 },
-    ],
-    total_marchandises: 1110,
-    frais_livraison: 1500,
-    commission: 7,
-    frais_retour: 150,
-    montant_total_du: 2453,
-    statut_paiement: 'paye',
-    mode_reglement: 'ESPECES',
-    date_paiement: '01 juin 2026',
-    montant_recu: 2453,
-  },
-]
+import { useState, useEffect } from 'react'
+import { api } from '../../services/api'
+import { useTheme } from '../../context/ThemeContext'
 
 const STATUT_STYLE = {
   en_attente: { label: 'En attente', bg: '#FAEEDA', color: '#854F0B', icon: '⏳' },
@@ -65,9 +9,20 @@ const STATUT_STYLE = {
 }
 
 export default function Factures() {
-  const [factures, setFactures] = useState(FACTURES_INIT)
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
+  const [factures, setFactures] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [filtre, setFiltre] = useState('tous')
   const [detail, setDetail] = useState(null)
+
+  useEffect(() => {
+    api.get('/vendor/factures')
+      .then(setFactures)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [])
 
   const filtres = {
     tous: factures,
@@ -77,17 +32,36 @@ export default function Factures() {
 
   const liste = filtres[filtre] || factures
   const totalEnAttente = factures.filter((f) => f.statut_paiement === 'en_attente').reduce((s, f) => s + f.montant_total_du, 0)
-  const totalPaye = factures.filter((f) => f.statut_paiement === 'paye').reduce((s, f) => s + f.montant_recu, 0)
+  const totalPaye = factures.filter((f) => f.statut_paiement === 'paye').reduce((s, f) => s + (f.montant_recu || 0), 0)
   const totalCommission = factures.reduce((s, f) => s + f.commission, 0)
 
   const facture = factures.find((f) => f.id === detail)
+
+  if (loading) {
+    return (
+      <div className="px-4 py-4 flex flex-col gap-4">
+        <div className="grid grid-cols-3 gap-3">{[1, 2, 3].map((i) => <div key={i} className="rounded-2xl h-16 animate-pulse" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }} />)}</div>
+        {[1, 2].map((i) => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />)}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="px-4 py-4">
+        <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <div className="text-4xl mb-3">⚠️</div>
+          <p className="font-bold text-sm" style={{ color: '#E24B4A' }}>{error}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="px-4 py-4 flex flex-col gap-4">
 
       {!detail ? (
         <>
-          {/* Résumé */}
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: 'En attente', val: totalEnAttente, accent: '#BA7517' },
@@ -102,7 +76,6 @@ export default function Factures() {
             ))}
           </div>
 
-          {/* Filtres */}
           <div className="flex gap-2">
             {[
               { id: 'tous', label: 'Toutes' },
@@ -121,7 +94,6 @@ export default function Factures() {
             ))}
           </div>
 
-          {/* Liste */}
           {liste.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-4xl mb-3">🧾</div>
@@ -129,7 +101,7 @@ export default function Factures() {
             </div>
           ) : (
             liste.map((f) => {
-              const st = STATUT_STYLE[f.statut_paiement]
+              const st = STATUT_STYLE[f.statut_paiement] || STATUT_STYLE.en_attente
               return (
                 <button key={f.id} onClick={() => setDetail(f.id)}
                   className="w-full text-left rounded-2xl p-4 cursor-pointer transition-all active:scale-98"
@@ -155,24 +127,20 @@ export default function Factures() {
         </>
       ) : facture && (
         <>
-          {/* En-tête détail */}
           <div className="flex items-center gap-3">
             <button onClick={() => setDetail(null)}
               className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
-              style={{ background: 'var(--surface-alt)', border: '1px solid var(--border)' }}>
-              ←
-            </button>
+              style={{ background: 'var(--surface-alt)', border: '1px solid var(--border)' }}>←</button>
             <div className="flex-1">
               <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{facture.id}</div>
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Commande #{facture.commandeId}</div>
             </div>
             <span className="text-xs font-bold px-3 py-1.5 rounded-full"
-              style={{ background: STATUT_STYLE[facture.statut_paiement].bg, color: STATUT_STYLE[facture.statut_paiement].color }}>
-              {STATUT_STYLE[facture.statut_paiement].icon} {STATUT_STYLE[facture.statut_paiement].label}
+              style={{ background: STATUT_STYLE[facture.statut_paiement]?.bg, color: STATUT_STYLE[facture.statut_paiement]?.color }}>
+              {STATUT_STYLE[facture.statut_paiement]?.icon} {STATUT_STYLE[facture.statut_paiement]?.label}
             </span>
           </div>
 
-          {/* Client */}
           <div className="rounded-2xl p-4"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
             <div className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Client</div>
@@ -180,7 +148,6 @@ export default function Factures() {
             <div className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>Date facture : {facture.date}</div>
           </div>
 
-          {/* Articles */}
           <div className="rounded-2xl p-4"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
             <div className="text-xs font-bold mb-3" style={{ color: 'var(--text-secondary)' }}>Articles</div>
@@ -188,18 +155,13 @@ export default function Factures() {
               {facture.articles.map((a, i) => (
                 <div key={i} className="flex items-center justify-between px-3 py-2.5 rounded-xl"
                   style={{ background: 'var(--surface-alt)' }}>
-                  <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {a.nom} × {a.qte}
-                  </span>
-                  <span className="text-xs font-black" style={{ color: 'var(--text-primary)' }}>
-                    {(a.prix * a.qte).toLocaleString()} F
-                  </span>
+                  <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{a.nom} × {a.qte}</span>
+                  <span className="text-xs font-black" style={{ color: 'var(--text-primary)' }}>{(a.prix * a.qte).toLocaleString()} F</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Détail financier */}
           <div className="rounded-2xl p-4"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
             <div className="text-xs font-bold mb-3" style={{ color: 'var(--text-secondary)' }}>Détail financier</div>
@@ -225,7 +187,6 @@ export default function Factures() {
             </div>
           </div>
 
-          {/* Paiement */}
           {facture.statut_paiement === 'paye' && (
             <div className="rounded-2xl p-4"
               style={{ background: '#E1F5EE', border: '1.5px solid #9FE1CB' }}>
@@ -240,12 +201,14 @@ export default function Factures() {
                 </div>
                 <div className="flex justify-between text-xs">
                   <span style={{ color: '#0F6E56' }}>Montant reçu</span>
-                  <span className="font-bold" style={{ color: '#0F6E56' }}>{facture.montant_recu.toLocaleString()} F</span>
+                  <span className="font-bold" style={{ color: '#0F6E56' }}>{(facture.montant_recu || 0).toLocaleString()} F</span>
                 </div>
-                <div className="flex justify-between text-xs">
-                  <span style={{ color: '#0F6E56' }}>Date</span>
-                  <span className="font-bold" style={{ color: '#0F6E56' }}>{facture.date_paiement}</span>
-                </div>
+                {facture.date_paiement && (
+                  <div className="flex justify-between text-xs">
+                    <span style={{ color: '#0F6E56' }}>Date</span>
+                    <span className="font-bold" style={{ color: '#0F6E56' }}>{facture.date_paiement}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
