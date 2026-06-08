@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import BottomNavVendeur from '../../components/vendeur/BottomNav'
 
 /* ── Constantes ──────────────────────────────────────────── */
 const EMOJIS = ['🍅','🧅','🥬','🌶️','🍌','🐟','🥚','🌽','🫘','🥕','🍆','🧄','🫑','🥦','🍊']
@@ -163,151 +162,136 @@ export default function CatalogueVendeur() {
   }
 
   return (
-    <div className="w-full min-h-screen font-sans"
-      style={{ background: '#F7F8F3', paddingBottom: 80 }}>
+    <div className="px-4 py-4 flex flex-col gap-4">
 
-      {/* ══ HEADER ══ */}
-      <div className="relative overflow-hidden px-5 pt-5 pb-5"
-        style={{ background: 'linear-gradient(135deg, #BA7517 0%, #854F0B 100%)' }}>
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
-
-        <div className="relative z-10 flex items-center gap-3 mb-4">
-          <button onClick={() => navigate('/vendeur/dashboard')}
-            className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
-            style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}>
-            <span className="text-white text-lg">←</span>
-          </button>
-          <div className="flex-1">
-            <div className="text-white font-black text-base">Mon catalogue</div>
-            <div className="text-white/70 text-xs">{produits.length} produits</div>
+      {/* En-tête + recherche */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>Mon catalogue</div>
+            <div className="text-xs" style={{ color: '#888780' }}>{produits.length} produits</div>
           </div>
           <button onClick={() => setMode('add')}
             className="px-4 py-2 rounded-full text-sm font-black cursor-pointer flex-shrink-0"
-            style={{ background: '#fff', color: '#BA7517', border: 'none' }}>
+            style={{ background: '#BA7517', color: '#fff', border: 'none' }}>
             + Ajouter
           </button>
         </div>
-
-        {/* Recherche */}
-        <div className="relative z-10 flex items-center gap-2 px-4 py-3 rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)' }}>
+        <div className="flex items-center gap-2 px-4 py-3 rounded-2xl"
+          style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
           <span className="text-base">🔍</span>
           <input type="text" placeholder="Rechercher un produit…"
             value={search} onChange={(e) => setSearch(e.target.value)}
             className="flex-1 bg-transparent outline-none text-sm font-medium"
-            style={{ color: '#fff' }} />
+            style={{ color: '#2C2C2A' }} />
           {search && (
             <button onClick={() => setSearch('')}
-              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16 }}>
+              style={{ background: 'none', border: 'none', color: '#888780', cursor: 'pointer' }}>
               ✕
             </button>
           )}
         </div>
       </div>
 
-      <div className="px-4 py-4 flex flex-col gap-3">
+      {/* Formulaire ajout */}
+      {mode === 'add' && (
+        <FormProduit onSave={ajouter} onCancel={() => setMode(null)} />
+      )}
 
-        {/* Formulaire ajout */}
-        {mode === 'add' && (
-          <FormProduit onSave={ajouter} onCancel={() => setMode(null)} />
-        )}
+      {/* Liste produits */}
+      {filtres.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-5xl mb-3">📦</div>
+          <p className="font-bold text-sm" style={{ color: '#888780' }}>
+            {search ? `Aucun produit pour "${search}"` : 'Aucun produit. Ajoutez-en un !'}
+          </p>
+        </div>
+      ) : (
+        filtres.map((p) => (
+          <div key={p.id}>
+            {/* Formulaire modification inline */}
+            {mode?.edit?.id === p.id ? (
+              <FormProduit initial={mode.edit} onSave={modifier} onCancel={() => setMode(null)} />
+            ) : (
+              <div className="rounded-2xl p-4 transition-all"
+                style={{
+                  background: '#fff',
+                  border: `1.5px solid ${p.stock <= 2 ? '#FAC775' : '#E8E6DF'}`,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                }}>
+                <div className="flex items-start gap-3">
 
-        {/* Liste produits */}
-        {filtres.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-5xl mb-3">📦</div>
-            <p className="font-bold text-sm" style={{ color: '#888780' }}>
-              {search ? `Aucun produit pour "${search}"` : 'Aucun produit. Ajoutez-en un !'}
-            </p>
+                  {/* Emoji */}
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+                    style={{ background: p.stock <= 2 ? '#FAEEDA' : '#F7F8F3' }}>
+                    {p.emoji}
+                  </div>
+
+                  {/* Infos */}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-black text-sm mb-0.5" style={{ color: '#2C2C2A' }}>
+                      {p.nom}
+                    </div>
+                    <div className="text-xs mb-2" style={{ color: '#888780' }}>
+                      {p.description}
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-black px-2.5 py-1 rounded-full"
+                        style={{ background: '#FAEEDA', color: '#BA7517' }}>
+                        {p.prix.toLocaleString()} F/{p.unite}
+                      </span>
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                        style={{
+                          background: p.stock <= 2 ? '#FAEEDA' : '#E1F5EE',
+                          color:      p.stock <= 2 ? '#854F0B' : '#0F6E56',
+                        }}>
+                        {p.stock <= 2 ? '⚠️ ' : ''}Stock: {p.stock}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col gap-2 flex-shrink-0">
+                    <button onClick={() => setMode({ edit: p })}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-base cursor-pointer"
+                      style={{ background: '#E6F1FB', border: 'none' }}>
+                      ✏️
+                    </button>
+                    <button onClick={() => setConfirmSup(p.id)}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-base cursor-pointer"
+                      style={{ background: '#FAECE7', border: 'none' }}>
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Confirmation suppression */}
+            {confirmSup === p.id && (
+              <div className="rounded-2xl p-4 mt-1"
+                style={{ background: '#FAECE7', border: '1.5px solid #F5C4B3' }}>
+                <p className="text-sm font-semibold mb-3" style={{ color: '#993C1D' }}>
+                  🗑️ Supprimer "{p.nom}" ? Action irréversible.
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={() => supprimer(p.id)}
+                    className="flex-1 py-2.5 rounded-xl text-white text-sm font-black cursor-pointer"
+                    style={{ background: '#D85A30', border: 'none' }}>
+                    Supprimer
+                  </button>
+                  <button onClick={() => setConfirmSup(null)}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer"
+                    style={{ background: '#fff', color: '#5F5E5A', border: '1.5px solid #E8E6DF' }}>
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        ) : (
-          filtres.map((p) => (
-            <div key={p.id}>
-              {/* Formulaire modification inline */}
-              {mode?.edit?.id === p.id ? (
-                <FormProduit initial={mode.edit} onSave={modifier} onCancel={() => setMode(null)} />
-              ) : (
-                <div className="rounded-2xl p-4 transition-all"
-                  style={{
-                    background: '#fff',
-                    border: `1.5px solid ${p.stock <= 2 ? '#FAC775' : '#E8E6DF'}`,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  }}>
-                  <div className="flex items-start gap-3">
+        ))
+      )}
 
-                    {/* Emoji */}
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
-                      style={{ background: p.stock <= 2 ? '#FAEEDA' : '#F7F8F3' }}>
-                      {p.emoji}
-                    </div>
-
-                    {/* Infos */}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-black text-sm mb-0.5" style={{ color: '#2C2C2A' }}>
-                        {p.nom}
-                      </div>
-                      <div className="text-xs mb-2" style={{ color: '#888780' }}>
-                        {p.description}
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-black px-2.5 py-1 rounded-full"
-                          style={{ background: '#FAEEDA', color: '#BA7517' }}>
-                          {p.prix.toLocaleString()} F/{p.unite}
-                        </span>
-                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                          style={{
-                            background: p.stock <= 2 ? '#FAEEDA' : '#E1F5EE',
-                            color:      p.stock <= 2 ? '#854F0B' : '#0F6E56',
-                          }}>
-                          {p.stock <= 2 ? '⚠️ ' : ''}Stock: {p.stock}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-col gap-2 flex-shrink-0">
-                      <button onClick={() => setMode({ edit: p })}
-                        className="w-9 h-9 rounded-xl flex items-center justify-center text-base cursor-pointer"
-                        style={{ background: '#E6F1FB', border: 'none' }}>
-                        ✏️
-                      </button>
-                      <button onClick={() => setConfirmSup(p.id)}
-                        className="w-9 h-9 rounded-xl flex items-center justify-center text-base cursor-pointer"
-                        style={{ background: '#FAECE7', border: 'none' }}>
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Confirmation suppression */}
-              {confirmSup === p.id && (
-                <div className="rounded-2xl p-4 mt-1"
-                  style={{ background: '#FAECE7', border: '1.5px solid #F5C4B3' }}>
-                  <p className="text-sm font-semibold mb-3" style={{ color: '#993C1D' }}>
-                    🗑️ Supprimer "{p.nom}" ? Action irréversible.
-                  </p>
-                  <div className="flex gap-2">
-                    <button onClick={() => supprimer(p.id)}
-                      className="flex-1 py-2.5 rounded-xl text-white text-sm font-black cursor-pointer"
-                      style={{ background: '#D85A30', border: 'none' }}>
-                      Supprimer
-                    </button>
-                    <button onClick={() => setConfirmSup(null)}
-                      className="flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer"
-                      style={{ background: '#fff', color: '#5F5E5A', border: '1.5px solid #E8E6DF' }}>
-                      Annuler
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))
-        )}
-      </div>
-
-      <BottomNavVendeur />
     </div>
   )
 }
