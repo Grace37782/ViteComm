@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
+import Footer from './components/Footer'
 import Accueil from './pages/Accueil/Accueil'
 import Connexion from './pages/auth/Connexion'
 import AccueilClient from './pages/client/AccueilClient'
@@ -37,6 +39,7 @@ function AppProviders({ children }) {
 export default function App() {
   return (
     <AppProviders>
+    <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -83,8 +86,10 @@ export default function App() {
         <Route path="*" element={<Navigate to="/accueil" />} />
 
       </Routes>
+      <Footer />
       </BrowserRouter>
     </AuthProvider>
+    </ThemeProvider>
     </AppProviders>
   )
 }

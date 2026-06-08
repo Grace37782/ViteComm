@@ -1,4 +1,51 @@
 @import "tailwindcss";
+
+/* ── Theme Variables ── */
+:root {
+  --bg: #F7F8F3;
+  --surface: #FFFFFF;
+  --surface-alt: #FAFAF7;
+  --text-primary: #2C2C2A;
+  --text-secondary: #5F5E5A;
+  --text-muted: #888780;
+  --border: #E8E6DF;
+  --border-light: #F1EFE8;
+  --accent: #1D9E75;
+  --accent-dark: #0F6E56;
+  --shadow: rgba(0, 0, 0, 0.04);
+}
+
+.dark {
+  --bg: #1A1B19;
+  --surface: #252623;
+  --surface-alt: #2C2D2A;
+  --text-primary: #E8E6DF;
+  --text-secondary: #B0AFA8;
+  --text-muted: #7A7972;
+  --border: #3A3B38;
+  --border-light: #333431;
+  --accent: #2DC491;
+  --accent-dark: #1FA876;
+  --shadow: rgba(0, 0, 0, 0.2);
+}
+
+/* ── Smooth theme transition ── */
+*,
+*::before,
+*::after {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* ── Leaflet fix ── */
 .leaflet-container {
   z-index: 0;
+}
+
+/* ── Scrollbar styling ── */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
