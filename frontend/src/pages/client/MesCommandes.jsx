@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
+import { useTheme } from '../../context/ThemeContext'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -12,17 +13,40 @@ function formatDate(d) {
   })
 }
 
-const STATUS_LABELS = {
-  'En attente': { label: 'En attente', color: '#F59E0B', bg: '#FEF3C7' },
-  'Validee': { label: 'Validée', color: '#3B82F6', bg: '#DBEAFE' },
-  'En cours de collecte': { label: 'Collecte en cours', color: '#8B5CF6', bg: '#EDE9FE' },
-  'Collectee': { label: 'Collectée', color: '#F59E0B', bg: '#FEF3C7' },
-  'Livree': { label: 'Livrée', color: '#1D9E75', bg: '#D1FAE5' },
-  'Annulee': { label: 'Annulée', color: '#E24B4A', bg: '#FEE2E2' },
-}
-
-function getStatusConfig(statut) {
-  return STATUS_LABELS[statut] || { label: statut, color: 'var(--text-muted)', bg: '#F3F4F6' }
+function getStatusConfig(statut, isDark) {
+  const MAP = {
+    'En attente': {
+      label: 'En attente',
+      color: isDark ? '#FBBF24' : '#F59E0B',
+      bg: isDark ? 'rgba(251,191,36,0.15)' : '#FEF3C7',
+    },
+    'Validee': {
+      label: 'Validée',
+      color: isDark ? '#60A5FA' : '#3B82F6',
+      bg: isDark ? 'rgba(96,165,250,0.15)' : '#DBEAFE',
+    },
+    'En cours de collecte': {
+      label: 'Collecte en cours',
+      color: isDark ? '#A78BFA' : '#8B5CF6',
+      bg: isDark ? 'rgba(167,139,250,0.15)' : '#EDE9FE',
+    },
+    'Collectee': {
+      label: 'Collectée',
+      color: isDark ? '#FBBF24' : '#F59E0B',
+      bg: isDark ? 'rgba(251,191,36,0.15)' : '#FEF3C7',
+    },
+    'Livree': {
+      label: 'Livrée',
+      color: isDark ? '#34D399' : '#1D9E75',
+      bg: isDark ? 'rgba(52,211,153,0.15)' : '#D1FAE5',
+    },
+    'Annulee': {
+      label: 'Annulée',
+      color: isDark ? '#F87171' : '#E24B4A',
+      bg: isDark ? 'rgba(248,113,113,0.15)' : '#FEE2E2',
+    },
+  }
+  return MAP[statut] || { label: statut, color: 'var(--text-muted)', bg: 'var(--surface-alt)' }
 }
 
 function copyCode(code) {
@@ -31,6 +55,8 @@ function copyCode(code) {
 
 export default function MesCommandes() {
   const navigate = useNavigate()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [copiedId, setCopiedId] = useState(null)
@@ -99,7 +125,7 @@ export default function MesCommandes() {
           </div>
         ) : (
           orders.map(order => {
-            const sc = getStatusConfig(order.statut)
+            const sc = getStatusConfig(order.statut, isDark)
             const livreur = order.livraison?.livreur
             const livreurNom = livreur
               ? `${livreur.utilisateur?.prenom} ${livreur.utilisateur?.nom}`
@@ -120,7 +146,7 @@ export default function MesCommandes() {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 16 }}>📋</span>
-                    <span style={{ fontWeight: 900, fontSize: 13, color: 'var(--text-primary)' }}>
+                    <span style={{ fontWeight: 900, fontSize: 13, color: sc.color }}>
                       #{String(order.id_commande).padStart(5, '0')}
                     </span>
                   </div>
@@ -159,7 +185,7 @@ export default function MesCommandes() {
                         setTimeout(() => setCopiedId(null), 2000)
                       }}
                       style={{
-                        background: copiedId === order.id_commande ? '#D1FAE5' : '#fff',
+                        background: copiedId === order.id_commande ? (isDark ? 'rgba(29,158,117,0.15)' : '#D1FAE5') : 'var(--surface)',
                         border: `1.5px solid ${copiedId === order.id_commande ? '#1D9E75' : 'var(--border)'}`,
                         borderRadius: 12, padding: '10px 14px',
                         fontSize: 12, fontWeight: 800, cursor: 'pointer',
