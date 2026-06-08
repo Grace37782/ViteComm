@@ -6,14 +6,14 @@ export const getVendorDashboard = async (req, res) => {
   try {
     const vendorId = req.user.id_user;
 
-    const vendor = await prisma.vendeur.findUnique({ where: { id_user: vendorId } });
+    const vendor = await prisma.vendeur.findUnique({
+      where: { id_user: vendorId },
+      include: { utilisateur: true }
+    });
     if (!vendor) return res.status(403).json({ error: 'Espace réservé aux vendeurs.' });
 
-    // All order lines for this vendor's products
     const orderLines = await prisma.detailCommande.findMany({
-      where: {
-        produit: { id_user_vendeur: vendorId }
-      }
+      where: { produit: { id_user_vendeur: vendorId } }
     });
 
     let totalBrut = 0;
@@ -30,23 +30,39 @@ export const getVendorDashboard = async (req, res) => {
       }
     });
 
-    const commission = parseFloat((totalNetMarchandises * 0.006).toFixed(2)); // RG08
+    const commission = parseFloat((totalNetMarchandises * 0.006).toFixed(2));
     const gainsNets = parseFloat((totalNetMarchandises - commission).toFixed(2));
 
-    // Low stock alerts
     const lowStockAlerts = await prisma.produit.findMany({
       where: { id_user_vendeur: vendorId, stock_disponible: { lte: 5 } }
     });
 
+    // Count total orders
+    const nbCommandes = await prisma.commande.count({
+      where: { detailsCommande: { some: { produit: { id_user_vendeur: vendorId } } } }
+    });
+
     return res.json({
+      vendeur: {
+        prenom: vendor.utilisateur?.prenom || 'Vendeur',
+        etal: vendor.nom_etal || 'Mon étal',
+        marche: vendor.adresse_etal || 'Marché'
+      },
       score_reputation: vendor.score_reputation,
+      nb_avis: vendor.nb_avis || 0,
+      nb_commandes: nbCommandes,
       financier: {
-        total_brut: totalBrut,
-        total_pertes: totalPertes,
+        revenu_brut: totalBrut,
         commission_plateforme: commission,
+        pertes_rejets: totalPertes,
         gains_nets: gainsNets
       },
-      alertes_stock: lowStockAlerts
+      alertes_stock: lowStockAlerts.map((a) => ({
+        id: a.id_produit,
+        emoji: a.photo_url || '📦',
+        nom: a.nom,
+        stock: a.stock_disponible
+      }))
     });
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors du calcul des statistiques.' });
@@ -567,16 +583,30 @@ export const getVendorRecentOrders = async (req, res) => {
             produit: { id_user_vendeur: vendorId }
           },
           include: { produit: true }
-        },
-        client: {
-          include: { utilisateur: true }
         }
       },
       orderBy: { date_creation: 'desc' },
       take: 5
     });
 
-    return res.json(orders);
+    const formatted = orders.map((o) => {
+      const total = o.detailsCommande.reduce((s, d) => s + d.prix_vente_applique * d.quantite_commandee, 0);
+      const nbArticles = o.detailsCommande.reduce((s, d) => s + d.quantite_commandee, 0);
+
+      let statut = 'en_attente';
+      if (o.statut === 'Livrée') statut = 'livre';
+      else if (o.statut === 'En transit' || o.statut === 'En collecte') statut = 'collecte';
+
+      return {
+        id: o.id_commande,
+        heure: formatHeure(o.date_creation),
+        articles: nbArticles,
+        total,
+        statut
+      };
+    });
+
+    return res.json(formatted);
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors du chargement des commandes récentes.' });
   }
