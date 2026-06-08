@@ -92,6 +92,8 @@ async function resolveCategoryId(categoryName) {
 
 // Helper: format product for frontend
 function formatProduct(p) {
+  // If photo_url is a real URL, use '📦' as emoji fallback; otherwise treat as emoji
+  const isUrl = p.photo_url && p.photo_url.startsWith('http');
   return {
     id: p.id_produit,
     nom: p.nom,
@@ -99,10 +101,10 @@ function formatProduct(p) {
     prix: p.prix_reference,
     stock: p.stock_disponible,
     unite: p.unite || 'kg',
-    emoji: p.photo_url || '📦',
+    emoji: isUrl ? '📦' : (p.photo_url || '📦'),
+    photo_url: isUrl ? p.photo_url : null,
     categorie: p.categorie?.nom_categorie || null,
     id_categorie: p.id_categorie,
-    photo_url: p.photo_url,
     created_at: p.created_at,
     historiques: p.historiques
   };

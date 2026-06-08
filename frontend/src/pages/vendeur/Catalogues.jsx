@@ -272,7 +272,7 @@ export default function CatalogueVendeur() {
       ) : (
         filtres.map((p) => (
           <div key={p.id}>
-            {mode?.edit?.id === p.id ? (
+          {mode?.edit?.id === p.id ? (
               <FormProduit initial={mode.edit} categories={categories} onSave={modifier} onCancel={() => setMode(null)} />
             ) : (
               <div className="rounded-2xl p-4 transition-all"
@@ -282,9 +282,13 @@ export default function CatalogueVendeur() {
                   boxShadow: 'var(--shadow)',
                 }}>
                 <div className="flex items-start gap-3">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 overflow-hidden"
                     style={{ background: p.stock <= 2 ? '#FAEEDA' : 'var(--surface-alt)' }}>
-                    {p.emoji}
+                    {p.photo_url ? (
+                      <img src={p.photo_url} alt={p.nom} className="w-full h-full object-cover" />
+                    ) : (
+                      p.emoji
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-black text-sm mb-0.5" style={{ color: 'var(--text-primary)' }}>{p.nom}</div>
