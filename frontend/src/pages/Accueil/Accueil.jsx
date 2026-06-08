@@ -74,7 +74,7 @@ export default function Accueil() {
   const isDark = resolved === 'dark'
 
   return (
-    <div className="w-full min-h-screen flex flex-col font-sans" style={{ background: 'var(--bg)' }}>
+    <div className="w-full font-sans" style={{ background: 'var(--bg)' }}>
 
       {/* Header + Hero */}
       <div
@@ -179,7 +179,7 @@ export default function Accueil() {
       </div>
 
       {/* Cartes rôles */}
-      <div className="px-6 py-12 sm:py-16" style={{ background: 'var(--surface)' }}>
+      <div className="px-6 pt-12 pb-16 sm:pt-16 sm:pb-20" style={{ background: 'var(--surface)' }}>
         <div className="text-center mb-8">
           <h1
             className="text-3xl md:text-4xl font-bold uppercase tracking-widest mb-2"
