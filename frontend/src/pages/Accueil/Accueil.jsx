@@ -13,7 +13,7 @@ const roles = [
     tagBg: '#1D9E7520',
     tagColor: '#0F6E56',
     ctaBg: '#1D9E75',
-    route: '/register',
+    route: '/register?role=client',
   },
   {
     id: 'vendeur',
@@ -27,7 +27,7 @@ const roles = [
     tagBg: '#BA751720',
     tagColor: '#854F0B',
     ctaBg: '#BA7517',
-    route: '/register',
+    route: '/register?role=vendeur',
   },
   {
     id: 'livreur',
@@ -41,7 +41,7 @@ const roles = [
     tagBg: '#D85A3020',
     tagColor: '#993C1D',
     ctaBg: '#D85A30',
-    route: '/register',
+    route: '/register?role=livreur',
   },
 ]
 
