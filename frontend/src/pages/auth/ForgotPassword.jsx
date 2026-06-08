@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
+import { useTheme } from '../../context/ThemeContext'
 
 export default function ForgotPassword() {
   const navigate = useNavigate()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
+
   const [email, setEmail] = useState('')
-  const [step, setStep] = useState('email') // email | code
+  const [step, setStep] = useState('email')
   const [resetToken, setResetToken] = useState('')
   const [code, setCode] = useState('')
   const [mdp, setMdp] = useState('')
@@ -26,9 +30,8 @@ export default function ForgotPassword() {
       const res = await api.post('/auth/forgot-password', { email })
       setResetToken(res.token)
       setStep('code')
-    } catch (err) {
-      showError(err.message)
-    } finally { setLoading(false) }
+    } catch (err) { showError(err.message) }
+    finally { setLoading(false) }
   }
 
   async function handleReset(e) {
@@ -42,7 +45,6 @@ export default function ForgotPassword() {
     if (!/\d/.test(mdp)) return showError('Un chiffre requis.')
     if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'/`~]/.test(mdp))
       return showError('Un caractère spécial requis.')
-
     setLoading(true); setError('')
     try {
       await api.post('/auth/reset-password', {
@@ -51,134 +53,158 @@ export default function ForgotPassword() {
       })
       showSuccess('Mot de passe réinitialisé ! Redirection...')
       setTimeout(() => navigate('/connect'), 2000)
-    } catch (err) {
-      showError(err.message)
-    } finally { setLoading(false) }
+    } catch (err) { showError(err.message) }
+    finally { setLoading(false) }
   }
 
-  const bgGrad = 'linear-gradient(135deg, #1D9E75 0%, #15795A 55%, #0F5B44 100%)'
+  const inputStyle = {
+    background: 'var(--surface-alt)',
+    border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+    color: 'var(--text-primary)',
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden" style={{ background: bgGrad }}>
-      <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-[#A8EDCA]/20 blur-3xl" />
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
+      <div className="relative flex-1 flex items-center justify-center px-4 py-12 sm:py-0 overflow-hidden">
+        {/* Decorative blobs */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full blur-[120px] opacity-30"
+            style={{ background: isDark ? '#1FA876' : '#1D9E75' }} />
+          <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full blur-[100px] opacity-20"
+            style={{ background: isDark ? '#BA7517' : '#BA7517' }} />
+          <div className="absolute inset-0 opacity-[0.03]"
+            style={{ backgroundImage: `radial-gradient(${isDark ? '#fff' : '#000'} 1px, transparent 1px)`, backgroundSize: '32px 32px' }} />
+        </div>
 
-      <button onClick={() => navigate('/connect')}
-        className="absolute top-6 left-6 z-50 px-4 py-2 rounded-full text-sm font-semibold text-white backdrop-blur-xl border cursor-pointer"
-        style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}>
-        ← Connexion
-      </button>
+        {/* Back button */}
+        <button onClick={() => navigate('/connect')}
+          className="absolute top-5 left-5 z-20 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold cursor-pointer backdrop-blur-md"
+          style={{
+            background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+            color: 'var(--text-secondary)',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+          }}>
+          <span className="text-base">←</span> Connexion
+        </button>
 
-      {error && (
-        <div style={{
-          position: 'fixed', top: 16, left: 16, right: 16, zIndex: 100,
-          background: '#E24B4A', color: '#fff', borderRadius: 16,
-          padding: '14px 20px', fontWeight: 700, fontSize: 14, textAlign: 'center',
-          maxWidth: 480, margin: '0 auto', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-        }}>⚠️ {error}</div>
-      )}
-      {message && (
-        <div style={{
-          position: 'fixed', top: 16, left: 16, right: 16, zIndex: 100,
-          background: '#1D9E75', color: '#fff', borderRadius: 16,
-          padding: '14px 20px', fontWeight: 700, fontSize: 14, textAlign: 'center',
-          maxWidth: 480, margin: '0 auto', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-        }}>✅ {message}</div>
-      )}
-
-      <div className="relative w-full max-w-sm rounded-[32px] p-8 backdrop-blur-xl border"
-        style={{ background: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.18)', boxShadow: '0 10px 40px rgba(0,0,0,0.18)' }}>
-
-        {step === 'email' && (
-          <>
-            <div className="flex flex-col items-center mb-6">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black mb-4"
-                style={{ background: '#fff', color: '#1D9E75' }}>🔑</div>
-              <h1 className="text-2xl font-black text-white tracking-tight">Mot de passe oublié</h1>
-              <p className="text-white/70 text-sm mt-2 text-center leading-relaxed">
-                Entrez votre email, nous vous enverrons un code pour réinitialiser votre mot de passe.
-              </p>
-            </div>
-
-            <form onSubmit={handleSendCode} className="flex flex-col gap-5">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-white/80">Adresse email</label>
-                <input type="email" placeholder="exemple@gmail.com" value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="rounded-2xl px-4 py-4 text-sm text-white placeholder:text-white/40 outline-none border"
-                  style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }} />
-              </div>
-
-              <button type="submit" disabled={loading}
-                className="rounded-2xl py-4 text-base font-black bg-white text-[#1D9E75] hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
-                style={{ opacity: loading ? 0.75 : 1 }}>
-                {loading ? '⏳ Envoi...' : 'Envoyer le code →'}
-              </button>
-            </form>
-          </>
+        {/* Toasts */}
+        {error && (
+          <div className="fixed top-4 left-4 right-4 z-50 rounded-2xl px-5 py-3.5 text-sm font-bold text-center max-w-md mx-auto"
+            style={{ background: '#E24B4A', color: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+            ⚠️ {error}
+          </div>
+        )}
+        {message && (
+          <div className="fixed top-4 left-4 right-4 z-50 rounded-2xl px-5 py-3.5 text-sm font-bold text-center max-w-md mx-auto"
+            style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+            ✅ {message}
+          </div>
         )}
 
-        {step === 'code' && (
-          <>
-            <div className="flex flex-col items-center mb-6">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black mb-4"
-                style={{ background: '#fff', color: '#1D9E75' }}>✉️</div>
-              <h1 className="text-2xl font-black text-white tracking-tight">Nouveau mot de passe</h1>
-              <p className="text-white/70 text-sm mt-2 text-center leading-relaxed">
-                Un code à 6 chiffres vous a été envoyé par email. Saisissez-le ci-dessous avec votre nouveau mot de passe.
-              </p>
-            </div>
+        {/* Main card */}
+        <div className="relative z-10 w-full max-w-sm rounded-3xl p-8 sm:p-10"
+          style={{
+            background: 'var(--surface)',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+            boxShadow: isDark ? '0 25px 60px rgba(0,0,0,0.4)' : '0 25px 60px rgba(0,0,0,0.08)',
+          }}>
 
-            <form onSubmit={handleReset} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-white/80">Code de réinitialisation</label>
-                <input type="text" inputMode="numeric" placeholder="000000" value={code}
-                  onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="rounded-2xl px-4 py-4 text-sm text-white placeholder:text-white/40 outline-none border text-center tracking-widest text-lg font-black"
-                  style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }} />
+          {/* Green accent bar */}
+          <div className="absolute top-0 left-8 right-8 h-[3px] rounded-b-full"
+            style={{ background: 'linear-gradient(90deg, #1D9E75, #2DC491, #1D9E75)' }} />
+
+          {step === 'email' && (
+            <>
+              <div className="flex flex-col items-center mb-6">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black mb-4"
+                  style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', boxShadow: '0 8px 24px rgba(29,158,117,0.25)' }}>🔑</div>
+                <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>Mot de passe oublié</h1>
+                <p className="text-sm mt-2 text-center leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  Entrez votre email, nous vous enverrons un code pour réinitialiser votre mot de passe.
+                </p>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-white/80">Nouveau mot de passe</label>
-                <div className="flex items-center rounded-2xl overflow-hidden border"
-                  style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}>
-                  <input type={showMdp ? 'text' : 'password'} placeholder="••••••••" value={mdp}
-                    onChange={e => setMdp(e.target.value)}
-                    className="flex-1 bg-transparent px-4 py-4 text-sm text-white placeholder:text-white/40 outline-none" />
-                  <button type="button" onClick={() => setShowMdp(!showMdp)}
-                    className="px-4 text-lg cursor-pointer" style={{ background: 'none', border: 'none' }}>
-                    {showMdp ? '🙈' : '👁️'}
-                  </button>
+              <form onSubmit={handleSendCode} className="flex flex-col gap-5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Adresse email</label>
+                  <input type="email" placeholder="exemple@gmail.com" value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="rounded-xl px-4 py-3.5 text-sm outline-none" style={inputStyle} />
                 </div>
+
+                <button type="submit" disabled={loading}
+                  className="rounded-xl py-3.5 text-sm font-black transition-all cursor-pointer"
+                  style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', border: 'none', opacity: loading ? 0.7 : 1, boxShadow: loading ? 'none' : '0 4px 16px rgba(29,158,117,0.3)' }}>
+                  {loading ? '⏳ Envoi...' : 'Envoyer le code →'}
+                </button>
+              </form>
+            </>
+          )}
+
+          {step === 'code' && (
+            <>
+              <div className="flex flex-col items-center mb-6">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black mb-4"
+                  style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', boxShadow: '0 8px 24px rgba(29,158,117,0.25)' }}>✉️</div>
+                <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>Nouveau mot de passe</h1>
+                <p className="text-sm mt-2 text-center leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  Un code à 6 chiffres vous a été envoyé par email. Saisissez-le ci-dessous avec votre nouveau mot de passe.
+                </p>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-white/80">Confirmer le mot de passe</label>
-                <input type={showMdp ? 'text' : 'password'} placeholder="Retaper le mot de passe" value={mdpConfirm}
-                  onChange={e => setMdpConfirm(e.target.value)}
-                  className="rounded-2xl px-4 py-4 text-sm text-white placeholder:text-white/40 outline-none border"
-                  style={{
-                    background: 'rgba(255,255,255,0.08)',
-                    borderColor: mdpConfirm ? (mdp === mdpConfirm ? '#1D9E75' : '#E24B4A') : 'rgba(255,255,255,0.12)',
-                  }} />
-              </div>
+              <form onSubmit={handleReset} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Code de réinitialisation</label>
+                  <input type="text" inputMode="numeric" placeholder="000000" value={code}
+                    onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="rounded-xl px-4 py-3.5 text-sm outline-none text-center tracking-widest text-lg font-black"
+                    style={inputStyle} />
+                </div>
 
-              <button type="submit" disabled={loading || code.length < 6}
-                className="rounded-2xl py-4 text-base font-black bg-white text-[#1D9E75] hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
-                style={{ opacity: loading ? 0.75 : 1 }}>
-                {loading ? '⏳ Réinitialisation...' : '✅ Réinitialiser'}
-              </button>
-            </form>
-          </>
-        )}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Nouveau mot de passe</label>
+                  <div className="flex items-center rounded-xl overflow-hidden"
+                    style={{ background: 'var(--surface-alt)', border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }}>
+                    <span className="pl-4 text-sm select-none">🔒</span>
+                    <input type={showMdp ? 'text' : 'password'} placeholder="••••••••" value={mdp}
+                      onChange={e => setMdp(e.target.value)}
+                      className="flex-1 bg-transparent px-3 py-3.5 text-sm outline-none"
+                      style={{ color: 'var(--text-primary)' }} />
+                    <button type="button" onClick={() => setShowMdp(!showMdp)}
+                      className="px-4 text-lg cursor-pointer" style={{ background: 'none', border: 'none' }}>
+                      {showMdp ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                </div>
 
-        <div className="mt-5 text-center">
-          <p className="text-sm text-white/65">Vous vous êtes souvenu de votre mot de passe ?</p>
-          <button onClick={() => navigate('/connect')}
-            className="mt-2 text-sm font-bold text-white underline underline-offset-4 cursor-pointer"
-            style={{ background: 'none', border: 'none' }}>
-            Se connecter
-          </button>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Confirmer le mot de passe</label>
+                  <input type={showMdp ? 'text' : 'password'} placeholder="Retaper le mot de passe" value={mdpConfirm}
+                    onChange={e => setMdpConfirm(e.target.value)}
+                    className="rounded-xl px-4 py-3.5 text-sm outline-none"
+                    style={{
+                      ...inputStyle,
+                      borderColor: mdpConfirm ? (mdp === mdpConfirm ? 'var(--accent)' : '#E24B4A') : inputStyle.border,
+                    }} />
+                </div>
+
+                <button type="submit" disabled={loading || code.length < 6}
+                  className="rounded-xl py-3.5 text-sm font-black transition-all cursor-pointer"
+                  style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', border: 'none', opacity: loading ? 0.7 : 1, boxShadow: loading ? 'none' : '0 4px 16px rgba(29,158,117,0.3)' }}>
+                  {loading ? '⏳ Réinitialisation...' : '✅ Réinitialiser'}
+                </button>
+              </form>
+            </>
+          )}
+
+          <div className="mt-5 text-center">
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Vous vous êtes souvenu de votre mot de passe ?</p>
+            <button onClick={() => navigate('/connect')}
+              className="mt-1.5 text-sm font-bold cursor-pointer"
+              style={{ background: 'none', border: 'none', color: 'var(--accent)' }}>
+              Se connecter
+            </button>
+          </div>
         </div>
       </div>
     </div>
