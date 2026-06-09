@@ -1,10 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { Home, ClipboardList, ShoppingCart, User } from 'lucide-react'
 
 const items = [
-  { icon: '🏠', label: 'Accueil',  path: '/client/accueil', activeOn: '/client/accueil' },
-  { icon: '📋', label: 'Commandes', path: '/client/mes-commandes', activeOn: '/client/mes-commandes' },
-  { icon: '🛒', label: 'Panier',   path: '/client/panier',  activeOn: '/client/panier'  },
-  { icon: '👤', label: 'Profil',   path: '/client/profil',  activeOn: '/client/profil'  },
+  { icon: Home, label: 'Accueil',  path: '/client/accueil', activeOn: '/client/accueil' },
+  { icon: ClipboardList, label: 'Commandes', path: '/client/mes-commandes', activeOn: '/client/mes-commandes' },
+  { icon: ShoppingCart, label: 'Panier',   path: '/client/panier',  activeOn: '/client/panier'  },
+  { icon: User, label: 'Profil',   path: '/client/profil',  activeOn: '/client/profil'  },
 ]
 
 export default function BottomNav({ panierCount = 0 }) {
@@ -24,7 +25,7 @@ export default function BottomNav({ panierCount = 0 }) {
             className="flex-1 flex flex-col items-center justify-center py-3 gap-1 relative cursor-pointer"
             style={{ background: 'none', border: 'none' }}
           >
-            <span className="text-xl leading-none">{item.icon}</span>
+            <item.icon size={20} className="leading-none" />
             <span
               className="text-xs font-semibold"
               style={{ color: actif ? '#1D9E75' : '#888780' }}

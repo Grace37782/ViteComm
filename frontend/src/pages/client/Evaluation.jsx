@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { Star, CheckCircle, Search, Package, Flag, Motorbike, Store, Loader2 } from 'lucide-react'
 
 function Etoiles({ note, onChange, isDark }) {
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((n) => (
         <button key={n} type="button" onClick={() => onChange(n)}
-          className="text-2xl cursor-pointer transition-all active:scale-90"
+          className="cursor-pointer transition-all active:scale-90"
           style={{ background: 'none', border: 'none', lineHeight: 1 }}>
-          {n <= note ? '⭐' : '☆'}
+          <Star size={24} fill={n <= note ? 'currentColor' : 'none'} />
         </button>
       ))}
     </div>
@@ -133,8 +134,8 @@ export default function Evaluation() {
   }
 
   const STATUT_STYLE = {
-    'Livree': { bg: isDark ? 'rgba(45,196,145,0.15)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', icon: '✅', label: 'Livrée' },
-    'Inspectee': { bg: isDark ? 'rgba(243,168,59,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B', icon: '🔍', label: 'Inspectée' },
+    'Livree': { bg: isDark ? 'rgba(45,196,145,0.15)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', Icon: CheckCircle, label: 'Livrée' },
+    'Inspectee': { bg: isDark ? 'rgba(243,168,59,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B', Icon: Search, label: 'Inspectée' },
   }
 
   return (
@@ -171,7 +172,7 @@ export default function Evaluation() {
 
         {!loading && orders.length === 0 && (
           <div className="text-center py-10">
-            <div className="text-4xl mb-3">📦</div>
+            <div className="text-4xl mb-3"><Package size={40} /></div>
             <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Aucune commande livrée</p>
             <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Évaluez vos commandes une fois livrées.</p>
           </div>
@@ -201,7 +202,7 @@ export default function Evaluation() {
                 </div>
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
                   style={{ background: st.bg, color: st.color }}>
-                  {st.icon} {st.label}
+                  <st.Icon size={14} /> {st.label}
                 </span>
               </div>
 
@@ -219,13 +220,13 @@ export default function Evaluation() {
                       onClick={() => { setSignalement({ type: 'livreur', id: livreur.id, nom: livreur.nom }); setMotifSig('') }}
                       className="text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer"
                       style={{ background: isDark ? 'rgba(232,125,85,0.12)' : '#FAECE7', color: isDark ? '#E87D55' : '#D85A30', border: 'none' }}>
-                      🚩 Signaler
+                       <Flag size={14} /> Signaler
                     </button>
                   )}
                   <button onClick={() => { setEvalOpen(c.id_commande); setTypeEval('livreur') }}
                     className="text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer"
                     style={{ background: 'var(--accent)', color: '#fff', border: 'none' }}>
-                    ⭐ Évaluer
+                    <Star size={14} /> Évaluer
                   </button>
                 </div>
               </div>
@@ -258,7 +259,7 @@ export default function Evaluation() {
                       color: typeEval === t ? '#fff' : 'var(--text-secondary)',
                       border: `1.5px solid ${typeEval === t ? 'var(--accent)' : 'var(--border)'}`,
                     }}>
-                    {t === 'livreur' ? '🏍️ Livreur' : '🏪 Vendeur(s)'}
+                    {t === 'livreur' ? <><Motorbike size={14} /> Livreur</> : <><Store size={14} /> Vendeur(s)</>}
                   </button>
                 ))}
               </div>
@@ -313,7 +314,7 @@ export default function Evaluation() {
                       background: disabled ? '#D3D1C7' : 'var(--accent)',
                       border: 'none', opacity: submitting ? 0.75 : 1,
                     }}>
-                    {submitting ? '⏳ Envoi…' : 'Soumettre mon avis →'}
+                    {submitting ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" /> Envoi…</span> : 'Soumettre mon avis →'}
                   </button>
                 )
               })()}
@@ -334,7 +335,7 @@ export default function Evaluation() {
               <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
             </div>
             <h2 className="font-black text-base mb-1" style={{ color: 'var(--text-primary)' }}>
-              🚩 Signaler {signalement.nom}
+               <Flag size={16} /> Signaler {signalement.nom}
             </h2>
             <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
               Ce signalement sera traité par l'administrateur ViteComm.
@@ -350,7 +351,7 @@ export default function Evaluation() {
                 background: motifSig.trim() ? '#D85A30' : '#D3D1C7',
                 border: 'none', opacity: submitting ? 0.75 : 1,
               }}>
-              {submitting ? '⏳ Envoi…' : 'Envoyer le signalement →'}
+              {submitting ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" /> Envoi…</span> : 'Envoyer le signalement →'}
             </button>
           </div>
         </div>

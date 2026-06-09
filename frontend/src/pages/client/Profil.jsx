@@ -3,11 +3,12 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
+import { ShoppingCart, Package, Bike, User, Lock, Mail, Smartphone, MapPin, CheckCircle, Pencil, Camera, Save, KeyRound, LogOut, Loader2, XCircle, AlertTriangle } from 'lucide-react'
 
 const ROLE_THEMES = {
-  client: { primary: '#1D9E75', dark: '#0F6E56', label: 'Client ViteComm', icon: '🛒' },
-  vendeur: { primary: '#BA7517', dark: '#854F0B', label: 'Vendeur ViteComm', icon: '📦' },
-  livreur: { primary: '#D85A30', dark: '#993C1D', label: 'Livreur ViteComm', icon: '🚲' },
+  client: { primary: '#1D9E75', dark: '#0F6E56', label: 'Client ViteComm', icon: ShoppingCart },
+  vendeur: { primary: '#BA7517', dark: '#854F0B', label: 'Vendeur ViteComm', icon: Package },
+  livreur: { primary: '#D85A30', dark: '#993C1D', label: 'Livreur ViteComm', icon: Bike },
 }
 
 function getRole(pathname) {
@@ -17,8 +18,8 @@ function getRole(pathname) {
 }
 
 const TABS = [
-  { id: 'infos', label: 'Mon Profil', icon: '👤' },
-  { id: 'securite', label: 'Sécurité', icon: '🔒' },
+  { id: 'infos', label: 'Mon Profil', icon: User },
+  { id: 'securite', label: 'Sécurité', icon: Lock },
 ]
 
 export default function Profil() {
@@ -49,7 +50,7 @@ export default function Profil() {
         telephone: data.telephone || '', email: data.email || '',
         adresse_livraison: data.profil?.adresse_livraison || '',
       }))
-    }).catch(e => showToast('❌ ' + e.message, 'error'))
+    }).catch(e => showToast(<><XCircle size={14} className="inline" /> {e.message}</>, 'error'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -69,9 +70,9 @@ export default function Profil() {
 
   async function handleSave(e) {
     e.preventDefault()
-    if (!form.nom || !form.prenom || !form.email) return showToast('⚠️ Nom, prénom et email requis.', 'error')
-    if (form.mot_de_passe && form.mot_de_passe !== form.confirm) return showToast('⚠️ Les mots de passe ne correspondent pas.', 'error')
-    if (form.mot_de_passe && form.mot_de_passe.length < 6) return showToast('⚠️ Le mot de passe doit comporter au moins 6 caractères.', 'error')
+    if (!form.nom || !form.prenom || !form.email) return showToast(<><AlertTriangle size={14} className="inline" /> Nom, prénom et email requis.</>, 'error')
+    if (form.mot_de_passe && form.mot_de_passe !== form.confirm) return showToast(<><AlertTriangle size={14} className="inline" /> Les mots de passe ne correspondent pas.</>, 'error')
+    if (form.mot_de_passe && form.mot_de_passe.length < 6) return showToast(<><AlertTriangle size={14} className="inline" /> Le mot de passe doit comporter au moins 6 caractères.</>, 'error')
     setSaving(true)
     try {
       const body = new FormData()
@@ -88,11 +89,11 @@ export default function Profil() {
       const res = await api.put('/auth/profile', body)
       setProfile(res.user)
       updateCtx(res.user, localStorage.getItem('vc_token'))
-      showToast('✅ Profil mis à jour !', 'ok')
+      showToast(<><CheckCircle size={14} className="inline" /> Profil mis à jour !</>, 'ok')
       setEditing(false)
       setPhotoFile(null)
       setPhotoPreview('')
-    } catch (e) { showToast('❌ ' + e.message, 'error') }
+    } catch (e) { showToast(<><XCircle size={14} className="inline" /> {e.message}</>, 'error') }
     finally { setSaving(false) }
   }
 
@@ -107,7 +108,7 @@ export default function Profil() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
-          <div className="text-4xl mb-3">⏳</div>
+          <div className="mb-3 flex justify-center"><Loader2 size={32} className="animate-spin" /></div>
           <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Chargement du profil…</div>
         </div>
       </div>
@@ -136,7 +137,7 @@ export default function Profil() {
                 border: tab === t.id ? '1px solid var(--border)' : 'none',
                 boxShadow: tab === t.id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
               }}>
-              <span>{t.icon}</span> {t.label}
+              <t.icon size={14} /> {t.label}
             </button>
           ))}
         </div>
@@ -162,22 +163,22 @@ export default function Profil() {
 
                 <div className="text-center mb-5">
                   <h2 className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>{profile?.prenom} {profile?.nom}</h2>
-                  <p className="text-sm font-semibold mt-1" style={{ color: theme.primary }}>{theme.icon} {theme.label}</p>
+                  <p className="text-sm font-semibold mt-1" style={{ color: theme.primary }}><theme.icon size={16} className="inline align-middle" /> {theme.label}</p>
                 </div>
 
                 <div className="flex flex-col gap-3 mb-5">
-                  <InfoRow label="Prénom" value={profile?.prenom} icon="👤" />
-                  <InfoRow label="Nom" value={profile?.nom} icon="👤" />
-                  <InfoRow label="Email" value={profile?.email} icon="✉️" />
-                  <InfoRow label="Téléphone" value={profile?.telephone || '—'} icon="📱" />
-                  <InfoRow label="Adresse livraison" value={profile?.profil?.adresse_livraison || '—'} icon="📍" />
-                  <InfoRow label="Statut" value={profile?.statut_compte || '—'} icon={profile?.statut_compte === 'Actif' ? '✅' : '🔒'} />
+                  <InfoRow label="Prénom" value={profile?.prenom} icon={<User size={14} />} />
+                  <InfoRow label="Nom" value={profile?.nom} icon={<User size={14} />} />
+                  <InfoRow label="Email" value={profile?.email} icon={<Mail size={14} />} />
+                  <InfoRow label="Téléphone" value={profile?.telephone || '—'} icon={<Smartphone size={14} />} />
+                  <InfoRow label="Adresse livraison" value={profile?.profil?.adresse_livraison || '—'} icon={<MapPin size={14} />} />
+                  <InfoRow label="Statut" value={profile?.statut_compte || '—'} icon={profile?.statut_compte === 'Actif' ? <CheckCircle size={14} /> : <Lock size={14} />} />
                 </div>
 
                 <button onClick={() => setEditing(true)}
                   className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                   style={{ background: theme.primary, color: '#fff', border: 'none' }}>
-                  ✏️ Modifier mon profil
+                  <Pencil size={14} className="inline align-middle" /> Modifier mon profil
                 </button>
               </div>
             ) : (
@@ -195,7 +196,7 @@ export default function Profil() {
                       ) : profile?.photo_url ? (
                         <img src={profile.photo_url} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-3xl" style={{ color: 'var(--text-muted)' }}>📷</span>
+                        <Camera size={32} style={{ color: 'var(--text-muted)' }} />
                       )}
                       <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                       {(photoPreview || profile?.photo_url) && (
@@ -217,7 +218,7 @@ export default function Profil() {
                     <button type="submit" disabled={saving}
                       className="flex-1 rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                       style={{ background: theme.primary, color: '#fff', border: 'none', opacity: saving ? 0.7 : 1 }}>
-                      {saving ? '⏳' : '💾 Enregistrer'}
+                      {saving ? <Loader2 size={14} className="animate-spin inline" /> : <><Save size={14} className="inline align-middle" /> Enregistrer</>}
                     </button>
                     <button type="button" onClick={() => {
                       setEditing(false); setPhotoFile(null); setPhotoPreview('')
@@ -241,17 +242,17 @@ export default function Profil() {
         {tab === 'securite' && (
           <div className="flex flex-col gap-4">
             <div className="rounded-2xl p-6 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-              <h3 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}>🔑 Changer le mot de passe</h3>
+              <h3 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}><KeyRound size={14} className="inline align-middle" /> Changer le mot de passe</h3>
               <PasswordChangeForm theme={theme} isDark={isDark} />
             </div>
 
             <div className="rounded-2xl p-6 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-              <h3 className="text-sm font-black mb-2" style={{ color: 'var(--text-primary)' }}>🚪 Session</h3>
+              <h3 className="text-sm font-black mb-2" style={{ color: 'var(--text-primary)' }}><LogOut size={14} className="inline align-middle" /> Session</h3>
               <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Déconnectez-vous de votre compte sur cet appareil.</p>
               <button onClick={() => setShowLogout(true)}
                 className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                 style={{ background: isDark ? 'rgba(232,125,85,0.12)' : '#FDE8E2', color: isDark ? '#E87D55' : '#D85A30', border: 'none' }}>
-                🚪 Se déconnecter
+                <LogOut size={14} className="inline align-middle" /> Se déconnecter
               </button>
             </div>
           </div>
@@ -265,7 +266,7 @@ export default function Profil() {
           <div className="rounded-3xl p-6 w-full max-w-sm shadow-2xl" style={{ background: 'var(--surface)' }}
             onClick={e => e.stopPropagation()}>
             <div className="text-center mb-5">
-              <div className="text-5xl mb-3">👋</div>
+              <div className="mb-3 flex justify-center"><LogOut size={40} /></div>
               <h3 className="text-lg font-black" style={{ color: 'var(--text-primary)' }}>Se déconnecter ?</h3>
               <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Vous devrez vous reconnecter pour accéder à votre espace.</p>
             </div>
@@ -292,24 +293,25 @@ function PasswordChangeForm({ theme, isDark }) {
   const [mdp, setMdp] = useState('')
   const [confirm, setConfirm] = useState('')
   const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState('')
+  const [msg, setMsg] = useState(null)
+  const [msgType, setMsgType] = useState('ok')
 
-  useEffect(() => { if (msg) setTimeout(() => setMsg(''), 3000) }, [msg])
+  useEffect(() => { if (msg) setTimeout(() => setMsg(null), 3000) }, [msg])
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!mdp) return setMsg('⚠️ Entrez un nouveau mot de passe.')
-    if (mdp.length < 6) return setMsg('⚠️ Au moins 6 caractères.')
-    if (mdp !== confirm) return setMsg('⚠️ Les mots de passe ne correspondent pas.')
-    setSaving(true); setMsg('')
+    if (!mdp) { setMsg('Entrez un nouveau mot de passe.'); setMsgType('error'); return }
+    if (mdp.length < 6) { setMsg('Au moins 6 caractères.'); setMsgType('error'); return }
+    if (mdp !== confirm) { setMsg('Les mots de passe ne correspondent pas.'); setMsgType('error'); return }
+    setSaving(true); setMsg(null)
     try {
       const body = new FormData()
       body.set('mot_de_passe', mdp)
       body.set('mot_de_passe_confirmation', confirm)
       await api.put('/auth/profile', body)
-      setMsg('✅ Mot de passe mis à jour.')
+      setMsg('Mot de passe mis à jour.'); setMsgType('ok')
       setMdp(''); setConfirm('')
-    } catch (e) { setMsg('❌ ' + e.message) }
+    } catch (e) { setMsg(e.message); setMsgType('error') }
     finally { setSaving(false) }
   }
 
@@ -317,7 +319,7 @@ function PasswordChangeForm({ theme, isDark }) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       {msg && (
         <div className="rounded-xl px-4 py-2.5 text-xs font-bold text-center"
-          style={{ background: msg.startsWith('✅') ? (isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE') : (isDark ? 'rgba(232,125,85,0.12)' : '#FDE8E2'), color: msg.startsWith('✅') ? (isDark ? '#2DC491' : (theme?.primary || '#0F6E56')) : (isDark ? '#E87D55' : '#D85A30') }}>
+          style={{ background: msgType === 'ok' ? (isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE') : (isDark ? 'rgba(232,125,85,0.12)' : '#FDE8E2'), color: msgType === 'ok' ? (isDark ? '#2DC491' : (theme?.primary || '#0F6E56')) : (isDark ? '#E87D55' : '#D85A30') }}>
           {msg}
         </div>
       )}
@@ -326,7 +328,7 @@ function PasswordChangeForm({ theme, isDark }) {
       <button type="submit" disabled={saving}
         className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer mt-1"
         style={{ background: saving ? (isDark ? 'rgba(255,255,255,0.08)' : '#ccc') : (theme?.primary || '#1D9E75'), color: '#fff', border: 'none' }}>
-        {saving ? '⏳' : '🔑 Mettre à jour'}
+        {saving ? <Loader2 size={14} className="animate-spin inline" /> : <><KeyRound size={14} className="inline align-middle" /> Mettre à jour</>}
       </button>
     </form>
   )

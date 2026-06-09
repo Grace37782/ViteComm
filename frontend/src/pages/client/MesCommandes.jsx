@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { ClipboardList, Inbox, ShoppingCart, ShieldCheck, Motorbike, CheckCircle } from 'lucide-react'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -72,7 +73,7 @@ export default function MesCommandes() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+          <div style={{ fontSize: 40, marginBottom: 12 }}><ClipboardList size={40} /></div>
           <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>Chargement de vos commandes…</div>
         </div>
       </div>
@@ -108,7 +109,7 @@ export default function MesCommandes() {
 
         {orders.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--surface)', borderRadius: 24, border: '1.5px solid var(--border)' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
+            <div style={{ fontSize: 48, marginBottom: 12 }}><Inbox size={48} /></div>
             <div style={{ fontWeight: 900, fontSize: 16, color: 'var(--text-primary)', marginBottom: 6 }}>Aucune commande</div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
               Vous n'avez pas encore passé de commande.
@@ -120,7 +121,7 @@ export default function MesCommandes() {
                 padding: '14px 28px', fontSize: 14, fontWeight: 900, cursor: 'pointer',
               }}
             >
-              🛒 Découvrir les marchés
+              <ShoppingCart size={16} className="inline" /> Découvrir les marchés
             </button>
           </div>
         ) : (
@@ -145,7 +146,7 @@ export default function MesCommandes() {
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 16 }}>📋</span>
+                    <span style={{ fontSize: 16 }}><ClipboardList size={16} /></span>
                     <span style={{ fontWeight: 900, fontSize: 13, color: sc.color }}>
                       #{String(order.id_commande).padStart(5, '0')}
                     </span>
@@ -169,7 +170,7 @@ export default function MesCommandes() {
                   }}>
                     <div>
                       <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        🔐 Code de vérification
+                        <ShieldCheck size={12} className="inline" /> Code de vérification
                       </div>
                       <div style={{
                         fontSize: 24, fontWeight: 900, letterSpacing: 6,
@@ -193,7 +194,7 @@ export default function MesCommandes() {
                         display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
                       }}
                     >
-                      {copiedId === order.id_commande ? '✓ Copié' : '📋 Copier'}
+                      {copiedId === order.id_commande ? <><CheckCircle size={12} className="inline" /> Copié</> : <><ClipboardList size={12} className="inline" /> Copier</>}
                     </button>
                   </div>
 
@@ -206,7 +207,7 @@ export default function MesCommandes() {
 
                     {livreurNom && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>🏍️ Livreur</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}><Motorbike size={12} className="inline" /> Livreur</span>
                         <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
                           {livreurNom}
                           {livreur?.utilisateur?.telephone && ` · ${livreur.utilisateur.telephone}`}

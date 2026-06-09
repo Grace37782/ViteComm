@@ -283,7 +283,7 @@ export default function Inscription() {
                     const actif = profil === p.id
                     return (
                       <button key={p.id} type="button" onClick={() => setProfil(p.id)}
-                        className="rounded-xl py-4 transition-all cursor-pointer"
+                        className="rounded-xl py-4 flex flex-col items-center gap-2 transition-all cursor-pointer"
                         style={{
                           background: actif ? (isDark ? `${p.color}22` : `${p.color}15`) : 'var(--surface-alt)',
                           border: `1.5px solid ${actif ? p.color : 'var(--border)'}`,

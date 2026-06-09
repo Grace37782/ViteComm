@@ -2,28 +2,29 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { Package, Leaf, Flame, Droplets, Fish, Drumstick, Wheat, Apple, Citrus, CircleDot, UtensilsCrossed, Loader2, XCircle, Search, ShoppingCart, Store, MapPin, Star, Home, AlertTriangle } from 'lucide-react'
 
 const CATEGORY_EMOJI = {
-  'Légumes': '🥬',
-  'Épices & Condiments': '🌶️',
-  'Huiles & Matières Grasses': '🫒',
+  'Légumes': <Leaf size={14} />,
+  'Épices & Condiments': <Flame size={14} />,
+  'Huiles & Matières Grasses': <Droplets size={14} />,
 }
 
 function productEmoji(name) {
   const map = {
-    'tomate': '🍅', 'piment': '🌶️', 'oignon': '🧅',
-    'banane': '🍌', 'poisson': '🐟', 'épice': '🌶️',
-    'huile': '🫒', 'palme': '🌴', 'crevette': '🦐',
-    'tilapia': '🐠', 'maïs': '🌽', 'riz': '🍚',
-    'haricot': '🫘', 'gombo': '🥬', 'mangue': '🥭',
-    'ananas': '🍍', 'pain': '🍞', 'œuf': '🥚', 'poulet': '🍗',
-    'ndolè': '🥬', 'frais': '🍅',
+    'tomate': <Apple size={32} />, 'piment': <Flame size={32} />, 'oignon': <CircleDot size={32} />,
+    'banane': <Citrus size={32} />, 'poisson': <Fish size={32} />, 'épice': <Flame size={32} />,
+    'huile': <Droplets size={32} />, 'palme': <Leaf size={32} />, 'crevette': <Fish size={32} />,
+    'tilapia': <Fish size={32} />, 'maïs': <Wheat size={32} />, 'riz': <UtensilsCrossed size={32} />,
+    'haricot': <Package size={32} />, 'gombo': <Leaf size={32} />, 'mangue': <Apple size={32} />,
+    'ananas': <Apple size={32} />, 'pain': <Package size={32} />, 'œuf': <Package size={32} />, 'poulet': <Drumstick size={32} />,
+    'ndolè': <Leaf size={32} />, 'frais': <Apple size={32} />,
   }
   const lower = name.toLowerCase()
-  for (const [key, emoji] of Object.entries(map)) {
-    if (lower.includes(key)) return emoji
+  for (const [key, icon] of Object.entries(map)) {
+    if (lower.includes(key)) return icon
   }
-  return '📦'
+  return <Package size={32} />
 }
 
 function formatPrice(price) {
@@ -94,9 +95,9 @@ export default function Catalogue() {
     try {
       await api.post('/client/cart/item', { id_produit: prod.id_produit, quantite: newQte })
       setCartItems(prev => ({ ...prev, [prod.id_produit]: newQte }))
-      setToast(`✅ ${prod.nom} ajouté au panier`)
+      setToast(`${prod.nom} ajouté au panier`)
     } catch (err) {
-      setToast(`❌ ${err.message}`)
+      setToast(`${err.message}`)
     }
     setTimeout(() => setToast(''), 2000)
   }
@@ -112,7 +113,7 @@ export default function Catalogue() {
         return n
       })
     } catch (err) {
-      setToast(`❌ ${err.message}`)
+      setToast(`${err.message}`)
     }
     setTimeout(() => setToast(''), 2000)
   }
@@ -133,7 +134,7 @@ export default function Catalogue() {
     return (
       <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
-          <div className="text-4xl mb-3">⏳</div>
+          <div className="text-4xl mb-3"><Loader2 size={32} className="animate-spin" /></div>
           <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Chargement…</div>
         </div>
       </div>
@@ -144,7 +145,7 @@ export default function Catalogue() {
     return (
       <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
-          <div className="text-4xl mb-3">❌</div>
+          <div className="text-4xl mb-3"><XCircle size={32} /></div>
           <div className="font-bold text-sm mb-4" style={{ color: 'var(--text-muted)' }}>Étal introuvable</div>
           <button onClick={() => navigate('/client/accueil')} className="text-sm font-bold cursor-pointer" style={{ color: '#1D9E75', background: 'none', border: 'none' }}>
             ← Retour à l'accueil
@@ -175,8 +176,8 @@ export default function Catalogue() {
           <div className="flex-1">
             <div className="text-white font-black text-base leading-tight">{vendor.nom_etablissement}</div>
             <div className="text-white/70 text-xs">
-              {fromMarket && <span>🏛️ {marketName} · </span>}
-              📍 {vendor.localisation_marche} · 🏪 {vendor._count.produits} produit{vendor._count.produits !== 1 ? 's' : ''} · ⭐ {vendor.score_reputation.toFixed(1)}
+              {fromMarket && <span><Store size={12} className="inline" /> {marketName} · </span>}
+              <MapPin size={12} className="inline" /> {vendor.localisation_marche} · <Store size={12} className="inline" /> {vendor._count.produits} produit{vendor._count.produits !== 1 ? 's' : ''} · <Star size={12} className="inline" /> {vendor.score_reputation.toFixed(1)}
             </div>
           </div>
           <button
@@ -184,7 +185,7 @@ export default function Catalogue() {
             className="relative w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer"
             style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}
           >
-            <span className="text-xl">🛒</span>
+            <ShoppingCart size={20} />
             {panierCount > 0 && (
               <div
                 className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-white font-black"
@@ -201,7 +202,7 @@ export default function Catalogue() {
           className="relative z-10 flex items-center gap-2 px-4 py-3 rounded-2xl"
           style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)' }}
         >
-          <span className="text-base">🔍</span>
+          <Search size={16} className="text-gray-300" />
           <input
             type="text"
             placeholder="Chercher un produit…"
@@ -231,7 +232,7 @@ export default function Catalogue() {
                   border: `1.5px solid ${categorie === cat ? '#1D9E75' : 'var(--border)'}`,
                 }}
               >
-                {cat === 'Tout' ? '🏠 Tous' : `${CATEGORY_EMOJI[cat] || '📦'} ${cat}`}
+                {cat === 'Tout' ? <><Home size={12} className="inline" /> Tous</> : <>{CATEGORY_EMOJI[cat] || <Package size={12} />} {cat}</>}
               </button>
             ))}
           </div>
@@ -242,7 +243,7 @@ export default function Catalogue() {
       <div className="px-4 py-4">
         {productsFiltered.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-5xl mb-3">🔍</div>
+            <div className="text-5xl mb-3"><Search size={40} /></div>
             <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
               Aucun produit trouvé{recherche ? ` pour "${recherche}"` : ''}
             </p>
@@ -282,8 +283,8 @@ export default function Catalogue() {
                   {/* Stock faible */}
                   {stockFaible && (
                     <div className="text-center mb-1">
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: isDark ? 'rgba(243,168,59,0.12)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' }}>
-                        ⚠️ {prod.stock_disponible} restant{prod.stock_disponible !== 1 ? 's' : ''}
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: isDark ? 'rgba(243,168,59,0.12)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' }}>
+                        <AlertTriangle size={12} /> {prod.stock_disponible} restant{prod.stock_disponible !== 1 ? 's' : ''}
                       </span>
                     </div>
                   )}

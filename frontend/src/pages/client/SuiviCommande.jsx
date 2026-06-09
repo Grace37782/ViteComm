@@ -2,14 +2,15 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCheck, Home } from 'lucide-react'
 
 const STATUT_STEPS = [
-  { key: 'En attente', icon: '⏳', titre: 'En attente', desc: 'En attente d\'un livreur' },
-  { key: 'Validee', icon: '✅', titre: 'Validée', desc: 'Commande acceptée' },
-  { key: 'En cours de collecte', icon: '🏍️', titre: 'Collecte', desc: 'Le livreur se dirige vers les marchés' },
-  { key: 'Collectee', icon: '📦', titre: 'Collectée', desc: 'Articles collectés, en route vers vous' },
-  { key: 'Inspectee', icon: '🔍', titre: 'Inspection', desc: 'Inspectez vos articles' },
-  { key: 'Livree', icon: '🎉', titre: 'Livrée', desc: 'Livraison terminée !' },
+  { key: 'En attente', icon: Loader2, titre: 'En attente', desc: 'En attente d\'un livreur' },
+  { key: 'Validee', icon: CheckCircle, titre: 'Validée', desc: 'Commande acceptée' },
+  { key: 'En cours de collecte', icon: Motorbike, titre: 'Collecte', desc: 'Le livreur se dirige vers les marchés' },
+  { key: 'Collectee', icon: Package, titre: 'Collectée', desc: 'Articles collectés, en route vers vous' },
+  { key: 'Inspectee', icon: Search, titre: 'Inspection', desc: 'Inspectez vos articles' },
+  { key: 'Livree', icon: PartyPopper, titre: 'Livrée', desc: 'Livraison terminée !' },
 ]
 
 export default function SuiviCommande() {
@@ -80,7 +81,7 @@ export default function SuiviCommande() {
         {/* STATUT ACTUEL */}
         <div className="rounded-2xl p-5 text-center"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-          <div className="text-4xl mb-2">{STATUT_STEPS[Math.max(0, currentStepIndex)]?.icon || '⏳'}</div>
+          <div className="text-4xl mb-2">{(() => { const step = STATUT_STEPS[Math.max(0, currentStepIndex)]; return step ? (step.key === 'En attente' ? <Loader2 size={36} className="animate-spin" /> : <step.icon size={36} />) : <Loader2 size={36} className="animate-spin" />; })()}</div>
           <div className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>
             {STATUT_STEPS[Math.max(0, currentStepIndex)]?.titre || statut}
           </div>
@@ -97,7 +98,7 @@ export default function SuiviCommande() {
           <div className="rounded-2xl p-5 text-center"
             style={{ background: 'var(--surface)', border: '2px solid var(--accent)', boxShadow: isDark ? '0 4px 20px rgba(45,196,145,0.1)' : '0 4px 20px rgba(29,158,117,0.15)' }}>
             <div className="text-[11px] font-extrabold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
-              🔐 Code de vérification
+              <ShieldCheck size={14} className="inline" /> Code de vérification
             </div>
             <div className="text-3xl font-black tracking-[8px] font-mono" style={{ color: 'var(--accent)' }}>
               {verificationCode}
@@ -129,7 +130,7 @@ export default function SuiviCommande() {
                         border: `2px solid ${isPast || isActive ? 'var(--accent)' : 'var(--border)'}`,
                         boxShadow: isActive ? (isDark ? '0 0 12px rgba(45,196,145,0.3)' : '0 0 12px rgba(29,158,117,0.2)') : 'none',
                       }}>
-                      {isPast ? '✓' : step.icon}
+                      {isPast ? <CheckCircle size={14} /> : step.key === 'En attente' ? <Loader2 size={14} className="animate-spin" /> : <step.icon size={14} />}
                     </div>
                     {i < STATUT_STEPS.length - 1 && (
                       <div className="w-0.5 h-5" style={{ background: isPast ? '#1D9E75' : 'var(--border)' }} />
@@ -153,13 +154,13 @@ export default function SuiviCommande() {
             <button onClick={() => navigate('/client/inspection', { state: { id_commande } })}
               className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer"
               style={{ background: '#D85A30', border: 'none', boxShadow: '0 4px 16px rgba(216,90,48,0.3)' }}>
-              🔍 Inspecter les articles
+               <Search size={16} className="inline" /> Inspecter les articles
             </button>
           )}
           <button onClick={() => navigate('/client/accueil')}
             className="w-full py-3.5 rounded-2xl font-black text-sm cursor-pointer"
             style={{ background: 'var(--surface-alt)', color: 'var(--text-primary)', border: '1.5px solid var(--border)' }}>
-            🏠 Retour à l'accueil
+             <Home size={16} className="inline" /> Retour à l'accueil
           </button>
         </div>
       </div>

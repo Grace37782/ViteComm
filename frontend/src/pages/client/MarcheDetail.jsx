@@ -5,36 +5,35 @@ import { useTheme } from '../../context/ThemeContext'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { Package, Loader2, XCircle, Building2, Search, Star, MapPin, Home, Leaf, Flame, Droplets, Wheat, Fish, Egg, Beef, Apple } from 'lucide-react'
 
-const CATEGORY_EMOJI = {
-  'Légumes': '🥬',
-  'Épices & Condiments': '🌶️',
-  'Huiles & Matières Grasses': '🫒',
+const CATEGORY_ICONS = {
+  'Légumes': Leaf,
+  'Épices & Condiments': Flame,
+  'Huiles & Matières Grasses': Droplets,
 }
 
-function catEmoji(name) {
-  return CATEGORY_EMOJI[name] || '📦'
+function catIcon(name) {
+  return CATEGORY_ICONS[name] || Package
 }
 
-function productEmoji(name) {
+function productIcon(name) {
   const map = {
-    'tomate': '🍅', 'piment': '🌶️', 'oignon': '🧅',
-    'banane': '🍌', 'poisson': '🐟', 'épice': '🌶️',
-    'huile': '🫒', 'palme': '🌴', 'crevette': '🦐',
-    'tilapia': '🐠', 'maïs': '🌽', 'riz': '🍚',
-    'haricot': '🫘', 'gombo': '🥬', 'mangue': '🥭',
-    'ananas': '🍍', 'pain': '🍞', 'œuf': '🥚', 'poulet': '🍗',
-    'ndolè': '🥬', 'frais': '🍅', 'piment': '🌶️',
-    'gombo': '🥬',
+    'tomate': Apple, 'piment': Flame, 'oignon': Leaf,
+    'banane': Package, 'poisson': Fish, 'épice': Flame,
+    'huile': Droplets, 'palme': Leaf, 'crevette': Package,
+    'tilapia': Fish, 'maïs': Wheat, 'riz': Wheat,
+    'haricot': Leaf, 'gombo': Leaf, 'mangue': Apple,
+    'ananas': Package, 'pain': Package, 'œuf': Egg, 'poulet': Beef,
+    'ndolè': Leaf, 'frais': Apple,
   }
   const lower = name.toLowerCase()
-  for (const [key, emoji] of Object.entries(map)) {
-    if (lower.includes(key)) return emoji
+  for (const [key, Icon] of Object.entries(map)) {
+    if (lower.includes(key)) return Icon
   }
-  return '📦'
+  return Package
 }
 
-// Custom Leaflet marker icons using divIcon
 const createVendorIcon = (initial) => L.divIcon({
   html: `<div style="width:40px;height:40px;border-radius:50%;background:#F59E0B;border:2.5px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:15px;">${initial}</div>`,
   className: '',
@@ -44,7 +43,7 @@ const createVendorIcon = (initial) => L.divIcon({
 })
 
 const createMarketCenterIcon = () => L.divIcon({
-  html: `<div style="width:32px;height:32px;border-radius:50%;background:#059669;border:2.5px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;">🏛️</div>`,
+  html: `<div style="width:32px;height:32px;border-radius:50%;background:#059669;border:2.5px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg></div>`,
   className: '',
   iconSize: [32, 32],
   iconAnchor: [16, 32],
@@ -146,7 +145,7 @@ export default function MarcheDetail() {
     return (
       <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
-          <div className="text-4xl mb-3 animate-spin">⏳</div>
+          <div className="mb-3 flex justify-center"><Loader2 size={32} className="animate-spin" /></div>
           <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Chargement de l'étal virtuel…</div>
         </div>
       </div>
@@ -157,7 +156,7 @@ export default function MarcheDetail() {
     return (
       <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
-          <div className="text-4xl mb-3">❌</div>
+          <div className="mb-3 flex justify-center"><XCircle size={32} /></div>
           <div className="font-bold text-sm mb-4" style={{ color: 'var(--text-muted)' }}>Marché introuvable</div>
           <button onClick={() => navigate('/client/accueil')} className="text-sm font-bold text-emerald-600 cursor-pointer">
             ← Retour à l'accueil
@@ -189,14 +188,14 @@ export default function MarcheDetail() {
 
         <div className="absolute bottom-4 left-4 right-4 text-white">
           <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-600">
-            🏛️ Marché Virtuel
+            <Building2 size={10} className="inline align-middle" /> Marché Virtuel
           </span>
           <h1 className="text-lg font-black mt-1 leading-tight">{market.nom}</h1>
           <p className="text-[10px] text-gray-300 mt-0.5 line-clamp-1">{market.description}</p>
         </div>
       </div>
 
-      {/* 🗺️ Market Stalls Map */}
+      {/* Market Stalls Map */}
       <div className="w-full h-64 relative shadow-inner border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
         <MapContainer
           center={[market.latitude, market.longitude]}
@@ -216,7 +215,7 @@ export default function MarcheDetail() {
           {market.vendeurs.map(v => {
             const pos = vendorCoords[v.id_user]
             if (!pos) return null
-            const initial = v.nom_etablissement ? v.nom_etablissement.charAt(0).toUpperCase() : '🏪'
+            const initial = v.nom_etablissement ? v.nom_etablissement.charAt(0).toUpperCase() : 'V'
 
             return (
               <Marker
@@ -241,9 +240,9 @@ export default function MarcheDetail() {
               <p className="font-extrabold text-xs truncate" style={{ color: 'var(--text-primary)' }}>{activeVendor.nom_etablissement}</p>
               <p className="text-[9px] truncate" style={{ color: 'var(--text-muted)' }}>{activeVendor.localisation_marche}</p>
               <div className="flex gap-2 mt-0.5 text-[9px] font-bold">
-                <span className="text-amber-600">⭐ {activeVendor.score_reputation.toFixed(1)}</span>
+                <span className="text-amber-600"><Star size={10} className="inline align-middle" /> {activeVendor.score_reputation.toFixed(1)}</span>
                 <span style={{ color: 'var(--text-muted)' }}>•</span>
-                <span style={{ color: 'var(--text-muted)' }}>📦 {activeVendor._count?.produits || 0} articles</span>
+                <span style={{ color: 'var(--text-muted)' }}><Package size={10} className="inline align-middle" /> {activeVendor._count?.produits || 0} articles</span>
               </div>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -268,7 +267,7 @@ export default function MarcheDetail() {
       {/* Search + Filters */}
       <div className="px-5 mt-4 flex-shrink-0">
         <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>🔍</span>
+          <span className="text-sm" style={{ color: 'var(--text-muted)' }}><Search size={14} /></span>
           <input
             id="marche-search"
             type="text"
@@ -287,20 +286,23 @@ export default function MarcheDetail() {
       {/* Category filter chips */}
       <div className="px-5 overflow-x-auto mt-3 flex-shrink-0">
         <div className="flex gap-2 pb-1" style={{ width: 'max-content' }}>
-          {catList.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className="px-4 py-1.5 rounded-full text-[10px] font-bold cursor-pointer whitespace-nowrap transition-all"
-              style={{
-                background: selectedCategory === cat ? '#059669' : (isDark ? 'rgba(255,255,255,0.06)' : '#fff'),
-                color: selectedCategory === cat ? '#fff' : (isDark ? '#9CA3AF' : '#5F5E5A'),
-                border: `1.5px solid ${selectedCategory === cat ? '#059669' : 'var(--border)'}`,
-              }}
-            >
-              {cat === 'Tout' ? '🏠 Tout' : `${catEmoji(cat)} ${cat}`}
-            </button>
-          ))}
+          {catList.map(cat => {
+            const Icon = cat === 'Tout' ? Home : catIcon(cat);
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className="px-4 py-1.5 rounded-full text-[10px] font-bold cursor-pointer whitespace-nowrap transition-all"
+                style={{
+                  background: selectedCategory === cat ? '#059669' : (isDark ? 'rgba(255,255,255,0.06)' : '#fff'),
+                  color: selectedCategory === cat ? '#fff' : (isDark ? '#9CA3AF' : '#5F5E5A'),
+                  border: `1.5px solid ${selectedCategory === cat ? '#059669' : 'var(--border)'}`,
+                }}
+              >
+                <Icon size={12} className="inline align-middle" /> {cat}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -334,7 +336,7 @@ export default function MarcheDetail() {
                   {v.utilisateur.prenom} {v.utilisateur.nom}
                 </p>
                 <div className="flex items-center justify-between mt-2 pt-2 text-[9px] font-bold" style={{ borderTop: '1px solid var(--border)' }}>
-                  <span className="text-amber-600">⭐ {v.score_reputation.toFixed(1)}</span>
+                  <span className="text-amber-600"><Star size={10} className="inline align-middle" /> {v.score_reputation.toFixed(1)}</span>
                   <span style={{ color: 'var(--text-muted)' }}>{v._count?.produits || 0} art.</span>
                 </div>
               </div>
@@ -352,34 +354,38 @@ export default function MarcheDetail() {
 
         {productsFiltered.length === 0 ? (
           <div className="text-center py-10 rounded-2xl shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-            <span className="text-3xl">🔍</span>
+            <span className="text-3xl flex justify-center"><Search size={24} /></span>
             <p className="text-[10px] font-bold mt-2" style={{ color: 'var(--text-muted)' }}>Aucun produit disponible dans ce marché.</p>
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-3">
-            {productsFiltered.map(p => (
-              <div
-                key={p.id_produit}
-                onClick={() => goToVendorCatalogue(p.vendeur.id_user)}
-                className="p-2.5 rounded-2xl cursor-pointer shadow-sm hover:shadow-md hover:border-amber-300 transition-all flex flex-col justify-between"
-                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-              >
-                <div className="text-center">
-                  <div className="text-3xl mb-1.5">{productEmoji(p.nom)}</div>
-                  <h4 className="font-extrabold text-[10px] line-clamp-2 leading-tight" style={{ color: 'var(--text-primary)' }}>{p.nom}</h4>
-                  <p className="text-[8px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{p.vendeur?.nom_etablissement}</p>
-                </div>
+            {productsFiltered.map(p => {
+              const PIcon = productIcon(p.nom);
+              return (
+                <div
+                  key={p.id_produit}
+                  onClick={() => goToVendorCatalogue(p.vendeur.id_user)}
+                  className="p-2.5 rounded-2xl cursor-pointer shadow-sm hover:shadow-md hover:border-amber-300 transition-all flex flex-col justify-between"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                >
+                  <div className="text-center">
+                    <div className="mb-1.5 flex justify-center"><PIcon size={24} /></div>
+                    <h4 className="font-extrabold text-[10px] line-clamp-2 leading-tight" style={{ color: 'var(--text-primary)' }}>{p.nom}</h4>
+                    <p className="text-[8px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{p.vendeur?.nom_etablissement}</p>
+                  </div>
 
-                <div className="mt-2 text-center pt-1.5" style={{ borderTop: '1px solid var(--border)' }}>
-                  <span className="text-[10px] font-black text-emerald-600 block">
-                    {p.prix_reference.toLocaleString()} F
-                  </span>
-                  {p.categorie && (
-                    <span className="text-[8px] block" style={{ color: 'var(--text-muted)' }}>{catEmoji(p.categorie.nom_categorie)} {p.categorie.nom_categorie}</span>
-                  )}
+                  <div className="mt-2 text-center pt-1.5" style={{ borderTop: '1px solid var(--border)' }}>
+                    <span className="text-[10px] font-black text-emerald-600 block">
+                      {p.prix_reference.toLocaleString()} F
+                    </span>
+                    {p.categorie && (() => {
+                      const CIcon = catIcon(p.categorie.nom_categorie);
+                      return <span className="text-[8px] block" style={{ color: 'var(--text-muted)' }}><CIcon size={10} className="inline align-middle" /> {p.categorie.nom_categorie}</span>;
+                    })()}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

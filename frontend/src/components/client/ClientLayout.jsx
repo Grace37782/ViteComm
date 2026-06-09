@@ -1,13 +1,14 @@
 import { useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { Home, ClipboardList, Star, ShoppingCart, User } from 'lucide-react'
 
 const NAV_TABS = [
-  { icon: '🏠', label: 'Accueil', path: '/client/accueil' },
-  { icon: '📋', label: 'Commandes', path: '/client/mes-commandes' },
-  { icon: '⭐', label: 'Évaluer', path: '/client/evaluation' },
-  { icon: '🛒', label: 'Panier', path: '/client/panier' },
-  { icon: '👤', label: 'Profil', path: '/client/profil' },
+  { icon: Home, label: 'Accueil', path: '/client/accueil' },
+  { icon: ClipboardList, label: 'Commandes', path: '/client/mes-commandes' },
+  { icon: Star, label: 'Évaluer', path: '/client/evaluation' },
+  { icon: ShoppingCart, label: 'Panier', path: '/client/panier' },
+  { icon: User, label: 'Profil', path: '/client/profil' },
 ]
 
 export default function ClientLayout() {
@@ -64,7 +65,7 @@ export default function ClientLayout() {
                 <button key={tab.path} onClick={() => navigate(tab.path)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
                   style={{ background: active ? 'rgba(255,255,255,0.2)' : 'transparent', color: active ? '#fff' : 'rgba(255,255,255,0.7)' }}>
-                  <span>{tab.icon}</span> {tab.label}
+                  <tab.icon size={14} /> {tab.label}
                 </button>
               )
             })}

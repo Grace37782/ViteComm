@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { Loader2, XCircle, Star, Phone, Banknote, Car, Motorbike, Frown } from 'lucide-react'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -21,7 +22,7 @@ export default function SelectionLivreur() {
   useEffect(() => {
     api.get('/client/drivers')
       .then(setDrivers)
-      .catch(err => showToast('❌ ' + err.message))
+      .catch(err => showToast(<><XCircle size={14} style={{verticalAlign: 'middle', marginRight: 4}} />{err.message}</>))
       .finally(() => setLoading(false))
   }, [])
 
@@ -54,7 +55,7 @@ export default function SelectionLivreur() {
         }
       })
     } catch (err) {
-      showToast('❌ ' + err.message)
+      showToast(<><XCircle size={14} style={{verticalAlign: 'middle', marginRight: 4}} />{err.message}</>)
       setPlacing(false)
     }
   }
@@ -67,7 +68,7 @@ export default function SelectionLivreur() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🏍️</div>
+          <div style={{ fontSize: 40, marginBottom: 12 }}><Motorbike size={40} /></div>
           <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>Recherche des livreurs disponibles…</div>
         </div>
       </div>
@@ -129,7 +130,7 @@ export default function SelectionLivreur() {
         {/* NO DRIVERS */}
         {drivers.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-5xl mb-3">😔</div>
+            <div className="text-5xl mb-3"><Frown size={48} /></div>
             <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
               Aucun livreur disponible pour le moment.<br />Réessayez dans quelques minutes.
             </div>
@@ -155,7 +156,7 @@ export default function SelectionLivreur() {
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-                      style={{ background: sel ? '#1D9E75' : 'var(--surface-alt)' }}>🏍️</div>
+                      style={{ background: sel ? '#1D9E75' : 'var(--surface-alt)' }}><Motorbike size={24} /></div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5 flex-wrap">
@@ -163,18 +164,18 @@ export default function SelectionLivreur() {
                       </div>
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
                         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                          ⭐ {drv.score_reputation.toFixed(1)} · {drv.type_vehicule}
+                          <Star size={14} /> {drv.score_reputation.toFixed(1)} · {drv.type_vehicule}
                         </span>
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>📞 {drv.utilisateur.telephone}</span>
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}><Phone size={14} /> {drv.utilisateur.telephone}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold px-2 py-1 rounded-lg"
                           style={{ background: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' }}>
-                           💵 {formatPrice(FRAIS_LIVRAISON)} livraison
+                           <Banknote size={14} /> {formatPrice(FRAIS_LIVRAISON)} livraison
                          </span>
                          <span className="text-xs font-semibold px-2 py-1 rounded-lg"
                            style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56' }}>
-                           🚗 {drv.immatriculation}
+                           <Car size={14} /> {drv.immatriculation}
                          </span>
                       </div>
                     </div>
@@ -224,14 +225,14 @@ export default function SelectionLivreur() {
           }}
         >
           {placing
-            ? '⏳ Confirmation en cours…'
+            ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" /> Confirmation en cours…</span>
             : livreurId
             ? `Confirmer avec ${livreurSelected?.utilisateur?.prenom} →`
             : 'Sélectionnez un livreur'}
         </button>
 
         <p className="text-center text-xs pb-2" style={{ color: 'var(--text-muted)' }}>
-          💵 Vous payez {formatPrice(totalFinal)} en espèces à la réception
+          <Banknote size={14} /> Vous payez {formatPrice(totalFinal)} en espèces à la réception
         </p>
       </div>
 

@@ -2,24 +2,25 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { Package, AlertTriangle, Camera, Loader2, Leaf, Fish, Drumstick, Flame, Droplets, Wheat, CircleDot, UtensilsCrossed, Apple, Citrus } from 'lucide-react'
 
 const FRAIS_RETOUR_PAR_ARTICLE = 500
 
 function productEmoji(name) {
   const n = name?.toLowerCase() || ''
-  if (n.includes('tomate')) return '🍅'
-  if (n.includes('gombo')) return '🥬'
-  if (n.includes('poisson') || n.includes('capitaine') || n.includes('evie')) return '🐟'
-  if (n.includes('poulet')) return '🍗'
-  if (n.includes('boeuf') || n.includes('bœuf')) return '🥩'
-  if (n.includes('banane')) return '🍌'
-  if (n.includes('oignon') || n.includes('ognon')) return '🧅'
-  if (n.includes('piment')) return '🌶️'
-  if (n.includes('huile')) return '🫒'
-  if (n.includes('riz')) return '🍚'
-  if (n.includes('maïs') || n.includes('blé')) return '🌾'
-  if (n.includes('sel')) return '🧂'
-  return '📦'
+  if (n.includes('tomate')) return <Apple size={24} />
+  if (n.includes('gombo')) return <Leaf size={24} />
+  if (n.includes('poisson') || n.includes('capitaine') || n.includes('evie')) return <Fish size={24} />
+  if (n.includes('poulet')) return <Drumstick size={24} />
+  if (n.includes('boeuf') || n.includes('bœuf')) return <Drumstick size={24} />
+  if (n.includes('banane')) return <Citrus size={24} />
+  if (n.includes('oignon') || n.includes('ognon')) return <CircleDot size={24} />
+  if (n.includes('piment')) return <Flame size={24} />
+  if (n.includes('huile')) return <Droplets size={24} />
+  if (n.includes('riz')) return <UtensilsCrossed size={24} />
+  if (n.includes('maïs') || n.includes('blé')) return <Wheat size={24} />
+  if (n.includes('sel')) return <Droplets size={24} />
+  return <Package size={24} />
 }
 
 export default function Inspection() {
@@ -114,7 +115,7 @@ export default function Inspection() {
       {toast && (
         <div className="fixed top-4 left-4 right-4 z-50 rounded-2xl px-5 py-3.5 text-sm font-bold text-center max-w-md mx-auto"
           style={{ background: '#E24B4A', color: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
-          ⚠️ {toast}
+          <AlertTriangle size={16} className="inline" /> {toast}
         </div>
       )}
 
@@ -140,7 +141,7 @@ export default function Inspection() {
         {/* CONSIGNE */}
         <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
           style={{ background: isDark ? 'rgba(232,125,85,0.08)' : '#FAECE7', border: `1.5px solid ${isDark ? 'rgba(232,125,85,0.2)' : '#F5C4B3'}` }}>
-          <span className="text-xl flex-shrink-0">📦</span>
+          <span className="flex-shrink-0"><Package size={20} /></span>
           <p className="text-xs font-semibold leading-relaxed" style={{ color: isDark ? '#E87D55' : '#993C1D' }}>
             Inspectez chaque article <strong>en présence du livreur</strong>. Acceptez ou rejetez article par article. Vous ne payez que ce que vous acceptez.
           </p>
@@ -222,7 +223,7 @@ export default function Inspection() {
         <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-lg">📸</span>
+              <span className="flex-shrink-0"><Camera size={18} /></span>
               <h3 className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
                 Photos de preuve <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optionnel)</span>
               </h3>
@@ -294,7 +295,7 @@ export default function Inspection() {
             cursor: (!tousDefinis || motifManquant) ? 'not-allowed' : 'pointer',
             opacity: submitting ? 0.75 : 1,
           }}>
-          {submitting ? '⏳ Confirmation…'
+          {submitting ? <><Loader2 size={16} className="inline animate-spin" /> Confirmation…</>
             : !tousDefinis ? 'Inspectez tous les articles pour continuer'
             : motifManquant ? 'Renseignez les motifs de rejet'
             : tousRejetes ? `Confirmer le retour — ${fraisRetour.toLocaleString()} F →`

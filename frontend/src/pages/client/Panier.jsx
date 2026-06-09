@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import { ShoppingCart, Store, Package, Banknote, Lock, Loader2, XCircle } from 'lucide-react'
 
 const FRAIS_LIVRAISON = 1500
 const COMMISSION_RATE = 0.006
@@ -23,7 +24,7 @@ export default function Panier() {
   useEffect(() => {
     api.get('/client/cart')
       .then(setCart)
-      .catch(err => showToast('❌ ' + err.message))
+      .catch(err => showToast(<><XCircle size={14} style={{verticalAlign: 'middle', marginRight: 4}} />{err.message}</>))
       .finally(() => setLoading(false))
   }, [])
 
@@ -39,7 +40,7 @@ export default function Panier() {
       const updated = await api.get('/client/cart')
       setCart(updated)
     } catch (err) {
-      showToast('❌ ' + err.message)
+      showToast(<><XCircle size={14} style={{verticalAlign: 'middle', marginRight: 4}} />{err.message}</>)
     }
   }
 
@@ -48,7 +49,7 @@ export default function Panier() {
       await api.delete('/client/cart')
       setCart({ details: [] })
     } catch (err) {
-      showToast('❌ ' + err.message)
+      showToast(<><XCircle size={14} style={{verticalAlign: 'middle', marginRight: 4}} />{err.message}</>)
     }
   }
 
@@ -73,7 +74,7 @@ export default function Panier() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
+          <div style={{ fontSize: 40, marginBottom: 12 }}><Loader2 size={40} className="animate-spin" /></div>
           <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>Chargement du panier…</div>
         </div>
       </div>
@@ -127,7 +128,7 @@ export default function Panier() {
       {/* EMPTY */}
       {details.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-          <div className="text-6xl mb-4">🛒</div>
+          <div className="text-6xl mb-4"><ShoppingCart size={64} /></div>
           <h2 className="font-black text-lg mb-2" style={{ color: 'var(--text-primary)' }}>Votre panier est vide</h2>
           <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
             Ajoutez des produits depuis les catalogues des marchés.
@@ -149,7 +150,7 @@ export default function Panier() {
               style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow)' }}>
               <div className="flex items-center gap-2 px-4 py-3"
                 style={{ background: 'var(--surface-alt)', borderBottom: '1px solid var(--border)' }}>
-                <span className="text-lg">🏪</span>
+                <Store size={18} />
                 <span className="font-black text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{etal.nom}</span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
                   style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56' }}>
@@ -162,7 +163,7 @@ export default function Panier() {
                   <div key={d.id_produit} className="flex items-center gap-3 px-4 py-3">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
                       style={{ background: 'var(--surface-alt)' }}>
-                      📦
+                      <Package size={20} />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -201,7 +202,7 @@ export default function Panier() {
           <div className="rounded-2xl p-4" style={{ background: isDark ? 'rgba(186,117,23,0.08)' : '#FAEEDA', border: `1.5px solid ${isDark ? 'rgba(243,168,59,0.2)' : '#FAC775'}` }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                style={{ background: '#BA7517' }}>💵</div>
+                style={{ background: '#BA7517' }}><Banknote size={20} /></div>
               <div>
                 <div className="font-black text-sm" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Paiement à la livraison</div>
                 <div className="text-xs" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Vous payez en espèces quand vous recevez vos articles</div>
@@ -246,7 +247,7 @@ export default function Panier() {
           </button>
 
           <p className="text-center text-xs pb-2" style={{ color: 'var(--text-muted)' }}>
-            🔒 Paiement sécurisé · Vous inspectez avant de payer
+            <Lock size={14} style={{verticalAlign: 'middle', marginRight: 4}} /> Paiement sécurisé · Vous inspectez avant de payer
           </p>
 
         </div>
