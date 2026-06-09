@@ -510,34 +510,42 @@ export const getLivreurHistorique = async (req, res) => {
           include: {
             client: {
               include: { utilisateur: { select: { nom: true, prenom: true, telephone: true } } }
-            },
-            detailsCommande: {
-              include: {
-                produit: {
-                  include: { vendeur: { select: { nom_etablissement: true, localisation_marche: true } } }
-                }
-              }
-            },
-            preuvesCollecte: { include: { medias: true } }
+            }
           }
         },
         litiges: true,
-        feedbacks: { include: { client: { include: { utilisateur: { nom: true, prenom: true } } } } }
+        feedbacks: true
       },
       orderBy: { date_prise_en_charge: 'desc' }
     });
 
-    const completed = deliveries.filter(d => d.statut_livraison === 'Livree');
-    const failed = deliveries.filter(d => d.statut_livraison === 'Echec');
-    const inProgress = deliveries.filter(d => d.statut_livraison !== 'Livree' && d.statut_livraison !== 'Echec');
+    const commandIds = [...new Set(deliveries.map(d => d.id_commande))];
+    const allDetails = await prisma.detailCommande.findMany({
+      where: { id_commande: { in: commandIds } },
+      include: { produit: { include: { vendeur: { select: { nom_etablissement: true, localisation_marche: true } } } } }
+    });
+    const detailsByCommand = {};
+    for (const d of allDetails) {
+      if (!detailsByCommand[d.id_commande]) detailsByCommand[d.id_commande] = [];
+      detailsByCommand[d.id_commande].push(d);
+    }
+
+    const enrichedDeliveries = deliveries.map(d => ({
+      ...d,
+      commande: { ...d.commande, detailsCommande: detailsByCommand[d.id_commande] || [] }
+    }));
+
+    const completed = enrichedDeliveries.filter(d => d.statut_livraison === 'Livree');
+    const failed = enrichedDeliveries.filter(d => d.statut_livraison === 'Echec');
+    const inProgress = enrichedDeliveries.filter(d => d.statut_livraison !== 'Livree' && d.statut_livraison !== 'Echec');
 
     const totalGains = completed.reduce((sum, d) => sum + d.commande.frais_livraison, 0);
     const totalReturnFees = completed.reduce((sum, d) => sum + (d.frais_retour_calcules || 0), 0);
 
     return res.json({
-      livraisons: deliveries,
+      livraisons: enrichedDeliveries,
       stats: {
-        total: deliveries.length,
+        total: enrichedDeliveries.length,
         terminees: completed.length,
         en_cours: inProgress.length,
         echecs: failed.length,
@@ -570,40 +578,57 @@ export const getReturns = async (req, res) => {
           include: {
             commande: {
               include: {
-                client: { include: { utilisateur: { select: { nom: true, prenom: true } } } },
-                detailsCommande: {
-                  include: {
-                    produit: {
-                      include: { vendeur: { select: { nom_etablissement: true, localisation_marche: true } } }
-                    }
-                  }
-                }
+                client: { include: { utilisateur: { select: { nom: true, prenom: true } } } }
               }
             }
           }
-        },
-        detailsCommande: { include: { produit: true } }
+        }
       },
       orderBy: { date_ouverture: 'desc' }
     });
 
+    const commandIds = [...new Set(returns.map(r => r.livraison?.id_commande).filter(Boolean))];
+    const allDetails = await prisma.detailCommande.findMany({
+      where: { id_commande: { in: commandIds } },
+      include: { produit: { include: { vendeur: { select: { nom_etablissement: true, localisation_marche: true } } } } }
+    });
+    const detailsByCommand = {};
+    for (const d of allDetails) {
+      if (!detailsByCommand[d.id_commande]) detailsByCommand[d.id_commande] = [];
+      detailsByCommand[d.id_commande].push(d);
+    }
+
+    const litigeIds2 = returns.map(r => r.id_litige);
+    const litigeDetails2 = await prisma.detailCommande.findMany({
+      where: { id_litige: { in: litigeIds2 } },
+      include: { produit: true }
+    });
+    const detailsMap2 = {};
+    for (const d of litigeDetails2) {
+      if (!detailsMap2[d.id_litige]) detailsMap2[d.id_litige] = [];
+      detailsMap2[d.id_litige].push(d);
+    }
+
     // Format for frontend
     const formatted = returns.map(r => {
       const cmd = r.livraison?.commande;
-      const line = r.detailsCommande?.[0];
+      const cmdDetails = detailsByCommand[cmd?.id_commande] || [];
+      const lines = detailsMap2[r.id_litige] || [];
+      const line = lines[0];
+      const rejectedProductIds = new Set(lines.map(d => d.id_produit));
       return {
         id_litige: r.id_litige,
         id_commande: cmd?.id_commande,
         client: cmd?.client?.utilisateur ? `${cmd.client.utilisateur.prenom} ${cmd.client.utilisateur.nom}` : '—',
         origine: line?.produit?.vendeur?.localisation_marche || '—',
         destination: cmd?.client?.adresse_livraison || '—',
-        articles: r.detailsCommande.map(d => ({
+        articles: lines.map(d => ({
           nom: d.produit?.nom || '—',
           quantite: d.quantite_commandee,
           prix: d.prix_vente_applique
         })),
-        qte: r.detailsCommande.reduce((a, d) => a + d.quantite_commandee, 0),
-        montant: r.detailsCommande.reduce((a, d) => a + (d.prix_vente_applique * d.quantite_commandee), 0),
+        qte: lines.reduce((a, d) => a + d.quantite_commandee, 0),
+        montant: lines.reduce((a, d) => a + (d.prix_vente_applique * d.quantite_commandee), 0),
         motif: r.description,
         statut_retour: r.statut_retour,
         date_ouverture: r.date_ouverture,
@@ -613,6 +638,7 @@ export const getReturns = async (req, res) => {
 
     return res.json(formatted);
   } catch (error) {
+    console.error('getReturns error:', error);
     return res.status(500).json({ error: 'Erreur lors du chargement des retours.' });
   }
 };
@@ -631,39 +657,43 @@ export const getLivreurRetours = async (req, res) => {
           include: {
             commande: {
               include: {
-                client: { include: { utilisateur: { select: { nom: true, prenom: true } } } },
-                detailsCommande: {
-                  include: {
-                    produit: {
-                      include: { vendeur: { select: { nom_etablissement: true, localisation_marche: true } } }
-                    }
-                  }
-                }
+                client: { include: { utilisateur: { select: { nom: true, prenom: true } } } }
               }
             }
           }
-        },
-        detailsCommande: { include: { produit: true } }
+        }
       },
       orderBy: { date_ouverture: 'desc' }
     });
 
+    const litigeIds = returns.map(r => r.id_litige);
+    const litigeDetails = await prisma.detailCommande.findMany({
+      where: { id_litige: { in: litigeIds } },
+      include: { produit: { include: { vendeur: { select: { nom_etablissement: true, localisation_marche: true } } } } }
+    });
+    const detailsByLitige = {};
+    for (const d of litigeDetails) {
+      if (!detailsByLitige[d.id_litige]) detailsByLitige[d.id_litige] = [];
+      detailsByLitige[d.id_litige].push(d);
+    }
+
     const formatted = returns.map(r => {
       const cmd = r.livraison?.commande;
-      const line = r.detailsCommande?.[0];
+      const lines = detailsByLitige[r.id_litige] || [];
+      const line = lines[0];
       return {
         id_litige: r.id_litige,
         id_commande: cmd?.id_commande,
         client: cmd?.client?.utilisateur ? `${cmd.client.utilisateur.prenom} ${cmd.client.utilisateur.nom}` : '—',
         origine: line?.produit?.vendeur?.localisation_marche || '—',
         destination: cmd?.client?.adresse_livraison || '—',
-        articles: r.detailsCommande.map(d => ({
+        articles: lines.map(d => ({
           nom: d.produit?.nom || '—',
           quantite: d.quantite_commandee,
           prix: d.prix_vente_applique
         })),
-        qte: r.detailsCommande.reduce((a, d) => a + d.quantite_commandee, 0),
-        montant: r.detailsCommande.reduce((a, d) => a + (d.prix_vente_applique * d.quantite_commandee), 0),
+        qte: lines.reduce((a, d) => a + d.quantite_commandee, 0),
+        montant: lines.reduce((a, d) => a + (d.prix_vente_applique * d.quantite_commandee), 0),
         motif: r.description,
         statut_retour: r.statut_retour,
         date_ouverture: r.date_ouverture,

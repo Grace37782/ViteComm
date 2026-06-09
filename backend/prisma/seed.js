@@ -858,6 +858,457 @@ async function main() {
     }
   });
 
+  // ═══════════════════════════════════════════════════════════
+  // HEAVY SEED — Historique & Retours for Vincent (livreur1)
+  // ═══════════════════════════════════════════════════════════
+  console.log('Création de l\'historique lourd pour Vincent Aboubakar...');
+
+  const clients = [client1, client2];
+  const allProducts = [prod1, prod2, prod3, prod4, prod5, prod6, prod7, prod8];
+  const adresses = [
+    'Rue 1.234, Akpakpa', 'Boulevard du Cameroun, Cotonou', 'Quartier Haie-Vive, Porto-Novo',
+    'Avenue Charles de Gaulle, Cotonou', 'Rue des Manguiers, Calavi', 'Zone Industrielle, Sèmè-Kpodji',
+    'Cité AKP, Cotonou', 'Marché Dantokpa, Cotonou', 'Quartier Ganhi, Porto-Novo',
+    'Rue Joss, Cotonou', 'Carrefour Sépèpè, Cotonou', 'Quartier Zongo, Porto-Novo',
+    'Avenue Blaise Compaoré, Cotonou', 'Rue 412, Godomey', 'Cité Château, Cotonou',
+    'Quartier Togba, Porto-Novo', 'Rue des Palmiers, Abomey-Calavi', 'Centre-ville, Parakou',
+    'Quartier Adamidomè, Porto-Novo', 'Boulevard Sainte-Michel, Cotonou', 'Rue Parchappé, Cotonou'
+  ];
+  const vendeurs = [vendeur1, vendeur2, vendeur3, vendeur4, vendeur5];
+
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+  const hour = 60 * 60 * 1000;
+
+  // Helper to create an order + delivery + details + optionally facture + retour
+  async function createFullDelivery({ daysAgo, clientIdx, productIndices, quantities, statutLivraison, hasReturn, returnStatus, rejectedIndices, fraisRetour, clientNote, deliveryMins }) {
+    const cli = clients[clientIdx % clients.length];
+    const products = productIndices.map(i => allProducts[i % allProducts.length]);
+    const qty = quantities || products.map(() => Math.floor(Math.random() * 5) + 1);
+    const totalMarchandises = products.reduce((s, p, i) => s + p.prix_reference * qty[i], 0);
+
+    const order = await prisma.commande.create({
+      data: {
+        id_user_client: cli.id_user,
+        date_creation: new Date(now - daysAgo * day),
+        statut: hasReturn ? 'Livree' : statutLivraison === 'Echec' ? 'Echec' : 'Livree',
+        code_verification: String(Math.floor(100000 + Math.random() * 900000)),
+        total_marchandises: totalMarchandises,
+        frais_livraison: 1500,
+        commission: totalMarchandises * 0.006,
+        detailsCommande: {
+          createMany: {
+            data: products.map((p, i) => ({
+              id_produit: p.id_produit,
+              quantite_commandee: qty[i],
+              prix_vente_applique: p.prix_reference,
+              statut_acceptation: rejectedIndices?.includes(i) ? 'Rejete' : 'Accepte'
+            }))
+          }
+        }
+      }
+    });
+
+    const delivery = await prisma.livraison.create({
+      data: {
+        id_commande: order.id_commande,
+        id_user_livreur: livreur1.id_user,
+        statut_livraison: statutLivraison,
+        date_prise_en_charge: new Date(now - daysAgo * day),
+        date_fin_reelle: (statutLivraison === 'Livree' || statutLivraison === 'Echec')
+          ? new Date(now - daysAgo * day + (deliveryMins || 30 + Math.floor(Math.random() * 30)) * 60 * 1000)
+          : null,
+        frais_retour_calcules: fraisRetour || 0
+      }
+    });
+
+    if (statutLivraison === 'Livree') {
+      await prisma.facture.create({
+        data: {
+          id_commande: order.id_commande,
+          montant_marchandises: totalMarchandises,
+          montant_frais_livraison: 1500,
+          montant_frais_retour: fraisRetour || 0,
+          montant_commission: totalMarchandises * 0.006,
+          montant_total_du: totalMarchandises + 1500 - (fraisRetour || 0),
+          statut_paiement: Math.random() > 0.3 ? 'Paye' : 'En attente'
+        }
+      });
+      await prisma.bonDeLivraison.create({
+        data: {
+          id_livraison: delivery.id_livraison,
+          statut_bon: 'SIGNE',
+          date_signature_client: new Date(now - daysAgo * day + 25 * 60 * 1000),
+          observations_livreur: 'Colis remis en bon état.'
+        }
+      });
+    }
+
+    if (clientNote && statutLivraison === 'Livree') {
+      await prisma.feedback.create({
+        data: {
+          note: clientNote,
+          commentaire: clientNote >= 4 ? 'Très bon livreur, colis en bon état.' : 'Livraison correcte.',
+          type_feedback: 'LIVREUR',
+          id_user_client: cli.id_user,
+          id_livraison: delivery.id_livraison
+        }
+      });
+    }
+
+    if (hasReturn && rejectedIndices) {
+      for (const ri of rejectedIndices) {
+        const p = products[ri];
+        const litige = await prisma.litige.create({
+          data: {
+            id_livraison: delivery.id_livraison,
+            description: `Produit "${p.nom}" rejeté à la réception.`,
+            statut: returnStatus === 'recupere' ? 'Ferme' : 'Ouvert',
+            statut_retour: returnStatus || 'a_recuperer',
+            montant_rembourse: 0
+          }
+        });
+        await prisma.detailCommande.updateMany({
+          where: { id_commande: order.id_commande, id_produit: p.id_produit },
+          data: { id_litige: litige.id_litige }
+        });
+      }
+    }
+
+    return { order, delivery };
+  }
+
+  // ── 15 COMPLETED DELIVERIES (varied dates, notes, products) ──
+  const completedNotes = [5, 5, 4, 5, 3, 5, 4, 5, 5, 4, 5, 5, 4, 3, 5];
+  for (let i = 0; i < 15; i++) {
+    const daysAgo = 1 + i;
+    const clientIdx = i % 2;
+    const prodCount = 1 + (i % 3);
+    const productIndices = [];
+    for (let j = 0; j < prodCount; j++) productIndices.push((i + j) % allProducts.length);
+    const quantities = productIndices.map(() => Math.floor(Math.random() * 8) + 1);
+    await createFullDelivery({
+      daysAgo,
+      clientIdx,
+      productIndices,
+      quantities,
+      statutLivraison: 'Livree',
+      hasReturn: false,
+      clientNote: completedNotes[i],
+      deliveryMins: 20 + Math.floor(Math.random() * 40)
+    });
+  }
+
+  // ── 5 FAILED DELIVERIES ──
+  const failReasons = [
+    'Client absent, colis retourné.', 'Client a refusé la livraison.',
+    'Adresse introuvable.', 'Client injoignable après 3 tentatives.',
+    'Colis endommagé pendant le transport.'
+  ];
+  for (let i = 0; i < 5; i++) {
+    const daysAgo = 2 + i * 2;
+    await createFullDelivery({
+      daysAgo,
+      clientIdx: i % 2,
+      productIndices: [i % allProducts.length, (i + 1) % allProducts.length],
+      quantities: [2, 1],
+      statutLivraison: 'Echec',
+      hasReturn: false
+    });
+  }
+
+  // ── 5 ACTIVE DELIVERIES (various states) ──
+  const activeStatuses = ['En cours de collecte', 'Collectee', 'En cours de livraison', 'En cours de collecte', 'Collectee'];
+  for (let i = 0; i < 5; i++) {
+    await createFullDelivery({
+      daysAgo: 0,
+      clientIdx: i % 2,
+      productIndices: [i % allProducts.length],
+      quantities: [Math.floor(Math.random() * 4) + 1],
+      statutLivraison: activeStatuses[i],
+      hasReturn: false
+    });
+  }
+
+  // ── 10 RETURNS (various statuses) ──
+  const returnStatuses = ['a_recuperer', 'a_recuperer', 'en_cours', 'en_cours', 'recupere', 'recupere', 'recupere', 'a_recuperer', 'en_cours', 'recupere'];
+  for (let i = 0; i < 10; i++) {
+    const daysAgo = 1 + i;
+    const rejectedIdx = [0];
+    const prodIdx = [i % allProducts.length];
+    const p = allProducts[prodIdx[0]];
+    const qty = Math.floor(Math.random() * 5) + 1;
+    const totalMarchandises = p.prix_reference * qty;
+
+    const order = await prisma.commande.create({
+      data: {
+        id_user_client: clients[i % 2].id_user,
+        date_creation: new Date(now - daysAgo * day),
+        statut: 'Livree',
+        code_verification: String(Math.floor(100000 + Math.random() * 900000)),
+        total_marchandises: totalMarchandises,
+        frais_livraison: 1500,
+        commission: totalMarchandises * 0.006,
+        detailsCommande: {
+          createMany: {
+            data: [{
+              id_produit: p.id_produit,
+              quantite_commandee: qty,
+              prix_vente_applique: p.prix_reference,
+              statut_acceptation: 'Rejete'
+            }]
+          }
+        }
+      }
+    });
+
+    const delivery = await prisma.livraison.create({
+      data: {
+        id_commande: order.id_commande,
+        id_user_livreur: livreur1.id_user,
+        statut_livraison: 'Livree',
+        date_prise_en_charge: new Date(now - daysAgo * day),
+        date_fin_reelle: new Date(now - daysAgo * day + 35 * 60 * 1000),
+        frais_retour_calcules: 500
+      }
+    });
+
+    const litige = await prisma.litige.create({
+      data: {
+        id_livraison: delivery.id_livraison,
+        description: `${p.nom} non conforme : ${['abîmé', 'périmé', 'quantité insuffisante', 'mauvaise qualité', 'mauvais emballage', 'trop mûr', 'trop petit', 'pas comme décrit', 'manquant', 'écrasé'][i]}.`,
+        statut: returnStatuses[i] === 'recupere' ? 'Ferme' : 'Ouvert',
+        statut_retour: returnStatuses[i],
+        montant_rembourse: 0
+      }
+    });
+
+    await prisma.detailCommande.updateMany({
+      where: { id_commande: order.id_commande, id_produit: p.id_produit },
+      data: { id_litige: litige.id_litige }
+    });
+
+    await prisma.facture.create({
+      data: {
+        id_commande: order.id_commande,
+        montant_marchandises: totalMarchandises,
+        montant_frais_livraison: 1500,
+        montant_frais_retour: 500,
+        montant_commission: totalMarchandises * 0.006,
+        montant_total_du: totalMarchandises + 1500 - 500,
+        statut_paiement: 'Paye'
+      }
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // HEAVY SEED — Historique & Retours for Karl Toko (livreur2)
+  // ═══════════════════════════════════════════════════════════
+  console.log('Création de l\'historique lourd pour Karl Toko...');
+
+  async function createKarlDelivery({ daysAgo, clientIdx, productIndices, quantities, statutLivraison, hasReturn, returnStatus, rejectedIndices, fraisRetour, clientNote, deliveryMins }) {
+    const cli = clients[clientIdx % clients.length];
+    const products = productIndices.map(i => allProducts[i % allProducts.length]);
+    const qty = quantities || products.map(() => Math.floor(Math.random() * 5) + 1);
+    const totalMarchandises = products.reduce((s, p, i) => s + p.prix_reference * qty[i], 0);
+
+    const order = await prisma.commande.create({
+      data: {
+        id_user_client: cli.id_user,
+        date_creation: new Date(now - daysAgo * day),
+        statut: hasReturn ? 'Livree' : statutLivraison === 'Echec' ? 'Echec' : 'Livree',
+        code_verification: String(Math.floor(100000 + Math.random() * 900000)),
+        total_marchandises: totalMarchandises,
+        frais_livraison: 1500,
+        commission: totalMarchandises * 0.006,
+        detailsCommande: {
+          createMany: {
+            data: products.map((p, i) => ({
+              id_produit: p.id_produit,
+              quantite_commandee: qty[i],
+              prix_vente_applique: p.prix_reference,
+              statut_acceptation: rejectedIndices?.includes(i) ? 'Rejete' : 'Accepte'
+            }))
+          }
+        }
+      }
+    });
+
+    const delivery = await prisma.livraison.create({
+      data: {
+        id_commande: order.id_commande,
+        id_user_livreur: livreur2.id_user,
+        statut_livraison: statutLivraison,
+        date_prise_en_charge: new Date(now - daysAgo * day),
+        date_fin_reelle: (statutLivraison === 'Livree' || statutLivraison === 'Echec')
+          ? new Date(now - daysAgo * day + (deliveryMins || 30 + Math.floor(Math.random() * 30)) * 60 * 1000)
+          : null,
+        frais_retour_calcules: fraisRetour || 0
+      }
+    });
+
+    if (statutLivraison === 'Livree') {
+      await prisma.facture.create({
+        data: {
+          id_commande: order.id_commande,
+          montant_marchandises: totalMarchandises,
+          montant_frais_livraison: 1500,
+          montant_frais_retour: fraisRetour || 0,
+          montant_commission: totalMarchandises * 0.006,
+          montant_total_du: totalMarchandises + 1500 - (fraisRetour || 0),
+          statut_paiement: Math.random() > 0.3 ? 'Paye' : 'En attente'
+        }
+      });
+      await prisma.bonDeLivraison.create({
+        data: {
+          id_livraison: delivery.id_livraison,
+          statut_bon: 'SIGNE',
+          date_signature_client: new Date(now - daysAgo * day + 25 * 60 * 1000),
+          observations_livreur: 'Colis remis en bon état.'
+        }
+      });
+    }
+
+    if (clientNote && statutLivraison === 'Livree') {
+      await prisma.feedback.create({
+        data: {
+          note: clientNote,
+          commentaire: clientNote >= 4 ? 'Bon livreur.' : 'Livraison OK.',
+          type_feedback: 'LIVREUR',
+          id_user_client: cli.id_user,
+          id_livraison: delivery.id_livraison
+        }
+      });
+    }
+
+    if (hasReturn && rejectedIndices) {
+      for (const ri of rejectedIndices) {
+        const p = products[ri];
+        const litige = await prisma.litige.create({
+          data: {
+            id_livraison: delivery.id_livraison,
+            description: `Produit "${p.nom}" rejeté.`,
+            statut: returnStatus === 'recupere' ? 'Ferme' : 'Ouvert',
+            statut_retour: returnStatus || 'a_recuperer',
+            montant_rembourse: 0
+          }
+        });
+        await prisma.detailCommande.updateMany({
+          where: { id_commande: order.id_commande, id_produit: p.id_produit },
+          data: { id_litige: litige.id_litige }
+        });
+      }
+    }
+
+    return { order, delivery };
+  }
+
+  // ── 10 COMPLETED DELIVERIES for Karl ──
+  for (let i = 0; i < 10; i++) {
+    await createKarlDelivery({
+      daysAgo: 1 + i,
+      clientIdx: i % 2,
+      productIndices: [i % allProducts.length, (i + 2) % allProducts.length],
+      quantities: [Math.floor(Math.random() * 5) + 1, Math.floor(Math.random() * 3) + 1],
+      statutLivraison: 'Livree',
+      hasReturn: false,
+      clientNote: [5, 4, 5, 3, 5, 4, 5, 4, 3, 5][i],
+      deliveryMins: 25 + Math.floor(Math.random() * 35)
+    });
+  }
+
+  // ── 3 FAILED DELIVERIES for Karl ──
+  for (let i = 0; i < 3; i++) {
+    await createKarlDelivery({
+      daysAgo: 2 + i * 3,
+      clientIdx: i % 2,
+      productIndices: [i % allProducts.length],
+      quantities: [2],
+      statutLivraison: 'Echec',
+      hasReturn: false
+    });
+  }
+
+  // ── 3 ACTIVE DELIVERIES for Karl ──
+  for (let i = 0; i < 3; i++) {
+    await createKarlDelivery({
+      daysAgo: 0,
+      clientIdx: i % 2,
+      productIndices: [(i + 3) % allProducts.length],
+      quantities: [Math.floor(Math.random() * 3) + 1],
+      statutLivraison: ['En cours de livraison', 'Collectee', 'En cours de collecte'][i],
+      hasReturn: false
+    });
+  }
+
+  // ── 5 RETURNS for Karl ──
+  for (let i = 0; i < 5; i++) {
+    const daysAgo = 1 + i;
+    const p = allProducts[(i + 1) % allProducts.length];
+    const qty = Math.floor(Math.random() * 3) + 1;
+    const totalMarchandises = p.prix_reference * qty;
+
+    const order = await prisma.commande.create({
+      data: {
+        id_user_client: clients[i % 2].id_user,
+        date_creation: new Date(now - daysAgo * day),
+        statut: 'Livree',
+        code_verification: String(Math.floor(100000 + Math.random() * 900000)),
+        total_marchandises: totalMarchandises,
+        frais_livraison: 1500,
+        commission: totalMarchandises * 0.006,
+        detailsCommande: {
+          createMany: {
+            data: [{
+              id_produit: p.id_produit,
+              quantite_commandee: qty,
+              prix_vente_applique: p.prix_reference,
+              statut_acceptation: 'Rejete'
+            }]
+          }
+        }
+      }
+    });
+
+    const delivery = await prisma.livraison.create({
+      data: {
+        id_commande: order.id_commande,
+        id_user_livreur: livreur2.id_user,
+        statut_livraison: 'Livree',
+        date_prise_en_charge: new Date(now - daysAgo * day),
+        date_fin_reelle: new Date(now - daysAgo * day + 30 * 60 * 1000),
+        frais_retour_calcules: 500
+      }
+    });
+
+    const litige = await prisma.litige.create({
+      data: {
+        id_livraison: delivery.id_livraison,
+        description: `${p.nom} non conforme.`,
+        statut: returnStatuses[i] === 'recupere' ? 'Ferme' : 'Ouvert',
+        statut_retour: returnStatuses[i],
+        montant_rembourse: 0
+      }
+    });
+
+    await prisma.detailCommande.updateMany({
+      where: { id_commande: order.id_commande, id_produit: p.id_produit },
+      data: { id_litige: litige.id_litige }
+    });
+
+    await prisma.facture.create({
+      data: {
+        id_commande: order.id_commande,
+        montant_marchandises: totalMarchandises,
+        montant_frais_livraison: 1500,
+        montant_frais_retour: 500,
+        montant_commission: totalMarchandises * 0.006,
+        montant_total_du: totalMarchandises + 1500 - 500,
+        statut_paiement: 'Paye'
+      }
+    });
+  }
+
   // 4. Create Signalements
   console.log('Création des signalements de démonstration...');
   
