@@ -37,8 +37,8 @@ export default function LivreurLayout() {
       <div className="sticky top-0 z-50" style={{ background: 'linear-gradient(135deg, #D85A30 0%, #993C1D 100%)' }}>
         <div className="px-3 py-2.5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <button onClick={() => navigate('/livreur/dashboard')} className="cursor-pointer flex-shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0 cursor-pointer" onClick={() => navigate('/livreur/profil')}>
+              <div className="flex-shrink-0">
                 {user?.photo_url ? (
                   <img src={user.photo_url} alt="" className="w-8 h-8 rounded-xl object-cover border-2" style={{ borderColor: 'rgba(255,255,255,0.3)' }} />
                 ) : (
@@ -46,7 +46,7 @@ export default function LivreurLayout() {
                     {initials}
                   </div>
                 )}
-              </button>
+              </div>
               <div className="min-w-0">
                 <div className="text-white font-black text-sm truncate">ViteComm · Livreur</div>
                 <div className="text-white/60 text-xs truncate">{user?.prenom} {user?.nom}</div>

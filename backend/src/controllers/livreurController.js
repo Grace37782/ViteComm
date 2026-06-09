@@ -1,4 +1,5 @@
 import prisma from '../config/db.js';
+import bcryptjs from 'bcryptjs';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -680,9 +681,18 @@ export const getLivreurProfil = async (req, res) => {
   try {
     const driver = await prisma.livreur.findUnique({
       where: { id_user: req.user.id_user },
-      include: { utilisateur: { select: { nom: true, prenom: true, email: true, telephone: true, photo_url: true } } }
+      include: { utilisateur: { select: { nom: true, prenom: true, email: true, telephone: true, photo_url: true, statut_compte: true } } }
     });
     if (!driver) return res.status(403).json({ error: 'Espace réservé aux livreurs.' });
+
+    // Get feedback stats
+    const feedbacks = await prisma.feedback.findMany({
+      where: { type_feedback: 'LIVREUR', livraison: { id_user_livreur: req.user.id_user } },
+      select: { note: true }
+    });
+    const avgRating = feedbacks.length > 0
+      ? (feedbacks.reduce((a, f) => a + f.note, 0) / feedbacks.length)
+      : driver.score_reputation;
 
     return res.json({
       nom: driver.utilisateur.nom,
@@ -690,9 +700,11 @@ export const getLivreurProfil = async (req, res) => {
       email: driver.utilisateur.email,
       telephone: driver.utilisateur.telephone,
       photo_url: driver.utilisateur.photo_url,
+      statut_compte: driver.utilisateur.statut_compte,
       type_vehicule: driver.type_vehicule,
       immatriculation: driver.immatriculation,
-      score_reputation: driver.score_reputation
+      score_reputation: avgRating,
+      nb_avis: feedbacks.length
     });
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors du chargement du profil.' });
@@ -700,20 +712,45 @@ export const getLivreurProfil = async (req, res) => {
 };
 
 export const updateLivreurProfil = async (req, res) => {
-  const { type_vehicule, immatriculation } = req.body;
+  const { type_vehicule, immatriculation, nom, prenom, email, telephone, mot_de_passe, mot_de_passe_confirmation } = req.body;
 
   try {
     const driver = await prisma.livreur.findUnique({ where: { id_user: req.user.id_user } });
     if (!driver) return res.status(403).json({ error: 'Espace réservé aux livreurs.' });
 
-    const updateData = {};
-    if (type_vehicule) updateData.type_vehicule = type_vehicule;
-    if (immatriculation) updateData.immatriculation = immatriculation;
+    // Update livreur-specific fields
+    const livreurData = {};
+    if (type_vehicule !== undefined) livreurData.type_vehicule = type_vehicule;
+    if (immatriculation !== undefined) livreurData.immatriculation = immatriculation;
 
-    if (Object.keys(updateData).length > 0) {
+    if (Object.keys(livreurData).length > 0) {
       await prisma.livreur.update({
         where: { id_user: req.user.id_user },
-        data: updateData
+        data: livreurData
+      });
+    }
+
+    // Update utilisateur fields
+    const userData = {};
+    if (nom !== undefined) userData.nom = nom;
+    if (prenom !== undefined) userData.prenom = prenom;
+    if (email !== undefined) userData.email = email;
+    if (telephone !== undefined) userData.telephone = telephone;
+
+    // Handle password change
+    if (mot_de_passe) {
+      if (mot_de_passe.length < 8) return res.status(400).json({ error: 'Minimum 8 caractères.' });
+      if (!/[A-Z]/.test(mot_de_passe)) return res.status(400).json({ error: 'Une majuscule requise.' });
+      if (!/[a-z]/.test(mot_de_passe)) return res.status(400).json({ error: 'Une minuscule requise.' });
+      if (!/\d/.test(mot_de_passe)) return res.status(400).json({ error: 'Un chiffre requis.' });
+      if (mot_de_passe !== mot_de_passe_confirmation) return res.status(400).json({ error: 'Les mots de passe ne correspondent pas.' });
+      userData.mot_de_passe = await bcryptjs.hash(mot_de_passe, 12);
+    }
+
+    if (Object.keys(userData).length > 0) {
+      await prisma.utilisateur.update({
+        where: { id_user: req.user.id_user },
+        data: userData
       });
     }
 
@@ -734,8 +771,25 @@ export const updateLivreurProfil = async (req, res) => {
       });
     }
 
-    return res.json({ message: 'Profil mis à jour.' });
+    // Return updated profile
+    const updated = await prisma.livreur.findUnique({
+      where: { id_user: req.user.id_user },
+      include: { utilisateur: { select: { nom: true, prenom: true, email: true, telephone: true, photo_url: true } } }
+    });
+
+    return res.json({
+      message: 'Profil mis à jour.',
+      nom: updated.utilisateur.nom,
+      prenom: updated.utilisateur.prenom,
+      email: updated.utilisateur.email,
+      telephone: updated.utilisateur.telephone,
+      photo_url: updated.utilisateur.photo_url,
+      type_vehicule: updated.type_vehicule,
+      immatriculation: updated.immatriculation,
+      score_reputation: updated.score_reputation
+    });
   } catch (error) {
+    console.error('updateLivreurProfil error:', error);
     return res.status(500).json({ error: 'Erreur lors de la mise à jour du profil.' });
   }
 };
