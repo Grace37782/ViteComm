@@ -72,6 +72,10 @@ export default function Evaluation() {
 
   async function soumettreFeedback() {
     if (typeEval === 'livreur' && noteL === 0) return
+    if (typeEval === 'vendeur') {
+      const hasAnyRating = getVendeurs(commande).some(v => notesV[v.id])
+      if (!hasAnyRating) return
+    }
     if (!commande?.livraison) return
     setSubmitting(true)
     try {
@@ -83,7 +87,9 @@ export default function Evaluation() {
           commentaire: commentL || undefined,
         })
       } else {
-        for (const v of getVendeurs(commande)) {
+        const vendeurs = getVendeurs(commande)
+        let submitted = 0
+        for (const v of vendeurs) {
           const note = notesV[v.id]
           if (!note) continue
           await api.post('/client/feedbacks', {
@@ -93,7 +99,9 @@ export default function Evaluation() {
             commentaire: commentsV[v.id] || undefined,
             id_user_vendeur: v.id,
           })
+          submitted++
         }
+        if (submitted === 0) return
       }
       showToast('Évaluation enregistrée !')
       setEvalOpen(null)
@@ -273,6 +281,11 @@ export default function Evaluation() {
 
               {typeEval === 'vendeur' && (
                 <div className="flex flex-col gap-3">
+                  {getVendeurs(commande).length === 0 && (
+                    <div className="text-center py-4 rounded-2xl" style={{ background: 'var(--surface-alt)' }}>
+                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Aucun vendeur trouvé pour cette commande.</p>
+                    </div>
+                  )}
                   {getVendeurs(commande).map((v) => (
                     <div key={v.id} className="rounded-2xl p-4" style={{ background: 'var(--surface-alt)' }}>
                       <div className="font-black text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{v.nom}</div>
@@ -288,15 +301,22 @@ export default function Evaluation() {
                 </div>
               )}
 
-              <button onClick={soumettreFeedback}
-                disabled={submitting || (typeEval === 'livreur' && noteL === 0)}
-                className="w-full mt-5 py-4 rounded-2xl text-white font-black text-base cursor-pointer"
-                style={{
-                  background: (typeEval === 'livreur' && noteL === 0) ? '#D3D1C7' : 'var(--accent)',
-                  border: 'none', opacity: submitting ? 0.75 : 1,
-                }}>
-                {submitting ? '⏳ Envoi…' : 'Soumettre mon avis →'}
-              </button>
+              {(() => {
+                const disabled = submitting ||
+                  (typeEval === 'livreur' && noteL === 0) ||
+                  (typeEval === 'vendeur' && getVendeurs(commande).every(v => !notesV[v.id]))
+                return (
+                  <button onClick={soumettreFeedback}
+                    disabled={disabled}
+                    className="w-full mt-5 py-4 rounded-2xl text-white font-black text-base cursor-pointer"
+                    style={{
+                      background: disabled ? '#D3D1C7' : 'var(--accent)',
+                      border: 'none', opacity: submitting ? 0.75 : 1,
+                    }}>
+                    {submitting ? '⏳ Envoi…' : 'Soumettre mon avis →'}
+                  </button>
+                )
+              })()}
             </div>
           </div>
         </div>

@@ -340,7 +340,17 @@ export const getMyOrders = async (req, res) => {
       where: { id_user_client: req.user.id_user },
       include: {
         detailsCommande: {
-          include: { produit: true }
+          include: {
+            produit: {
+              include: {
+                vendeur: {
+                  include: {
+                    utilisateur: { select: { nom: true, prenom: true } }
+                  }
+                }
+              }
+            }
+          }
         },
         livraison: {
           include: {
