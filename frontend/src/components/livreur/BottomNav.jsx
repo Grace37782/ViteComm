@@ -1,9 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { BarChart3, ShoppingCart, Undo2 } from 'lucide-react'
 
 const ITEMS = [
-  { id: 'dashboard', label: 'Accueil', icon: '📊', route: '/livreur/dashboard' },
-  { id: 'commandes', label: 'Commandes', icon: '🛒', route: '/livreur/commandes' },
-  { id: 'retours', label: 'Retours', icon: '↩️', route: '/livreur/retours' },
+  { id: 'dashboard', label: 'Accueil', icon: BarChart3, route: '/livreur/dashboard' },
+  { id: 'commandes', label: 'Commandes', icon: ShoppingCart, route: '/livreur/commandes' },
+  { id: 'retours', label: 'Retours', icon: Undo2, route: '/livreur/retours' },
 ]
 
 export default function BottomNavLivreur() {
@@ -24,7 +25,7 @@ export default function BottomNavLivreur() {
             className="flex-1 flex flex-col items-center justify-center py-3 gap-1 cursor-pointer relative"
             style={{ background: 'none', border: 'none' }}
           >
-            <span className="text-xl leading-none">{item.icon}</span>
+            <item.icon size={20} className="leading-none" />
             <span className="text-xs font-semibold" style={{ color: actif ? '#BA7517' : '#888780' }}>
               {item.label}
             </span>

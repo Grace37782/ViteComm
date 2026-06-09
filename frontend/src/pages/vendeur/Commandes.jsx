@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { AlertTriangle, ShoppingCart, Camera, Loader2, KeyRound, CheckCircle } from 'lucide-react'
+import { AlertTriangle, ShoppingCart, Camera, Loader2, KeyRound, CheckCircle, Package } from 'lucide-react'
 
 export default function CommandesVendeur() {
   const { resolved } = useTheme()

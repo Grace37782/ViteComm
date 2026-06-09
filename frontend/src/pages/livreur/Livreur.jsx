@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
+import { AlertTriangle, Bike, Star, Wallet, Truck, Undo2, Loader2, Save } from 'lucide-react'
 
 export default function Livreur() {
   const { resolved } = useTheme()
@@ -25,7 +26,7 @@ export default function Livreur() {
         setHoraireFin(data.disponibilite?.heure_fin_dispo?.slice(0,5) || '20:00')
         setDistanceAction(data.disponibilite?.distance_marche || 10)
       })
-      .catch(e => { setError(e.message); showToast('❌ ' + e.message) })
+      .catch(e => { setError(e.message); showToast(e.message) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -40,8 +41,8 @@ export default function Livreur() {
         est_disponible: newVal, distance_marche: distanceAction,
         heure_debut_dispo: horaireDebut, heure_fin_dispo: horaireFin,
       })
-      showToast(newVal ? '✅ Vous êtes en ligne' : '⏸️ Hors ligne')
-    } catch (e) { setDispo(!newVal); showToast('❌ ' + e.message) }
+      showToast(newVal ? 'Vous êtes en ligne' : 'Hors ligne')
+    } catch (e) { setDispo(!newVal); showToast(e.message) }
     finally { setSavingDispo(false) }
   }
 
@@ -52,8 +53,8 @@ export default function Livreur() {
         est_disponible: dispo, distance_marche: distanceAction,
         heure_debut_dispo: horaireDebut, heure_fin_dispo: horaireFin,
       })
-      showToast('✅ Disponibilité mise à jour')
-    } catch (e) { showToast('❌ ' + e.message) }
+      showToast('Disponibilité mise à jour')
+    } catch (e) { showToast(e.message) }
     finally { setSavingDispo(false) }
   }
 
@@ -74,7 +75,7 @@ export default function Livreur() {
   if (error) {
     return (
       <div className="px-4 py-8 flex flex-col items-center gap-3">
-        <div className="text-4xl">⚠️</div>
+        <div className="flex justify-center"><AlertTriangle size={40} /></div>
         <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Impossible de charger le tableau de bord</div>
         <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>{error}</div>
         <button onClick={() => window.location.reload()}
@@ -102,7 +103,7 @@ export default function Livreur() {
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg flex-shrink-0"
             style={{ background: isDark ? 'rgba(216,90,48,0.2)' : '#D85A30', color: '#fff' }}>
-            🏍️
+            <Bike size={20} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{dash?.prenom} {dash?.nom}</div>
@@ -113,7 +114,7 @@ export default function Livreur() {
           <div className="text-right flex-shrink-0">
             <div className="flex items-center gap-1">
               <span className="font-black text-lg" style={{ color: '#D85A30' }}>{score.toFixed(1)}</span>
-              <span className="text-sm">⭐</span>
+              <Star size={16} />
             </div>
             <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{dash?.nb_avis || 0} avis</div>
           </div>
@@ -123,16 +124,16 @@ export default function Livreur() {
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Gains', value: `${(dash?.total_gains || 0).toLocaleString()} F`, icon: '💰',
+          { label: 'Gains', value: `${(dash?.total_gains || 0).toLocaleString()} F`, icon: <Wallet size={20} />,
             bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3', color: isDark ? '#E87D55' : '#993C1D' },
-          { label: 'Actives', value: dash?.courses_actives || 0, icon: '🚚',
+          { label: 'Actives', value: dash?.courses_actives || 0, icon: <Truck size={20} />,
             bg: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', border: isDark ? '#BA7517' : '#FAC775', color: isDark ? '#F3A83B' : '#854F0B' },
-          { label: 'Retours', value: dash?.retours_en_attente || 0, icon: '↩️',
+          { label: 'Retours', value: dash?.retours_en_attente || 0, icon: <Undo2 size={20} />,
             bg: isDark ? 'rgba(239,68,68,0.12)' : '#FEE2E2', border: isDark ? '#EF4444' : '#FECACA', color: isDark ? '#F87171' : '#B91C1C' },
         ].map(card => (
           <div key={card.label} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
             style={{ background: card.bg, border: `1.5px solid ${card.border}` }}>
-            <div className="text-lg mb-1">{card.icon}</div>
+            <div className="mb-1">{card.icon}</div>
             <div className="text-[10px] uppercase tracking-wider font-semibold mb-0.5" style={{ color: 'var(--text-muted)' }}>{card.label}</div>
             <div className="font-black text-lg" style={{ color: card.color }}>{card.value}</div>
           </div>
@@ -154,7 +155,7 @@ export default function Livreur() {
               border: `1.5px solid ${dispo ? '#D85A30' : 'var(--border)'}`,
               opacity: savingDispo ? 0.6 : 1,
             }}>
-            {dispo ? '🟢 En ligne' : '⏸️ Hors ligne'}
+            {dispo ? 'En ligne' : 'Hors ligne'}
           </button>
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -178,7 +179,7 @@ export default function Livreur() {
         <button onClick={saveDispo} disabled={savingDispo}
           className="mt-3 w-full rounded-2xl py-2.5 text-xs font-bold cursor-pointer transition-all active:scale-98"
           style={{ background: 'var(--surface-alt)', color: 'var(--accent)', border: '1.5px solid var(--border)' }}>
-          {savingDispo ? '⏳ Enregistrement…' : '💾 Enregistrer les paramètres'}
+          {savingDispo ? <><Loader2 size={14} className="animate-spin inline" /> Enregistrement…</> : <><Save size={14} className="inline align-middle" /> Enregistrer les paramètres</>}
         </button>
       </div>
 

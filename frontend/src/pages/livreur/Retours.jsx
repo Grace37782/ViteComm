@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
+import { Undo2, Package, Truck, Store, Rocket, CheckCircle } from 'lucide-react'
 
 export default function RetourLivreur() {
   const { resolved } = useTheme()
@@ -13,7 +14,7 @@ export default function RetourLivreur() {
   useEffect(() => {
     api.get('/livreur/retours')
       .then(data => { setRetours(data.retours || []); setStats(data.stats || null) })
-      .catch(e => showToast('❌ ' + e.message))
+      .catch(e => showToast(e.message))
       .finally(() => setLoading(false))
   }, [])
 
@@ -25,8 +26,8 @@ export default function RetourLivreur() {
     try {
       await api.put(`/livreur/returns/${id_litige}`, { statut_retour: next })
       setRetours(prev => prev.map(r => r.id_litige === id_litige ? { ...r, statut_retour: next } : r))
-      showToast(next === 'recupere' ? '✅ Retour terminé' : '✅ Statut mis à jour')
-    } catch (e) { showToast('❌ ' + e.message) }
+      showToast(next === 'recupere' ? 'Retour terminé' : 'Statut mis à jour')
+    } catch (e) { showToast(e.message) }
   }
 
   function statutStyle(statut) {
@@ -59,16 +60,16 @@ export default function RetourLivreur() {
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Total', value: stats?.total ?? 0, icon: '↩️',
+          { label: 'Total', value: stats?.total ?? 0, icon: <Undo2 size={20} />,
             bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3', color: isDark ? '#E87D55' : '#993C1D' },
-          { label: 'À récupérer', value: stats?.a_recuperer ?? 0, icon: '📦',
+          { label: 'À récupérer', value: stats?.a_recuperer ?? 0, icon: <Package size={20} />,
             bg: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', border: isDark ? '#BA7517' : '#FAC775', color: isDark ? '#F3A83B' : '#854F0B' },
-          { label: 'En cours', value: stats?.en_cours ?? 0, icon: '🚚',
+          { label: 'En cours', value: stats?.en_cours ?? 0, icon: <Truck size={20} />,
             bg: isDark ? 'rgba(29,158,117,0.12)' : '#E1F5EE', border: isDark ? '#2DC491' : '#9FE1CB', color: isDark ? '#34D399' : '#0F6E56' },
         ].map(s => (
           <div key={s.label} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
             style={{ background: s.bg, border: `1.5px solid ${s.border}` }}>
-            <div className="text-lg mb-1">{s.icon}</div>
+            <div className="mb-1">{s.icon}</div>
             <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
             <div className="font-black text-xl" style={{ color: s.color }}>{s.value}</div>
           </div>
@@ -98,7 +99,7 @@ export default function RetourLivreur() {
             </div>
 
             <div className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
-              🏪 Vendeur : {retour.vendeur}
+              <Store size={12} className="inline align-middle" /> Vendeur : {retour.vendeur}
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
@@ -120,7 +121,7 @@ export default function RetourLivreur() {
               <button onClick={() => changerStatut(retour.id_litige, retour.statut_retour)}
                 className="w-full rounded-2xl py-3 font-black text-white cursor-pointer transition-all active:scale-98"
                 style={{ background: '#D85A30', border: 'none' }}>
-                {retour.statut_retour === 'a_recuperer' ? '🚀 Commencer la récupération' : '✅ Marquer comme récupéré'}
+                {retour.statut_retour === 'a_recuperer' ? <><Rocket size={14} className="inline align-middle" /> Commencer la récupération</> : <><CheckCircle size={14} className="inline align-middle" /> Marquer comme récupéré</>}
               </button>
             )}
           </div>

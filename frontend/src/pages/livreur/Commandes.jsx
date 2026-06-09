@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
+import { XCircle, CheckCircle, AlertTriangle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, X } from 'lucide-react'
 
 export default function CommandesLivreur() {
   const { resolved } = useTheme()
@@ -23,7 +24,7 @@ export default function CommandesLivreur() {
       api.get('/livreur/deliveries/available'),
       api.get('/livreur/deliveries'),
     ]).then(([a, d]) => { setAvailable(a); setDeliveries(d) })
-      .catch(e => showToast('❌ ' + e.message))
+      .catch(e => showToast(e.message))
       .finally(() => setLoading(false))
   }
 
@@ -32,25 +33,25 @@ export default function CommandesLivreur() {
   async function accepterCourse(id_commande) {
     try {
       await api.post(`/livreur/deliveries/${id_commande}/accept`)
-      showToast('✅ Course acceptée !')
+      showToast('Course acceptée !')
       loadData()
-    } catch (e) { showToast('❌ ' + e.message) }
+    } catch (e) { showToast(e.message) }
   }
 
   async function marquerCollectee(id_commande) {
     try {
       await api.post(`/livreur/deliveries/${id_commande}/collect`, { code_verification: 'VendeurOK' })
-      showToast('✅ Collecte confirmée !')
+      showToast('Collecte confirmée !')
       loadData()
-    } catch (e) { showToast('❌ ' + e.message) }
+    } catch (e) { showToast(e.message) }
   }
 
   async function marquerEnRoute(id_commande) {
     try {
       await api.post(`/livreur/deliveries/${id_commande}/depart`)
-      showToast('✅ Départ enregistré !')
+      showToast('Départ enregistré !')
       loadData()
-    } catch (e) { showToast('❌ ' + e.message) }
+    } catch (e) { showToast(e.message) }
   }
 
   function openFinalize(delivery) { setFinalizeOpen(delivery); setCodeVerification(''); setRejections({}) }
@@ -64,7 +65,7 @@ export default function CommandesLivreur() {
   }
 
   async function handleFinalize() {
-    if (!codeVerification.trim()) return showToast('⚠️ Entrez le code de vérification')
+    if (!codeVerification.trim()) return showToast('Entrez le code de vérification')
     if (!finalizeOpen) return
     setSubmitting(true)
     try {
@@ -74,9 +75,9 @@ export default function CommandesLivreur() {
       await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/finalize`, {
         code_verification: codeVerification, rejections: rejArray.length > 0 ? rejArray : undefined,
       })
-      showToast('✅ Livraison finalisée !')
+      showToast('Livraison finalisée !')
       setFinalizeOpen(null); loadData()
-    } catch (e) { showToast('❌ ' + e.message) }
+    } catch (e) { showToast(e.message) }
     finally { setSubmitting(false) }
   }
 
@@ -99,9 +100,9 @@ export default function CommandesLivreur() {
 
   function nextAction(d) {
     const s = d.statut_livraison
-    if (s === 'En cours de collecte') return { label: '📦 Confirmer la collecte', fn: () => marquerCollectee(d.commande.id_commande) }
-    if (s === 'Collectee') return { label: '🚚 Partir en livraison', fn: () => marquerEnRoute(d.commande.id_commande) }
-    if (s === 'En cours de livraison') return { label: '✅ Finaliser la livraison', fn: () => openFinalize(d) }
+    if (s === 'En cours de collecte') return { label: <><Package size={14} className="inline align-middle" /> Confirmer la collecte</>, fn: () => marquerCollectee(d.commande.id_commande) }
+    if (s === 'Collectee') return { label: <><Truck size={14} className="inline align-middle" /> Partir en livraison</>, fn: () => marquerEnRoute(d.commande.id_commande) }
+    if (s === 'En cours de livraison') return { label: <><CheckCircle size={14} className="inline align-middle" /> Finaliser la livraison</>, fn: () => openFinalize(d) }
     return null
   }
 
@@ -126,16 +127,16 @@ export default function CommandesLivreur() {
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Actives', value: activeDeliveries.length, icon: '🚚',
+          { label: 'Actives', value: activeDeliveries.length, icon: <Truck size={20} />,
             bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3', color: isDark ? '#E87D55' : '#993C1D' },
-          { label: 'Disponibles', value: available.length, icon: '📦',
+          { label: 'Disponibles', value: available.length, icon: <Package size={20} />,
             bg: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', border: isDark ? '#BA7517' : '#FAC775', color: isDark ? '#F3A83B' : '#854F0B' },
-          { label: 'Historique', value: historyDeliveries.length, icon: '📋',
+          { label: 'Historique', value: historyDeliveries.length, icon: <ClipboardList size={20} />,
             bg: isDark ? 'rgba(29,158,117,0.12)' : '#E1F5EE', border: isDark ? '#2DC491' : '#9FE1CB', color: isDark ? '#34D399' : '#0F6E56' },
         ].map(s => (
           <div key={s.label} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
             style={{ background: s.bg, border: `1.5px solid ${s.border}` }}>
-            <div className="text-lg mb-1">{s.icon}</div>
+            <div className="mb-1">{s.icon}</div>
             <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
             <div className="font-black text-xl" style={{ color: s.color }}>{s.value}</div>
           </div>
@@ -145,9 +146,9 @@ export default function CommandesLivreur() {
       {/* TABS */}
       <div className="flex gap-2">
         {[
-          { id: 'actives', label: '🚚 Actives' },
-          { id: 'disponibles', label: '📦 Disponibles' },
-          { id: 'historique', label: '📋 Historique' },
+          { id: 'actives', label: <><Truck size={12} className="inline align-middle" /> Actives</> },
+          { id: 'disponibles', label: <><Package size={12} className="inline align-middle" /> Disponibles</> },
+          { id: 'historique', label: <><ClipboardList size={12} className="inline align-middle" /> Historique</> },
         ].map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all active:scale-95"
@@ -182,7 +183,7 @@ export default function CommandesLivreur() {
                   {c.detailsCommande?.[0]?.produit?.vendeur?.localisation_marche || 'Marché'} → {c.client?.adresse_livraison || '—'}
                 </div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  👤 {c.client?.utilisateur?.prenom} {c.client?.utilisateur?.nom}
+                  <User size={12} className="inline align-middle" /> {c.client?.utilisateur?.prenom} {c.client?.utilisateur?.nom}
                 </div>
               </div>
               <div className="text-sm font-black" style={{ color: isDark ? '#E87D55' : '#993C1D' }}>{(c.frais_livraison || 1500).toLocaleString()} F</div>
@@ -193,7 +194,7 @@ export default function CommandesLivreur() {
             <button onClick={() => accepterCourse(c.id_commande)}
               className="w-full rounded-2xl py-3 font-black text-white cursor-pointer transition-all active:scale-98"
               style={{ background: '#D85A30', border: 'none' }}>
-              🚀 Accepter cette course
+              <Rocket size={14} className="inline align-middle" /> Accepter cette course
             </button>
           </div>
         ))}
@@ -215,7 +216,7 @@ export default function CommandesLivreur() {
                   {d.statut_livraison}
                 </span>
               </div>
-              <div className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>📍 {cmd?.client?.adresse_livraison || '—'}</div>
+              <div className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}><MapPin size={12} className="inline align-middle" /> {cmd?.client?.adresse_livraison || '—'}</div>
               <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
                 <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                   <div className="font-semibold">Montant</div>
@@ -248,7 +249,7 @@ export default function CommandesLivreur() {
               <div className="flex items-center justify-between mb-2">
                 <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{cmd?.id_commande}</div>
                 <span className="rounded-2xl px-3 py-1 text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>
-                  {isLivree ? '✅ Livrée' : '❌ Échec'}
+                  {isLivree ? <><CheckCircle size={12} className="inline align-middle" /> Livrée</> : <><XCircle size={12} className="inline align-middle" /> Échec</>}
                 </span>
               </div>
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -276,7 +277,7 @@ export default function CommandesLivreur() {
               <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{finalizeOpen.commande?.id_commande}</p>
 
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>🔐 Code de vérification du client (RG06)</div>
+                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Lock size={12} className="inline align-middle" /> Code de vérification du client (RG06)</div>
                 <input type="text" value={codeVerification} onChange={e => setCodeVerification(e.target.value)}
                   placeholder="Code à 6 chiffres"
                   className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"
@@ -284,7 +285,7 @@ export default function CommandesLivreur() {
               </div>
 
               <div className="mb-4">
-                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>📦 Produits — refusez si non conformes</div>
+                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Package size={12} className="inline align-middle" /> Produits — refusez si non conformes</div>
                 {finalizeOpen.commande?.detailsCommande?.map(line => (
                   <div key={line.id_produit} className="rounded-xl p-3 mb-2" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                     <div className="flex items-center justify-between">
@@ -299,7 +300,7 @@ export default function CommandesLivreur() {
                           color: rejections[line.id_produit] ? '#fff' : 'var(--text-muted)',
                           border: `1.5px solid ${rejections[line.id_produit] ? '#D85A30' : 'var(--border)'}`,
                         }}>
-                        {rejections[line.id_produit] ? 'Refusé ✕' : 'Refuser'}
+                        {rejections[line.id_produit] ? <>Refusé <X size={12} className="inline" /></> : 'Refuser'}
                       </button>
                     </div>
                     {rejections[line.id_produit] && (
@@ -319,7 +320,7 @@ export default function CommandesLivreur() {
                   background: (!codeVerification.trim() || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
                   border: 'none', opacity: submitting ? 0.7 : 1,
                 }}>
-                {submitting ? '⏳ Envoi…' : '✅ Confirmer la livraison'}
+                {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Envoi…</> : <><CheckCircle size={14} className="inline align-middle" /> Confirmer la livraison</>}
               </button>
             </div>
           </div>

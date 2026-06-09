@@ -1,14 +1,15 @@
 import { useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { BarChart3, ShoppingCart, Wallet, ClipboardList, Undo2, User } from 'lucide-react'
 
 const NAV_TABS = [
-  { icon: '📊', label: 'Accueil', path: '/livreur/dashboard' },
-  { icon: '🛒', label: 'Commandes', path: '/livreur/commandes' },
-  { icon: '💰', label: 'Gains', path: '/livreur/gains' },
-  { icon: '📋', label: 'Historique', path: '/livreur/historique' },
-  { icon: '↩️', label: 'Retours', path: '/livreur/retours' },
-  { icon: '👤', label: 'Profil', path: '/livreur/profil' },
+  { icon: BarChart3, label: 'Accueil', path: '/livreur/dashboard' },
+  { icon: ShoppingCart, label: 'Commandes', path: '/livreur/commandes' },
+  { icon: Wallet, label: 'Gains', path: '/livreur/gains' },
+  { icon: ClipboardList, label: 'Historique', path: '/livreur/historique' },
+  { icon: Undo2, label: 'Retours', path: '/livreur/retours' },
+  { icon: User, label: 'Profil', path: '/livreur/profil' },
 ]
 
 export default function LivreurLayout() {
@@ -65,7 +66,7 @@ export default function LivreurLayout() {
                 <button key={tab.path} onClick={() => navigate(tab.path)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
                   style={{ background: active ? 'rgba(255,255,255,0.2)' : 'transparent', color: active ? '#fff' : 'rgba(255,255,255,0.7)' }}>
-                  <span>{tab.icon}</span> {tab.label}
+                  <tab.icon size={14} /> {tab.label}
                 </button>
               )
             })}
