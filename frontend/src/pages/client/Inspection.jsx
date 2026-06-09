@@ -90,7 +90,7 @@ export default function Inspection() {
         motifs,
       })
       showToast('Inspection confirmée !')
-      setTimeout(() => navigate('/client/mes-commandes'), 1000)
+      setTimeout(() => navigate('/client/evaluation'), 1000)
     } catch (err) {
       showToast(err.message || 'Erreur lors de la confirmation')
     } finally {

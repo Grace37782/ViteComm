@@ -553,16 +553,20 @@ export const inspectionOrder = async (req, res) => {
         }
       }
 
-      // Update delivery with return fees (RG28)
+      // Update delivery: mark as delivered + return fees (RG27, RG28)
       await tx.livraison.update({
         where: { id_livraison: commande.livraison.id_livraison },
-        data: { frais_retour_calcules: fraisRetour }
+        data: {
+          statut_livraison: 'Livree',
+          date_fin_reelle: new Date(),
+          frais_retour_calcules: fraisRetour
+        }
       });
 
-      // Update order statut
+      // Update order statut to Livree (delivery complete after inspection)
       await tx.commande.update({
         where: { id_commande: commande.id_commande },
-        data: { statut: 'Inspectee' }
+        data: { statut: 'Livree' }
       });
 
       // Generate facture (RG25) — only after inspection
