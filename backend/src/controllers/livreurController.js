@@ -496,6 +496,63 @@ export const getMyDeliveries = async (req, res) => {
 };
 
 // ═══════════════════════════════════════════════════════════
+// 4.2c. HISTORIQUE LIVREUR (stats + livraisons)
+// ═══════════════════════════════════════════════════════════
+
+export const getLivreurHistorique = async (req, res) => {
+  try {
+    const driverId = req.user.id_user;
+
+    const deliveries = await prisma.livraison.findMany({
+      where: { id_user_livreur: driverId },
+      include: {
+        commande: {
+          include: {
+            client: {
+              include: { utilisateur: { select: { nom: true, prenom: true, telephone: true } } }
+            },
+            detailsCommande: {
+              include: {
+                produit: {
+                  include: { vendeur: { select: { nom_etablissement: true, localisation_marche: true } } }
+                }
+              }
+            },
+            preuvesCollecte: { include: { medias: true } }
+          }
+        },
+        litiges: true,
+        feedbacks: { include: { client: { include: { utilisateur: { nom: true, prenom: true } } } } }
+      },
+      orderBy: { date_prise_en_charge: 'desc' }
+    });
+
+    const completed = deliveries.filter(d => d.statut_livraison === 'Livree');
+    const failed = deliveries.filter(d => d.statut_livraison === 'Echec');
+    const inProgress = deliveries.filter(d => d.statut_livraison !== 'Livree' && d.statut_livraison !== 'Echec');
+
+    const totalGains = completed.reduce((sum, d) => sum + d.commande.frais_livraison, 0);
+    const totalReturnFees = completed.reduce((sum, d) => sum + (d.frais_retour_calcules || 0), 0);
+
+    return res.json({
+      livraisons: deliveries,
+      stats: {
+        total: deliveries.length,
+        terminees: completed.length,
+        en_cours: inProgress.length,
+        echecs: failed.length,
+        total_gains: totalGains,
+        total_frais_retour: totalReturnFees,
+        gains_nets: totalGains + totalReturnFees
+      }
+    });
+  } catch (error) {
+    console.error('getLivreurHistorique error:', error);
+    return res.status(500).json({ error: 'Erreur lors du chargement de l\'historique.' });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
 // 4.5. RETOURS / RÉCUPÉRATION (RG09, RG16)
 // ═══════════════════════════════════════════════════════════
 

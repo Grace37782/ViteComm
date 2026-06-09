@@ -11,6 +11,7 @@ import {
   departDelivery,
   finalizeDelivery,
   getMyDeliveries,
+  getLivreurHistorique,
   getReturns,
   updateReturnStatus,
   getGainsDetailed,
@@ -70,6 +71,7 @@ router.post('/deliveries/:id_commande/accept', acceptDelivery);
 
 // ── Flux de livraison ──
 router.get('/deliveries', getMyDeliveries);
+router.get('/historique', getLivreurHistorique);
 router.post('/deliveries/:id_commande/collect', uploadProof.array('photos', 5), collectDelivery);
 router.post('/deliveries/:id_commande/depart', departDelivery);
 router.post('/deliveries/:id_commande/finalize', finalizeDelivery);

@@ -6,20 +6,18 @@ export default function Historique() {
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
   const [deliveries, setDeliveries] = useState([])
+  const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
 
   useEffect(() => {
-    api.get('/livreur/deliveries')
-      .then(data => setDeliveries(data))
+    api.get('/livreur/historique')
+      .then(data => { setDeliveries(data.livraisons || []); setStats(data.stats || null) })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 
   const filtered = filter === 'all' ? deliveries : deliveries.filter(d => d.statut_livraison === filter)
-  const completed = deliveries.filter(d => d.statut_livraison === 'Livree')
-  const failed = deliveries.filter(d => d.statut_livraison === 'Echec')
-  const inProgress = deliveries.filter(d => d.statut_livraison !== 'Livree' && d.statut_livraison !== 'Echec')
 
   function statusStyle(statut) {
     const map = {
@@ -48,11 +46,11 @@ export default function Historique() {
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Terminées', value: completed.length, icon: '✅',
+          { label: 'Terminées', value: stats?.terminees ?? 0, icon: '✅',
             bg: isDark ? 'rgba(29,158,117,0.12)' : '#E1F5EE', border: isDark ? '#2DC491' : '#9FE1CB', color: isDark ? '#34D399' : '#0F6E56' },
-          { label: 'En cours', value: inProgress.length, icon: '🚚',
+          { label: 'En cours', value: stats?.en_cours ?? 0, icon: '🚚',
             bg: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', border: isDark ? '#BA7517' : '#FAC775', color: isDark ? '#F3A83B' : '#854F0B' },
-          { label: 'Échecs', value: failed.length, icon: '❌',
+          { label: 'Échecs', value: stats?.echecs ?? 0, icon: '❌',
             bg: isDark ? 'rgba(239,68,68,0.12)' : '#FEE2E2', border: isDark ? '#EF4444' : '#FECACA', color: isDark ? '#F87171' : '#B91C1C' },
         ].map(s => (
           <div key={s.label} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
