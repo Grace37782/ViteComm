@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { Wallet, Truck, Undo2, ClipboardList, Calendar, Info } from 'lucide-react'
+import { Wallet, Truck, Undo2, ClipboardList, Calendar } from 'lucide-react'
 
 export default function Gains() {
   const { resolved } = useTheme()
@@ -101,16 +101,7 @@ export default function Gains() {
         </div>
       )}
 
-      {/* INFO */}
-      <div className="rounded-2xl p-4"
-        style={{ background: isDark ? 'rgba(186,117,23,0.08)' : '#FAFAF7', border: `1.5px solid ${isDark ? '#3A3B38' : '#E8E6DF'}` }}>
-        <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Info size={14} className="inline align-middle" /> Calcul des gains (RG28)</div>
-        <div className="text-xs" style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>
-          • Forfait livraison : <strong>1 500 F</strong> par course<br />
-          • Frais retour : <strong>500 F</strong> par produit rejeté (ajoutées)<br />
-          • Créditation après finalisation (statut "Livrée")
-        </div>
-      </div>
+
     </div>
   )
 }
