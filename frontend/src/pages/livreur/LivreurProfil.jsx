@@ -220,9 +220,9 @@ export default function LivreurProfil() {
       {tab === 'reputation' && (
         <div className="flex flex-col gap-4">
           <div className="rounded-2xl p-6 text-center transition-all hover:shadow-md"
-            style={{ background: isDark ? 'rgba(29,158,117,0.12)' : '#E1F5EE', border: `1.5px solid ${isDark ? '#2DC491' : '#9FE1CB'}` }}>
+            style={{ background: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: `1.5px solid ${isDark ? '#D85A30' : '#F5C4B3'}` }}>
             <div className="text-5xl mb-3">⭐</div>
-            <div className="text-4xl font-black" style={{ color: isDark ? '#34D399' : '#0F6E56' }}>{score.toFixed(1)}/5</div>
+            <div className="text-4xl font-black" style={{ color: isDark ? '#E87D55' : '#993C1D' }}>{Math.round(score)}/5</div>
             <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Score de réputation ({profile?.nb_avis || 0} avis)</div>
             <div className="flex justify-center gap-1 mt-3">
               {[1,2,3,4,5].map(s => <span key={s} className="text-2xl" style={{ opacity: s <= Math.round(score) ? 1 : 0.3 }}>⭐</span>)}
