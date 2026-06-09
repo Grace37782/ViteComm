@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { Package, Leaf, Flame, Droplets, Fish, Drumstick, Wheat, Apple, Citrus, CircleDot, UtensilsCrossed, Loader2, XCircle, Search, ShoppingCart, Store, MapPin, Star, Home, AlertTriangle } from 'lucide-react'
+import { Package, Leaf, Flame, Droplets, Fish, Drumstick, Wheat, Apple, Citrus, CircleDot, UtensilsCrossed, Loader2, XCircle, Search, ShoppingCart, Store, MapPin, Star, Home, AlertTriangle, ChevronDown } from 'lucide-react'
 
 const CATEGORY_EMOJI = {
   'Légumes': <Leaf size={14} />,
@@ -26,6 +26,8 @@ function productEmoji(name) {
   }
   return <Package size={32} />
 }
+
+const PAGE_SIZE = 10
 
 function formatPrice(price) {
   return price.toLocaleString() + ' F'
@@ -58,6 +60,9 @@ export default function Catalogue() {
 
   const [recherche, setRecherche] = useState('')
   const [categorie, setCategorie] = useState('Tout')
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [recherche, categorie])
 
   useEffect(() => {
     async function load() {
@@ -129,6 +134,9 @@ export default function Catalogue() {
     const matchCat = categorie === 'Tout' || catName === categorie
     return matchRecherche && matchCat
   })
+
+  const visibleItems = productsFiltered.slice(0, visibleCount)
+  const hasMore = visibleCount < productsFiltered.length
 
   if (loading) {
     return (
@@ -250,7 +258,7 @@ export default function Catalogue() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            {productsFiltered.map((prod) => {
+            {visibleItems.map((prod) => {
               const qteAuPanier = cartItems[prod.id_produit] || 0
               const stockFaible = prod.stock_disponible <= 3
 
@@ -323,6 +331,14 @@ export default function Catalogue() {
               )
             })}
           </div>
+
+          {hasMore && (
+            <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+              className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5 mt-3"
+              style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+              <ChevronDown size={14} /> Charger plus ({productsFiltered.length - visibleCount} restant{productsFiltered.length - visibleCount > 1 ? 's' : ''})
+            </button>
+          )}
         )}
       </div>
 

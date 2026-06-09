@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { AlertTriangle, ShoppingCart, Camera, Loader2, KeyRound, CheckCircle, Package } from 'lucide-react'
+import { AlertTriangle, ShoppingCart, Camera, Loader2, KeyRound, CheckCircle, Package, ChevronDown } from 'lucide-react'
+
+const PAGE_SIZE = 10
 
 export default function CommandesVendeur() {
   const { resolved } = useTheme()
@@ -14,6 +16,7 @@ export default function CommandesVendeur() {
   const [errCodes, setErrCodes] = useState({})
   const [submitting, setSubmitting] = useState({})
   const [filtre, setFiltre] = useState('tous')
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
     fetchOrders()
@@ -44,6 +47,8 @@ export default function CommandesVendeur() {
   }
 
   const liste = filtres[filtre] || commandes
+  const visibleItems = liste.slice(0, visibleCount)
+  const hasMore = visibleCount < liste.length
 
   async function confirmerRemise(cmd) {
     const code = codes[cmd.id]?.trim().toUpperCase()
@@ -118,7 +123,7 @@ export default function CommandesVendeur() {
           { id: 'en_attente', label: 'En attente' },
           { id: 'collecte', label: 'Collectées' },
         ].map((f) => (
-          <button key={f.id} onClick={() => setFiltre(f.id)}
+          <button key={f.id} onClick={() => { setFiltre(f.id); setVisibleCount(PAGE_SIZE) }}
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer"
             style={{
               background: filtre === f.id ? '#BA7517' : 'var(--surface)',
@@ -139,7 +144,7 @@ export default function CommandesVendeur() {
         </div>
       )}
 
-      {liste.map((cmd) => {
+      {visibleItems.map((cmd) => {
         const confirme = confirmes[cmd.id]
         const collecte = cmd.statut_collecte === 'collecte' || confirme
         const st = collecte ? STATUT_STYLE.collecte : STATUT_STYLE.en_attente
@@ -292,6 +297,14 @@ export default function CommandesVendeur() {
           </div>
         )
       })}
+
+      {hasMore && (
+        <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+          className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+          <ChevronDown size={14} /> Charger plus ({liste.length - visibleCount} restant{liste.length - visibleCount > 1 ? 's' : ''})
+        </button>
+      )}
 
     </div>
   )

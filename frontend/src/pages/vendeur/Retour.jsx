@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { AlertTriangle, CheckCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle, ChevronDown } from 'lucide-react'
+
+const PAGE_SIZE = 10
 
 export default function RetourVendeur() {
   const { resolved } = useTheme()
@@ -10,6 +12,7 @@ export default function RetourVendeur() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [filtre, setFiltre] = useState('tous')
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [updating, setUpdating] = useState(null)
 
   useEffect(() => {
@@ -54,6 +57,8 @@ export default function RetourVendeur() {
   }
 
   const liste = filtres[filtre] || retours
+  const visibleItems = liste.slice(0, visibleCount)
+  const hasMore = visibleCount < liste.length
   const totalRetours = retours.length
   const totalPertes = retours.reduce((sum, r) => sum + r.perte, 0)
   const enAttente = filtres.a_recuperer.length
@@ -115,7 +120,7 @@ export default function RetourVendeur() {
           { id: 'a_recuperer', label: `À récupérer (${enAttente})` },
           { id: 'recupere', label: `Récupérés (${filtres.recupere.length})` },
         ].map((item) => (
-          <button key={item.id} onClick={() => setFiltre(item.id)}
+          <button key={item.id} onClick={() => { setFiltre(item.id); setVisibleCount(PAGE_SIZE) }}
             className="px-3 py-2 rounded-full text-xs font-bold cursor-pointer"
             style={{
               background: filtre === item.id ? '#BA7517' : 'var(--surface)',
@@ -136,7 +141,7 @@ export default function RetourVendeur() {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {liste.map((retour) => {
+          {visibleItems.map((retour) => {
             const st = STATUT_STYLE[retour.statut] || STATUT_STYLE.a_recuperer
             const isUpdating = updating === retour.id
             return (
@@ -213,6 +218,14 @@ export default function RetourVendeur() {
             )
           })}
         </div>
+      )}
+
+      {hasMore && (
+        <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+          className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+          <ChevronDown size={14} /> Charger plus ({liste.length - visibleCount} restant{liste.length - visibleCount > 1 ? 's' : ''})
+        </button>
       )}
 
     </div>

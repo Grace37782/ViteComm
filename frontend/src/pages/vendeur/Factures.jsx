@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { AlertTriangle, CheckCircle, RefreshCw, Loader2, Receipt } from 'lucide-react'
+import { AlertTriangle, CheckCircle, RefreshCw, Loader2, Receipt, ChevronDown } from 'lucide-react'
+
+const PAGE_SIZE = 10
 
 const STATUT_STYLE = {
   en_attente: { label: 'En attente', bg: '#FAEEDA', color: '#854F0B', icon: Loader2 },
@@ -16,6 +18,7 @@ export default function Factures() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [filtre, setFiltre] = useState('tous')
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [detail, setDetail] = useState(null)
 
   useEffect(() => {
@@ -32,6 +35,8 @@ export default function Factures() {
   }
 
   const liste = filtres[filtre] || factures
+  const visibleItems = liste.slice(0, visibleCount)
+  const hasMore = visibleCount < liste.length
   const totalEnAttente = factures.filter((f) => f.statut_paiement === 'en_attente').reduce((s, f) => s + f.montant_total_du, 0)
   const totalPaye = factures.filter((f) => f.statut_paiement === 'paye').reduce((s, f) => s + (f.montant_recu || 0), 0)
   const totalCommission = factures.reduce((s, f) => s + f.commission, 0)
@@ -84,7 +89,7 @@ export default function Factures() {
               { id: 'en_attente', label: 'En attente' },
               { id: 'paye', label: 'Payées' },
             ].map((f) => (
-              <button key={f.id} onClick={() => setFiltre(f.id)}
+              <button key={f.id} onClick={() => { setFiltre(f.id); setVisibleCount(PAGE_SIZE) }}
                 className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer"
                 style={{
                   background: filtre === f.id ? '#BA7517' : 'var(--surface)',
@@ -102,7 +107,7 @@ export default function Factures() {
               <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>Aucune facture.</p>
             </div>
           ) : (
-            liste.map((f) => {
+            visibleItems.map((f) => {
               const st = STATUT_STYLE[f.statut_paiement] || STATUT_STYLE.en_attente
               return (
                 <button key={f.id} onClick={() => setDetail(f.id)}
@@ -125,6 +130,14 @@ export default function Factures() {
                 </button>
               )
             })
+          )}
+
+          {hasMore && (
+            <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+              className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+              style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+              <ChevronDown size={14} /> Charger plus ({liste.length - visibleCount} restant{liste.length - visibleCount > 1 ? 's' : ''})
+            </button>
           )}
         </>
       ) : facture && (

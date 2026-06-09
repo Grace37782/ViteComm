@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { ClipboardList, Inbox, ShoppingCart, ShieldCheck, Motorbike, CheckCircle } from 'lucide-react'
+import { ClipboardList, Inbox, ShoppingCart, ShieldCheck, Motorbike, CheckCircle, ChevronDown } from 'lucide-react'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -50,6 +50,8 @@ function getStatusConfig(statut, isDark) {
   return MAP[statut] || { label: statut, color: 'var(--text-muted)', bg: 'var(--surface-alt)' }
 }
 
+const PAGE_SIZE = 10
+
 function copyCode(code) {
   navigator.clipboard?.writeText(code)
 }
@@ -61,6 +63,7 @@ export default function MesCommandes() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [copiedId, setCopiedId] = useState(null)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
     api.get('/client/orders')
@@ -68,6 +71,9 @@ export default function MesCommandes() {
       .catch(err => console.error(err))
       .finally(() => setLoading(false))
   }, [])
+
+  const visibleItems = orders.slice(0, visibleCount)
+  const hasMore = visibleCount < orders.length
 
   if (loading) {
     return (
@@ -125,7 +131,7 @@ export default function MesCommandes() {
             </button>
           </div>
         ) : (
-          orders.map(order => {
+          visibleItems.map(order => {
             const sc = getStatusConfig(order.statut, isDark)
             const livreur = order.livraison?.livreur
             const livreurNom = livreur
@@ -256,6 +262,14 @@ export default function MesCommandes() {
               </div>
             )
           })
+        )}
+
+        {hasMore && (
+          <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+            className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+            style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+            <ChevronDown size={14} /> Charger plus ({orders.length - visibleCount} restant{orders.length - visibleCount > 1 ? 's' : ''})
+          </button>
         )}
       </div>
 

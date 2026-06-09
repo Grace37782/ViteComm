@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../services/api'
-import { AlertTriangle, CheckCircle, Search, Loader2, ClipboardList, BarChart3, ShoppingCart, Package, Bike, Send } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Search, Loader2, ClipboardList, BarChart3, ShoppingCart, Package, Bike, Send, ChevronDown } from 'lucide-react'
 
 const MOTIFS = [
   'Comportement inapproprié',
@@ -23,6 +23,8 @@ const STATUT_COLORS = {
   traite: { bg: '#E1F5EE', text: '#0F6E56', border: '#9AE6B4', label: 'Traité' },
 }
 
+const PAGE_SIZE = 10
+
 export default function Signalement() {
   const [signalements, setSignalements] = useState([])
   const [loading, setLoading] = useState(true)
@@ -35,6 +37,7 @@ export default function Signalement() {
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
   const [detail, setDetail] = useState(null)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
     fetchSignalements()
@@ -60,6 +63,8 @@ export default function Signalement() {
   const filtres = signalements.filter((s) =>
     filtreStatut === 'tous' || s.statut === filtreStatut
   )
+  const visibleItems = filtres.slice(0, visibleCount)
+  const hasMore = visibleCount < filtres.length
 
   const stats = {
     total: signalements.length,
@@ -180,7 +185,7 @@ export default function Signalement() {
 
           <div className="flex gap-2 overflow-x-auto scrollbar-none">
             {['tous', 'en_attente', 'en_cours', 'traite'].map((s) => (
-              <button key={s} onClick={() => setFiltreStatut(s)}
+              <button key={s} onClick={() => { setFiltreStatut(s); setVisibleCount(PAGE_SIZE) }}
                 className="px-3 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap cursor-pointer flex items-center gap-1"
                 style={{
                   background: filtreStatut === s ? '#BA7517' : 'var(--surface)',
@@ -269,7 +274,7 @@ export default function Signalement() {
               <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Aucun signalement</p>
             </div>
           ) : (
-            filtres.map((s) => (
+            visibleItems.map((s) => (
               <div key={s.id} onClick={() => setDetail(s)}
                 className="rounded-2xl p-4 cursor-pointer transition-all"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
@@ -295,6 +300,14 @@ export default function Signalement() {
                 <div className="text-[10px] mt-2" style={{ color: 'var(--text-muted)' }}>{formatDate(s.date)}</div>
               </div>
             ))
+          )}
+
+          {hasMore && (
+            <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+              className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+              style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+              <ChevronDown size={14} /> Charger plus ({filtres.length - visibleCount} restant{filtres.length - visibleCount > 1 ? 's' : ''})
+            </button>
           )}
         </>
       )}

@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { Loader2, XCircle, Star, Phone, Banknote, Car, Motorbike, Frown } from 'lucide-react'
+import { Loader2, XCircle, Star, Phone, Banknote, Car, Motorbike, Frown, ChevronDown } from 'lucide-react'
+
+const PAGE_SIZE = 10
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -17,6 +19,7 @@ export default function SelectionLivreur() {
   const [livreurId, setLivreurId] = useState(null)
   const [placing, setPlacing]   = useState(false)
   const [toast, setToast]       = useState('')
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   /* ── Load drivers from API ──────────────────────────── */
   useEffect(() => {
@@ -63,6 +66,9 @@ export default function SelectionLivreur() {
   const livreurSelected = drivers.find(d => d.id_user === livreurId)
   const FRAIS_LIVRAISON = 1500
   const totalFinal = (sousTotal || 0) + FRAIS_LIVRAISON
+
+  const visibleItems = drivers.slice(0, visibleCount)
+  const hasMore = visibleCount < drivers.length
 
   if (loading) {
     return (
@@ -139,7 +145,7 @@ export default function SelectionLivreur() {
           <div className="flex flex-col gap-3">
             <h2 className="font-black text-base" style={{ color: 'var(--text-primary)' }}>Livreurs disponibles</h2>
 
-            {drivers.map((drv) => {
+            {visibleItems.map((drv) => {
               const sel = livreurId === drv.id_user
               const nom = `${drv.utilisateur.prenom} ${drv.utilisateur.nom}`
               return (
@@ -188,6 +194,14 @@ export default function SelectionLivreur() {
                 </button>
               )
             })}
+
+            {hasMore && (
+              <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+                className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+                style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+                <ChevronDown size={14} /> Charger plus ({drivers.length - visibleCount} restant{drivers.length - visibleCount > 1 ? 's' : ''})
+              </button>
+            )}
           </div>
         )}
 

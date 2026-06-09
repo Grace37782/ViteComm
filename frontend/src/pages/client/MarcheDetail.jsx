@@ -5,13 +5,15 @@ import { useTheme } from '../../context/ThemeContext'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Package, Loader2, XCircle, Building2, Search, Star, MapPin, Home, Leaf, Flame, Droplets, Wheat, Fish, Egg, Beef, Apple } from 'lucide-react'
+import { Package, Loader2, XCircle, Building2, Search, Star, MapPin, Home, Leaf, Flame, Droplets, Wheat, Fish, Egg, Beef, Apple, ChevronDown } from 'lucide-react'
 
 const CATEGORY_ICONS = {
   'Légumes': Leaf,
   'Épices & Condiments': Flame,
   'Huiles & Matières Grasses': Droplets,
 }
+
+const PAGE_SIZE = 10
 
 function catIcon(name) {
   return CATEGORY_ICONS[name] || Package
@@ -72,6 +74,9 @@ export default function MarcheDetail() {
   const [recherche, setRecherche] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('Tout')
   const [activeVendor, setActiveVendor] = useState(null)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [recherche, selectedCategory])
 
   // Stable offset coordinates for vendors without precise location
   const [vendorCoords, setVendorCoords] = useState({})
@@ -131,6 +136,9 @@ export default function MarcheDetail() {
     v.nom_etablissement.toLowerCase().includes(recherche.toLowerCase()) ||
     `${v.utilisateur.prenom} ${v.utilisateur.nom}`.toLowerCase().includes(recherche.toLowerCase())
   )
+
+  const visibleItems = productsFiltered.slice(0, visibleCount)
+  const hasMore = visibleCount < productsFiltered.length
 
   const catList = ['Tout', ...categories.map(c => c.nom_categorie)]
 
@@ -359,7 +367,7 @@ export default function MarcheDetail() {
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-3">
-            {productsFiltered.map(p => {
+            {visibleItems.map(p => {
               const PIcon = productIcon(p.nom);
               return (
                 <div
@@ -387,6 +395,14 @@ export default function MarcheDetail() {
               );
             })}
           </div>
+
+          {hasMore && (
+            <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+              className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5 mt-3"
+              style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+              <ChevronDown size={14} /> Charger plus ({productsFiltered.length - visibleCount} restant{productsFiltered.length - visibleCount > 1 ? 's' : ''})
+            </button>
+          )}
         )}
       </div>
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { Star, CheckCircle, Search, Package, Flag, Motorbike, Store, Loader2 } from 'lucide-react'
+import { Star, CheckCircle, Search, Package, Flag, Motorbike, Store, Loader2, ChevronDown } from 'lucide-react'
 
 function Etoiles({ note, onChange, isDark }) {
   return (
@@ -17,6 +17,8 @@ function Etoiles({ note, onChange, isDark }) {
     </div>
   )
 }
+
+const PAGE_SIZE = 10
 
 export default function Evaluation() {
   const navigate = useNavigate()
@@ -35,6 +37,7 @@ export default function Evaluation() {
   const [signalement, setSignalement] = useState(null)
   const [motifSig, setMotifSig] = useState('')
   const [toast, setToast] = useState('')
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
     api.get('/client/orders')
@@ -178,7 +181,7 @@ export default function Evaluation() {
           </div>
         )}
 
-        {orders.map((c) => {
+        {visibleItems.map((c) => {
           const st = STATUT_STYLE[c.statut] || STATUT_STYLE['Livree']
           const livreur = getLivreur(c)
           const vendeurs = getVendeurs(c)
@@ -233,6 +236,14 @@ export default function Evaluation() {
             </div>
           )
         })}
+
+        {hasMore && (
+          <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+            className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+            style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+            <ChevronDown size={14} /> Charger plus ({orders.length - visibleCount} restant{orders.length - visibleCount > 1 ? 's' : ''})
+          </button>
+        )}
       </div>
 
       {/* MODAL ÉVALUATION */}
@@ -306,7 +317,10 @@ export default function Evaluation() {
                 const disabled = submitting ||
                   (typeEval === 'livreur' && noteL === 0) ||
                   (typeEval === 'vendeur' && getVendeurs(commande).every(v => !notesV[v.id]))
-                return (
+  const visibleItems = orders.slice(0, visibleCount)
+  const hasMore = visibleCount < orders.length
+
+  return (
                   <button onClick={soumettreFeedback}
                     disabled={disabled}
                     className="w-full mt-5 py-4 rounded-2xl text-white font-black text-base cursor-pointer"

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
-import { Apple, Flame, Leaf, Fish, Drumstick, Egg, Wheat, Package, Citrus, Carrot, Droplets, Bean, CircleDot, Salad, Cherry, AlertTriangle, Search, Folder, Pencil, Trash2 } from 'lucide-react'
+import { Apple, Flame, Leaf, Fish, Drumstick, Egg, Wheat, Package, Citrus, Carrot, Droplets, Bean, CircleDot, Salad, Cherry, AlertTriangle, Search, Folder, Pencil, Trash2, ChevronDown } from 'lucide-react'
 
+const PAGE_SIZE = 10
 const EMOJIS = [Apple, Flame, Leaf, Fish, Drumstick, Egg, Wheat, Package, Citrus, Carrot, Droplets, Bean, CircleDot, Salad, Cherry]
 const UNITES = ['kg', 'tas', 'pièce', 'régime', 'litre', 'paquet', 'boîte']
 
@@ -140,6 +141,7 @@ export default function CatalogueVendeur() {
   const [search, setSearch] = useState('')
   const [confirmSup, setConfirmSup] = useState(null)
   const [filtreCategorie, setFiltreCategorie] = useState('Toutes')
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
     fetchData()
@@ -169,6 +171,8 @@ export default function CatalogueVendeur() {
     const matchCategorie = filtreCategorie === 'Toutes' || p.categorie === filtreCategorie
     return matchSearch && matchCategorie
   })
+  const visibleItems = filtres.slice(0, visibleCount)
+  const hasMore = visibleCount < filtres.length
 
   async function ajouter(data) {
     const created = await api.post('/vendor/products', data)
@@ -233,7 +237,7 @@ export default function CatalogueVendeur() {
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <Search size={16} style={{ color: 'var(--text-muted)' }} />
           <input type="text" placeholder="Rechercher un produit…"
-            value={search} onChange={(e) => setSearch(e.target.value)}
+            value={search} onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
             className="flex-1 bg-transparent outline-none text-sm font-medium"
             style={{ color: 'var(--text-primary)' }} />
           {search && (
@@ -246,7 +250,7 @@ export default function CatalogueVendeur() {
       {categoriesDisponibles.length > 1 && (
         <div className="flex gap-2 overflow-x-auto scrollbar-none">
           {categoriesDisponibles.map((c) => (
-            <button key={c} onClick={() => setFiltreCategorie(c)}
+            <button key={c} onClick={() => { setFiltreCategorie(c); setVisibleCount(PAGE_SIZE) }}
               className="px-3 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap cursor-pointer"
               style={{
                 background: filtreCategorie === c ? '#BA7517' : 'var(--surface)',
@@ -271,7 +275,7 @@ export default function CatalogueVendeur() {
           </p>
         </div>
       ) : (
-        filtres.map((p) => (
+        visibleItems.map((p) => (
           <div key={p.id}>
           {mode?.edit?.id === p.id ? (
               <FormProduit initial={mode.edit} categories={categories} onSave={modifier} onCancel={() => setMode(null)} />
@@ -346,6 +350,14 @@ export default function CatalogueVendeur() {
             )}
           </div>
         ))
+      )}
+
+      {hasMore && (
+        <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+          className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+          <ChevronDown size={14} /> Charger plus ({filtres.length - visibleCount} restant{filtres.length - visibleCount > 1 ? 's' : ''})
+        </button>
       )}
 
     </div>

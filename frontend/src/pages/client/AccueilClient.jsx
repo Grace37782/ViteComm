@@ -6,7 +6,7 @@ import { api } from '../../services/api'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Loader2, Search, Store, MapPin, Ruler, Mountain } from 'lucide-react'
+import { Loader2, Search, Store, MapPin, Ruler, Mountain, ChevronDown } from 'lucide-react'
 
 /* ─── Profile helpers (moved from Profil.jsx for reuse) ─── */
 function initials(u) {
@@ -140,6 +140,8 @@ function matchMarket(market, keywords) {
   return keywords.every(kw => fuzzyMatch(kw, normNom) || fuzzyMatch(kw, normDesc))
 }
 
+const PAGE_SIZE = 10
+
 function MapRecenter({ center, zoomLevel }) {
   const map = useMap()
   useEffect(() => {
@@ -167,6 +169,7 @@ export default function AccueilClient() {
   const [mapCenter, setMapCenter] = useState([6.370, 2.430]) // Default Cotonou
   const [mapZoom, setMapZoom] = useState(13)
   const [activeMarket, setActiveMarket] = useState(null)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   const panierCount = cart?.details?.reduce((s, d) => s + d.quantite, 0) || 0
 
@@ -191,6 +194,7 @@ export default function AccueilClient() {
 
   // Auto-selection of market when exactly 1 market matches the search term
   useEffect(() => {
+    setVisibleCount(PAGE_SIZE)
     const keywords = getKeywords(recherche)
     if (keywords.length > 0 && recherche.trim().length >= 2) {
       const matched = markets.filter(m => matchMarket(m, keywords))
@@ -239,6 +243,9 @@ export default function AccueilClient() {
   // Filter based on search query
   const keywords = getKeywords(recherche)
   const marketsFiltered = sortedMarkets.filter(m => matchMarket(m, keywords))
+
+  const visibleItems = marketsFiltered.slice(0, visibleCount)
+  const hasMore = visibleCount < marketsFiltered.length
 
   const suggestions = recherche
     ? markets.filter(m => matchMarket(m, keywords))
@@ -442,7 +449,7 @@ export default function AccueilClient() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {marketsFiltered.map((m) => {
+            {visibleItems.map((m) => {
               const isSelected = activeMarket?.id_marche === m.id_marche
               return (
                 <div
@@ -493,6 +500,14 @@ export default function AccueilClient() {
                 </div>
               )
             })}
+
+            {hasMore && (
+              <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+                className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+                style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+                <ChevronDown size={14} /> Charger plus ({marketsFiltered.length - visibleCount} restant{marketsFiltered.length - visibleCount > 1 ? 's' : ''})
+              </button>
+            )}
           </div>
         )}
       </div>
