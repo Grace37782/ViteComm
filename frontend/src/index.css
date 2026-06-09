@@ -56,6 +56,26 @@ html, body, #root {
   scrollbar-width: none;
 }
 
+/* Global themed scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-muted) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
 /* ── Override webkit autofill styling to match active theme ── */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
