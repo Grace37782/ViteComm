@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
+import {
+  ShoppingCart, MapPin, ShieldCheck, Banknote, Store, Zap,
+  Motorbike, Sparkles, CheckCircle, Camera, Route, AlertTriangle,
+  Package, KeyRound, Eye, EyeOff,
+} from 'lucide-react'
 
 // ─── Typewriter Hook ────────────────────────────────────────────────────────────
 function useTypewriter(words, typingSpeed = 80, deletingSpeed = 40, pause = 2000) {
@@ -33,24 +38,24 @@ const CITIES = ['Cotonou', 'Porto-Novo', 'Parakou', 'Abomey-Calavi', 'votre quar
 const ACTIONS = ['Acheter frais', 'Vendre en direct', 'Livrer par Zem']
 
 const FEATURES = [
-  { emoji: '🛒', title: 'Panier multi-étals', desc: 'Commandez de plusieurs marchands en une seule course.' },
-  { emoji: '📍', title: 'Suivi en direct', desc: 'Suivez votre livreur en temps réel sur la carte.' },
-  { emoji: '🔐', title: 'Code de confirmation', desc: 'Sécurisez chaque échange avec un code unique.' },
-  { emoji: '💰', title: 'Paiement à la livraison', desc: 'Payez en espèces ou mobile money, à votre convenance.' },
-  { emoji: '🏪', title: 'Étal en ligne', desc: 'Vendez vos produits sans gérer la logistique.' },
-  { emoji: '⚡', title: 'Livraison zemidjan', desc: 'Livraison rapide par motards locaux certifiés.' },
+  { icon: ShoppingCart, title: 'Panier multi-étals', desc: 'Commandez de plusieurs marchands en une seule course.' },
+  { icon: MapPin, title: 'Suivi en direct', desc: 'Suivez votre livreur en temps réel sur la carte.' },
+  { icon: ShieldCheck, title: 'Code de confirmation', desc: 'Sécurisez chaque échange avec un code unique.' },
+  { icon: Banknote, title: 'Paiement à la livraison', desc: 'Payez en espèces ou mobile money, à votre convenance.' },
+  { icon: Store, title: 'Étal en ligne', desc: 'Vendez vos produits sans gérer la logistique.' },
+  { icon: Zap, title: 'Livraison zemidjan', desc: 'Livraison rapide par motards locaux certifiés.' },
 ]
 
 const ECONOMICS = [
-  { role: 'Client', icon: '🛒', color: '#1D9E75', fee: 'Frais de livraison', detail: 'Basés sur la distance, à partir de 300 F', example: 'Dantokpa → Akpakpa ≈ 500 F' },
-  { role: 'Vendeur', icon: '🏪', color: '#BA7517', fee: '0.6% de commission', detail: 'Uniquement sur les transactions finalisées', example: '10 000 F de ventes → 60 F de frais' },
-  { role: 'Livreur', icon: '🏍️', color: '#D85A30', fee: '100% des frais de livraison', detail: 'Gardez l\'intégralité, petite licence de service', example: 'Course à 500 F → vous gardez 500 F' },
+  { role: 'Client', icon: ShoppingCart, color: '#1D9E75', fee: 'Frais de livraison', detail: 'Basés sur la distance, à partir de 300 F', example: 'Dantokpa → Akpakpa ≈ 500 F' },
+  { role: 'Vendeur', icon: Store, color: '#BA7517', fee: '0.6% de commission', detail: 'Uniquement sur les transactions finalisées', example: '10 000 F de ventes → 60 F de frais' },
+  { role: 'Livreur', icon: Motorbike, color: '#D85A30', fee: '100% des frais de livraison', detail: 'Gardez l\'intégralité, petite licence de service', example: 'Course à 500 F → vous gardez 500 F' },
 ]
 
 const TESTIMONIALS = [
-  { name: 'Amina K.', role: 'Cliente', text: 'Je commande à Dantokpa et reçois en 20 minutes. Les zemidjans sont fiables !', emoji: '🛒' },
-  { name: 'Ibrahim M.', role: 'Vendeur', text: 'Mes ventes ont augmenté de 40% depuis que je suis sur ViteComm.', emoji: '🏪' },
-  { name: 'Kofi A.', role: 'Livreur', text: 'Je gagne ma vie librement, je choisis mes horaires et mes courses.', emoji: '🏍️' },
+  { name: 'Amina K.', role: 'Cliente', text: 'Je commande à Dantokpa et reçois en 20 minutes. Les zemidjans sont fiables !', Icon: ShoppingCart },
+  { name: 'Ibrahim M.', role: 'Vendeur', text: 'Mes ventes ont augmenté de 40% depuis que je suis sur ViteComm.', Icon: Store },
+  { name: 'Kofi A.', role: 'Livreur', text: 'Je gagne ma vie librement, je choisis mes horaires et mes courses.', Icon: Motorbike },
 ]
 
 const FAQ = [
@@ -111,7 +116,7 @@ function MockDashboard({ isDark }) {
         {tab === 'client' && (
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ background: 'rgba(29,158,117,0.12)' }}>🛒</div>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(29,158,117,0.12)' }}><ShoppingCart size={18} color="#1D9E75" /></div>
               <div>
                 <div className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>Commande #1847</div>
                 <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>3 articles · Dantokpa → Akpakpa</div>
@@ -120,7 +125,7 @@ function MockDashboard({ isDark }) {
             </div>
             <div className="rounded-xl p-3" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs" style={{ background: 'rgba(29,158,117,0.12)' }}>🏍️</div>
+                <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'rgba(29,158,117,0.12)' }}><Motorbike size={12} color="#1D9E75" /></div>
                 <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>Kofi A. — Zemidjan</span>
               </div>
               <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
@@ -129,7 +134,7 @@ function MockDashboard({ isDark }) {
               <div className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>72% du trajet · Arrivée estimée 12 min</div>
             </div>
             <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(29,158,117,0.06)' }}>
-              <span className="text-sm">🔑</span>
+              <span className="text-sm"><KeyRound size={14} color="#1D9E75" /></span>
               <span className="text-xs font-mono font-bold" style={{ color: '#1D9E75' }}>Code : 4-8-2-9</span>
             </div>
           </div>
@@ -148,7 +153,7 @@ function MockDashboard({ isDark }) {
               </div>
             </div>
             <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(216,90,48,0.06)', border: `1px solid ${isDark ? 'rgba(216,90,48,0.12)' : 'rgba(216,90,48,0.08)'}` }}>
-              <span className="text-lg">⚠️</span>
+              <span className="text-lg"><AlertTriangle size={18} color="#D85A30" /></span>
               <div>
                 <div className="text-xs font-bold" style={{ color: '#D85A30' }}>Stock bas</div>
                 <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Gombo Frais — 2 kg restants</div>
@@ -177,7 +182,7 @@ function MockDashboard({ isDark }) {
             <div className="rounded-xl p-3" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs" style={{ background: 'rgba(216,90,48,0.12)' }}>📦</div>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(216,90,48,0.12)' }}><Package size={13} color="#D85A30" /></div>
                   <div>
                     <div className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>Commande #1851</div>
                     <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Ouando → Haie-Vivier</div>
@@ -186,7 +191,7 @@ function MockDashboard({ isDark }) {
                 <div className="text-xs font-bold" style={{ color: '#D85A30' }}>600 F</div>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs" style={{ background: 'rgba(186,117,23,0.12)' }}>📦</div>
+                <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(186,117,23,0.12)' }}><Package size={13} color="#BA7517" /></div>
                 <div>
                   <div className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>Commande #1849</div>
                   <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Saint-Michel → Cadjèhoun</div>
@@ -195,7 +200,7 @@ function MockDashboard({ isDark }) {
               </div>
             </div>
             <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(216,90,48,0.06)' }}>
-              <span className="text-sm">🗺️</span>
+              <span className="text-sm"><Route size={14} color="#D85A30" /></span>
               <span className="text-[11px] font-medium" style={{ color: '#D85A30' }}>Itinéraire optimisé — 3 arrêts</span>
             </div>
           </div>
@@ -234,9 +239,9 @@ const getRoleTheme = (id, isDark) => ({
 }[id])
 
 const roles = [
-  { id: 'client', emoji: '🛒', nom: 'Je suis client', desc: 'Commandez vos produits frais livrés directement à votre porte.', features: ['Panier multi-étals', 'Suivi en direct', 'Paiement à la livraison'], tag: 'Gratuit', route: '/register?role=client' },
-  { id: 'vendeur', emoji: '🏪', nom: 'Je suis vendeur', desc: 'Vendez vos produits sans vous occuper de la livraison.', features: ['Étal en ligne', 'Gestion des stocks', 'Paiement sécurisé'], tag: 'Étal virtuel', route: '/register?role=vendeur' },
-  { id: 'livreur', emoji: '🏍️', nom: 'Je suis livreur', desc: 'Collectez et livrez les commandes. Gagnez à chaque course.', features: ['Itinéraire optimisé', 'Commissions directes', 'Carte GPS intégrée'], tag: 'Gagner plus', route: '/register?role=livreur' },
+  { id: 'client', Icon: ShoppingCart, nom: 'Je suis client', desc: 'Commandez vos produits frais livrés directement à votre porte.', features: ['Panier multi-étals', 'Suivi en direct', 'Paiement à la livraison'], tag: 'Gratuit', route: '/register?role=client' },
+  { id: 'vendeur', Icon: Store, nom: 'Je suis vendeur', desc: 'Vendez vos produits sans vous occuper de la livraison.', features: ['Étal en ligne', 'Gestion des stocks', 'Paiement sécurisé'], tag: 'Étal virtuel', route: '/register?role=vendeur' },
+  { id: 'livreur', Icon: Motorbike, nom: 'Je suis livreur', desc: 'Collectez et livrez les commandes. Gagnez à chaque course.', features: ['Itinéraire optimisé', 'Commissions directes', 'Carte GPS intégrée'], tag: 'Gagner plus', route: '/register?role=livreur' },
 ]
 
 export default function Accueil() {
@@ -323,7 +328,7 @@ export default function Accueil() {
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 text-xs font-semibold px-4 py-1.5 rounded-full mb-6"
             style={{ background: isDark ? 'rgba(45,196,145,0.12)' : 'rgba(255,255,255,0.16)', border: `1px solid ${isDark ? 'rgba(45,196,145,0.2)' : 'rgba(255,255,255,0.3)'}`, color: '#fff' }}>
-            ✨ La première marketplace locale au Bénin
+            <Sparkles size={14} className="inline-block mr-1.5" /> La première marketplace locale au Bénin
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tight">
@@ -354,8 +359,15 @@ export default function Accueil() {
 
           {/* Trust badges */}
           <div className="flex justify-center gap-6 mt-10 flex-wrap">
-            {['✅ Paiement à la livraison', '📍 Suivi en temps réel', '📸 Photo de collecte', '⚡ Livraison zemidjan'].map(b => (
-              <span key={b} className="text-[11px] font-semibold" style={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.7)' }}>{b}</span>
+            {[
+              { Icon: CheckCircle, text: 'Paiement à la livraison' },
+              { Icon: MapPin, text: 'Suivi en temps réel' },
+              { Icon: Camera, text: 'Photo de collecte' },
+              { Icon: Zap, text: 'Livraison zemidjan' },
+            ].map(b => (
+              <span key={b.text} className="text-[11px] font-semibold flex items-center gap-1.5" style={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.7)' }}>
+                <b.Icon size={12} /> {b.text}
+              </span>
             ))}
           </div>
         </div>
@@ -371,13 +383,13 @@ export default function Accueil() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
-              { emoji: '🛒', title: 'Client', desc: 'Commandez de Dantokpa, Missèbo ou Ouando. Livraison en 20-40 min.', color: '#1D9E75', features: ['Panier multi-étals', 'Suivi GPS', 'Code de confirmation'] },
-              { emoji: '🏪', title: 'Vendeur', desc: 'Vendez en ligne sans gérer la livraison. Revenus instantanés.', color: '#BA7517', features: ['Étal virtuel', 'Gestion stocks', '0.6% commission'] },
-              { emoji: '🏍️', title: 'Livreur', desc: 'Gagnez à chaque course. Choisissez vos horaires.', color: '#D85A30', features: ['100% frais gardés', 'Itinéraire optimisé', 'Paiement quotidien'] },
+              { Icon: ShoppingCart, title: 'Client', desc: 'Commandez de Dantokpa, Missèbo ou Ouando. Livraison en 20-40 min.', color: '#1D9E75', features: ['Panier multi-étals', 'Suivi GPS', 'Code de confirmation'] },
+              { Icon: Store, title: 'Vendeur', desc: 'Vendez en ligne sans gérer la livraison. Revenus instantanés.', color: '#BA7517', features: ['Étal virtuel', 'Gestion stocks', '0.6% commission'] },
+              { Icon: Motorbike, title: 'Livreur', desc: 'Gagnez à chaque course. Choisissez vos horaires.', color: '#D85A30', features: ['100% frais gardés', 'Itinéraire optimisé', 'Paiement quotidien'] },
             ].map(item => (
               <div key={item.title} className="rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1"
                 style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4" style={{ background: `${item.color}15` }}>{item.emoji}</div>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: `${item.color}15` }}><item.Icon size={24} color={item.color} /></div>
                 <h3 className="text-base font-black mb-1.5" style={{ color: item.color }}>{item.title}</h3>
                 <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
                 <div className="flex flex-col gap-1">
@@ -417,7 +429,7 @@ export default function Accueil() {
                   className="rounded-2xl border-2 p-6 text-left flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl active:scale-95 cursor-pointer hover:border-current"
                   style={{ background: t.bg, borderColor: t.border, '--tw-shadow-color': t.glow }}>
                   <div className="flex items-start justify-between mb-3">
-                    <span className="text-4xl leading-none">{r.emoji}</span>
+                    <span className="leading-none"><r.Icon size={32} color={t.tagColor} /></span>
                     <span className="text-xs font-bold px-3 py-1 rounded-full mt-1" style={{ background: t.tagBg, color: t.tagColor }}>{r.tag}</span>
                   </div>
                   <p className="text-base font-black mb-2" style={{ color: t.tagColor }}>{r.nom}</p>
@@ -448,7 +460,7 @@ export default function Accueil() {
             {FEATURES.map(f => (
               <div key={f.title} className="rounded-xl p-5 transition-all duration-300 hover:-translate-y-0.5"
                 style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
-                <div className="text-2xl mb-3">{f.emoji}</div>
+                <div className="mb-3" style={{ color: 'var(--text-primary)' }}><f.icon size={22} /></div>
                 <h3 className="text-sm font-black mb-1" style={{ color: 'var(--text-primary)' }}>{f.title}</h3>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{f.desc}</p>
               </div>
@@ -469,7 +481,7 @@ export default function Accueil() {
               <div key={e.role} className="rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1"
                 style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: `${e.color}15` }}>{e.icon}</div>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${e.color}15` }}><e.icon size={20} color={e.color} /></div>
                   <div>
                     <div className="text-sm font-black" style={{ color: e.color }}>{e.role}</div>
                     <div className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{e.fee}</div>
@@ -496,7 +508,7 @@ export default function Accueil() {
             {TESTIMONIALS.map(t => (
               <div key={t.name} className="rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1"
                 style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
-                <div className="text-2xl mb-3">{t.emoji}</div>
+                <div className="mb-3" style={{ color: 'var(--text-primary)' }}><t.Icon size={22} /></div>
                 <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--text-secondary)' }}>"{t.text}"</p>
                 <div>
                   <div className="text-xs font-black" style={{ color: 'var(--text-primary)' }}>{t.name}</div>

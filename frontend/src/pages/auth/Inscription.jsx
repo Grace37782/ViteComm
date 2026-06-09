@@ -3,11 +3,12 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import { ShoppingCart, Store, Motorbike, Lock, Eye, EyeOff, Camera, Mail, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react'
 
 const profils = [
-  { id: 'client',  emoji: '🛒', label: 'Acheter',  color: '#1D9E75' },
-  { id: 'vendeur', emoji: '🏪', label: 'Vendre',   color: '#BA7517' },
-  { id: 'livreur', emoji: '🏍️', label: 'Livrer',   color: '#D85A30' },
+  { id: 'client',  Icon: ShoppingCart, label: 'Acheter',  color: '#1D9E75' },
+  { id: 'vendeur', Icon: Store, label: 'Vendre',   color: '#BA7517' },
+  { id: 'livreur', Icon: Motorbike, label: 'Livrer',   color: '#D85A30' },
 ]
 
 const PWD_RULES = [
@@ -47,12 +48,12 @@ function PasswordStrengthInput({ showMdp, setShowMdp, value, onChange, isDark })
       <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Mot de passe</label>
       <div className="flex items-center rounded-xl overflow-hidden"
         style={{ background: 'var(--surface-alt)', border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }}>
-        <span className="pl-4 text-sm select-none">🔒</span>
+        <span className="pl-4 text-sm select-none"><Lock size={16} color="var(--text-muted)" /></span>
         <input type={showMdp ? 'text' : 'password'} placeholder="••••••••" value={value} onChange={onChange}
           className="flex-1 bg-transparent px-3 py-3.5 text-sm outline-none"
           style={{ color: 'var(--text-primary)' }} />
-        <button type="button" onClick={() => setShowMdp(!showMdp)} className="px-4 text-lg cursor-pointer" style={{ background: 'none', border: 'none' }}>
-          {showMdp ? '🙈' : '👁️'}
+        <button type="button" onClick={() => setShowMdp(!showMdp)} className="px-4 cursor-pointer" style={{ background: 'none', border: 'none' }}>
+          {showMdp ? <EyeOff size={18} color="var(--text-muted)" /> : <Eye size={18} color="var(--text-muted)" />}
         </button>
       </div>
       {value && <PasswordChecklist value={value} isDark={isDark} />}
@@ -243,13 +244,13 @@ export default function Inscription() {
         {error && (
           <div className="fixed top-4 left-4 right-4 z-50 rounded-2xl px-5 py-3.5 text-sm font-bold text-center max-w-md mx-auto"
             style={{ background: '#E24B4A', color: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
-            ⚠️ {error}
+            <AlertTriangle size={16} className="inline-block mr-1.5 -mt-0.5" /> {error}
           </div>
         )}
         {success && (
           <div className="fixed top-4 left-4 right-4 z-50 rounded-2xl px-5 py-3.5 text-sm font-bold text-center max-w-md mx-auto"
             style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
-            ✅ {success}
+            <CheckCircle size={16} className="inline-block mr-1.5 -mt-0.5" /> {success}
           </div>
         )}
 
@@ -287,7 +288,7 @@ export default function Inscription() {
                           background: actif ? (isDark ? `${p.color}22` : `${p.color}15`) : 'var(--surface-alt)',
                           border: `1.5px solid ${actif ? p.color : 'var(--border)'}`,
                         }}>
-                        <div className="text-2xl mb-2">{p.emoji}</div>
+                        <div className="mb-2" style={{ color: actif ? p.color : 'var(--text-secondary)' }}><p.Icon size={24} /></div>
                         <div className="text-xs font-bold" style={{ color: actif ? p.color : 'var(--text-secondary)' }}>{p.label}</div>
                       </button>
                     )
@@ -304,7 +305,7 @@ export default function Inscription() {
                     {photoPreview ? (
                       <img src={photoPreview} alt="Aperçu" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-3xl" style={{ color: 'var(--text-muted)' }}>📷</span>
+                      <Camera size={28} color="var(--text-muted)" />
                     )}
                     <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                     {photoPreview && (
@@ -403,7 +404,7 @@ export default function Inscription() {
                 <button type="submit" disabled={loading}
                   className="mt-1 rounded-xl py-3.5 text-sm font-black transition-all cursor-pointer"
                   style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', border: 'none', opacity: loading ? 0.7 : 1, boxShadow: loading ? 'none' : '0 4px 16px rgba(29,158,117,0.3)' }}>
-                  {loading ? '⏳ Envoi du code...' : 'Créer mon compte →'}
+                  {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> Envoi du code...</> : 'Créer mon compte →'}
                 </button>
               </form>
 
@@ -423,7 +424,7 @@ export default function Inscription() {
               {/* Step 2: Verification */}
               <div className="flex flex-col items-center mb-6">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black mb-4"
-                  style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', boxShadow: '0 8px 24px rgba(29,158,117,0.25)' }}>✉️</div>
+                  style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', boxShadow: '0 8px 24px rgba(29,158,117,0.25)' }}><Mail size={28} /></div>
                 <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>Vérifiez votre email</h1>
                 <p className="text-sm mt-2 text-center leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   Nous avons envoyé un code à 6 chiffres à<br />
@@ -444,7 +445,7 @@ export default function Inscription() {
                   <button type="submit" disabled={loading}
                     className="rounded-xl py-3.5 text-sm font-black transition-all cursor-pointer"
                     style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', border: 'none', opacity: loading ? 0.7 : 1 }}>
-                    {loading ? '⏳ Vérification...' : '✅ Vérifier mon compte'}
+                    {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> Vérification...</> : <><CheckCircle size={14} className="inline-block mr-1.5" /> Vérifier mon compte</>}
                   </button>
                 )}
 

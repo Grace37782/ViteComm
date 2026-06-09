@@ -4,6 +4,7 @@ import { login as apiLogin } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import GoogleSignInButton from '../../components/GoogleSignInButton'
+import { AlertTriangle, Lock, Ban, WifiOff, Smartphone, Mail, Eye, EyeOff, Loader2 } from 'lucide-react'
 
 function detecterTypeIdentifiant(valeur) {
   if (valeur.includes('@')) return 'email'
@@ -29,10 +30,10 @@ function messageErreur(err) {
 }
 
 const erreurStyles = {
-  erreur:  { bg: 'rgba(255,80,80,0.12)',  border: 'rgba(255,100,100,0.25)', icon: '⚠️' },
-  suspend: { bg: 'rgba(186,117,23,0.15)', border: 'rgba(186,117,23,0.35)', icon: '🔒' },
-  ban:     { bg: 'rgba(216,90,48,0.15)',  border: 'rgba(216,90,48,0.35)',  icon: '🚫' },
-  network: { bg: 'rgba(255,80,80,0.12)',  border: 'rgba(255,100,100,0.25)', icon: '🌐' },
+  erreur:  { bg: 'rgba(255,80,80,0.12)',  border: 'rgba(255,100,100,0.25)', Icon: AlertTriangle, iconColor: '#E24B4A' },
+  suspend: { bg: 'rgba(186,117,23,0.15)', border: 'rgba(186,117,23,0.35)', Icon: Lock, iconColor: '#BA7517' },
+  ban:     { bg: 'rgba(216,90,48,0.15)',  border: 'rgba(216,90,48,0.35)',  Icon: Ban, iconColor: '#D85A30' },
+  network: { bg: 'rgba(255,80,80,0.12)',  border: 'rgba(255,100,100,0.25)', Icon: WifiOff, iconColor: '#E24B4A' },
 }
 
 export default function Connexion() {
@@ -180,7 +181,7 @@ export default function Connexion() {
                 }}
               >
                 <span className="pl-4 text-sm select-none">
-                  {typeIdent === 'telephone' ? '📱' : '✉️'}
+                  {typeIdent === 'telephone' ? <Smartphone size={16} color="var(--text-muted)" /> : <Mail size={16} color="var(--text-muted)" />}
                 </span>
                 <input
                   type="text"
@@ -214,7 +215,7 @@ export default function Connexion() {
                   border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
                 }}
               >
-                <span className="pl-4 text-sm select-none">🔒</span>
+                <span className="pl-4 text-sm select-none"><Lock size={16} color="var(--text-muted)" /></span>
                 <input
                   type={showMdp ? 'text' : 'password'}
                   placeholder="••••••••"
@@ -230,7 +231,7 @@ export default function Connexion() {
                   className="px-4 text-base cursor-pointer"
                   style={{ background: 'none', border: 'none' }}
                 >
-                  {showMdp ? '🙈' : '👁️'}
+                  {showMdp ? <EyeOff size={18} color="var(--text-muted)" /> : <Eye size={18} color="var(--text-muted)" />}
                 </button>
               </div>
             </div>
@@ -257,7 +258,7 @@ export default function Connexion() {
                   color: 'var(--text-primary)',
                 }}
               >
-                {styleErreur.icon} {erreur.texte}
+                {styleErreur.Icon && <styleErreur.Icon size={16} color={styleErreur.iconColor} className="inline-block mr-1.5 -mt-0.5" />} {erreur.texte}
                 {(erreur.type === 'suspend' || erreur.type === 'ban') && (
                   <div className="mt-1.5">
                     <a
@@ -282,7 +283,7 @@ export default function Connexion() {
                   color: 'var(--text-primary)',
                 }}
               >
-                🔒 Vous êtes déjà connecté en tant que <strong>{user.prenom} {user.nom}</strong>.
+                <Lock size={14} className="inline-block mr-1 -mt-0.5" color="#BA7517" /> Vous êtes déjà connecté en tant que <strong>{user.prenom} {user.nom}</strong>.
                 <div className="mt-2.5 flex gap-2 justify-center">
                   <button
                     type="button"
@@ -325,7 +326,7 @@ export default function Connexion() {
                 boxShadow: loading ? 'none' : '0 4px 16px rgba(29,158,117,0.3)',
               }}
             >
-              {loading ? '⏳ Connexion…' : 'Se connecter →'}
+              {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> Connexion…</> : 'Se connecter →'}
             </button>
           </form>
 
