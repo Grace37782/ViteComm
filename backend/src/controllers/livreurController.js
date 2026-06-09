@@ -617,6 +617,82 @@ export const getReturns = async (req, res) => {
   }
 };
 
+export const getLivreurRetours = async (req, res) => {
+  try {
+    const driverId = req.user.id_user;
+
+    const returns = await prisma.litige.findMany({
+      where: {
+        livraison: { id_user_livreur: driverId },
+        statut_retour: { not: null }
+      },
+      include: {
+        livraison: {
+          include: {
+            commande: {
+              include: {
+                client: { include: { utilisateur: { select: { nom: true, prenom: true } } } },
+                detailsCommande: {
+                  include: {
+                    produit: {
+                      include: { vendeur: { select: { nom_etablissement: true, localisation_marche: true } } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        detailsCommande: { include: { produit: true } }
+      },
+      orderBy: { date_ouverture: 'desc' }
+    });
+
+    const formatted = returns.map(r => {
+      const cmd = r.livraison?.commande;
+      const line = r.detailsCommande?.[0];
+      return {
+        id_litige: r.id_litige,
+        id_commande: cmd?.id_commande,
+        client: cmd?.client?.utilisateur ? `${cmd.client.utilisateur.prenom} ${cmd.client.utilisateur.nom}` : '—',
+        origine: line?.produit?.vendeur?.localisation_marche || '—',
+        destination: cmd?.client?.adresse_livraison || '—',
+        articles: r.detailsCommande.map(d => ({
+          nom: d.produit?.nom || '—',
+          quantite: d.quantite_commandee,
+          prix: d.prix_vente_applique
+        })),
+        qte: r.detailsCommande.reduce((a, d) => a + d.quantite_commandee, 0),
+        montant: r.detailsCommande.reduce((a, d) => a + (d.prix_vente_applique * d.quantite_commandee), 0),
+        motif: r.description,
+        statut_retour: r.statut_retour,
+        date_ouverture: r.date_ouverture,
+        vendeur: line?.produit?.vendeur?.nom_etablissement || '—'
+      };
+    });
+
+    const total = formatted.length;
+    const aRecuperer = formatted.filter(r => r.statut_retour === 'a_recuperer').length;
+    const enCours = formatted.filter(r => r.statut_retour === 'en_cours').length;
+    const recupere = formatted.filter(r => r.statut_retour === 'recupere').length;
+    const montantTotal = formatted.reduce((sum, r) => sum + (r.montant || 0), 0);
+
+    return res.json({
+      retours: formatted,
+      stats: {
+        total,
+        a_recuperer: aRecuperer,
+        en_cours: enCours,
+        recupere,
+        montant_total: montantTotal
+      }
+    });
+  } catch (error) {
+    console.error('getLivreurRetours error:', error);
+    return res.status(500).json({ error: 'Erreur lors du chargement des retours.' });
+  }
+};
+
 export const updateReturnStatus = async (req, res) => {
   const { id_litige } = req.params;
   const { statut_retour } = req.body;

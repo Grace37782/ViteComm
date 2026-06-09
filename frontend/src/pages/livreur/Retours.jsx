@@ -6,12 +6,13 @@ export default function RetourLivreur() {
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
   const [retours, setRetours] = useState([])
+  const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
 
   useEffect(() => {
-    api.get('/livreur/returns')
-      .then(data => setRetours(data))
+    api.get('/livreur/retours')
+      .then(data => { setRetours(data.retours || []); setStats(data.stats || null) })
       .catch(e => showToast('❌ ' + e.message))
       .finally(() => setLoading(false))
   }, [])
@@ -37,10 +38,6 @@ export default function RetourLivreur() {
     return map[statut] || map.a_recuperer
   }
 
-  const totalRetours = retours.length
-  const aRecuperer = retours.filter(r => r.statut_retour === 'a_recuperer').length
-  const enCours = retours.filter(r => r.statut_retour === 'en_cours').length
-
   if (loading) {
     return (
       <div className="px-4 py-4 flex flex-col gap-4">
@@ -62,11 +59,11 @@ export default function RetourLivreur() {
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Total', value: totalRetours, icon: '↩️',
+          { label: 'Total', value: stats?.total ?? 0, icon: '↩️',
             bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3', color: isDark ? '#E87D55' : '#993C1D' },
-          { label: 'À récupérer', value: aRecuperer, icon: '📦',
+          { label: 'À récupérer', value: stats?.a_recuperer ?? 0, icon: '📦',
             bg: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', border: isDark ? '#BA7517' : '#FAC775', color: isDark ? '#F3A83B' : '#854F0B' },
-          { label: 'En cours', value: enCours, icon: '🚚',
+          { label: 'En cours', value: stats?.en_cours ?? 0, icon: '🚚',
             bg: isDark ? 'rgba(29,158,117,0.12)' : '#E1F5EE', border: isDark ? '#2DC491' : '#9FE1CB', color: isDark ? '#34D399' : '#0F6E56' },
         ].map(s => (
           <div key={s.label} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"

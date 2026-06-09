@@ -13,6 +13,7 @@ import {
   getMyDeliveries,
   getLivreurHistorique,
   getReturns,
+  getLivreurRetours,
   updateReturnStatus,
   getGainsDetailed,
   getFeedbacks,
@@ -78,6 +79,7 @@ router.post('/deliveries/:id_commande/finalize', finalizeDelivery);
 
 // ── Retours (RG09, RG16) ──
 router.get('/returns', getReturns);
+router.get('/retours', getLivreurRetours);
 router.put('/returns/:id_litige', updateReturnStatus);
 
 // ── Gains (RG28) ──
