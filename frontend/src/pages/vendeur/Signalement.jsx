@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../services/api'
+import { AlertTriangle, CheckCircle, Search, Loader2, ClipboardList, BarChart3, ShoppingCart, Package, Bike, Send } from 'lucide-react'
 
 const MOTIFS = [
   'Comportement inapproprié',
@@ -10,10 +11,16 @@ const MOTIFS = [
   'Autre',
 ]
 
+const STATUT_ICONS = {
+  en_attente: Loader2,
+  en_cours: Search,
+  traite: CheckCircle,
+}
+
 const STATUT_COLORS = {
-  en_attente: { bg: '#FFF8E7', text: '#854F0B', border: '#FAC775', label: '⏳ En attente' },
-  en_cours: { bg: '#E6F1FB', text: '#2B6CB0', border: '#90CDF4', label: '🔍 En cours' },
-  traite: { bg: '#E1F5EE', text: '#0F6E56', border: '#9AE6B4', label: '✅ Traité' },
+  en_attente: { bg: '#FFF8E7', text: '#854F0B', border: '#FAC775', label: 'En attente' },
+  en_cours: { bg: '#E6F1FB', text: '#2B6CB0', border: '#90CDF4', label: 'En cours' },
+  traite: { bg: '#E1F5EE', text: '#0F6E56', border: '#9AE6B4', label: 'Traité' },
 }
 
 export default function Signalement() {
@@ -83,10 +90,10 @@ export default function Signalement() {
       setForm({ cible: '', type: 'client', motif: '', description: '' })
       setErreurs({})
       setShowForm(false)
-      showToast("✅ Signalement envoyé à l'administrateur")
+      showToast("Signalement envoyé à l'administrateur")
       fetchSignalements()
     } catch (e) {
-      showToast('❌ ' + e.message, 'error')
+      showToast(e.message, 'error')
     } finally {
       setSaving(false)
     }
@@ -110,7 +117,7 @@ export default function Signalement() {
     return (
       <div className="px-4 py-4">
         <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-          <div className="text-4xl mb-3">⚠️</div>
+          <div className="flex justify-center mb-3"><AlertTriangle size={40} style={{ color: '#E24B4A' }} /></div>
           <p className="font-bold text-sm" style={{ color: '#E24B4A' }}>{error}</p>
         </div>
       </div>
@@ -122,22 +129,25 @@ export default function Signalement() {
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"
           style={{ background: toast.type === 'ok' ? '#BA7517' : '#D85A30' }}>
+          {toast.type === 'error' && <AlertTriangle size={14} className="inline mr-1" />}
+          {toast.type === 'ok' && <CheckCircle size={14} className="inline mr-1" />}
           {toast.msg}
         </div>
       )}
 
       <div className="flex gap-2">
         {[
-          { id: 'liste', label: '📋 Mes signalements' },
-          { id: 'stats', label: '📊 Résumé' },
+          { id: 'liste', label: 'Mes signalements', icon: ClipboardList },
+          { id: 'stats', label: 'Résumé', icon: BarChart3 },
         ].map((o) => (
           <button key={o.id} onClick={() => { setOnglet(o.id); setDetail(null) }}
-            className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer"
+            className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer flex items-center gap-1.5"
             style={{
               background: onglet === o.id ? '#BA7517' : 'var(--surface)',
               color: onglet === o.id ? '#fff' : 'var(--text-secondary)',
               border: `1.5px solid ${onglet === o.id ? '#BA7517' : 'var(--border)'}`,
             }}>
+            <o.icon size={12} />
             {o.label}
           </button>
         ))}
@@ -163,21 +173,21 @@ export default function Signalement() {
       {onglet === 'liste' && !detail && (
         <>
           <button onClick={() => setShowForm(true)}
-            className="w-full py-3 rounded-2xl text-white text-sm font-black cursor-pointer"
+            className="w-full py-3 rounded-2xl text-white text-sm font-black cursor-pointer flex items-center justify-center gap-2"
             style={{ background: '#BA7517', border: 'none' }}>
-            ⚠️ Nouveau signalement
+            <AlertTriangle size={14} /> Nouveau signalement
           </button>
 
           <div className="flex gap-2 overflow-x-auto scrollbar-none">
             {['tous', 'en_attente', 'en_cours', 'traite'].map((s) => (
               <button key={s} onClick={() => setFiltreStatut(s)}
-                className="px-3 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap cursor-pointer"
+                className="px-3 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap cursor-pointer flex items-center gap-1"
                 style={{
                   background: filtreStatut === s ? '#BA7517' : 'var(--surface)',
                   color: filtreStatut === s ? '#fff' : 'var(--text-muted)',
                   border: `1.5px solid ${filtreStatut === s ? '#BA7517' : 'var(--border)'}`,
                 }}>
-                {s === 'tous' ? 'Tous' : STATUT_COLORS[s]?.label || s}
+                {s === 'tous' ? 'Tous' : (() => { const Icon = STATUT_ICONS[s]; return Icon ? <><Icon size={10} className={s === 'en_attente' ? 'animate-spin' : ''} /> {STATUT_COLORS[s]?.label}</> : s })()}
               </button>
             ))}
           </div>
@@ -185,7 +195,7 @@ export default function Signalement() {
           {showForm && (
             <div className="rounded-2xl p-4 flex flex-col gap-3"
               style={{ background: 'var(--surface)', border: '2px solid #BA7517' }}>
-              <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>⚠️ Nouveau signalement</div>
+              <div className="text-sm font-black flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><AlertTriangle size={14} /> Nouveau signalement</div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Nom de la personne signalée *</label>
@@ -193,21 +203,25 @@ export default function Signalement() {
                   value={form.cible} onChange={(e) => setForm((p) => ({ ...p, cible: e.target.value }))}
                   className="px-4 py-3 rounded-xl text-sm outline-none"
                   style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)' }} />
-                {erreurs.cible && <span className="text-xs" style={{ color: '#E24B4A' }}>⚠ {erreurs.cible}</span>}
+                {erreurs.cible && <span className="text-xs flex items-center gap-1" style={{ color: '#E24B4A' }}><AlertTriangle size={12} /> {erreurs.cible}</span>}
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Type d'utilisateur</label>
                 <div className="flex gap-2">
-                  {['client', 'vendeur', 'livreur'].map((t) => (
-                    <button key={t} type="button" onClick={() => setForm((p) => ({ ...p, type: t }))}
-                      className="flex-1 py-2 rounded-xl text-xs font-bold capitalize cursor-pointer"
+                  {[
+                    { value: 'client', icon: ShoppingCart },
+                    { value: 'vendeur', icon: Package },
+                    { value: 'livreur', icon: Bike },
+                  ].map((t) => (
+                    <button key={t.value} type="button" onClick={() => setForm((p) => ({ ...p, type: t.value }))}
+                      className="flex-1 py-2 rounded-xl text-xs font-bold capitalize cursor-pointer flex items-center justify-center gap-1"
                       style={{
-                        background: form.type === t ? '#FAEEDA' : 'var(--surface-alt)',
-                        border: `1.5px solid ${form.type === t ? '#BA7517' : 'var(--border)'}`,
-                        color: form.type === t ? '#BA7517' : 'var(--text-secondary)',
+                        background: form.type === t.value ? '#FAEEDA' : 'var(--surface-alt)',
+                        border: `1.5px solid ${form.type === t.value ? '#BA7517' : 'var(--border)'}`,
+                        color: form.type === t.value ? '#BA7517' : 'var(--text-secondary)',
                       }}>
-                      {t}
+                      <t.icon size={12} /> {t.value}
                     </button>
                   ))}
                 </div>
@@ -221,7 +235,7 @@ export default function Signalement() {
                   <option value="">Sélectionnez un motif</option>
                   {MOTIFS.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
-                {erreurs.motif && <span className="text-xs" style={{ color: '#E24B4A' }}>⚠ {erreurs.motif}</span>}
+                {erreurs.motif && <span className="text-xs flex items-center gap-1" style={{ color: '#E24B4A' }}><AlertTriangle size={12} /> {erreurs.motif}</span>}
               </div>
 
               <div className="flex flex-col gap-1">
@@ -231,14 +245,14 @@ export default function Signalement() {
                   rows={3}
                   className="px-4 py-3 rounded-xl text-sm outline-none resize-none"
                   style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)' }} />
-                {erreurs.description && <span className="text-xs" style={{ color: '#E24B4A' }}>⚠ {erreurs.description}</span>}
+                {erreurs.description && <span className="text-xs flex items-center gap-1" style={{ color: '#E24B4A' }}><AlertTriangle size={12} /> {erreurs.description}</span>}
               </div>
 
               <div className="flex gap-2 mt-1">
                 <button onClick={envoyerSignalement} disabled={saving}
-                  className="flex-1 py-3 rounded-xl text-white text-sm font-black cursor-pointer"
+                  className="flex-1 py-3 rounded-xl text-white text-sm font-black cursor-pointer flex items-center justify-center gap-2"
                   style={{ background: saving ? '#999' : '#BA7517', border: 'none', opacity: saving ? 0.7 : 1 }}>
-                  {saving ? 'Envoi…' : '📨 Envoyer'}
+                  {saving ? 'Envoi…' : <><Send size={14} /> Envoyer</>}
                 </button>
                 <button onClick={() => { setShowForm(false); setErreurs({}) }}
                   className="px-4 py-3 rounded-xl text-sm font-semibold cursor-pointer"
@@ -251,7 +265,7 @@ export default function Signalement() {
 
           {filtres.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-5xl mb-3">✅</div>
+              <div className="flex justify-center mb-3"><CheckCircle size={48} style={{ color: 'var(--text-muted)' }} /></div>
               <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Aucun signalement</p>
             </div>
           ) : (
@@ -261,17 +275,18 @@ export default function Signalement() {
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                       style={{ background: 'var(--surface-alt)' }}>
-                      {s.type === 'client' ? '🛒' : s.type === 'vendeur' ? '📦' : '🚲'}
+                      {s.type === 'client' ? <ShoppingCart size={14} style={{ color: 'var(--text-secondary)' }} /> : s.type === 'vendeur' ? <Package size={14} style={{ color: 'var(--text-secondary)' }} /> : <Bike size={14} style={{ color: 'var(--text-secondary)' }} />}
                     </div>
                     <div>
                       <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{s.cible}</div>
                       <div className="text-[10px] capitalize" style={{ color: 'var(--text-muted)' }}>{s.type}</div>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-1 rounded-full"
+                  <span className="text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"
                     style={{ background: STATUT_COLORS[s.statut]?.bg, color: STATUT_COLORS[s.statut]?.text, border: `1px solid ${STATUT_COLORS[s.statut]?.border}` }}>
+                    {(() => { const Icon = STATUT_ICONS[s.statut]; return Icon ? <Icon size={10} className={s.statut === 'en_attente' ? 'animate-spin' : ''} /> : null })()}
                     {STATUT_COLORS[s.statut]?.label}
                   </span>
                 </div>
@@ -291,15 +306,16 @@ export default function Signalement() {
             <button onClick={() => setDetail(null)}
               className="text-xs font-bold cursor-pointer"
               style={{ color: '#BA7517', background: 'none', border: 'none' }}>← Retour</button>
-            <span className="text-[10px] font-bold px-2 py-1 rounded-full"
+            <span className="text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"
               style={{ background: STATUT_COLORS[detail.statut]?.bg, color: STATUT_COLORS[detail.statut]?.text, border: `1px solid ${STATUT_COLORS[detail.statut]?.border}` }}>
+              {(() => { const Icon = STATUT_ICONS[detail.statut]; return Icon ? <Icon size={10} className={detail.statut === 'en_attente' ? 'animate-spin' : ''} /> : null })()}
               {STATUT_COLORS[detail.statut]?.label}
             </span>
           </div>
 
           <div className="text-center py-3">
-            <div className="text-4xl mb-2">
-              {detail.type === 'client' ? '🛒' : detail.type === 'vendeur' ? '📦' : '🚲'}
+            <div className="flex justify-center mb-2">
+              {detail.type === 'client' ? <ShoppingCart size={32} style={{ color: 'var(--text-secondary)' }} /> : detail.type === 'vendeur' ? <Package size={32} style={{ color: 'var(--text-secondary)' }} /> : <Bike size={32} style={{ color: 'var(--text-secondary)' }} />}
             </div>
             <div className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>{detail.cible}</div>
             <div className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>Type: {detail.type}</div>

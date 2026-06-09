@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../services/api'
+import { AlertTriangle, BarChart3, Trophy, Package } from 'lucide-react'
 
 export default function Statistiques() {
   const [onglet, setOnglet] = useState('apercu')
@@ -35,7 +36,7 @@ export default function Statistiques() {
     return (
       <div className="px-4 py-4">
         <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-          <div className="text-4xl mb-3">⚠️</div>
+          <div className="flex justify-center mb-3"><AlertTriangle size={48} style={{ color: '#E24B4A' }} /></div>
           <p className="font-bold text-sm" style={{ color: '#E24B4A' }}>{error}</p>
         </div>
       </div>
@@ -47,9 +48,9 @@ export default function Statistiques() {
 
       <div className="flex gap-2">
         {[
-          { id: 'apercu', label: '📊 Aperçu' },
-          { id: 'vendus', label: '🏆 Top ventes' },
-          { id: 'rejets', label: '⚠️ Top rejets' },
+          { id: 'apercu', label: <><BarChart3 size={14} className="inline" /> Aperçu</> },
+          { id: 'vendus', label: <><Trophy size={14} className="inline" /> Top ventes</> },
+          { id: 'rejets', label: <><AlertTriangle size={14} className="inline" /> Top rejets</> },
         ].map((o) => (
           <button key={o.id} onClick={() => setOnglet(o.id)}
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer"
@@ -88,8 +89,8 @@ export default function Statistiques() {
               <div key={p.id} className="rounded-2xl p-4"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                    style={{ background: 'var(--surface-alt)' }}>{p.emoji}</div>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ background: 'var(--surface-alt)' }}><Package size={18} /></div>
                   <div className="flex-1 min-w-0">
                     <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{p.nom}</div>
                     <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Stock: {p.stock} {p.unite}</div>
@@ -121,7 +122,7 @@ export default function Statistiques() {
                 style={{ background: i === 0 ? '#FAEEDA' : 'var(--surface-alt)', color: i === 0 ? '#BA7517' : 'var(--text-muted)' }}>
                 #{i + 1}
               </div>
-              <span className="text-xl">{p.emoji}</span>
+              <Package size={18} />
               <div className="flex-1 min-w-0">
                 <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{p.nom}</div>
                 <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{p.revenu.toLocaleString()} F de revenu</div>
@@ -147,7 +148,7 @@ export default function Statistiques() {
                   style={{ background: i === 0 ? '#FAECE7' : 'var(--surface-alt)', color: i === 0 ? '#D85A30' : 'var(--text-muted)' }}>
                   #{i + 1}
                 </div>
-                <span className="text-xl">{p.emoji}</span>
+                <Package size={18} />
                 <div className="flex-1 min-w-0">
                   <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{p.nom}</div>
                   <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Taux: {tauxRejetProd}%</div>

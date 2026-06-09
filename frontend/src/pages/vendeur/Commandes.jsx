@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
+import { AlertTriangle, ShoppingCart, Camera, Loader2, KeyRound, CheckCircle } from 'lucide-react'
 
 export default function CommandesVendeur() {
   const { resolved } = useTheme()
@@ -95,7 +96,7 @@ export default function CommandesVendeur() {
     return (
       <div className="px-4 py-4">
         <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-          <div className="text-4xl mb-3">⚠️</div>
+          <div className="text-4xl mb-3"><AlertTriangle size={32} /></div>
           <p className="font-bold text-sm" style={{ color: '#E24B4A' }}>{error}</p>
           <button onClick={fetchOrders}
             className="mt-3 px-4 py-2 rounded-xl text-xs font-bold"
@@ -131,7 +132,7 @@ export default function CommandesVendeur() {
 
       {liste.length === 0 && (
         <div className="text-center py-12">
-          <div className="text-5xl mb-3">🛒</div>
+          <div className="text-5xl mb-3"><ShoppingCart size={40} /></div>
           <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
             Aucune commande dans cette catégorie
           </p>
@@ -206,7 +207,7 @@ export default function CommandesVendeur() {
                 <div className="flex items-center gap-3 px-3 py-3 rounded-xl"
                   style={{ background: cmd.photo_collecte ? (isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE') : 'var(--surface-alt)' }}>
                   <span className="text-xl flex-shrink-0">
-                    {cmd.photo_collecte ? '📸' : '⏳'}
+                    {cmd.photo_collecte ? <Camera size={20} /> : <Loader2 size={20} className="animate-spin" />}
                   </span>
                   <div>
                     <div className="text-xs font-bold"
@@ -225,8 +226,8 @@ export default function CommandesVendeur() {
 
                 {/* Saisie code */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>
-                    🔑 Code de vérification du livreur
+                  <label className="text-xs font-bold flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
+                    <KeyRound size={12} /> Code de vérification du livreur
                   </label>
                   <input
                     type="text"
@@ -248,7 +249,7 @@ export default function CommandesVendeur() {
                   />
                   {errCodes[cmd.id] && (
                     <span className="text-xs font-semibold" style={{ color: '#E24B4A' }}>
-                      ⚠ {errCodes[cmd.id]}
+                       <AlertTriangle size={12} /> {errCodes[cmd.id]}
                     </span>
                   )}
                 </div>
@@ -281,7 +282,7 @@ export default function CommandesVendeur() {
               <div className="px-4 pb-4 pt-2">
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
                   style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
-                  <span className="text-lg">✅</span>
+                  <CheckCircle size={18} />
                   <span className="text-xs font-black" style={{ color: isDark ? '#34D399' : '#0F6E56' }}>
                     Remise confirmée — Articles collectés par le livreur
                   </span>

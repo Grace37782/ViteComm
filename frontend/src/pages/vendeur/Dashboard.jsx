@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
+import { AlertTriangle, Star, Package, ShoppingCart, Undo2, Flag } from 'lucide-react'
 
 export default function DashboardVendeur() {
   const navigate = useNavigate()
@@ -58,7 +59,7 @@ export default function DashboardVendeur() {
     return (
       <div className="px-4 py-4">
         <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-          <div className="text-4xl mb-3">⚠️</div>
+          <div className="text-4xl mb-3"><AlertTriangle size={32} /></div>
           <p className="font-bold text-sm" style={{ color: '#E24B4A' }}>{error}</p>
           <button onClick={fetchData} className="mt-3 px-4 py-2 rounded-xl text-xs font-bold" style={{ background: '#BA7517', color: '#fff' }}>Réessayer</button>
         </div>
@@ -87,7 +88,7 @@ export default function DashboardVendeur() {
           <div className="text-right flex-shrink-0">
             <div className="flex items-center gap-1">
               <span className="font-black text-lg" style={{ color: '#BA7517' }}>{dashboard.score_reputation || '—'}</span>
-              <span className="text-sm">⭐</span>
+              <Star size={16} />
             </div>
             <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{dashboard.nb_avis || 0} avis</div>
           </div>
@@ -123,7 +124,7 @@ export default function DashboardVendeur() {
             border: `1.5px solid ${isDark ? '#BA7517' : '#FAC775'}`,
           }}>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">⚠️</span>
+            <AlertTriangle size={18} />
             <h3 className="font-black text-sm" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Stock faible — action requise</h3>
           </div>
           <div className="flex flex-col gap-2 mb-3">
@@ -187,15 +188,15 @@ export default function DashboardVendeur() {
       {/* ACTIONS RAPIDES */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { icon: '📦', label: 'Mon catalogue', sub: 'Gérer mes produits', route: '/vendeur/catalogue' },
-          { icon: '🛒', label: 'Commandes', sub: 'Gérer les remises', route: '/vendeur/commandes' },
-          { icon: '↩️', label: 'Retours', sub: 'Articles rejetés', route: '/vendeur/retours' },
-          { icon: '🚩', label: 'Signaler', sub: 'Client ou livreur', route: '/vendeur/signalement' },
+          { icon: Package, label: 'Mon catalogue', sub: 'Gérer mes produits', route: '/vendeur/catalogue' },
+          { icon: ShoppingCart, label: 'Commandes', sub: 'Gérer les remises', route: '/vendeur/commandes' },
+          { icon: Undo2, label: 'Retours', sub: 'Articles rejetés', route: '/vendeur/retours' },
+          { icon: Flag, label: 'Signaler', sub: 'Client ou livreur', route: '/vendeur/signalement' },
         ].map((a) => (
           <button key={a.label} onClick={() => navigate(a.route)}
             className="rounded-2xl p-4 text-left cursor-pointer transition-all hover:shadow-md active:scale-98"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-            <div className="text-2xl mb-2">{a.icon}</div>
+            <div className="mb-2"><a.icon size={28} /></div>
             <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{a.label}</div>
             <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{a.sub}</div>
           </button>

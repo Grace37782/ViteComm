@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { AlertTriangle, CheckCircle, RefreshCw, Loader2, Receipt } from 'lucide-react'
 
 const STATUT_STYLE = {
-  en_attente: { label: 'En attente', bg: '#FAEEDA', color: '#854F0B', icon: '⏳' },
-  paye: { label: 'Payé', bg: '#E1F5EE', color: '#0F6E56', icon: '✅' },
-  partiel: { label: 'Partiel', bg: '#E6F1FB', color: '#185FA5', icon: '🔄' },
+  en_attente: { label: 'En attente', bg: '#FAEEDA', color: '#854F0B', icon: Loader2 },
+  paye: { label: 'Payé', bg: '#E1F5EE', color: '#0F6E56', icon: CheckCircle },
+  partiel: { label: 'Partiel', bg: '#E6F1FB', color: '#185FA5', icon: RefreshCw },
 }
 
 export default function Factures() {
@@ -36,6 +37,7 @@ export default function Factures() {
   const totalCommission = factures.reduce((s, f) => s + f.commission, 0)
 
   const facture = factures.find((f) => f.id === detail)
+  const stDetail = facture ? STATUT_STYLE[facture.statut_paiement] : null
 
   if (loading) {
     return (
@@ -50,7 +52,7 @@ export default function Factures() {
     return (
       <div className="px-4 py-4">
         <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-          <div className="text-4xl mb-3">⚠️</div>
+          <div className="flex justify-center mb-3"><AlertTriangle size={48} style={{ color: '#E24B4A' }} /></div>
           <p className="font-bold text-sm" style={{ color: '#E24B4A' }}>{error}</p>
         </div>
       </div>
@@ -96,7 +98,7 @@ export default function Factures() {
 
           {liste.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-4xl mb-3">🧾</div>
+              <div className="flex justify-center mb-3"><Receipt size={48} style={{ color: 'var(--text-muted)' }} /></div>
               <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>Aucune facture.</p>
             </div>
           ) : (
@@ -113,7 +115,7 @@ export default function Factures() {
                     </div>
                     <span className="text-xs font-bold px-2.5 py-1 rounded-full"
                       style={{ background: st.bg, color: st.color }}>
-                      {st.icon} {st.label}
+                      <st.icon size={12} className="inline" /> {st.label}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -137,7 +139,7 @@ export default function Factures() {
             </div>
             <span className="text-xs font-bold px-3 py-1.5 rounded-full"
               style={{ background: STATUT_STYLE[facture.statut_paiement]?.bg, color: STATUT_STYLE[facture.statut_paiement]?.color }}>
-              {STATUT_STYLE[facture.statut_paiement]?.icon} {STATUT_STYLE[facture.statut_paiement]?.label}
+               {stDetail?.icon && <stDetail.icon size={12} />} {stDetail?.label}
             </span>
           </div>
 
@@ -191,7 +193,7 @@ export default function Factures() {
             <div className="rounded-2xl p-4"
               style={{ background: '#E1F5EE', border: '1.5px solid #9FE1CB' }}>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">✅</span>
+                <CheckCircle size={20} style={{ color: '#0F6E56' }} />
                 <div className="text-xs font-black" style={{ color: '#0F6E56' }}>Paiement reçu</div>
               </div>
               <div className="flex flex-col gap-1">
@@ -217,7 +219,7 @@ export default function Factures() {
             <div className="rounded-2xl p-4"
               style={{ background: '#FAEEDA', border: '1.5px solid #FAC775' }}>
               <div className="flex items-center gap-2">
-                <span className="text-lg">⏳</span>
+                <Loader2 size={20} style={{ color: '#854F0B' }} className="animate-spin" />
                 <div className="text-xs font-bold" style={{ color: '#854F0B' }}>
                   Paiement en attente — le livreur collectera le montant à la livraison (COD).
                 </div>

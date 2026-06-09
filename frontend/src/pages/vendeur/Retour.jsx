@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
+import { AlertTriangle, CheckCircle } from 'lucide-react'
 
 export default function RetourVendeur() {
   const { resolved } = useTheme()
@@ -77,7 +78,7 @@ export default function RetourVendeur() {
     return (
       <div className="px-4 py-4">
         <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-          <div className="text-4xl mb-3">⚠️</div>
+          <div className="flex justify-center mb-3"><AlertTriangle size={40} style={{ color: '#E24B4A' }} /></div>
           <p className="font-bold text-sm" style={{ color: '#E24B4A' }}>{error}</p>
           <button onClick={fetchReturns}
             className="mt-3 px-4 py-2 rounded-xl text-xs font-bold"
@@ -128,7 +129,7 @@ export default function RetourVendeur() {
 
       {liste.length === 0 ? (
         <div className="text-center py-16 rounded-3xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-          <div className="text-5xl mb-3">✔️</div>
+          <div className="flex justify-center mb-3"><CheckCircle size={48} style={{ color: 'var(--text-muted)' }} /></div>
           <p className="font-black text-sm" style={{ color: 'var(--text-muted)' }}>
             Aucun retour à afficher dans cette catégorie.
           </p>
@@ -204,7 +205,7 @@ export default function RetourVendeur() {
                         {isUpdating ? '...' : 'Marquer récupéré'}
                       </button>
                     ) : (
-                      <div className="text-xs font-bold" style={{ color: isDark ? '#34D399' : '#0F6E56' }}>✓ Récupération confirmée</div>
+                      <div className="text-xs font-bold flex items-center gap-1" style={{ color: isDark ? '#34D399' : '#0F6E56' }}><CheckCircle size={12} /> Récupération confirmée</div>
                     )}
                   </div>
                 </div>
