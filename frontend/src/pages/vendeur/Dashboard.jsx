@@ -131,7 +131,7 @@ export default function DashboardVendeur() {
             {dashboard.alertes_stock.map((a) => (
               <div key={a.id} className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
                 style={{ background: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.55)' }}>
-                <span className="text-xl">{a.emoji}</span>
+                <span className="text-xl flex-shrink-0"><Package size={18} /></span>
                 <span className="text-sm font-semibold flex-1" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>{a.nom}</span>
                 <span className="font-black text-xs px-2.5 py-1 rounded-full" style={{ background: '#D85A30', color: '#fff' }}>
                   {a.stock} restant{a.stock > 1 ? 's' : ''}

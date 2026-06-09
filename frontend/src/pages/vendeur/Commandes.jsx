@@ -180,7 +180,7 @@ export default function CommandesVendeur() {
               {cmd.articles.map((a) => (
                 <div key={a.id} className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
                   style={{ background: 'var(--surface-alt)' }}>
-                  <span className="text-xl">{a.emoji}</span>
+                  <span className="text-xl flex-shrink-0"><Package size={18} /></span>
                   <span className="text-xs font-semibold flex-1" style={{ color: 'var(--text-primary)' }}>
                     {a.nom} × {a.qte} {a.unite}
                   </span>
