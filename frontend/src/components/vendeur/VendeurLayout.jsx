@@ -27,10 +27,15 @@ export default function VendeurLayout() {
     }
   }, [user, navigate])
 
+  useEffect(() => {
+    document.documentElement.classList.add('role-vendeur')
+    return () => document.documentElement.classList.remove('role-vendeur')
+  }, [])
+
   const initials = ((user?.prenom?.[0] || '') + (user?.nom?.[0] || '')).toUpperCase() || '?'
 
   return (
-    <div className="min-h-screen font-sans role-vendeur" style={{ background: 'var(--bg)' }}>
+    <div className="min-h-screen font-sans" style={{ background: 'var(--bg)' }}>
       <div className="sticky top-0 z-50" style={{ background: 'linear-gradient(135deg, #BA7517 0%, #854F0B 100%)' }}>
         <div className="px-3 py-2.5">
           <div className="flex items-center justify-between">

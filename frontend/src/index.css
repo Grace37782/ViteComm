@@ -77,29 +77,29 @@ html, body, #root {
 }
 
 /* ── Role-adaptive accent colors ── */
-.role-client {
+html.role-client {
   --accent: #1D9E75;
   --accent-dark: #0F6E56;
 }
-html.dark .role-client {
+html.role-client.dark {
   --accent: #2DC491;
   --accent-dark: #1FA876;
 }
 
-.role-vendeur {
+html.role-vendeur {
   --accent: #BA7517;
   --accent-dark: #854F0B;
 }
-html.dark .role-vendeur {
+html.role-vendeur.dark {
   --accent: #D4922A;
   --accent-dark: #BA7517;
 }
 
-.role-livreur {
+html.role-livreur {
   --accent: #D85A30;
   --accent-dark: #993C1D;
 }
-html.dark .role-livreur {
+html.role-livreur.dark {
   --accent: #E87D55;
   --accent-dark: #D85A30;
 }

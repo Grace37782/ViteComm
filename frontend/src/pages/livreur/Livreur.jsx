@@ -13,17 +13,19 @@ export default function Livreur() {
   const [distanceAction, setDistanceAction] = useState(10)
   const [savingDispo, setSavingDispo] = useState(false)
   const [toast, setToast] = useState(null)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     api.get('/livreur/dashboard')
       .then(data => {
         setDash(data)
+        setError(null)
         setDispo(data.disponibilite?.est_disponible ?? true)
         setHoraireDebut(data.disponibilite?.heure_debut_dispo?.slice(0,5) || '06:00')
         setHoraireFin(data.disponibilite?.heure_fin_dispo?.slice(0,5) || '20:00')
         setDistanceAction(data.disponibilite?.distance_marche || 10)
       })
-      .catch(e => showToast('❌ ' + e.message))
+      .catch(e => { setError(e.message); showToast('❌ ' + e.message) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -65,6 +67,21 @@ export default function Livreur() {
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3">{[1,2,3].map(i => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />)}</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="px-4 py-8 flex flex-col items-center gap-3">
+        <div className="text-4xl">⚠️</div>
+        <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Impossible de charger le tableau de bord</div>
+        <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>{error}</div>
+        <button onClick={() => window.location.reload()}
+          className="mt-2 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
+          style={{ background: '#D85A30', color: '#fff' }}>
+          Réessayer
+        </button>
       </div>
     )
   }

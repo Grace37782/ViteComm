@@ -25,10 +25,15 @@ export default function LivreurLayout() {
     }
   }, [user, navigate])
 
+  useEffect(() => {
+    document.documentElement.classList.add('role-livreur')
+    return () => document.documentElement.classList.remove('role-livreur')
+  }, [])
+
   const initials = ((user?.prenom?.[0] || '') + (user?.nom?.[0] || '')).toUpperCase() || '?'
 
   return (
-    <div className="min-h-screen font-sans role-livreur" style={{ background: 'var(--bg)' }}>
+    <div className="min-h-screen font-sans" style={{ background: 'var(--bg)' }}>
       <div className="sticky top-0 z-50" style={{ background: 'linear-gradient(135deg, #D85A30 0%, #993C1D 100%)' }}>
         <div className="px-3 py-2.5">
           <div className="flex items-center justify-between">
