@@ -35,7 +35,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/vendor', vendeurRoutes);
-app.use('/api/driver', livreurRoutes);
+app.use('/api/livreur', livreurRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
