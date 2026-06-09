@@ -34,7 +34,7 @@ export default function CommandesVendeur() {
   const STATUT_STYLE = {
     en_attente: { label: 'En attente livreur', bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
     code_saisi: { label: 'Code en cours', bg: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5' },
-    collecte: { label: 'Collecté ✓', bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
+    collecte: { label: 'Collecté', bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
   }
 
   const filtres = {
@@ -213,7 +213,7 @@ export default function CommandesVendeur() {
                     <div className="text-xs font-bold"
                       style={{ color: cmd.photo_collecte ? (isDark ? '#34D399' : '#0F6E56') : 'var(--text-muted)' }}>
                       {cmd.photo_collecte
-                        ? 'Photo de collecte prise par le livreur ✓'
+                        ? 'Photo de collecte prise par le livreur'
                         : 'En attente de la photo du livreur…'}
                     </div>
                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
