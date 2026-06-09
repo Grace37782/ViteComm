@@ -563,7 +563,7 @@ export const getReturns = async (req, res) => {
     const returns = await prisma.litige.findMany({
       where: {
         livraison: { id_user_livreur: driverId },
-        statut_retour: { not: null }
+        statut_retour: { in: ['a_recuperer', 'en_cours', 'recupere'] }
       },
       include: {
         livraison: {
@@ -624,7 +624,7 @@ export const getLivreurRetours = async (req, res) => {
     const returns = await prisma.litige.findMany({
       where: {
         livraison: { id_user_livreur: driverId },
-        statut_retour: { not: null }
+        statut_retour: { in: ['a_recuperer', 'en_cours', 'recupere'] }
       },
       include: {
         livraison: {
