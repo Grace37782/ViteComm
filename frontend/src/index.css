@@ -76,6 +76,34 @@ html, body, #root {
   background: var(--accent-dark);
 }
 
+/* ── Role-adaptive accent colors ── */
+.role-client {
+  --accent: #1D9E75;
+  --accent-dark: #0F6E56;
+}
+html.dark .role-client {
+  --accent: #2DC491;
+  --accent-dark: #1FA876;
+}
+
+.role-vendeur {
+  --accent: #BA7517;
+  --accent-dark: #854F0B;
+}
+html.dark .role-vendeur {
+  --accent: #D4922A;
+  --accent-dark: #BA7517;
+}
+
+.role-livreur {
+  --accent: #D85A30;
+  --accent-dark: #993C1D;
+}
+html.dark .role-livreur {
+  --accent: #E87D55;
+  --accent-dark: #D85A30;
+}
+
 /* ── Override webkit autofill styling to match active theme ── */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,

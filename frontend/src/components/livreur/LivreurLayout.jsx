@@ -18,14 +18,17 @@ export default function LivreurLayout() {
 
   useEffect(() => {
     if (!user) return navigate('/connect', { replace: true })
-    if (user.role === 'client') return navigate('/client/accueil', { replace: true })
-    if (user.role === 'vendeur') return navigate('/vendeur/dashboard', { replace: true })
+    if (user.role !== 'livreur') {
+      if (user.role === 'client') return navigate('/client/accueil', { replace: true })
+      if (user.role === 'vendeur') return navigate('/vendeur/dashboard', { replace: true })
+      return navigate('/accueil', { replace: true })
+    }
   }, [user, navigate])
 
   const initials = ((user?.prenom?.[0] || '') + (user?.nom?.[0] || '')).toUpperCase() || '?'
 
   return (
-    <div className="min-h-screen font-sans" style={{ background: 'var(--bg)' }}>
+    <div className="min-h-screen font-sans role-livreur" style={{ background: 'var(--bg)' }}>
       <div className="sticky top-0 z-50" style={{ background: 'linear-gradient(135deg, #D85A30 0%, #993C1D 100%)' }}>
         <div className="px-3 py-2.5">
           <div className="flex items-center justify-between">
