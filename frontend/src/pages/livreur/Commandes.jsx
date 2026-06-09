@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
 
 const STATUS_LABEL = {
@@ -10,16 +11,9 @@ const STATUS_LABEL = {
   'Echec': 'Échec',
 }
 
-const STATUS_COLOR = {
-  'En attente': '#BA7517',
-  'Validee': '#BA7517',
-  'Collectee': '#D85A30',
-  'En cours de livraison': '#D85A30',
-  'Livree': '#1D9E75',
-  'Echec': '#888780',
-}
-
 export default function CommandesLivreur() {
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
   const [available, setAvailable] = useState([])
   const [deliveries, setDeliveries] = useState([])
   const [loading, setLoading] = useState(true)
@@ -37,47 +31,21 @@ export default function CommandesLivreur() {
     Promise.all([
       api.get('/livreur/deliveries/available'),
       api.get('/livreur/deliveries'),
-    ]).then(([a, d]) => {
-      setAvailable(a)
-      setDeliveries(d)
-    }).catch(e => showToast('❌ ' + e.message))
+    ]).then(([a, d]) => { setAvailable(a); setDeliveries(d) })
+      .catch(e => showToast('❌ ' + e.message))
       .finally(() => setLoading(false))
   }
 
-  function showToast(msg) {
-    setToast(msg)
-    setTimeout(() => setToast(null), 3000)
-  }
+  function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
-  async function accepterCourse(id_commande) {
-    try {
-      await api.post(`/livreur/deliveries/${id_commande}/finalize`, {})
-      showToast('❌ Cette action nécessite le code client')
-    } catch {
-      // Acceptance is implicit via assignment; show available course flow
-      showToast('✅ Course acceptée !')
-      loadData()
-    }
-  }
-
-  function openFinalize(delivery) {
-    setFinalizeOpen(delivery)
-    setCodeVerification('')
-    setRejections({})
-  }
+  function openFinalize(delivery) { setFinalizeOpen(delivery); setCodeVerification(''); setRejections({}) }
 
   function toggleReject(id_produit) {
-    setRejections(prev => ({
-      ...prev,
-      [id_produit]: prev[id_produit] ? undefined : { rejected: true, motif: '' }
-    }))
+    setRejections(prev => ({ ...prev, [id_produit]: prev[id_produit] ? undefined : { rejected: true, motif: '' } }))
   }
 
   function setRejectMotif(id_produit, motif) {
-    setRejections(prev => ({
-      ...prev,
-      [id_produit]: { ...prev[id_produit], motif }
-    }))
+    setRejections(prev => ({ ...prev, [id_produit]: { ...prev[id_produit], motif } }))
   }
 
   async function handleFinalize() {
@@ -85,43 +53,39 @@ export default function CommandesLivreur() {
     if (!finalizeOpen) return
     setSubmitting(true)
     try {
-      const rejArray = Object.entries(rejections)
-        .filter(([, v]) => v)
-        .map(([id_produit, v]) => ({
-          id_produit: parseInt(id_produit),
-          rejected: v.rejected,
-          motif: v.motif || 'Non spécifié',
-        }))
-
+      const rejArray = Object.entries(rejections).filter(([, v]) => v).map(([id_produit, v]) => ({
+        id_produit: parseInt(id_produit), rejected: v.rejected, motif: v.motif || 'Non spécifié',
+      }))
       await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/finalize`, {
-        code_verification: codeVerification,
-        rejections: rejArray.length > 0 ? rejArray : undefined,
+        code_verification: codeVerification, rejections: rejArray.length > 0 ? rejArray : undefined,
       })
       showToast('✅ Livraison finalisée !')
-      setFinalizeOpen(null)
-      loadData()
-    } catch (e) {
-      showToast('❌ ' + e.message)
-    } finally {
-      setSubmitting(false)
-    }
+      setFinalizeOpen(null); loadData()
+    } catch (e) { showToast('❌ ' + e.message) }
+    finally { setSubmitting(false) }
   }
 
-  const activeDeliveries = deliveries.filter(d =>
-    d.statut_livraison !== 'Livree' && d.statut_livraison !== 'Echec'
-  )
-  const historyDeliveries = deliveries.filter(d =>
-    d.statut_livraison === 'Livree' || d.statut_livraison === 'Echec'
-  )
+  const activeDeliveries = deliveries.filter(d => d.statut_livraison !== 'Livree' && d.statut_livraison !== 'Echec')
+  const historyDeliveries = deliveries.filter(d => d.statut_livraison === 'Livree' || d.statut_livraison === 'Echec')
+  const showList = activeTab === 'actives' ? activeDeliveries : activeTab === 'disponibles' ? available : historyDeliveries
 
-  const showList = activeTab === 'actives' ? activeDeliveries
-    : activeTab === 'disponibles' ? available
-    : historyDeliveries
+  function statusStyle(statut) {
+    const map = {
+      'En attente': { bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
+      'Validee': { bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
+      'Collectee': { bg: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5' },
+      'En cours de livraison': { bg: isDark ? 'rgba(216,90,48,0.15)' : '#FAECE7', color: isDark ? '#E87D55' : '#993C1D' },
+      'Livree': { bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
+      'Echec': { bg: isDark ? 'rgba(239,68,68,0.15)' : '#FEE2E2', color: isDark ? '#F87171' : '#B91C1C' },
+    }
+    return map[statut] || map['En attente']
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-        <div className="text-sm font-bold" style={{ color: 'var(--text-muted)' }}>Chargement des courses…</div>
+      <div className="px-4 py-4 flex flex-col gap-4">
+        <div className="grid grid-cols-3 gap-3">{[1,2,3].map(i => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />)}</div>
+        <div className="rounded-2xl h-40 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />
       </div>
     )
   }
@@ -130,8 +94,7 @@ export default function CommandesLivreur() {
     <div className="px-4 py-4 flex flex-col gap-4">
 
       {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"
-          style={{ background: '#D85A30' }}>
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl" style={{ background: '#D85A30' }}>
           {toast}
         </div>
       )}
@@ -139,13 +102,18 @@ export default function CommandesLivreur() {
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Actives', value: activeDeliveries.length, accent: '#D85A30' },
-          { label: 'Disponibles', value: available.length, accent: '#BA7517' },
-          { label: 'Historique', value: historyDeliveries.length, accent: '#1D9E75' },
+          { label: 'Actives', value: activeDeliveries.length, icon: '🚚',
+            bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3', color: isDark ? '#E87D55' : '#993C1D' },
+          { label: 'Disponibles', value: available.length, icon: '📦',
+            bg: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', border: isDark ? '#BA7517' : '#FAC775', color: isDark ? '#F3A83B' : '#854F0B' },
+          { label: 'Historique', value: historyDeliveries.length, icon: '📋',
+            bg: isDark ? 'rgba(29,158,117,0.12)' : '#E1F5EE', border: isDark ? '#2DC491' : '#9FE1CB', color: isDark ? '#34D399' : '#0F6E56' },
         ].map(s => (
-          <div key={s.label} className="rounded-2xl p-3" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <div key={s.label} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
+            style={{ background: s.bg, border: `1.5px solid ${s.border}` }}>
+            <div className="text-lg mb-1">{s.icon}</div>
             <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
-            <div className="font-black text-xl" style={{ color: s.accent }}>{s.value}</div>
+            <div className="font-black text-xl" style={{ color: s.color }}>{s.value}</div>
           </div>
         ))}
       </div>
@@ -158,7 +126,7 @@ export default function CommandesLivreur() {
           { id: 'historique', label: '📋 Historique' },
         ].map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
-            className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer"
+            className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all active:scale-95"
             style={{
               background: activeTab === t.id ? '#D85A30' : 'var(--surface)',
               color: activeTab === t.id ? '#fff' : 'var(--text-secondary)',
@@ -172,15 +140,16 @@ export default function CommandesLivreur() {
       {/* LIST */}
       <div className="flex flex-col gap-3">
         {showList.length === 0 && (
-          <div className="text-center text-sm py-10" style={{ color: 'var(--text-muted)' }}>
+          <div className="text-center text-sm py-10 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-muted)' }}>
             {activeTab === 'actives' && 'Aucune course active.'}
-            {activeTab === 'disponibles' && 'Aucune course disponible pour le moment.'}
+            {activeTab === 'disponibles' && 'Aucune course disponible.'}
             {activeTab === 'historique' && 'Aucune livraison dans l\'historique.'}
           </div>
         )}
 
         {activeTab === 'disponibles' && showList.map(c => (
-          <div key={c.id_commande} className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <div key={c.id_commande} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
+            style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
                 <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{c.id_commande}</div>
@@ -188,41 +157,31 @@ export default function CommandesLivreur() {
                   {c.detailsCommande?.[0]?.produit?.vendeur?.localisation_marche || 'Marché'} → {c.client?.adresse_livraison || '—'}
                 </div>
               </div>
-              <div className="text-sm font-black" style={{ color: '#D85A30' }}>{(c.frais_livraison || 1500).toLocaleString()} F</div>
+              <div className="text-sm font-black" style={{ color: isDark ? '#E87D55' : '#993C1D' }}>{(c.frais_livraison || 1500).toLocaleString()} F</div>
             </div>
             <div className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
               {c.detailsCommande?.length || 0} produit(s) · {c.detailsCommande?.map(d => d.produit?.nom).filter(Boolean).join(', ')}
             </div>
-            <div className="flex items-center justify-between">
-              <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                {new Date(c.date_creation).toLocaleDateString('fr-FR')}
-              </div>
-            </div>
+            <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{new Date(c.date_creation).toLocaleDateString('fr-FR')}</div>
           </div>
         ))}
 
         {activeTab === 'actives' && showList.map(d => {
           const cmd = d.commande
-          const statutLabel = STATUS_LABEL[d.statut_livraison] || d.statut_livraison
-          const statutColor = STATUS_COLOR[d.statut_livraison] || '#BA7517'
+          const st = statusStyle(d.statut_livraison)
           return (
-            <div key={d.id_livraison} className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+            <div key={d.id_livraison} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
+              style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{cmd?.id_commande}</div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {cmd?.client?.utilisateur?.prenom} {cmd?.client?.utilisateur?.nom}
-                  </div>
+                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{cmd?.client?.utilisateur?.prenom} {cmd?.client?.utilisateur?.nom}</div>
                 </div>
-                <span className="rounded-2xl px-3 py-1 text-[11px] font-bold" style={{ background: statutColor + '22', color: statutColor }}>
-                  {statutLabel}
+                <span className="rounded-2xl px-3 py-1 text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>
+                  {STATUS_LABEL[d.statut_livraison] || d.statut_livraison}
                 </span>
               </div>
-
-              <div className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
-                📍 {cmd?.client?.adresse_livraison || '—'}
-              </div>
-
+              <div className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>📍 {cmd?.client?.adresse_livraison || '—'}</div>
               <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
                 <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                   <div className="font-semibold">Montant</div>
@@ -233,10 +192,9 @@ export default function CommandesLivreur() {
                   <div>{cmd?.detailsCommande?.length || 0} article(s)</div>
                 </div>
               </div>
-
               {d.statut_livraison !== 'Livree' && (
                 <button onClick={() => openFinalize(d)}
-                  className="w-full rounded-2xl py-3 font-black text-white cursor-pointer"
+                  className="w-full rounded-2xl py-3 font-black text-white cursor-pointer transition-all active:scale-98"
                   style={{ background: '#D85A30', border: 'none' }}>
                   ✅ Finaliser la livraison
                 </button>
@@ -248,12 +206,13 @@ export default function CommandesLivreur() {
         {activeTab === 'historique' && showList.map(d => {
           const cmd = d.commande
           const isLivree = d.statut_livraison === 'Livree'
+          const st = statusStyle(d.statut_livraison)
           return (
-            <div key={d.id_livraison} className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+            <div key={d.id_livraison} className="rounded-2xl p-4"
+              style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
               <div className="flex items-center justify-between mb-2">
                 <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{cmd?.id_commande}</div>
-                <span className="rounded-2xl px-3 py-1 text-[11px] font-bold"
-                  style={{ background: isLivree ? '#E1F5EE' : '#FDE8E2', color: isLivree ? '#0F6E56' : '#D85A30' }}>
+                <span className="rounded-2xl px-3 py-1 text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>
                   {isLivree ? '✅ Livrée' : '❌ Échec'}
                 </span>
               </div>
@@ -281,16 +240,14 @@ export default function CommandesLivreur() {
               <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Finaliser la livraison</h2>
               <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{finalizeOpen.commande?.id_commande}</p>
 
-              {/* CODE VERIFICATION */}
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>🔐 Code de vérification du client (RG06)</div>
+                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>🔐 Code de vérification (RG06)</div>
                 <input type="text" value={codeVerification} onChange={e => setCodeVerification(e.target.value)}
-                  placeholder="Entrez le code à 6 chiffres"
+                  placeholder="Code à 6 chiffres"
                   className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"
                   style={{ background: 'var(--surface)', border: '2px solid var(--border)', color: 'var(--text-primary)' }} />
               </div>
 
-              {/* REJECTIONS */}
               <div className="mb-4">
                 <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>📦 Produits — refusez si non conformes</div>
                 {finalizeOpen.commande?.detailsCommande?.map(line => (
@@ -298,12 +255,10 @@ export default function CommandesLivreur() {
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{line.produit?.nom}</div>
-                        <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                          {line.quantite_commandee} × {line.prix_vente_applique?.toLocaleString()} F
-                        </div>
+                        <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{line.quantite_commandee} × {line.prix_vente_applique?.toLocaleString()} F</div>
                       </div>
                       <button onClick={() => toggleReject(line.id_produit)}
-                        className="rounded-xl px-3 py-1.5 text-xs font-bold cursor-pointer"
+                        className="rounded-xl px-3 py-1.5 text-xs font-bold cursor-pointer transition-all active:scale-95"
                         style={{
                           background: rejections[line.id_produit] ? '#D85A30' : 'var(--surface)',
                           color: rejections[line.id_produit] ? '#fff' : 'var(--text-muted)',
@@ -324,9 +279,9 @@ export default function CommandesLivreur() {
               </div>
 
               <button onClick={handleFinalize} disabled={submitting || !codeVerification.trim()}
-                className="w-full py-4 rounded-2xl text-white font-black text-sm cursor-pointer"
+                className="w-full py-4 rounded-2xl text-white font-black text-sm cursor-pointer transition-all active:scale-98"
                 style={{
-                  background: (!codeVerification.trim() || submitting) ? '#888780' : '#D85A30',
+                  background: (!codeVerification.trim() || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
                   border: 'none', opacity: submitting ? 0.7 : 1,
                 }}>
                 {submitting ? '⏳ Envoi…' : '✅ Confirmer la livraison'}
