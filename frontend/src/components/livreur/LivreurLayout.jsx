@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext'
 const NAV_TABS = [
   { icon: '📊', label: 'Accueil', path: '/livreur/dashboard' },
   { icon: '🛒', label: 'Commandes', path: '/livreur/commandes' },
+  { icon: '💰', label: 'Gains', path: '/livreur/gains' },
+  { icon: '📋', label: 'Historique', path: '/livreur/historique' },
   { icon: '↩️', label: 'Retours', path: '/livreur/retours' },
   { icon: '👤', label: 'Profil', path: '/livreur/profil' },
 ]

@@ -20,6 +20,9 @@ import VendeurProfil from './pages/vendeur/VendeurProfil'
 import Livreur from './pages/livreur/Livreur'
 import CommandesLivreur from './pages/livreur/Commandes'
 import RetourLivreur from './pages/livreur/Retours'
+import GainsLivreur from './pages/livreur/Gains'
+import HistoriqueLivreur from './pages/livreur/Historique'
+import LivreurProfil from './pages/livreur/LivreurProfil'
 import Admin from './pages/admin/Admin'
 import Inscription from './pages/auth/Inscription'
 import ForgotPassword from './pages/auth/ForgotPassword'
@@ -88,8 +91,10 @@ export default function App() {
         <Route path="/livreur" element={<LivreurLayout />}>
           <Route path="dashboard" element={<Livreur />} />
           <Route path="commandes" element={<CommandesLivreur />} />
+          <Route path="gains" element={<GainsLivreur />} />
+          <Route path="historique" element={<HistoriqueLivreur />} />
           <Route path="retours" element={<RetourLivreur />} />
-          <Route path="profil" element={<Profil />} />
+          <Route path="profil" element={<LivreurProfil />} />
         </Route>
         <Route path="/admin/dashboard" element={<Admin />} />
 

@@ -59,7 +59,7 @@ html, body, #root {
 /* Global themed scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--text-muted) transparent;
+  scrollbar-color: var(--accent) transparent;
 }
 *::-webkit-scrollbar {
   width: 6px;
@@ -69,11 +69,11 @@ html, body, #root {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: var(--text-muted);
+  background: var(--accent);
   border-radius: 999px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+  background: var(--accent-dark);
 }
 
 /* ── Override webkit autofill styling to match active theme ── */
