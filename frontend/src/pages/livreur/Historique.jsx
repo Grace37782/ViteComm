@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { CheckCircle, Truck, XCircle, Undo2 } from 'lucide-react'
+import { CheckCircle, Truck, XCircle, Undo2, ChevronDown } from 'lucide-react'
+
+const PAGE_SIZE = 10
 
 export default function Historique() {
   const { resolved } = useTheme()
@@ -10,6 +12,7 @@ export default function Historique() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
     api.get('/livreur/historique')
@@ -19,6 +22,8 @@ export default function Historique() {
   }, [])
 
   const filtered = filter === 'all' ? deliveries : deliveries.filter(d => d.statut_livraison === filter)
+  const visibleItems = filtered.slice(0, visibleCount)
+  const hasMore = visibleCount < filtered.length
 
   function statusStyle(statut) {
     const map = {
@@ -71,7 +76,7 @@ export default function Historique() {
           { id: 'En cours de livraison', label: <><Truck size={12} className="inline align-middle" /> En cours</> },
           { id: 'Echec', label: <><XCircle size={12} className="inline align-middle" /> Échecs</> },
         ].map(f => (
-          <button key={f.id} onClick={() => setFilter(f.id)}
+          <button key={f.id} onClick={() => { setFilter(f.id); setVisibleCount(PAGE_SIZE) }}
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer whitespace-nowrap transition-all active:scale-95"
             style={{
               background: filter === f.id ? '#D85A30' : 'var(--surface)',
@@ -91,7 +96,7 @@ export default function Historique() {
           </div>
         )}
 
-        {filtered.map(d => {
+        {visibleItems.map(d => {
           const cmd = d.commande
           const st = statusStyle(d.statut_livraison)
           const clientName = cmd?.client?.utilisateur ? `${cmd.client.utilisateur.prenom} ${cmd.client.utilisateur.nom}` : '—'
@@ -131,6 +136,14 @@ export default function Historique() {
             </div>
           )
         })}
+
+        {hasMore && (
+          <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+            className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+            style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+            <ChevronDown size={14} /> Charger plus ({filtered.length - visibleCount} restant{filtered.length - visibleCount > 1 ? 's' : ''})
+          </button>
+        )}
       </div>
     </div>
   )

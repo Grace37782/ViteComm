@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { Undo2, Package, Truck, Store, Rocket, CheckCircle } from 'lucide-react'
+import { Undo2, Package, Truck, Store, Rocket, CheckCircle, ChevronDown } from 'lucide-react'
+
+const PAGE_SIZE = 10
 
 export default function RetourLivreur() {
   const { resolved } = useTheme()
@@ -10,6 +12,7 @@ export default function RetourLivreur() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
     api.get('/livreur/retours')
@@ -83,7 +86,7 @@ export default function RetourLivreur() {
         </div>
       )}
 
-      {retours.map(retour => {
+      {retours.slice(0, visibleCount).map(retour => {
         const st = statutStyle(retour.statut_retour)
         return (
           <div key={retour.id_litige} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
@@ -127,6 +130,14 @@ export default function RetourLivreur() {
           </div>
         )
       })}
+
+      {retours.length > visibleCount && (
+        <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+          className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+          <ChevronDown size={14} /> Charger plus ({retours.length - visibleCount} restant{retours.length - visibleCount > 1 ? 's' : ''})
+        </button>
+      )}
     </div>
   )
 }

@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { Wallet, Truck, Undo2, ClipboardList, Calendar } from 'lucide-react'
+import { Wallet, Truck, Undo2, ClipboardList, Calendar, ChevronDown } from 'lucide-react'
+
+const PAGE_SIZE = 10
 
 export default function Gains() {
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
   const [gains, setGains] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
     api.get('/livreur/gains')
@@ -67,7 +70,7 @@ export default function Gains() {
         {(!gains?.livraisons || gains.livraisons.length === 0) && (
           <div className="text-xs py-4 text-center" style={{ color: 'var(--text-muted)' }}>Aucun gain enregistré.</div>
         )}
-        {gains?.livraisons?.map(d => (
+        {(gains?.livraisons || []).slice(0, visibleCount).map(d => (
           <div key={d.id_livraison} className="flex items-center justify-between rounded-xl px-4 py-3 mb-2 transition-all hover:shadow-sm"
             style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
             <div className="flex-1 min-w-0">
@@ -82,6 +85,13 @@ export default function Gains() {
             </div>
           </div>
         ))}
+        {gains?.livraisons && gains.livraisons.length > visibleCount && (
+          <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+            className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+            style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+            <ChevronDown size={14} /> Charger plus ({gains.livraisons.length - visibleCount} restant{gains.livraisons.length - visibleCount > 1 ? 's' : ''})
+          </button>
+        )}
       </div>
 
       {/* MONTHLY */}

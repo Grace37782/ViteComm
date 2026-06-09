@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { XCircle, CheckCircle, AlertTriangle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, X } from 'lucide-react'
+import { XCircle, CheckCircle, AlertTriangle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, X, ChevronDown } from 'lucide-react'
+
+const PAGE_SIZE = 10
 
 export default function CommandesLivreur() {
   const { resolved } = useTheme()
@@ -15,6 +17,7 @@ export default function CommandesLivreur() {
   const [rejections, setRejections] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState('actives')
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => { loadData() }, [])
 
@@ -84,6 +87,8 @@ export default function CommandesLivreur() {
   const activeDeliveries = deliveries.filter(d => d.statut_livraison !== 'Livree' && d.statut_livraison !== 'Echec')
   const historyDeliveries = deliveries.filter(d => d.statut_livraison === 'Livree' || d.statut_livraison === 'Echec')
   const showList = activeTab === 'actives' ? activeDeliveries : activeTab === 'disponibles' ? available : historyDeliveries
+  const visibleItems = showList.slice(0, visibleCount)
+  const hasMore = visibleCount < showList.length
 
   function statusStyle(statut) {
     const map = {
@@ -150,7 +155,7 @@ export default function CommandesLivreur() {
           { id: 'disponibles', label: <><Package size={12} className="inline align-middle" /> Disponibles</> },
           { id: 'historique', label: <><ClipboardList size={12} className="inline align-middle" /> Historique</> },
         ].map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)}
+          <button key={t.id} onClick={() => { setActiveTab(t.id); setVisibleCount(PAGE_SIZE) }}
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all active:scale-95"
             style={{
               background: activeTab === t.id ? '#D85A30' : 'var(--surface)',
@@ -173,7 +178,7 @@ export default function CommandesLivreur() {
         )}
 
         {/* DISPONIBLES - can accept */}
-        {activeTab === 'disponibles' && showList.map(c => (
+        {activeTab === 'disponibles' && visibleItems.map(c => (
           <div key={c.id_commande} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
             <div className="flex items-start justify-between gap-3 mb-3">
@@ -200,7 +205,7 @@ export default function CommandesLivreur() {
         ))}
 
         {/* ACTIVES - show next action based on statut */}
-        {activeTab === 'actives' && showList.map(d => {
+        {activeTab === 'actives' && visibleItems.map(d => {
           const cmd = d.commande
           const st = statusStyle(d.statut_livraison)
           const action = nextAction(d)
@@ -239,7 +244,7 @@ export default function CommandesLivreur() {
         })}
 
         {/* HISTORIQUE */}
-        {activeTab === 'historique' && showList.map(d => {
+        {activeTab === 'historique' && visibleItems.map(d => {
           const cmd = d.commande
           const isLivree = d.statut_livraison === 'Livree'
           const st = statusStyle(d.statut_livraison)
@@ -261,6 +266,14 @@ export default function CommandesLivreur() {
             </div>
           )
         })}
+
+        {hasMore && (
+          <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+            className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+            style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+            <ChevronDown size={14} /> Charger plus ({showList.length - visibleCount} restant{showList.length - visibleCount > 1 ? 's' : ''})
+          </button>
+        )}
       </div>
 
       {/* FINALIZE MODAL */}
