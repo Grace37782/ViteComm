@@ -1,40 +1,63 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
-
-const RETOURS_INIT = [
-  { id: 701, commandeId: 1203, client: 'Awa D.', origine: 'Akpakpa Centre', destination: 'Haie Vive', qte: 3, montant: 300, motif: 'Articles rejetés après inspection', statut: 'attente' },
-  { id: 702, commandeId: 1215, client: 'M. Koffi', origine: 'Zogbo', destination: 'Cococodji', qte: 1, montant: 150, motif: 'Reprise produit fragile', statut: 'en_cours' },
-]
+import { api } from '../../services/api'
 
 export default function RetourLivreur() {
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
-  const [retours, setRetours] = useState(RETOURS_INIT)
+  const [retours, setRetours] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState(null)
 
-  function changerStatut(id) {
-    setRetours(prev => prev.map(r => {
-      if (r.id !== id) return r
-      if (r.statut === 'attente') return { ...r, statut: 'en_cours' }
-      if (r.statut === 'en_cours') return { ...r, statut: 'termine' }
-      return r
-    }))
+  useEffect(() => {
+    api.get('/livreur/returns')
+      .then(data => setRetours(data))
+      .catch(e => showToast('❌ ' + e.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000) }
+
+  async function changerStatut(id_litige, current) {
+    const next = current === 'a_recuperer' ? 'en_cours' : current === 'en_cours' ? 'recupere' : null
+    if (!next) return
+    try {
+      await api.put(`/livreur/returns/${id_litige}`, { statut_retour: next })
+      setRetours(prev => prev.map(r => r.id_litige === id_litige ? { ...r, statut_retour: next } : r))
+      showToast(next === 'recupere' ? '✅ Retour terminé' : '✅ Statut mis à jour')
+    } catch (e) { showToast('❌ ' + e.message) }
   }
 
   function statutStyle(statut) {
     const map = {
-      attente: { label: 'À récupérer', bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
+      a_recuperer: { label: 'À récupérer', bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
       en_cours: { label: 'En cours', bg: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5' },
-      termine: { label: 'Terminé', bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
+      recupere: { label: 'Récupéré', bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
     }
-    return map[statut] || map.attente
+    return map[statut] || map.a_recuperer
   }
 
   const totalRetours = retours.length
-  const aRecuperer = retours.filter(r => r.statut === 'attente').length
-  const enCours = retours.filter(r => r.statut === 'en_cours').length
+  const aRecuperer = retours.filter(r => r.statut_retour === 'a_recuperer').length
+  const enCours = retours.filter(r => r.statut_retour === 'en_cours').length
+
+  if (loading) {
+    return (
+      <div className="px-4 py-4 flex flex-col gap-4">
+        <div className="grid grid-cols-3 gap-3">{[1,2,3].map(i => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />)}</div>
+        <div className="rounded-2xl h-32 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />
+      </div>
+    )
+  }
 
   return (
     <div className="px-4 py-4 flex flex-col gap-4">
+
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl" style={{ background: '#D85A30' }}>
+          {toast}
+        </div>
+      )}
 
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
@@ -56,47 +79,53 @@ export default function RetourLivreur() {
       </div>
 
       {/* LIST */}
+      {retours.length === 0 && (
+        <div className="text-center text-sm py-10 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-muted)' }}>
+          Aucun retour à récupérer.
+        </div>
+      )}
+
       {retours.map(retour => {
-        const st = statutStyle(retour.statut)
+        const st = statutStyle(retour.statut_retour)
         return (
-          <div key={retour.id} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
+          <div key={retour.id_litige} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
             <div className="flex items-center justify-between gap-3 mb-3">
               <div>
-                <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Retour #{retour.id}</div>
-                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Commande #{retour.commandeId} · {retour.client}</div>
+                <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Retour #{retour.id_litige}</div>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Commande #{retour.id_commande} · {retour.client}</div>
               </div>
               <span className="rounded-2xl px-3 py-1 text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>
                 {st.label}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
-              <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                <div className="font-semibold">Point de collecte</div>
-                <div>{retour.origine}</div>
-              </div>
-              <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                <div className="font-semibold">Destination</div>
-                <div>{retour.destination}</div>
-              </div>
+
+            <div className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
+              🏪 Vendeur : {retour.vendeur}
             </div>
+
             <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
               <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="font-semibold">Articles</div>
-                <div>{retour.qte} article{retour.qte > 1 ? 's' : ''}</div>
+                {retour.articles?.map((a, i) => (
+                  <div key={i}>{a.nom} × {a.quantite}</div>
+                )) || <div>{retour.qte} article(s)</div>}
               </div>
               <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                <div className="font-semibold">Frais</div>
-                <div>{retour.montant.toLocaleString()} F</div>
+                <div className="font-semibold">Montant</div>
+                <div>{retour.montant?.toLocaleString()} F</div>
               </div>
             </div>
-            <div className="text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Motif: {retour.motif}</div>
-            <button onClick={() => changerStatut(retour.id)}
-              className="w-full rounded-2xl py-3 font-black text-white cursor-pointer transition-all active:scale-98"
-              style={{ background: retour.statut === 'termine' ? (isDark ? '#3A3B38' : '#888780') : '#D85A30', border: 'none' }}
-              disabled={retour.statut === 'termine'}>
-              {retour.statut === 'attente' ? 'Confirmer la récupération' : retour.statut === 'en_cours' ? 'Marquer comme livré' : 'Retour terminé'}
-            </button>
+
+            <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Motif : {retour.motif}</div>
+
+            {retour.statut_retour !== 'recupere' && (
+              <button onClick={() => changerStatut(retour.id_litige, retour.statut_retour)}
+                className="w-full rounded-2xl py-3 font-black text-white cursor-pointer transition-all active:scale-98"
+                style={{ background: '#D85A30', border: 'none' }}>
+                {retour.statut_retour === 'a_recuperer' ? '🚀 Commencer la récupération' : '✅ Marquer comme récupéré'}
+              </button>
+            )}
           </div>
         )
       })}

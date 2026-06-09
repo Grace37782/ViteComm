@@ -2,15 +2,6 @@ import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
 
-const STATUS_LABEL = {
-  'En attente': 'En attente',
-  'Validee': 'Validée',
-  'Collectee': 'Collectée',
-  'En cours de livraison': 'En route',
-  'Livree': 'Livrée',
-  'Echec': 'Échec',
-}
-
 export default function CommandesLivreur() {
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
@@ -37,6 +28,30 @@ export default function CommandesLivreur() {
   }
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000) }
+
+  async function accepterCourse(id_commande) {
+    try {
+      await api.post(`/livreur/deliveries/${id_commande}/accept`)
+      showToast('✅ Course acceptée !')
+      loadData()
+    } catch (e) { showToast('❌ ' + e.message) }
+  }
+
+  async function marquerCollectee(id_commande) {
+    try {
+      await api.post(`/livreur/deliveries/${id_commande}/collect`, { code_verification: 'VendeurOK' })
+      showToast('✅ Collecte confirmée !')
+      loadData()
+    } catch (e) { showToast('❌ ' + e.message) }
+  }
+
+  async function marquerEnRoute(id_commande) {
+    try {
+      await api.post(`/livreur/deliveries/${id_commande}/depart`)
+      showToast('✅ Départ enregistré !')
+      loadData()
+    } catch (e) { showToast('❌ ' + e.message) }
+  }
 
   function openFinalize(delivery) { setFinalizeOpen(delivery); setCodeVerification(''); setRejections({}) }
 
@@ -73,12 +88,21 @@ export default function CommandesLivreur() {
     const map = {
       'En attente': { bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
       'Validee': { bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
-      'Collectee': { bg: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5' },
+      'En cours de collecte': { bg: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5' },
+      'Collectee': { bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
       'En cours de livraison': { bg: isDark ? 'rgba(216,90,48,0.15)' : '#FAECE7', color: isDark ? '#E87D55' : '#993C1D' },
       'Livree': { bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
       'Echec': { bg: isDark ? 'rgba(239,68,68,0.15)' : '#FEE2E2', color: isDark ? '#F87171' : '#B91C1C' },
     }
     return map[statut] || map['En attente']
+  }
+
+  function nextAction(d) {
+    const s = d.statut_livraison
+    if (s === 'En cours de collecte') return { label: '📦 Confirmer la collecte', fn: () => marquerCollectee(d.commande.id_commande) }
+    if (s === 'Collectee') return { label: '🚚 Partir en livraison', fn: () => marquerEnRoute(d.commande.id_commande) }
+    if (s === 'En cours de livraison') return { label: '✅ Finaliser la livraison', fn: () => openFinalize(d) }
+    return null
   }
 
   if (loading) {
@@ -147,6 +171,7 @@ export default function CommandesLivreur() {
           </div>
         )}
 
+        {/* DISPONIBLES - can accept */}
         {activeTab === 'disponibles' && showList.map(c => (
           <div key={c.id_commande} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
@@ -156,19 +181,28 @@ export default function CommandesLivreur() {
                 <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                   {c.detailsCommande?.[0]?.produit?.vendeur?.localisation_marche || 'Marché'} → {c.client?.adresse_livraison || '—'}
                 </div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  👤 {c.client?.utilisateur?.prenom} {c.client?.utilisateur?.nom}
+                </div>
               </div>
               <div className="text-sm font-black" style={{ color: isDark ? '#E87D55' : '#993C1D' }}>{(c.frais_livraison || 1500).toLocaleString()} F</div>
             </div>
             <div className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
               {c.detailsCommande?.length || 0} produit(s) · {c.detailsCommande?.map(d => d.produit?.nom).filter(Boolean).join(', ')}
             </div>
-            <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{new Date(c.date_creation).toLocaleDateString('fr-FR')}</div>
+            <button onClick={() => accepterCourse(c.id_commande)}
+              className="w-full rounded-2xl py-3 font-black text-white cursor-pointer transition-all active:scale-98"
+              style={{ background: '#D85A30', border: 'none' }}>
+              🚀 Accepter cette course
+            </button>
           </div>
         ))}
 
+        {/* ACTIVES - show next action based on statut */}
         {activeTab === 'actives' && showList.map(d => {
           const cmd = d.commande
           const st = statusStyle(d.statut_livraison)
+          const action = nextAction(d)
           return (
             <div key={d.id_livraison} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
               style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
@@ -178,7 +212,7 @@ export default function CommandesLivreur() {
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{cmd?.client?.utilisateur?.prenom} {cmd?.client?.utilisateur?.nom}</div>
                 </div>
                 <span className="rounded-2xl px-3 py-1 text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>
-                  {STATUS_LABEL[d.statut_livraison] || d.statut_livraison}
+                  {d.statut_livraison}
                 </span>
               </div>
               <div className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>📍 {cmd?.client?.adresse_livraison || '—'}</div>
@@ -192,17 +226,18 @@ export default function CommandesLivreur() {
                   <div>{cmd?.detailsCommande?.length || 0} article(s)</div>
                 </div>
               </div>
-              {d.statut_livraison !== 'Livree' && (
-                <button onClick={() => openFinalize(d)}
+              {action && (
+                <button onClick={action.fn}
                   className="w-full rounded-2xl py-3 font-black text-white cursor-pointer transition-all active:scale-98"
                   style={{ background: '#D85A30', border: 'none' }}>
-                  ✅ Finaliser la livraison
+                  {action.label}
                 </button>
               )}
             </div>
           )
         })}
 
+        {/* HISTORIQUE */}
         {activeTab === 'historique' && showList.map(d => {
           const cmd = d.commande
           const isLivree = d.statut_livraison === 'Livree'
@@ -241,7 +276,7 @@ export default function CommandesLivreur() {
               <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{finalizeOpen.commande?.id_commande}</p>
 
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>🔐 Code de vérification (RG06)</div>
+                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>🔐 Code de vérification du client (RG06)</div>
                 <input type="text" value={codeVerification} onChange={e => setCodeVerification(e.target.value)}
                   placeholder="Code à 6 chiffres"
                   className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"

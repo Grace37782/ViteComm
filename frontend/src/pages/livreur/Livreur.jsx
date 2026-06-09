@@ -27,10 +27,7 @@ export default function Livreur() {
       .finally(() => setLoading(false))
   }, [])
 
-  function showToast(msg) {
-    setToast(msg)
-    setTimeout(() => setToast(null), 3000)
-  }
+  function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   async function toggleDispo() {
     const newVal = !dispo
@@ -38,28 +35,20 @@ export default function Livreur() {
     setSavingDispo(true)
     try {
       await api.put('/livreur/availability', {
-        est_disponible: newVal,
-        distance_marche: distanceAction,
-        heure_debut_dispo: horaireDebut,
-        heure_fin_dispo: horaireFin,
+        est_disponible: newVal, distance_marche: distanceAction,
+        heure_debut_dispo: horaireDebut, heure_fin_dispo: horaireFin,
       })
       showToast(newVal ? '✅ Vous êtes en ligne' : '⏸️ Hors ligne')
-    } catch (e) {
-      setDispo(!newVal)
-      showToast('❌ ' + e.message)
-    } finally {
-      setSavingDispo(false)
-    }
+    } catch (e) { setDispo(!newVal); showToast('❌ ' + e.message) }
+    finally { setSavingDispo(false) }
   }
 
   async function saveDispo() {
     setSavingDispo(true)
     try {
       await api.put('/livreur/availability', {
-        est_disponible: dispo,
-        distance_marche: distanceAction,
-        heure_debut_dispo: horaireDebut,
-        heure_fin_dispo: horaireFin,
+        est_disponible: dispo, distance_marche: distanceAction,
+        heure_debut_dispo: horaireDebut, heure_fin_dispo: horaireFin,
       })
       showToast('✅ Disponibilité mise à jour')
     } catch (e) { showToast('❌ ' + e.message) }
@@ -75,9 +64,7 @@ export default function Livreur() {
             <div className="flex-1"><div className="h-4 rounded w-32 mb-2" style={{ background: 'var(--border)' }} /><div className="h-3 rounded w-48" style={{ background: 'var(--border)' }} /></div>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          {[1, 2, 3].map(i => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />)}
-        </div>
+        <div className="grid grid-cols-3 gap-3">{[1,2,3].map(i => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />)}</div>
       </div>
     )
   }
@@ -88,22 +75,20 @@ export default function Livreur() {
     <div className="px-4 py-4 flex flex-col gap-4">
 
       {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"
-          style={{ background: '#D85A30' }}>
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl" style={{ background: '#D85A30' }}>
           {toast}
         </div>
       )}
 
-      {/* PROFIL & STATS */}
-      <div className="rounded-2xl p-4"
-        style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow)' }}>
+      {/* PROFIL */}
+      <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow)' }}>
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg flex-shrink-0"
-            style={{ background: '#D85A30', color: '#fff' }}>
+            style={{ background: isDark ? 'rgba(216,90,48,0.2)' : '#D85A30', color: '#fff' }}>
             🏍️
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Espace livreur</div>
+            <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{dash?.prenom} {dash?.nom}</div>
             <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
               {dash?.vehicule?.type_vehicule || '—'} · {dash?.vehicule?.immatriculation || '—'}
             </div>
@@ -113,20 +98,20 @@ export default function Livreur() {
               <span className="font-black text-lg" style={{ color: '#D85A30' }}>{score.toFixed(1)}</span>
               <span className="text-sm">⭐</span>
             </div>
-            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{dash?.courses_effectuees || 0} courses</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{dash?.nb_avis || 0} avis</div>
           </div>
         </div>
       </div>
 
-      {/* STATS SHINY CARDS */}
+      {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Gains', value: `${(dash?.total_gains || 0).toLocaleString()} F`, icon: '💰',
             bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3', color: isDark ? '#E87D55' : '#993C1D' },
-          { label: 'Courses', value: dash?.courses_effectuees || 0, icon: '📦',
+          { label: 'Actives', value: dash?.courses_actives || 0, icon: '🚚',
             bg: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', border: isDark ? '#BA7517' : '#FAC775', color: isDark ? '#F3A83B' : '#854F0B' },
-          { label: 'Réputation', value: `${score.toFixed(1)} ⭐`, icon: '⭐',
-            bg: isDark ? 'rgba(29,158,117,0.12)' : '#E1F5EE', border: isDark ? '#2DC491' : '#9FE1CB', color: isDark ? '#34D399' : '#0F6E56' },
+          { label: 'Retours', value: dash?.retours_en_attente || 0, icon: '↩️',
+            bg: isDark ? 'rgba(239,68,68,0.12)' : '#FEE2E2', border: isDark ? '#EF4444' : '#FECACA', color: isDark ? '#F87171' : '#B91C1C' },
         ].map(card => (
           <div key={card.label} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
             style={{ background: card.bg, border: `1.5px solid ${card.border}` }}>
@@ -138,8 +123,7 @@ export default function Livreur() {
       </div>
 
       {/* DISPO */}
-      <div className="rounded-2xl p-4"
-        style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+      <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-3">
           <div>
             <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Disponibilité</div>
@@ -148,9 +132,7 @@ export default function Livreur() {
           <button onClick={toggleDispo} disabled={savingDispo}
             className="rounded-2xl px-5 py-2 font-black text-sm cursor-pointer transition-all active:scale-95"
             style={{
-              background: dispo
-                ? (isDark ? 'rgba(216,90,48,0.2)' : '#D85A30')
-                : 'var(--surface-alt)',
+              background: dispo ? (isDark ? 'rgba(216,90,48,0.2)' : '#D85A30') : 'var(--surface-alt)',
               color: dispo ? '#fff' : 'var(--text-secondary)',
               border: `1.5px solid ${dispo ? '#D85A30' : 'var(--border)'}`,
               opacity: savingDispo ? 0.6 : 1,
@@ -184,8 +166,7 @@ export default function Livreur() {
       </div>
 
       {/* VÉHICULE */}
-      <div className="rounded-2xl p-4"
-        style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+      <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-3">
           <div>
             <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Mon véhicule</div>
