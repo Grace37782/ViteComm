@@ -37,7 +37,7 @@ export default function MobileDrawer({ navTabs, accentColor, brandLabel, onLogou
     <>
       {/* Hamburger button — only on mobile */}
       <button
-        onClick={() => setOpen(true)}
+        onClick={(e) => { e.stopPropagation(); setOpen(true) }}
         className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl cursor-pointer"
         style={{ background: 'rgba(255,255,255,0.15)', border: 'none' }}
       >
@@ -49,13 +49,14 @@ export default function MobileDrawer({ navTabs, accentColor, brandLabel, onLogou
         <div
           className="md:hidden fixed inset-0 z-[998] transition-opacity duration-300"
           style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
-          onClick={() => setOpen(false)}
+          onClick={(e) => { e.stopPropagation(); setOpen(false) }}
         />
       )}
 
       {/* Drawer */}
       <div
         className="md:hidden fixed top-0 left-0 bottom-0 z-[999] w-72 max-w-[85vw] transition-transform duration-300 ease-out flex flex-col"
+        onClick={(e) => e.stopPropagation()}
         style={{
           transform: open ? 'translateX(0)' : 'translateX(-100%)',
           background: 'var(--surface)',
