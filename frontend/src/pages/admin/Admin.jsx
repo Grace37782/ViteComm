@@ -170,8 +170,8 @@ function DashboardTab({ onNavigate, onLeaderboardReady }) {
       </div>
 
       <LeaderboardSection data={classements} onNavigate={onNavigate} />
-      <ProductRanking title="Produits les plus populaires" items={produits_populaires} color="#1D9E75" />
-      <ProductRanking title="Produits les plus refusés" items={produits_refuses} color="#D85A30" />
+      <ProductRanking title="Produits les plus populaires" items={produits_populaires} color="#1D9E75" onClick={() => onNavigate('products')} />
+      <ProductRanking title="Produits les plus refusés" items={produits_refuses} color="#D85A30" onClick={() => onNavigate('products')} />
     </div>
   )
 }
@@ -221,11 +221,16 @@ function LeaderboardCard({ title, items, valueKey, unit, color, onClick }) {
   )
 }
 
-function ProductRanking({ title, items, color }) {
+function ProductRanking({ title, items, color, onClick }) {
   if (!items || items.length === 0) return null
   return (
-    <div className="rounded-2xl p-5 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-      <h3 className="font-black text-sm mb-4" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+    <div onClick={onClick}
+      className={`rounded-2xl p-5 border transition-all ${onClick ? 'cursor-pointer hover:shadow-md hover:scale-[1.01] active:scale-[0.99]' : ''}`}
+      style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+        {onClick && <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />}
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead><tr className="text-left" style={{ color: 'var(--text-muted)' }}>
