@@ -200,6 +200,19 @@ async function main() {
     clients.push(c);
   }
 
+  // Legacy test account
+  const immaculee = await prisma.utilisateur.create({
+    data: {
+      nom: 'Koudjo', prenom: 'Immaculee', email: 'immaculee@gmail.com',
+      telephone: '+237699100099', mot_de_passe: hashedCommon,
+      statut_compte: 'Actif', est_admin: false,
+      photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&h=150&q=80',
+      client: { create: { adresse_livraison: 'Fidjrosse, Cotonou' } }
+    }
+  });
+  await prisma.panier.create({ data: { id_user_client: immaculee.id_user } });
+  clients.push(immaculee);
+
   console.log('Vendeurs (50)...');
   const vendeurs = [];
   for (let i = 0; i < 50; i++) {
