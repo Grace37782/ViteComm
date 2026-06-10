@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import MobileDrawer from '../../components/MobileDrawer'
-import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User } from 'lucide-react'
+import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User, DollarSign, TrendingUp, Store, Motorbike, ShoppingCart, Shield, Mail, Smartphone, Lock, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Building, Search } from 'lucide-react'
 
 const TABS = [
-  { id: 'dashboard', label: 'Tableau de bord', icon: '📊' },
-  { id: 'users', label: 'Utilisateurs', icon: '👥' },
-  { id: 'products', label: 'Produits', icon: '📦' },
-  { id: 'marchés', label: 'Marchés', icon: '🗺️' },
-  { id: 'signalements', label: 'Signalements', icon: '🚩' },
-  { id: 'litiges', label: 'Litiges', icon: '⚖️' },
-  { id: 'profil', label: 'Mon Profil', icon: '👤' },
+  { id: 'dashboard', label: 'Tableau de bord', icon: <LayoutDashboard size={14} /> },
+  { id: 'users', label: 'Utilisateurs', icon: <Users size={14} /> },
+  { id: 'products', label: 'Produits', icon: <Package size={14} /> },
+  { id: 'marchés', label: 'Marchés', icon: <MapPin size={14} /> },
+  { id: 'signalements', label: 'Signalements', icon: <Flag size={14} /> },
+  { id: 'litiges', label: 'Litiges', icon: <Scale size={14} /> },
+  { id: 'profil', label: 'Mon Profil', icon: <User size={14} /> },
 ]
 
 const ADMIN_NAV_TABS = [
@@ -120,7 +120,7 @@ function StatCard({ label, value, icon, color }) {
   return (
     <div className="rounded-2xl p-5 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style={{ background: `${color}18` }}>{icon}</div>
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}18`, color }}>{icon}</div>
         <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{label}</span>
       </div>
       <div className="text-2xl font-black" style={{ color }}>{value}</div>
@@ -144,10 +144,10 @@ function DashboardTab() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Ventes totales" value={`${(financier.total_ventes || 0).toLocaleString()} F`} icon="💰" color="#1D9E75" />
-        <StatCard label="Commissions" value={`${(financier.total_commissions_plateforme || 0).toLocaleString()} F`} icon="📈" color="#0F6E56" />
-        <StatCard label="Litiges ouverts" value={alertes.litiges_ouverts} icon="⚖️" color="#D85A30" />
-        <StatCard label="Signalements" value={alertes.signalements_en_attente} icon="🚩" color="#BA7517" />
+        <StatCard label="Ventes totales" value={`${(financier.total_ventes || 0).toLocaleString()} F`} icon={<DollarSign size={20} />} color="#1D9E75" />
+        <StatCard label="Commissions" value={`${(financier.total_commissions_plateforme || 0).toLocaleString()} F`} icon={<TrendingUp size={20} />} color="#0F6E56" />
+        <StatCard label="Litiges ouverts" value={alertes.litiges_ouverts} icon={<Scale size={20} />} color="#D85A30" />
+        <StatCard label="Signalements" value={alertes.signalements_en_attente} icon={<Flag size={20} />} color="#BA7517" />
       </div>
 
       <LeaderboardSection data={classements} />
@@ -161,9 +161,9 @@ function LeaderboardSection({ data }) {
   if (!data) return null
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <LeaderboardCard title="🏪 Vendeurs (CA)" items={data.vendeurs} valueKey="chiffre_affaires" unit="F" color="#BA7517" />
-      <LeaderboardCard title="🏍️ Livreurs (Volume)" items={data.livreurs} valueKey="volume_livre" unit="F" color="#D85A30" />
-      <LeaderboardCard title="🛒 Clients (Achats)" items={data.clients} valueKey="volume_achat" unit="F" color="#1D9E75" />
+      <LeaderboardCard title={<span className="flex items-center gap-1.5"><Store size={14} /> Vendeurs (CA)</span>} items={data.vendeurs} valueKey="chiffre_affaires" unit="F" color="#BA7517" />
+      <LeaderboardCard title={<span className="flex items-center gap-1.5"><Motorbike size={14} /> Livreurs (Volume)</span>} items={data.livreurs} valueKey="volume_livre" unit="F" color="#D85A30" />
+      <LeaderboardCard title={<span className="flex items-center gap-1.5"><ShoppingCart size={14} /> Clients (Achats)</span>} items={data.clients} valueKey="volume_achat" unit="F" color="#1D9E75" />
     </div>
   )
 }
@@ -251,7 +251,7 @@ function UsersTab() {
   })
 
   function getRole(u) { return u.client ? 'client' : u.vendeur ? 'vendeur' : u.livreur ? 'livreur' : 'admin' }
-  function getRoleIcon(u) { const r = getRole(u); return r === 'client' ? '🛒' : r === 'vendeur' ? '🏪' : r === 'livreur' ? '🏍️' : '🔐' }
+  function getRoleIcon(u) { const r = getRole(u); return r === 'client' ? <ShoppingCart size={16} /> : r === 'vendeur' ? <Store size={16} /> : r === 'livreur' ? <Motorbike size={16} /> : <Shield size={16} /> }
 
   async function loadDetails(id) {
     setSelected(id)
@@ -811,7 +811,7 @@ function ProfilTab({ admin: initialAdmin, onLogout }) {
 function InfoRow({ label, value, icon }) {
   return (
     <div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: 'var(--surface-alt)' }}>
-      <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{icon} {label}</span>
+      <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>{icon} {label}</span>
       <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{value}</span>
     </div>
   )

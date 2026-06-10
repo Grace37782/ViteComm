@@ -317,7 +317,7 @@ Comptes de test principaux :
 | Client | immaculee@gmail.com | password123 |
 | Client | pierre.kamdem@yahoo.com | password123 |
 | Vendeur | adela.agbeke0@shop.com | password123 |
-| Vendeur | samuel.eto0@shop.com | password123 |
+| Vendeur | bodjona.koudjo1@shop.com | password123 |
 | Livreur | vincent.aboubakar0@express.com | password123 |
 | Livreur | karl.toko0@delivery.com | password123 |
 

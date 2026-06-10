@@ -10,6 +10,7 @@ export default function MobileDrawer({ navTabs, accentColor, brandLabel, onLogou
   const [open, setOpen] = useState(false)
 
   const handleTabClick = (tabPath) => {
+    setOpen(false)
     if (onTabSelect) {
       onTabSelect(tabPath)
     } else {
@@ -123,7 +124,7 @@ export default function MobileDrawer({ navTabs, accentColor, brandLabel, onLogou
         {/* Logout button */}
         <div className="px-3 pb-4 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
           <button
-            onClick={onLogout}
+            onClick={() => { setOpen(false); onLogout() }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold cursor-pointer"
             style={{ background: 'rgba(226,75,74,0.08)', color: '#E24B4A', border: 'none' }}
           >
