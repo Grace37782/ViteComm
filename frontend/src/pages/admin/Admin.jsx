@@ -26,13 +26,14 @@ const ADMIN_NAV_TABS = [
 
 const STATUS_COLORS = { Actif: '#1D9E75', Suspendu: '#BA7517', Banni: '#D85A30' }
 
-const stored = localStorage.getItem('vc_user')
-const initialUser = stored ? JSON.parse(stored) : null
-
 export default function Admin() {
   const navigate = useNavigate()
   const [tab, setTab] = useState('dashboard')
-  const [admin] = useState(initialUser?.est_admin ? initialUser : null)
+  const [admin] = useState(() => {
+    const stored = localStorage.getItem('vc_user')
+    const user = stored ? JSON.parse(stored) : null
+    return user?.est_admin ? user : null
+  })
 
   useEffect(() => {
     if (!admin) navigate('/accueil')
