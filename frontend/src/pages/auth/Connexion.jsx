@@ -16,6 +16,8 @@ function messageErreur(err) {
   const msg = err.message?.toLowerCase() || ''
   if (msg === 'network_error')
     return { texte: 'Impossible de joindre le serveur. Vérifiez votre connexion internet.', type: 'network' }
+  if (msg.includes('google') || msg.includes('continuer avec google'))
+    return { texte: err.message || 'Ce compte utilise uniquement la connexion Google.', type: 'google' }
   if (msg.includes('suspendu') || msg.includes('suspended'))
     return { texte: 'Votre compte a été suspendu. Contactez le support ViteComm.', type: 'suspend' }
   if (msg.includes('banni') || msg.includes('banned'))
@@ -34,6 +36,7 @@ const erreurStyles = {
   suspend: { bg: 'rgba(186,117,23,0.15)', border: 'rgba(186,117,23,0.35)', Icon: Lock, iconColor: '#BA7517' },
   ban:     { bg: 'rgba(216,90,48,0.15)',  border: 'rgba(216,90,48,0.35)',  Icon: Ban, iconColor: '#D85A30' },
   network: { bg: 'rgba(255,80,80,0.12)',  border: 'rgba(255,100,100,0.25)', Icon: WifiOff, iconColor: '#E24B4A' },
+  google:  { bg: 'rgba(66,133,244,0.12)', border: 'rgba(66,133,244,0.25)', Icon: AlertTriangle, iconColor: '#4285F4' },
 }
 
 export default function Connexion() {

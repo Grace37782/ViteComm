@@ -277,8 +277,20 @@ export default function VendeurProfil() {
       {tab === 'securite' && (
         <div className="flex flex-col gap-4">
           <div className="rounded-2xl p-6" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-            <h3 className="text-sm font-black mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><KeyRound size={14} /> Changer le mot de passe</h3>
-            <PasswordChangeForm />
+            {ctxUser?.auth_provider === 'google' ? (
+              <div className="text-center py-4">
+                <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(66,133,244,0.12)' }}>
+                  <KeyRound size={20} style={{ color: '#4285F4' }} />
+                </div>
+                <p className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Compte Google</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Votre compte est lié à Google. Le mot de passe est géré par votre compte Google.</p>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-sm font-black mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><KeyRound size={14} /> Changer le mot de passe</h3>
+                <PasswordChangeForm />
+              </>
+            )}
           </div>
 
           <div className="rounded-2xl p-6" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>

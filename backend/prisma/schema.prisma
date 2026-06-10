@@ -16,6 +16,7 @@ model Utilisateur {
   statut_compte String  @default("Actif")
   est_admin     Boolean @default(false)
   photo_url     String?
+  auth_provider String  @default("local")
 
   client           Client?
   vendeur          Vendeur?

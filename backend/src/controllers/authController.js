@@ -33,6 +33,7 @@ const buildUserPayload = async (user) => {
     statut_compte: user.statut_compte,
     est_admin: user.est_admin,
     photo_url: user.photo_url,
+    auth_provider: user.auth_provider || 'local',
     role
   };
 
@@ -463,6 +464,11 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Identifiants invalides.' });
     }
 
+    // Block Google-only accounts from traditional login
+    if (user.auth_provider === 'google') {
+      return res.status(403).json({ error: 'Ce compte utilise uniquement la connexion Google. Veuillez cliquer sur "Continuer avec Google".' });
+    }
+
     // Block suspended/banned accounts (guide §1.2 - gestion du statut_compte)
     if (user.statut_compte !== 'Actif') {
       return res.status(403).json({
@@ -549,6 +555,11 @@ export const updateProfile = async (req, res) => {
 
   // Validate new password if provided
   if (mot_de_passe) {
+    // Block password change for Google OAuth users
+    const currentUser = await prisma.utilisateur.findUnique({ where: { id_user: req.user.id_user } });
+    if (currentUser.auth_provider === 'google') {
+      return res.status(403).json({ error: 'Les comptes Google ne peuvent pas modifier leur mot de passe. Utilisez la connexion Google.' });
+    }
     if (mot_de_passe_confirmation !== undefined && mot_de_passe !== mot_de_passe_confirmation) {
       return res.status(400).json({ error: 'Les mots de passe ne correspondent pas.' });
     }
@@ -680,6 +691,7 @@ export const googleAuth = async (req, res) => {
             mot_de_passe: await bcryptjs.hash(crypto.randomUUID(), 12),
             statut_compte: 'Actif',
             est_admin: false,
+            auth_provider: 'google',
           }
         });
         await tx.client.create({
@@ -691,6 +703,15 @@ export const googleAuth = async (req, res) => {
           include: { client: true, vendeur: true, livreur: true },
         });
       });
+    } else {
+      // Existing user — check auth_provider
+      if (user.auth_provider === 'local') {
+        return res.status(403).json({ error: 'Ce compte utilise une connexion par email/mot de passe. Veuillez vous connecter normalement.' });
+      }
+      // Mark as Google user if not yet set (backward compat)
+      if (!user.auth_provider || user.auth_provider === 'local') {
+        await prisma.utilisateur.update({ where: { id_user: user.id_user }, data: { auth_provider: 'google' } });
+      }
     }
 
     if (user.statut_compte !== 'Actif') {

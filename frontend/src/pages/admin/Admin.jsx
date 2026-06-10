@@ -1065,9 +1065,17 @@ function ProfilTab({ onLogout }) {
             <Field label="Téléphone" value={form.telephone} onChange={v => setForm(p => ({ ...p, telephone: v }))} />
 
             <hr className="border-t my-1" style={{ borderColor: 'var(--border)' }} />
-            <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Changer le mot de passe (optionnel)</p>
-            <Field label="Nouveau mot de passe" type="password" value={form.mot_de_passe} onChange={v => setForm(p => ({ ...p, mot_de_passe: v }))} />
-            <Field label="Confirmer le mot de passe" type="password" value={form.confirm} onChange={v => setForm(p => ({ ...p, confirm: v }))} />
+            {admin?.auth_provider === 'google' ? (
+              <div className="text-center py-3">
+                <p className="text-xs font-bold" style={{ color: '#4285F4' }}>Compte Google — mot de passe géré par Google</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Changer le mot de passe (optionnel)</p>
+                <Field label="Nouveau mot de passe" type="password" value={form.mot_de_passe} onChange={v => setForm(p => ({ ...p, mot_de_passe: v }))} />
+                <Field label="Confirmer le mot de passe" type="password" value={form.confirm} onChange={v => setForm(p => ({ ...p, confirm: v }))} />
+              </>
+            )}
 
             <div className="flex gap-3 mt-2">
               <button type="submit" disabled={saving}
