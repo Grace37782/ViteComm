@@ -12,7 +12,9 @@ export default function SelectionLivreur() {
   const { resolved } = useTheme(); const isDark = resolved === 'dark'
   const navigate = useNavigate()
   const location = useLocation()
-  const { cart, total: totalMarchandises, sousTotal } = location.state || {}
+  const stateCart = location.state?.cart
+  const stateTotal = location.state?.total
+  const stateSousTotal = location.state?.sousTotal
 
   const [drivers, setDrivers]   = useState([])
   const [loading, setLoading]   = useState(true)
@@ -22,11 +24,19 @@ export default function SelectionLivreur() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [modePaiement, setModePaiement] = useState('ESPECES')
   const [telephone, setTelephone] = useState('')
+  const [cart, setCart] = useState(stateCart || null)
 
-  /* ── Load drivers from API ──────────────────────────── */
+  const FRAIS_LIVRAISON = 1500
+  const sousTotal = stateSousTotal || cart?.details?.reduce((s, d) => s + (d.produit?.prix_reference || 0) * d.quantite, 0) || 0
+  const totalMarchandises = stateTotal || sousTotal
+
+  /* ── Load drivers + cart from API as fallback ─────────── */
   useEffect(() => {
-    api.get('/client/drivers')
-      .then(setDrivers)
+    const promises = [api.get('/client/drivers').then(setDrivers)]
+    if (!stateCart) {
+      promises.push(api.get('/client/cart').then(setCart))
+    }
+    Promise.all(promises)
       .catch(err => showToast(<><XCircle size={14} style={{verticalAlign: 'middle', marginRight: 4}} />{err.message}</>))
       .finally(() => setLoading(false))
   }, [])
@@ -81,7 +91,6 @@ export default function SelectionLivreur() {
   }
 
   const livreurSelected = drivers.find(d => d.id_user === livreurId)
-  const FRAIS_LIVRAISON = 1500
   const totalFinal = (sousTotal || 0) + FRAIS_LIVRAISON
 
   const visibleItems = drivers.slice(0, visibleCount)
