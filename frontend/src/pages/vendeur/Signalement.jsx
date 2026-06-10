@@ -111,7 +111,7 @@ export default function Signalement() {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 flex flex-col gap-4">
+    <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
         <div className="flex gap-2">{[1, 2].map((i) => <div key={i} className="h-8 rounded-full w-32 animate-pulse" style={{ background: 'var(--border)' }} />)}</div>
         {[1, 2].map((i) => <div key={i} className="rounded-2xl h-24 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />)}
       </div>

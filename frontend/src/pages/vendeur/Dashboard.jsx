@@ -41,7 +41,7 @@ export default function DashboardVendeur() {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 flex flex-col gap-4">
+    <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
         <div className="rounded-2xl p-4 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl" style={{ background: 'var(--border)' }} />
@@ -98,7 +98,7 @@ export default function DashboardVendeur() {
       {/* BILAN FINANCIER */}
       <div>
         <h2 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Bilan financier</h2>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: 'Revenu brut', val: f.revenu_brut || 0, color: 'var(--text-primary)', bg: 'var(--surface)', border: 'var(--border)' },
             { label: 'Gains nets', val: f.gains_nets || 0, color: isDark ? '#2DC491' : '#0F6E56', bg: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', border: isDark ? '#2DC491' : '#9FE1CB' },
@@ -186,7 +186,7 @@ export default function DashboardVendeur() {
       </div>
 
       {/* ACTIONS RAPIDES */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { icon: Package, label: 'Mon catalogue', sub: 'Gérer mes produits', route: '/vendeur/catalogue' },
           { icon: ShoppingCart, label: 'Commandes', sub: 'Gérer les remises', route: '/vendeur/commandes' },

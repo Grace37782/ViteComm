@@ -65,7 +65,7 @@ export default function RetourVendeur() {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 flex flex-col gap-4">
+    <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
         <div className="rounded-2xl p-4 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="grid grid-cols-2 gap-3">
             <div><div className="h-3 rounded w-16 mb-2" style={{ background: 'var(--border)' }} /><div className="h-7 rounded w-12" style={{ background: 'var(--border)' }} /></div>

@@ -280,7 +280,7 @@ export default function AccueilClient() {
   }
 
   return (
-    <div className="w-full font-sans flex flex-col pb-6" style={{ background: 'var(--bg)' }}>
+      <div className="w-full font-sans flex flex-col pb-6 mx-auto max-w-7xl" style={{ background: 'var(--bg)' }}>
       {/* Header Panel - Search */}
       <div className="bg-emerald-800 text-white px-4 pt-3 pb-3 shadow-md flex-shrink-0">
         {/* Search wrapper */}
@@ -341,7 +341,7 @@ export default function AccueilClient() {
       </div>
 
       {/* 🗺️ Interactive Map Container with absolute selection drawer overlay */}
-      <div className="w-full h-96 relative shadow-inner flex-shrink-0"
+      <div className="w-full h-72 md:h-96 relative shadow-inner flex-shrink-0"
         style={{ borderBottom: `1px solid ${isDark ? 'var(--border)' : '#e5e7eb'}` }}>
         <MapContainer center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%', zIndex: 10 }}>
           <TileLayer
@@ -448,7 +448,7 @@ export default function AccueilClient() {
             <p className="text-xs font-bold mt-2" style={{ color: 'var(--text-muted)' }}>Aucun marché ne correspond à ce secteur.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {visibleItems.map((m) => {
               const isSelected = activeMarket?.id_marche === m.id_marche
               return (

@@ -116,7 +116,7 @@ export default function Profil() {
   }
 
   return (
-    <div className="font-sans" style={{ background: 'var(--bg)' }}>
+    <div className="font-sans mx-auto max-w-3xl" style={{ background: 'var(--bg)' }}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"

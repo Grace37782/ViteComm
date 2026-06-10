@@ -57,7 +57,7 @@ export default function SuiviCommande() {
   }
 
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
+    <div className="w-full min-h-screen font-sans mx-auto max-w-3xl" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {/* HEADER */}
       <div className="relative overflow-hidden px-5 pt-5 pb-5"

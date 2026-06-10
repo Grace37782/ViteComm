@@ -164,7 +164,7 @@ export default function Catalogue() {
   }
 
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
+    <div className="w-full min-h-screen font-sans mx-auto max-w-7xl" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {/* ══ HEADER ══ */}
       <div
@@ -258,7 +258,7 @@ export default function Catalogue() {
           </div>
         ) : (
           <>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {visibleItems.map((prod) => {
               const qteAuPanier = cartItems[prod.id_produit] || 0
               const stockFaible = prod.stock_disponible <= 3

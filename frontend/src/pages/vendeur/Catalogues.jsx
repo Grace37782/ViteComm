@@ -194,7 +194,7 @@ export default function CatalogueVendeur() {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 flex flex-col gap-4">
+    <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
         <div className="flex items-center justify-between mb-3">
           <div><div className="h-4 rounded w-28 mb-1" style={{ background: 'var(--border)' }} /><div className="h-3 rounded w-16" style={{ background: 'var(--border)' }} /></div>
           <div className="h-9 rounded-full w-28" style={{ background: 'var(--border)' }} />

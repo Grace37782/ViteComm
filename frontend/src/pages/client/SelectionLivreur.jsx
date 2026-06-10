@@ -89,7 +89,7 @@ export default function SelectionLivreur() {
   }
 
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
+    <div className="w-full min-h-screen font-sans mx-auto max-w-3xl" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {toast && (
         <div style={{
@@ -145,7 +145,7 @@ export default function SelectionLivreur() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <h2 className="font-black text-base" style={{ color: 'var(--text-primary)' }}>Livreurs disponibles</h2>
 
             {visibleItems.map((drv) => {

@@ -175,7 +175,7 @@ export default function MarcheDetail() {
   }
 
   return (
-    <div className="w-full min-h-screen flex flex-col pb-20" style={{ background: 'var(--bg)' }}>
+    <div className="w-full min-h-screen flex flex-col pb-20 mx-auto max-w-7xl" style={{ background: 'var(--bg)' }}>
       <style>{`#marche-search::placeholder { color: var(--text-muted); opacity: 0.7; }`}</style>
 
       {/* Top Banner */}
@@ -204,7 +204,7 @@ export default function MarcheDetail() {
       </div>
 
       {/* Market Stalls Map */}
-      <div className="w-full h-64 relative shadow-inner border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
+      <div className="w-full h-48 md:h-64 relative shadow-inner border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
         <MapContainer
           center={[market.latitude, market.longitude]}
           zoom={16}
@@ -328,7 +328,7 @@ export default function MarcheDetail() {
             <p className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>Aucun étal trouvé.</p>
           </div>
         ) : (
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible lg:grid-cols-4">
             {vendorsFiltered.map(v => (
               <div
                 key={v.id_user}
@@ -367,7 +367,7 @@ export default function MarcheDetail() {
           </div>
         ) : (
           <>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {visibleItems.map(p => {
               const PIcon = productIcon(p.nom);
               return (

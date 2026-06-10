@@ -90,7 +90,7 @@ export default function LivreurProfil() {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 flex flex-col gap-4">
+      <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-3xl">
         <div className="rounded-2xl h-48 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />
         <div className="rounded-2xl h-32 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />
       </div>
@@ -98,7 +98,7 @@ export default function LivreurProfil() {
   }
 
   return (
-    <div className="px-4 py-4 flex flex-col gap-4">
+    <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-3xl">
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"
           style={{ background: '#D85A30' }}>

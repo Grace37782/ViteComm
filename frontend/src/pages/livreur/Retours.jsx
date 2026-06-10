@@ -44,7 +44,7 @@ export default function RetourLivreur() {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 flex flex-col gap-4">
+      <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
         <div className="grid grid-cols-3 gap-3">{[1,2,3].map(i => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />)}</div>
         <div className="rounded-2xl h-32 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />
       </div>
@@ -52,7 +52,7 @@ export default function RetourLivreur() {
   }
 
   return (
-    <div className="px-4 py-4 flex flex-col gap-4">
+    <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
 
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl" style={{ background: '#D85A30' }}>

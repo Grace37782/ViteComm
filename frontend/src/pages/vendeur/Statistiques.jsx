@@ -25,7 +25,7 @@ export default function Statistiques() {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 flex flex-col gap-4">
+    <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
         <div className="flex gap-2">{[1, 2, 3].map((i) => <div key={i} className="h-8 rounded-full w-24 animate-pulse" style={{ background: 'var(--border)' }} />)}</div>
         <div className="grid grid-cols-2 gap-3">{[1, 2, 3, 4].map((i) => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />)}</div>
       </div>
@@ -66,7 +66,7 @@ export default function Statistiques() {
 
       {onglet === 'apercu' && (
         <>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { label: 'Total vendus', val: totalVendus, accent: '#1D9E75', sub: 'unités' },
               { label: 'Taux de rejet', val: `${tauxRejet}%`, accent: '#D85A30', sub: `${totalRejets} articles` },

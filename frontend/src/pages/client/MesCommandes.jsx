@@ -87,7 +87,7 @@ export default function MesCommandes() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'sans-serif', paddingBottom: 80 }}>
+    <div className="mx-auto max-w-3xl" style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'sans-serif', paddingBottom: 80 }}>
 
       {/* HEADER */}
       <div style={{

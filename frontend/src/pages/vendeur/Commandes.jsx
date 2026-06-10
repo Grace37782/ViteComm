@@ -98,7 +98,7 @@ export default function CommandesVendeur() {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 flex flex-col gap-4">
+    <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
         {[1, 2, 3].map((i) => (
           <div key={i} className="rounded-2xl overflow-hidden animate-pulse"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>

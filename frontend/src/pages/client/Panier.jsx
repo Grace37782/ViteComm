@@ -82,7 +82,7 @@ export default function Panier() {
   }
 
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
+    <div className="w-full min-h-screen font-sans mx-auto max-w-3xl" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {/* TOAST */}
       {toast && (
