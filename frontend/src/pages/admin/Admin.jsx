@@ -841,6 +841,7 @@ function SignalementsTab({ initialFilter }) {
   const [loading, setLoading] = useState(true)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [statusFilter, setStatusFilter] = useState('tous')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     if (initialFilter?.status) setStatusFilter(initialFilter.status)
@@ -862,15 +863,23 @@ function SignalementsTab({ initialFilter }) {
 
   const col = (s) => s.statut_traitement === 'En attente' ? '#D85A30' : s.statut_traitement === 'Traite' ? '#BA7517' : '#1D9E75'
 
-  const filtered = signalements.filter(s => statusFilter === 'tous' || s.statut_traitement === statusFilter)
+  const filtered = signalements.filter(s => {
+    const matchStatus = statusFilter === 'tous' || s.statut_traitement === statusFilter
+    const matchSearch = !search || s.motif?.toLowerCase().includes(search.toLowerCase()) ||
+      `${s.auteur?.prenom} ${s.auteur?.nom}`.toLowerCase().includes(search.toLowerCase()) ||
+      `${s.cible?.prenom} ${s.cible?.nom}`.toLowerCase().includes(search.toLowerCase())
+    return matchStatus && matchSearch
+  })
   const visibleItems = filtered.slice(0, visibleCount)
   const hasMore = filtered.length > visibleCount
 
-  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [statusFilter])
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [statusFilter, search])
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input type="text" placeholder="Rechercher un signalement..." value={search} onChange={e => setSearch(e.target.value)}
+          className="flex-1 rounded-2xl px-4 py-2.5 text-sm outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="rounded-2xl px-4 py-2.5 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
           {['tous', 'En attente', 'Traite', 'Classe'].map(s => <option key={s} value={s}>{s === 'tous' ? 'Tous les statuts' : s}</option>)}
@@ -1108,6 +1117,7 @@ function LitigesTab({ initialFilter }) {
   const [loading, setLoading] = useState(true)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [statusFilter, setStatusFilter] = useState('tous')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     if (initialFilter?.status) setStatusFilter(initialFilter.status)
@@ -1128,21 +1138,31 @@ function LitigesTab({ initialFilter }) {
     } catch (e) { alert(e.message) }
   }
 
-  const visibleItems = litiges.filter(l => statusFilter === 'tous' || l.statut === statusFilter).slice(0, visibleCount)
-  const hasMore = litiges.filter(l => statusFilter === 'tous' || l.statut === statusFilter).length > visibleCount
+  const filteredLitiges = litiges.filter(l => {
+    const matchStatus = statusFilter === 'tous' || l.statut === statusFilter
+    const matchSearch = !search || l.description?.toLowerCase().includes(search.toLowerCase()) ||
+      `${l.livraison?.livreur?.utilisateur?.prenom} ${l.livraison?.livreur?.utilisateur?.nom}`.toLowerCase().includes(search.toLowerCase()) ||
+      `${l.livraison?.commande?.client?.utilisateur?.prenom} ${l.livraison?.commande?.client?.utilisateur?.nom}`.toLowerCase().includes(search.toLowerCase())
+    return matchStatus && matchSearch
+  })
 
-  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [statusFilter])
+  const visibleItems = filteredLitiges.slice(0, visibleCount)
+  const hasMore = filteredLitiges.length > visibleCount
+
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [statusFilter, search])
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input type="text" placeholder="Rechercher un litige..." value={search} onChange={e => setSearch(e.target.value)}
+          className="flex-1 rounded-2xl px-4 py-2.5 text-sm outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="rounded-2xl px-4 py-2.5 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
           {['tous', 'Ouvert', 'Resolu', 'Rejete'].map(s => <option key={s} value={s}>{s === 'tous' ? 'Tous les statuts' : s}</option>)}
         </select>
       </div>
       {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div> :
-       litiges.filter(l => statusFilter === 'tous' || l.statut === statusFilter).length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun litige</div> :
+       filteredLitiges.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun litige</div> :
        visibleItems.map(l => (
          <div key={l.id_litige} className="rounded-2xl p-4 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
            <div className="flex items-start justify-between mb-2">
@@ -1195,7 +1215,7 @@ function LitigesTab({ initialFilter }) {
           <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
             className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
             style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-            <ChevronDown size={16} /> Charger plus ({litiges.filter(l => statusFilter === 'tous' || l.statut === statusFilter).length - visibleCount} restant(s))
+            <ChevronDown size={16} /> Charger plus ({filteredLitiges.length - visibleCount} restant(s))
           </button>
         )}
     </div>
@@ -1248,6 +1268,8 @@ function MarketsTab() {
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState('')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [search, setSearch] = useState('')
+  const [vendorFilter, setVendorFilter] = useState('tous')
 
   function flash(msg, type = 'success') {
     setToastType(type)
@@ -1261,6 +1283,15 @@ function MarketsTab() {
   }
 
   useEffect(() => { fetchMarkets() }, [])
+
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search, vendorFilter])
+
+  const filteredMarkets = markets.filter(m => {
+    const matchSearch = !search || m.nom?.toLowerCase().includes(search.toLowerCase()) || m.description?.toLowerCase().includes(search.toLowerCase())
+    const vendorCount = m._count?.vendeurs || 0
+    const matchVendor = vendorFilter === 'tous' || (vendorFilter === 'avec' && vendorCount > 0) || (vendorFilter === 'sans' && vendorCount === 0)
+    return matchSearch && matchVendor
+  })
 
   function openCreate() {
     setForm(EMPTY_FORM)
@@ -1547,9 +1578,19 @@ function MarketsTab() {
       )}
 
       {/* Market Cards Grid */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input type="text" placeholder="Rechercher un marché..." value={search} onChange={e => setSearch(e.target.value)}
+          className="flex-1 rounded-2xl px-4 py-3 text-sm outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+        <select value={vendorFilter} onChange={e => setVendorFilter(e.target.value)}
+          className="rounded-2xl px-4 py-3 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+          <option value="tous">Tous les marchés</option>
+          <option value="avec">Avec vendeurs</option>
+          <option value="sans">Sans vendeur</option>
+        </select>
+      </div>
       {loading ? (
         <div className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement des marchés...</div>
-      ) : markets.length === 0 ? (
+      ) : filteredMarkets.length === 0 ? (
         <div className="text-center py-16 rounded-3xl border-2 border-dashed" style={{ borderColor: 'var(--border)' }}>
           <div className="mb-3 flex justify-center"><MapPin size={48} style={{ color: 'var(--text-muted)' }} /></div>
           <p className="font-bold text-sm mb-3" style={{ color: 'var(--text-muted)' }}>Aucun marché enregistré</p>
@@ -1560,7 +1601,7 @@ function MarketsTab() {
       ) : (
         <>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {markets.slice(0, visibleCount).map(m => (
+          {filteredMarkets.slice(0, visibleCount).map(m => (
             <div key={m.id_marche} className="rounded-2xl border overflow-hidden shadow-sm hover:shadow-md transition-all"
               style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
 
@@ -1621,11 +1662,11 @@ function MarketsTab() {
             </div>
           ))}
         </div>
-        {markets.length > visibleCount && (
+        {filteredMarkets.length > visibleCount && (
           <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
             className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
             style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-            <ChevronDown size={16} /> Charger plus ({markets.length - visibleCount} restant(s))
+            <ChevronDown size={16} /> Charger plus ({filteredMarkets.length - visibleCount} restant(s))
           </button>
         )}
         </>
