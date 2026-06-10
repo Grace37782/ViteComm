@@ -141,6 +141,9 @@ export default function Evaluation() {
     'Inspectee': { bg: isDark ? 'rgba(243,168,59,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B', Icon: Search, label: 'Inspectée' },
   }
 
+  const visibleItems = orders.slice(0, visibleCount)
+  const hasMore = visibleCount < orders.length
+
   return (
     <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
@@ -317,10 +320,8 @@ export default function Evaluation() {
                 const disabled = submitting ||
                   (typeEval === 'livreur' && noteL === 0) ||
                   (typeEval === 'vendeur' && getVendeurs(commande).every(v => !notesV[v.id]))
-  const visibleItems = orders.slice(0, visibleCount)
-  const hasMore = visibleCount < orders.length
 
-  return (
+                return (
                   <button onClick={soumettreFeedback}
                     disabled={disabled}
                     className="w-full mt-5 py-4 rounded-2xl text-white font-black text-base cursor-pointer"
