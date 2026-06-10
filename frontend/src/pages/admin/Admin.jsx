@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
+import MobileDrawer from '../../components/MobileDrawer'
+import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User } from 'lucide-react'
 
 const TABS = [
   { id: 'dashboard', label: 'Tableau de bord', icon: '📊' },
@@ -10,6 +12,16 @@ const TABS = [
   { id: 'signalements', label: 'Signalements', icon: '🚩' },
   { id: 'litiges', label: 'Litiges', icon: '⚖️' },
   { id: 'profil', label: 'Mon Profil', icon: '👤' },
+]
+
+const ADMIN_NAV_TABS = [
+  { icon: LayoutDashboard, label: 'Tableau de bord', path: '__dashboard' },
+  { icon: Users, label: 'Utilisateurs', path: '__users' },
+  { icon: Package, label: 'Produits', path: '__products' },
+  { icon: MapPin, label: 'Marchés', path: '__marchés' },
+  { icon: Flag, label: 'Signalements', path: '__signalements' },
+  { icon: Scale, label: 'Litiges', path: '__litiges' },
+  { icon: User, label: 'Mon Profil', path: '__profil' },
 ]
 
 const STATUS_COLORS = { Actif: '#1D9E75', Suspendu: '#BA7517', Banni: '#D85A30' }
@@ -46,11 +58,29 @@ export default function Admin() {
 
 function Header({ admin, onLogout, tab, onTabChange }) {
   const initials = (admin.prenom?.[0] || '') + (admin.nom?.[0] || '')
+  const accentColor = '#1D9E75'
+
+  const adminTabsWithHandlers = ADMIN_NAV_TABS.map(t => ({
+    ...t,
+    path: t.path,
+  }))
+
   return (
-    <div className="sticky top-0 z-50" style={{ background: 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+    <div className="sticky top-0 z-50" style={{ background: `linear-gradient(135deg, ${accentColor} 0%, #0F6E56 100%)` }}>
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
+            <MobileDrawer
+              navTabs={adminTabsWithHandlers}
+              accentColor={accentColor}
+              brandLabel="Admin ViteComm"
+              onLogout={onLogout}
+              currentTab={`__${tab}`}
+              onTabSelect={(path) => {
+                const tabId = path.replace('__', '')
+                onTabChange(tabId)
+              }}
+            />
             <button onClick={() => onTabChange('profil')} className="cursor-pointer">
               {admin.photo_url ? (
                 <img src={admin.photo_url} alt="" className="w-9 h-9 rounded-xl object-cover border-2" style={{ borderColor: 'rgba(255,255,255,0.3)' }} />
@@ -67,11 +97,12 @@ function Header({ admin, onLogout, tab, onTabChange }) {
               </div>
             </div>
           </div>
-          <button onClick={onLogout} className="text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer" style={{ background: 'rgba(255,255,255,0.1)' }}>
+          <button onClick={onLogout} className="hidden sm:block text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer" style={{ background: 'rgba(255,255,255,0.1)' }}>
             Déconnexion
           </button>
         </div>
-        <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none">
+        {/* Desktop tab bar — hidden on mobile */}
+        <div className="hidden md:flex gap-1 overflow-x-auto pb-1 scrollbar-none">
           {TABS.map(t => (
             <button key={t.id} onClick={() => onTabChange(t.id)} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
               style={{ background: tab === t.id ? 'rgba(255,255,255,0.2)' : 'transparent', color: tab === t.id ? '#fff' : 'rgba(255,255,255,0.7)' }}>

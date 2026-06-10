@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { BarChart3, Package, ShoppingCart, Undo2, TrendingUp, Banknote, AlertTriangle, User } from 'lucide-react'
+import MobileDrawer from '../MobileDrawer'
 
 const NAV_TABS = [
   { icon: BarChart3, label: 'Accueil', path: '/vendeur/dashboard' },
@@ -13,6 +14,8 @@ const NAV_TABS = [
   { icon: AlertTriangle, label: 'Signaler', path: '/vendeur/signalement' },
   { icon: User, label: 'Profil', path: '/vendeur/profil' },
 ]
+
+const ACCENT = '#BA7517'
 
 export default function VendeurLayout() {
   const navigate = useNavigate()
@@ -37,10 +40,16 @@ export default function VendeurLayout() {
 
   return (
     <div className="min-h-screen font-sans" style={{ background: 'var(--bg)' }}>
-      <div className="sticky top-0 z-50" style={{ background: 'linear-gradient(135deg, #BA7517 0%, #854F0B 100%)' }}>
+      <div className="sticky top-0 z-50" style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, #854F0B 100%)` }}>
         <div className="px-3 py-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0 cursor-pointer" onClick={() => navigate('/vendeur/profil')}>
+              <MobileDrawer
+                navTabs={NAV_TABS}
+                accentColor={ACCENT}
+                brandLabel="ViteComm · Vendeur"
+                onLogout={() => { logout(); navigate('/connect') }}
+              />
               <div className="flex-shrink-0">
                 {user?.photo_url ? (
                   <img src={user.photo_url} alt="" className="w-8 h-8 rounded-xl object-cover border-2" style={{ borderColor: 'rgba(255,255,255,0.3)' }} />
@@ -56,12 +65,13 @@ export default function VendeurLayout() {
               </div>
             </div>
             <button onClick={() => { logout(); navigate('/connect') }}
-              className="text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer flex-shrink-0"
+              className="hidden sm:block text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer flex-shrink-0"
               style={{ background: 'rgba(255,255,255,0.1)' }}>
               Déconnexion
             </button>
           </div>
-          <div className="flex gap-1 mt-2 overflow-x-auto scrollbar-none">
+          {/* Desktop tab bar — hidden on mobile */}
+          <div className="hidden md:flex gap-1 mt-2 overflow-x-auto scrollbar-none">
             {NAV_TABS.map(tab => {
               const active = location.pathname === tab.path || location.pathname.startsWith(tab.path + '/')
               return (
