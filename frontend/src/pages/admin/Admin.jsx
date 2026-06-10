@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import MobileDrawer from '../../components/MobileDrawer'
-import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User, DollarSign, TrendingUp, Store, Motorbike, ShoppingCart, Shield, Mail, Smartphone, Lock, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Building, Search } from 'lucide-react'
+import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User, DollarSign, TrendingUp, Store, Motorbike, ShoppingCart, Shield, Mail, Smartphone, Lock, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Building, ChevronDown, LogOut, ArrowRight, Star } from 'lucide-react'
 
 const TABS = [
   { id: 'dashboard', label: 'Tableau de bord', icon: <LayoutDashboard size={14} /> },
@@ -29,6 +29,7 @@ const STATUS_COLORS = { Actif: '#1D9E75', Suspendu: '#BA7517', Banni: '#D85A30' 
 export default function Admin() {
   const navigate = useNavigate()
   const [tab, setTab] = useState('dashboard')
+  const [tabFilter, setTabFilter] = useState(null)
   const [admin] = useState(() => {
     const stored = localStorage.getItem('vc_user')
     const user = stored ? JSON.parse(stored) : null
@@ -41,16 +42,21 @@ export default function Admin() {
 
   if (!admin) return null
 
+  function navigateTo(tabId, filter = null) {
+    setTabFilter(filter)
+    setTab(tabId)
+  }
+
   return (
     <div className="min-h-screen font-sans" style={{ background: 'var(--bg)' }}>
-      <Header admin={admin} onLogout={() => { localStorage.clear(); navigate('/accueil') }} tab={tab} onTabChange={setTab} />
+      <Header admin={admin} onLogout={() => { localStorage.clear(); navigate('/accueil') }} tab={tab} onTabChange={(t) => { setTabFilter(null); setTab(t) }} />
       <main className="max-w-7xl mx-auto px-4 py-6 pb-24">
-        {tab === 'dashboard' && <DashboardTab />}
-        {tab === 'users' && <UsersTab />}
+        {tab === 'dashboard' && <DashboardTab onNavigate={navigateTo} />}
+        {tab === 'users' && <UsersTab initialFilter={tabFilter} />}
         {tab === 'products' && <ProductsTab />}
         {tab === 'marchés' && <MarketsTab />}
-        {tab === 'signalements' && <SignalementsTab />}
-        {tab === 'litiges' && <LitigesTab />}
+        {tab === 'signalements' && <SignalementsTab initialFilter={tabFilter} />}
+        {tab === 'litiges' && <LitigesTab initialFilter={tabFilter} />}
         {tab === 'profil' && <ProfilTab admin={admin} onLogout={() => { localStorage.clear(); navigate('/accueil') }} />}
       </main>
     </div>
@@ -116,19 +122,24 @@ function Header({ admin, onLogout, tab, onTabChange }) {
   )
 }
 
-function StatCard({ label, value, icon, color }) {
+function StatCard({ label, value, icon, color, onClick }) {
   return (
-    <div className="rounded-2xl p-5 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+    <div onClick={onClick}
+      className={`rounded-2xl p-5 border transition-all ${onClick ? 'cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-95' : ''}`}
+      style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}18`, color }}>{icon}</div>
         <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{label}</span>
       </div>
-      <div className="text-2xl font-black" style={{ color }}>{value}</div>
+      <div className="flex items-center justify-between">
+        <div className="text-2xl font-black" style={{ color }}>{value}</div>
+        {onClick && <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />}
+      </div>
     </div>
   )
 }
 
-function DashboardTab() {
+function DashboardTab({ onNavigate }) {
   const [data, setData] = useState(null)
   const [err, setErr] = useState('')
 
@@ -136,43 +147,60 @@ function DashboardTab() {
     api.get('/admin/dashboard').then(setData).catch(e => setErr(e.message))
   }, [])
 
-  if (err) return <div className="text-center py-12 text-sm font-semibold" style={{ color: '#D85A30' }}>⚠️ {err}</div>
+  if (err) return <div className="text-center py-12 text-sm font-semibold" style={{ color: '#D85A30' }}><AlertTriangle size={14} className="inline align-middle mr-1" />{err}</div>
   if (!data) return <div className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div>
 
-  const { financier, alertes, produits_populaires, produits_refuses, classements } = data
+  const { financier, compteur, alertes, produits_populaires, produits_refuses, classements } = data
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Ventes totales" value={`${(financier.total_ventes || 0).toLocaleString()} F`} icon={<DollarSign size={20} />} color="#1D9E75" />
-        <StatCard label="Commissions" value={`${(financier.total_commissions_plateforme || 0).toLocaleString()} F`} icon={<TrendingUp size={20} />} color="#0F6E56" />
-        <StatCard label="Litiges ouverts" value={alertes.litiges_ouverts} icon={<Scale size={20} />} color="#D85A30" />
-        <StatCard label="Signalements" value={alertes.signalements_en_attente} icon={<Flag size={20} />} color="#BA7517" />
+        <StatCard label="Ventes totales" value={`${(financier.total_ventes || 0).toLocaleString()} F`} icon={<DollarSign size={20} />} color="#1D9E75" onClick={() => onNavigate('users', { role: 'vendeur' })} />
+        <StatCard label="Commissions" value={`${(financier.total_commissions_plateforme || 0).toLocaleString()} F`} icon={<TrendingUp size={20} />} color="#0F6E56" onClick={() => onNavigate('products')} />
+        <StatCard label="Litiges ouverts" value={alertes.litiges_ouverts} icon={<Scale size={20} />} color="#D85A30" onClick={() => onNavigate('litiges', { status: 'Ouvert' })} />
+        <StatCard label="Signalements en attente" value={alertes.signalements_en_attente} icon={<Flag size={20} />} color="#BA7517" onClick={() => onNavigate('signalements', { status: 'En attente' })} />
       </div>
 
-      <LeaderboardSection data={classements} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Utilisateurs" value={compteur?.total_utilisateurs || 0} icon={<Users size={20} />} color="#1D9E75" onClick={() => onNavigate('users')} />
+        <StatCard label="Vendeurs" value={compteur?.total_vendeurs || 0} icon={<Store size={20} />} color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur' })} />
+        <StatCard label="Livreurs" value={compteur?.total_livreurs || 0} icon={<Motorbike size={20} />} color="#D85A30" onClick={() => onNavigate('users', { role: 'livreur' })} />
+        <StatCard label="Commandes actives" value={compteur?.commandes_actives || 0} icon={<ShoppingCart size={20} />} color="#0F6E56" onClick={() => onNavigate('products')} />
+      </div>
+
+      <LeaderboardSection data={classements} onNavigate={onNavigate} />
       <ProductRanking title="Produits les plus populaires" items={produits_populaires} color="#1D9E75" />
       <ProductRanking title="Produits les plus refusés" items={produits_refuses} color="#D85A30" />
     </div>
   )
 }
 
-function LeaderboardSection({ data }) {
+function LeaderboardSection({ data, onNavigate }) {
   if (!data) return null
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <LeaderboardCard title={<span className="flex items-center gap-1.5"><Store size={14} /> Vendeurs (CA)</span>} items={data.vendeurs} valueKey="chiffre_affaires" unit="F" color="#BA7517" />
-      <LeaderboardCard title={<span className="flex items-center gap-1.5"><Motorbike size={14} /> Livreurs (Volume)</span>} items={data.livreurs} valueKey="volume_livre" unit="F" color="#D85A30" />
-      <LeaderboardCard title={<span className="flex items-center gap-1.5"><ShoppingCart size={14} /> Clients (Achats)</span>} items={data.clients} valueKey="volume_achat" unit="F" color="#1D9E75" />
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Store size={14} /> Vendeurs (CA)</span>} items={data.vendeurs} valueKey="chiffre_affaires" unit="F" color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur' })} />
+        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Motorbike size={14} /> Livreurs (Volume)</span>} items={data.livreurs} valueKey="volume_livre" unit="F" color="#D85A30" onClick={() => onNavigate('users', { role: 'livreur' })} />
+        <LeaderboardCard title={<span className="flex items-center gap-1.5"><ShoppingCart size={14} /> Clients (Achats)</span>} items={data.clients} valueKey="volume_achat" unit="F" color="#1D9E75" onClick={() => onNavigate('users', { role: 'client' })} />
+      </div>
+      {data.vendeurs_reputation && data.vendeurs_reputation.length > 0 && (
+        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Star size={14} /> Vendeurs (Réputation)</span>} items={data.vendeurs_reputation} valueKey="score_reputation" unit="/100" color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur' })} />
+      )}
     </div>
   )
 }
 
-function LeaderboardCard({ title, items, valueKey, unit, color }) {
+function LeaderboardCard({ title, items, valueKey, unit, color, onClick }) {
   if (!items || items.length === 0) return null
   return (
-    <div className="rounded-2xl p-5 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-      <h3 className="font-black text-sm mb-4" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+    <div onClick={onClick}
+      className={`rounded-2xl p-5 border transition-all ${onClick ? 'cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-95' : ''}`}
+      style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+        {onClick && <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />}
+      </div>
       <div className="flex flex-col gap-2.5">
         {items.slice(0, 5).map((item, i) => (
           <div key={item.id_user} className="flex items-center gap-3">
@@ -223,7 +251,9 @@ function ProductRanking({ title, items, color }) {
   )
 }
 
-function UsersTab() {
+const PAGE_SIZE = 10
+
+function UsersTab({ initialFilter }) {
   const [users, setUsers] = useState([])
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('tous')
@@ -231,6 +261,12 @@ function UsersTab() {
   const [selected, setSelected] = useState(null)
   const [details, setDetails] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+
+  useEffect(() => {
+    if (initialFilter?.role) setRoleFilter(initialFilter.role)
+    if (initialFilter?.status) setStatusFilter(initialFilter.status)
+  }, [initialFilter])
 
   function fetchUsers() {
     setLoading(true)
@@ -238,6 +274,8 @@ function UsersTab() {
   }
 
   useEffect(() => { fetchUsers() }, []) // eslint-disable-line react-hooks/set-state-in-effect
+
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search, roleFilter, statusFilter])
 
   const roles = ['tous', 'client', 'vendeur', 'livreur', 'admin']
   const statuses = ['tous', 'Actif', 'Suspendu', 'Banni']
@@ -250,10 +288,14 @@ function UsersTab() {
       (statusFilter === 'tous' || u.statut_compte === statusFilter)
   })
 
+  const visibleItems = filtered.slice(0, visibleCount)
+  const hasMore = filtered.length > visibleCount
+
   function getRole(u) { return u.client ? 'client' : u.vendeur ? 'vendeur' : u.livreur ? 'livreur' : 'admin' }
   function getRoleIcon(u) { const r = getRole(u); return r === 'client' ? <ShoppingCart size={16} /> : r === 'vendeur' ? <Store size={16} /> : r === 'livreur' ? <Motorbike size={16} /> : <Shield size={16} /> }
 
   async function loadDetails(id) {
+    if (id == null) { setSelected(null); setDetails(null); return }
     setSelected(id)
     try {
       const d = await api.get(`/admin/users/${id}/details`)
@@ -296,7 +338,7 @@ function UsersTab() {
       <div className="flex flex-col gap-2">
         {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div> :
          filtered.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun utilisateur trouvé</div> :
-         filtered.map(u => {
+         visibleItems.map(u => {
            const isSelected = selected === u.id_user
            const role = getRole(u)
            const photoUrl = u.photo_url
@@ -304,7 +346,7 @@ function UsersTab() {
              <div key={u.id_user}>
                <button onClick={() => loadDetails(isSelected ? null : u.id_user)}
                  className="w-full text-left rounded-2xl p-4 border transition-all cursor-pointer"
-                  style={{ background: isSelected ? '#E1F5EE' : '#fff', borderColor: isSelected ? '#9FE1CB' : 'var(--border)' }}>
+                   style={{ background: isSelected ? '#E1F5EE' : 'var(--surface)', borderColor: isSelected ? '#9FE1CB' : 'var(--border)' }}>
                  <div className="flex items-center gap-3">
                    <div className="w-10 h-10 rounded-xl bg-cover bg-center flex-shrink-0 flex items-center justify-center text-lg"
                      style={photoUrl ? { backgroundImage: `url(${photoUrl})` } : { background: 'var(--border-light)' }}>
@@ -315,191 +357,225 @@ function UsersTab() {
                        <span className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{u.prenom} {u.nom}</span>
                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: `${STATUS_COLORS[u.statut_compte]}18`, color: STATUS_COLORS[u.statut_compte] }}>{u.statut_compte}</span>
                      </div>
-                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{u.email} · {u.telephone} · Rôle: {role}</div>
-                   </div>
-                   <span className="text-base">{isSelected ? '▲' : '▼'}</span>
-                 </div>
-               </button>
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{u.email} · {u.telephone} · Rôle: {role}</div>
+                  </div>
+                </div>
+                </button>
 
-               {isSelected && details && details.user && details.user.id_user === u.id_user && (
-                 <UserDetailsPanel details={details} onUpdateStatus={updateStatus} onDelete={deleteUser} />
-               )}
-               {isSelected && (!details || details.user?.id_user !== u.id_user) && (
-                 <div className="text-center py-4 text-xs" style={{ color: 'var(--text-muted)' }}>Chargement des détails...</div>
-               )}
-             </div>
-           )
-         })}
-      </div>
-    </div>
-  )
+                {isSelected && details && details.user && details.user.id_user === u.id_user && (
+                  <UserDetailModal details={details} onClose={() => { setSelected(null); setDetails(null) }} onUpdateStatus={updateStatus} onDelete={deleteUser} />
+                )}
+           </div>
+            )
+          })}
+          {hasMore && (
+            <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+              className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+              <ChevronDown size={16} /> Charger plus ({filtered.length - visibleCount} restant(s))
+            </button>
+          )}
+       </div>
+     </div>
+   )
 }
 
-function UserDetailsPanel({ details, onUpdateStatus, onDelete }) {
-  if (!details) return null
+function UserDetailModal({ details, onClose, onUpdateStatus, onDelete }) {
+  if (!details || !details.user) return null
   const { user, roleData, feedbacks } = details
+  const role = user.client ? 'client' : user.vendeur ? 'vendeur' : user.livreur ? 'livreur' : 'admin'
+  const initials = (user.prenom?.[0] || '') + (user.nom?.[0] || '')
 
   return (
-    <div className="rounded-2xl p-5 border mt-2" style={{ background: 'var(--surface-alt)', borderColor: 'var(--border)' }}>
-      <div className="flex items-center justify-between mb-4">
-        <h4 className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Détails du compte</h4>
-        <div className="flex gap-2">
-          {['Actif', 'Suspendu', 'Banni'].map(s => (
-            <button key={s} onClick={() => onUpdateStatus(user.id_user, s)}
-              className="text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-pointer transition-all"
-              style={{ background: user.statut_compte === s ? STATUS_COLORS[s] : 'transparent', borderColor: STATUS_COLORS[s], color: user.statut_compte === s ? '#fff' : STATUS_COLORS[s] }}>
-              {s}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}
+      onClick={onClose}>
+      <div className="rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+        style={{ background: 'var(--surface)' }}
+        onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <h3 className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Profil Utilisateur</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
+            style={{ border: 'none', background: 'var(--surface-alt)', color: 'var(--text-muted)' }}>
+            <XCircle size={16} />
+          </button>
+        </div>
+
+        <div className="p-6">
+          {/* Avatar + Name */}
+          <div className="flex flex-col items-center mb-5">
+            {user.photo_url ? (
+              <img src={user.photo_url} alt="" className="w-20 h-20 rounded-full object-cover border-4 shadow-md"
+                style={{ borderColor: 'var(--surface)' }} />
+            ) : (
+              <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-white shadow-md"
+                style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)' }}>
+                {initials}
+              </div>
+            )}
+            <h2 className="text-lg font-black mt-3" style={{ color: 'var(--text-primary)' }}>{user.prenom} {user.nom}</h2>
+            <span className="text-xs px-3 py-1 rounded-full font-semibold mt-1"
+              style={{ background: `${STATUS_COLORS[user.statut_compte]}18`, color: STATUS_COLORS[user.statut_compte] }}>
+              {user.statut_compte} · {role}
+            </span>
+          </div>
+
+          {/* Info rows */}
+          <div className="flex flex-col gap-2 mb-5">
+            <InfoRow label="Email" value={user.email} icon={<Mail size={14} />} />
+            <InfoRow label="Telephone" value={user.telephone || '—'} icon={<Smartphone size={14} />} />
+            {user.date_inscription && (
+              <InfoRow label="Inscrit le" value={new Date(user.date_inscription).toLocaleDateString()} icon={<Flag size={14} />} />
+            )}
+          </div>
+
+          {/* Role-specific stats */}
+          {roleData && role !== 'admin' && (
+            <div className="grid grid-cols-3 gap-2 mb-5">
+              {roleData.score_reputation !== undefined && (
+                <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+                  <div className="text-lg font-black" style={{ color: '#1D9E75' }}>{roleData.score_reputation.toFixed(1)}</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Reputation</div>
+                </div>
+              )}
+              {roleData.total_commandes !== undefined && (
+                <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+                  <div className="text-lg font-black" style={{ color: '#1D9E75' }}>{roleData.total_commandes}</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Commandes</div>
+                </div>
+              )}
+              {roleData.total_depense !== undefined && (
+                <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+                  <div className="text-lg font-black" style={{ color: '#1D9E75' }}>{(roleData.total_depense || 0).toLocaleString()} F</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Depenses</div>
+                </div>
+              )}
+              {roleData.total_ventes !== undefined && (
+                <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+                  <div className="text-lg font-black" style={{ color: '#BA7517' }}>{roleData.total_ventes}</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Ventes</div>
+                </div>
+              )}
+              {roleData.total_revenu !== undefined && (
+                <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+                  <div className="text-lg font-black" style={{ color: '#BA7517' }}>{(roleData.total_revenu || 0).toLocaleString()} F</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Revenu</div>
+                </div>
+              )}
+              {roleData.total_livraisons !== undefined && (
+                <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+                  <div className="text-lg font-black" style={{ color: '#D85A30' }}>{roleData.total_livraisons}</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Livraisons</div>
+                </div>
+              )}
+              {roleData.volume_total !== undefined && (
+                <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+                  <div className="text-lg font-black" style={{ color: '#D85A30' }}>{(roleData.volume_total || 0).toLocaleString()} F</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Volume</div>
+                </div>
+              )}
+              {roleData.est_disponible !== undefined && (
+                <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+                  <div className="text-lg font-black" style={{ color: roleData.est_disponible ? '#1D9E75' : '#D85A30' }}>{roleData.est_disponible ? 'Disponible' : 'Indisponible'}</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Statut livreur</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Vendor catalogue */}
+          {roleData && roleData.type === 'vendeur' && roleData.products && roleData.products.length > 0 && (
+            <div className="mb-5">
+              <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: '#BA7517' }}>
+                <Package size={14} /> Catalogue ({roleData.products.length} produits)
+              </div>
+              <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
+                {roleData.products.map(p => (
+                  <div key={p.id_produit} className="flex items-center justify-between rounded-xl px-3 py-2"
+                    style={{ background: 'var(--surface-alt)' }}>
+                    <span className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{p.nom}</span>
+                    <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{p.prix_reference?.toLocaleString()} F</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Driver deliveries */}
+          {roleData && roleData.deliveries && roleData.deliveries.length > 0 && (
+            <div className="mb-5">
+              <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: '#D85A30' }}>
+                <Motorbike size={14} /> Livraisons recentes ({roleData.deliveries.length})
+              </div>
+              <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
+                {roleData.deliveries.map(d => (
+                  <div key={d.id_livraison} className="flex items-center justify-between rounded-xl px-3 py-2"
+                    style={{ background: 'var(--surface-alt)' }}>
+                    <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Commande #{d.id_commande}</span>
+                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{d.statut_livraison}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Client orders */}
+          {roleData && roleData.orders && roleData.orders.length > 0 && (
+            <div className="mb-5">
+              <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: '#1D9E75' }}>
+                <ShoppingCart size={14} /> Commandes recentes ({roleData.orders.length})
+              </div>
+              <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
+                {roleData.orders.map(o => (
+                  <div key={o.id_commande} className="flex items-center justify-between rounded-xl px-3 py-2"
+                    style={{ background: 'var(--surface-alt)' }}>
+                    <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>#{o.id_commande} — {o.total_marchandises?.toLocaleString()} F</span>
+                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{o.statut}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Feedbacks */}
+          {feedbacks && feedbacks.length > 0 && (
+            <div className="mb-5">
+              <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+                <Flag size={14} /> Avis recents ({feedbacks.length})
+              </div>
+              <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+                {feedbacks.map(f => (
+                  <div key={f.id_feedback} className="rounded-xl p-3" style={{ background: 'var(--surface-alt)' }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold" style={{ color: '#BA7517' }}>{'★'.repeat(f.note)}{'☆'.repeat(5 - f.note)}</span>
+                      <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{f.type_feedback}</span>
+                    </div>
+                    {f.commentaire && <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{f.commentaire}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-2 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+            {['Actif', 'Suspendu', 'Banni'].map(s => (
+              <button key={s} onClick={() => onUpdateStatus(user.id_user, s)}
+                className="text-[10px] font-bold px-3 py-1.5 rounded-full border cursor-pointer transition-all"
+                style={{ background: user.statut_compte === s ? STATUS_COLORS[s] : 'transparent', borderColor: STATUS_COLORS[s], color: user.statut_compte === s ? '#fff' : STATUS_COLORS[s] }}>
+                {s}
+              </button>
+            ))}
+            <button onClick={() => { onDelete(user.id_user, `${user.prenom} ${user.nom}`); onClose() }}
+              className="text-[10px] font-bold px-3 py-1.5 rounded-full border cursor-pointer ml-auto"
+              style={{ borderColor: '#D85A30', color: '#D85A30', background: 'transparent' }}>
+              <Trash2 size={10} className="inline align-middle mr-1" /> Supprimer
             </button>
-          ))}
-          <button onClick={() => onDelete(user.id_user, `${user.prenom} ${user.nom}`)}
-            className="text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-pointer"
-            style={{ borderColor: '#D85A30', color: '#D85A30' }}>Supprimer</button>
+          </div>
         </div>
       </div>
-
-      {roleData && roleData.type === 'vendeur' && roleData.products && (
-        <div className="mb-4">
-          <div className="text-xs font-bold mb-2" style={{ color: '#BA7517' }}>Catalogue ({roleData.products.length} produits)</div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead><tr className="text-left" style={{ color: 'var(--text-muted)' }}>
-                <th className="pb-1.5 pr-3 font-semibold">Produit</th>
-                <th className="pb-1.5 pr-3 font-semibold">Prix</th>
-                <th className="pb-1.5 pr-3 font-semibold">Stock</th>
-                <th className="pb-1.5 font-semibold">Dernier prix</th>
-              </tr></thead>
-              <tbody>
-                {roleData.products.map(p => (
-                  <tr key={p.id_produit} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                    <td className="py-1.5 pr-3 font-semibold" style={{ color: 'var(--text-primary)' }}>{p.nom}</td>
-                    <td className="py-1.5 pr-3" style={{ color: 'var(--text-primary)' }}>{p.prix_reference.toLocaleString()} F</td>
-                    <td className="py-1.5 pr-3" style={{ color: 'var(--text-secondary)' }}>{p.stock_disponible}</td>
-                    <td className="py-1.5" style={{ color: 'var(--text-secondary)' }}>{p.historiques?.[p.historiques.length - 1]?.prix?.toLocaleString() || '-'} F</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {roleData && roleData.type !== 'admin' && (
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {roleData.score_reputation !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
-              <div className="text-lg font-black" style={{ color: '#1D9E75' }}>{roleData.score_reputation.toFixed(1)}</div>
-              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Réputation</div>
-            </div>
-          )}
-          {roleData.total_commandes !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
-              <div className="text-lg font-black" style={{ color: '#1D9E75' }}>{roleData.total_commandes}</div>
-              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Commandes</div>
-            </div>
-          )}
-          {roleData.total_depense !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
-              <div className="text-lg font-black" style={{ color: '#1D9E75' }}>{(roleData.total_depense || 0).toLocaleString()} F</div>
-              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Dépenses</div>
-            </div>
-          )}
-          {roleData.total_ventes !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
-              <div className="text-lg font-black" style={{ color: '#BA7517' }}>{roleData.total_ventes}</div>
-              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Ventes</div>
-            </div>
-          )}
-          {roleData.total_revenu !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
-              <div className="text-lg font-black" style={{ color: '#BA7517' }}>{(roleData.total_revenu || 0).toLocaleString()} F</div>
-              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Revenu</div>
-            </div>
-          )}
-          {roleData.total_livraisons !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
-              <div className="text-lg font-black" style={{ color: '#D85A30' }}>{roleData.total_livraisons}</div>
-              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Livraisons</div>
-            </div>
-          )}
-          {roleData.volume_total !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
-              <div className="text-lg font-black" style={{ color: '#D85A30' }}>{(roleData.volume_total || 0).toLocaleString()} F</div>
-              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Volume</div>
-            </div>
-          )}
-          {roleData.est_disponible !== undefined && (
-            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface)' }}>
-              <div className="text-lg font-black" style={{ color: roleData.est_disponible ? '#1D9E75' : '#D85A30' }}>{roleData.est_disponible ? 'Disponible' : 'Indisponible'}</div>
-              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Statut livreur</div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {feedbacks && feedbacks.length > 0 && (
-        <div>
-          <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Avis récents ({feedbacks.length})</div>
-          <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
-            {feedbacks.map(f => (
-              <div key={f.id_feedback} className="rounded-xl p-3" style={{ background: 'var(--surface)' }}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{'★'.repeat(f.note)}{'☆'.repeat(5 - f.note)}</span>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{f.type_feedback}</span>
-                </div>
-                {f.commentaire && <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{f.commentaire}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {roleData && roleData.deliveries && roleData.deliveries.length > 0 && (
-        <div className="mt-4">
-          <div className="text-xs font-bold mb-2" style={{ color: '#D85A30' }}>Livraisons récentes ({roleData.deliveries.length})</div>
-          <div className="overflow-x-auto max-h-40 overflow-y-auto">
-            <table className="w-full text-xs">
-              <thead><tr className="text-left" style={{ color: 'var(--text-muted)' }}>
-                <th className="pb-1.5 pr-3 font-semibold">Commande</th>
-                <th className="pb-1.5 pr-3 font-semibold">Statut</th>
-                <th className="pb-1.5 font-semibold">Date</th>
-              </tr></thead>
-              <tbody>
-                {roleData.deliveries.map(d => (
-                  <tr key={d.id_livraison} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                    <td className="py-1.5 pr-3 font-semibold" style={{ color: 'var(--text-primary)' }}>#{d.id_commande}</td>
-                    <td className="py-1.5 pr-3" style={{ color: 'var(--text-secondary)' }}>{d.statut_livraison}</td>
-                    <td className="py-1.5" style={{ color: 'var(--text-secondary)' }}>{new Date(d.date_prise_en_charge).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {roleData && roleData.orders && roleData.orders.length > 0 && (
-        <div className="mt-4">
-          <div className="text-xs font-bold mb-2" style={{ color: '#1D9E75' }}>Commandes récentes ({roleData.orders.length})</div>
-          <div className="overflow-x-auto max-h-40 overflow-y-auto">
-            <table className="w-full text-xs">
-              <thead><tr className="text-left" style={{ color: 'var(--text-muted)' }}>
-                <th className="pb-1.5 pr-3 font-semibold">#</th>
-                <th className="pb-1.5 pr-3 font-semibold">Total</th>
-                <th className="pb-1.5 font-semibold">Statut</th>
-              </tr></thead>
-              <tbody>
-                {roleData.orders.map(o => (
-                  <tr key={o.id_commande} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                    <td className="py-1.5 pr-3 font-semibold" style={{ color: 'var(--text-primary)' }}>#{o.id_commande}</td>
-                    <td className="py-1.5 pr-3" style={{ color: 'var(--text-primary)' }}>{o.total_marchandises.toLocaleString()} F</td>
-                    <td className="py-1.5" style={{ color: 'var(--text-secondary)' }}>{o.statut}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -508,13 +584,20 @@ function ProductsTab() {
   const [products, setProducts] = useState([])
   const [search, setSearch] = useState('')
   const [priceHistory, setPriceHistory] = useState(null)
+  const [detailProduct, setDetailProduct] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
     api.get('/admin/products').then(d => { setProducts(d); setLoading(false) }).catch(() => setLoading(false))
   }, [])
 
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search])
+
   const filtered = products.filter(p => p.nom?.toLowerCase().includes(search.toLowerCase()))
+
+  const visibleItems = filtered.slice(0, visibleCount)
+  const hasMore = filtered.length > visibleCount
 
   async function showPriceHistory(id) {
     try {
@@ -529,53 +612,65 @@ function ProductsTab() {
         className="rounded-2xl px-4 py-3 text-sm outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
 
       {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div> :
-       <div className="overflow-x-auto rounded-2xl border" style={{ borderColor: 'var(--border)' }}>
-         <table className="w-full text-xs" style={{ background: 'var(--surface)' }}>
-           <thead><tr className="text-left" style={{ background: 'var(--surface-alt)', color: 'var(--text-muted)' }}>
-             <th className="p-3 font-semibold">Produit</th>
-             <th className="p-3 font-semibold">Vendeur</th>
-             <th className="p-3 font-semibold">Marché</th>
-             <th className="p-3 font-semibold text-right">Prix</th>
-             <th className="p-3 font-semibold text-right">Stock</th>
-             <th className="p-3 font-semibold text-right">Dernier prix</th>
-             <th className="p-3 font-semibold"></th>
-           </tr></thead>
-           <tbody>
-             {filtered.map(p => (
-               <tr key={p.id_produit} className="border-t" style={{ borderColor: 'var(--border-light)' }}>
-                 <td className="p-3 font-bold" style={{ color: 'var(--text-primary)' }}>{p.nom}</td>
-                 <td className="p-3" style={{ color: 'var(--text-secondary)' }}>{p.vendeur?.nom_etablissement || '-'}</td>
-                 <td className="p-3" style={{ color: 'var(--text-secondary)' }}>{p.vendeur?.localisation_marche || '-'}</td>
-                 <td className="p-3 text-right font-bold" style={{ color: 'var(--text-primary)' }}>{p.prix_reference?.toLocaleString()} F</td>
-                 <td className="p-3 text-right" style={{ color: p.stock_disponible > 0 ? '#1D9E75' : '#D85A30' }}>{p.stock_disponible}</td>
-                 <td className="p-3 text-right" style={{ color: 'var(--text-muted)' }}>{p.historiques?.[0]?.prix?.toLocaleString() || '-'} F</td>
-                 <td className="p-3 text-right">
-                   <button onClick={() => showPriceHistory(p.id_produit)} className="text-xs font-bold cursor-pointer" style={{ color: '#1D9E75', background: 'none', border: 'none' }}>
-                     Historique
-                   </button>
-                 </td>
-               </tr>
-             ))}
-           </tbody>
-         </table>
+       filtered.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun produit trouvé</div> :
+       <div className="flex flex-col gap-3">
+         {visibleItems.map(p => (
+           <div key={p.id_produit} className="rounded-2xl p-4 border flex items-center gap-4 cursor-pointer transition-all hover:shadow-sm"
+             style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+             onClick={() => setDetailProduct(p)}>
+             {/* Product image */}
+             <div className="w-14 h-14 rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden"
+               style={{ background: 'var(--surface-alt)' }}>
+               {p.photo_url ? (
+                 <img src={p.photo_url} alt={p.nom} className="w-full h-full object-cover" />
+               ) : (
+                 <Package size={20} style={{ color: 'var(--text-muted)' }} />
+               )}
+             </div>
+             {/* Info */}
+             <div className="flex-1 min-w-0">
+               <div className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{p.nom}</div>
+               <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{p.vendeur?.nom_etablissement || '—'} · {p.vendeur?.localisation_marche || '—'}</div>
+             </div>
+             {/* Price + stock */}
+             <div className="text-right flex-shrink-0">
+               <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>{p.prix_reference?.toLocaleString()} F</div>
+               <div className="text-[10px] font-semibold" style={{ color: p.stock_disponible > 0 ? '#1D9E75' : '#D85A30' }}>Stock: {p.stock_disponible}</div>
+             </div>
+             <ChevronDown size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+           </div>
+         ))}
        </div>
       }
+
+      {hasMore && (
+        <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+          className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+          <ChevronDown size={16} /> Charger plus ({filtered.length - visibleCount} restant(s))
+        </button>
+      )}
+
+      {/* Product detail modal */}
+      {detailProduct && (
+        <ProductDetailModal product={detailProduct} onClose={() => setDetailProduct(null)} onShowHistory={showPriceHistory} />
+      )}
 
       {priceHistory && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}
           onClick={() => setPriceHistory(null)}>
-          <div className="rounded-2xl p-6 border max-w-lg w-full max-h-[70vh] overflow-y-auto" style={{ background: 'hsl(250, 25%, 10%)', borderColor: '#333' }}
+          <div className="rounded-2xl p-6 border max-w-lg w-full max-h-[70vh] overflow-y-auto" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-black text-white">Historique des prix</h3>
-              <button onClick={() => setPriceHistory(null)} className="text-white/60 hover:text-white text-lg cursor-pointer" style={{ background: 'none', border: 'none' }}>✕</button>
+              <h3 className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Historique des prix</h3>
+              <button onClick={() => setPriceHistory(null)} style={{ color: 'var(--text-muted)', background: 'none', border: 'none' }} className="hover:opacity-80 text-lg cursor-pointer">✕</button>
             </div>
-            {priceHistory.length === 0 ? <div className="text-sm text-white/60 text-center py-4">Aucun historique</div> :
+            {priceHistory.length === 0 ? <div className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>Aucun historique</div> :
              <div className="flex flex-col gap-2">
                {priceHistory.map(h => (
-                 <div key={h.id_historique} className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                   <span className="text-sm font-bold text-white">{h.prix.toLocaleString()} F</span>
-                   <span className="text-xs text-white/50">{new Date(h.date_modification).toLocaleDateString()}</span>
+                 <div key={h.id_historique} className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: 'var(--surface-alt)' }}>
+                   <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{h.prix.toLocaleString()} F</span>
+                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(h.date_modification).toLocaleDateString()}</span>
                  </div>
                ))}
              </div>
@@ -587,9 +682,86 @@ function ProductsTab() {
   )
 }
 
-function SignalementsTab() {
+function ProductDetailModal({ product, onClose, onShowHistory }) {
+  const p = product
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}
+      onClick={onClose}>
+      <div className="rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+        style={{ background: 'var(--surface)' }}
+        onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <h3 className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Details du Produit</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
+            style={{ border: 'none', background: 'var(--surface-alt)', color: 'var(--text-muted)' }}>
+            <XCircle size={16} />
+          </button>
+        </div>
+
+        <div className="p-6">
+          {/* Product image */}
+          <div className="w-full h-48 rounded-2xl overflow-hidden mb-5 flex items-center justify-center"
+            style={{ background: 'var(--surface-alt)' }}>
+            {p.photo_url ? (
+              <img src={p.photo_url} alt={p.nom} className="w-full h-full object-cover" />
+            ) : (
+              <Package size={48} style={{ color: 'var(--text-muted)' }} />
+            )}
+          </div>
+
+          {/* Product name */}
+          <h2 className="text-lg font-black mb-1" style={{ color: 'var(--text-primary)' }}>{p.nom}</h2>
+          {p.description && <p className="text-xs mb-4" style={{ color: 'var(--text-secondary)' }}>{p.description}</p>}
+
+          {/* Stats grid */}
+          <div className="grid grid-cols-3 gap-2 mb-5">
+            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+              <div className="text-lg font-black" style={{ color: 'var(--text-primary)' }}>{p.prix_reference?.toLocaleString()} F</div>
+              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Prix</div>
+            </div>
+            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+              <div className="text-lg font-black" style={{ color: p.stock_disponible > 0 ? '#1D9E75' : '#D85A30' }}>{p.stock_disponible}</div>
+              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Stock</div>
+            </div>
+            <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+              <div className="text-lg font-black" style={{ color: 'var(--text-muted)' }}>{p.categorie?.nom || '—'}</div>
+              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Categorie</div>
+            </div>
+          </div>
+
+          {/* Info rows */}
+          <div className="flex flex-col gap-2 mb-5">
+            <InfoRow label="Vendeur" value={p.vendeur?.nom_etablissement || '—'} icon={<Store size={14} />} />
+            <InfoRow label="Marche" value={p.vendeur?.localisation_marche || '—'} icon={<MapPin size={14} />} />
+            {p.historiques && p.historiques.length > 0 && (
+              <InfoRow label="Dernier prix enregistre" value={`${p.historiques[0]?.prix?.toLocaleString() || '—'} F`} icon={<DollarSign size={14} />} />
+            )}
+          </div>
+
+          {/* Action button */}
+          <button onClick={() => { onClose(); onShowHistory(p.id_produit) }}
+            className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
+            style={{ background: 'var(--surface-alt)', borderColor: 'var(--border)', color: '#1D9E75' }}>
+            <TrendingUp size={14} /> Voir l'historique des prix
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SignalementsTab({ initialFilter }) {
   const [signalements, setSignalements] = useState([])
   const [loading, setLoading] = useState(true)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [statusFilter, setStatusFilter] = useState('tous')
+
+  useEffect(() => {
+    if (initialFilter?.status) setStatusFilter(initialFilter.status)
+  }, [initialFilter])
 
   function fetchSignalements() {
     setLoading(true)
@@ -607,11 +779,23 @@ function SignalementsTab() {
 
   const col = (s) => s.statut_traitement === 'En attente' ? '#D85A30' : s.statut_traitement === 'Traite' ? '#BA7517' : '#1D9E75'
 
+  const filtered = signalements.filter(s => statusFilter === 'tous' || s.statut_traitement === statusFilter)
+  const visibleItems = filtered.slice(0, visibleCount)
+  const hasMore = filtered.length > visibleCount
+
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [statusFilter])
+
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
+      <div className="flex gap-2">
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+          className="rounded-2xl px-4 py-2.5 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+          {['tous', 'En attente', 'Traite', 'Classe'].map(s => <option key={s} value={s}>{s === 'tous' ? 'Tous les statuts' : s}</option>)}
+        </select>
+      </div>
       {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div> :
-       signalements.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun signalement</div> :
-       signalements.map(s => (
+       filtered.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun signalement</div> :
+       visibleItems.map(s => (
          <div key={s.id_signalement} className="rounded-2xl p-4 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
            <div className="flex items-start justify-between mb-2">
              <div>
@@ -635,13 +819,20 @@ function SignalementsTab() {
              ))}
            </div>
          </div>
-       ))}
+        ))}
+           {hasMore && (
+             <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+               className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
+               style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+               <ChevronDown size={16} /> Charger plus ({filtered.length - visibleCount} restant(s))
+             </button>
+           )}
     </div>
   )
 }
 
 /* ─── PROFIL TAB ─── */
-function ProfilTab({ admin: initialAdmin, onLogout }) {
+function ProfilTab({ onLogout }) {
   const [profile, setProfile] = useState(null)
   const [edit, setEdit] = useState(false)
   const [form, setForm] = useState({ nom: '', prenom: '', email: '', telephone: '', mot_de_passe: '', confirm: '' })
@@ -698,7 +889,7 @@ function ProfilTab({ admin: initialAdmin, onLogout }) {
     finally { setSaving(false) }
   }
 
-  if (err) return <div className="text-center py-12 text-sm font-semibold" style={{ color: '#D85A30' }}>⚠️ {err}</div>
+  if (err) return <div className="text-center py-12 text-sm font-semibold" style={{ color: '#D85A30' }}><AlertTriangle size={14} className="inline align-middle mr-1" />{err}</div>
   if (!profile) return <div className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div>
 
   const initials = (profile.prenom?.[0] || '') + (profile.nom?.[0] || '')
@@ -707,7 +898,7 @@ function ProfilTab({ admin: initialAdmin, onLogout }) {
     <div className="max-w-lg mx-auto">
       {msg && (
         <div className="mb-4 rounded-2xl px-4 py-3 text-sm font-bold text-white text-center" style={{ background: '#1D9E75' }}>
-          ✅ {msg}
+          <CheckCircle size={14} className="inline align-middle mr-1" />{msg}
         </div>
       )}
 
@@ -717,7 +908,7 @@ function ProfilTab({ admin: initialAdmin, onLogout }) {
             {/* Avatar */}
             <div className="flex justify-center mb-5">
               {profile.photo_url ? (
-                <img src={profile.photo_url} alt="" className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md" />
+                <img src={profile.photo_url} alt="" className="w-24 h-24 rounded-full object-cover border-4 shadow-md" style={{ borderColor: 'var(--surface)' }} />
               ) : (
                 <div className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black text-white shadow-md"
                   style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)' }}>
@@ -732,21 +923,21 @@ function ProfilTab({ admin: initialAdmin, onLogout }) {
             </div>
 
             <div className="flex flex-col gap-3 mb-5">
-              <InfoRow label="Email" value={profile.email} icon="✉️" />
-              <InfoRow label="Téléphone" value={profile.telephone || '—'} icon="📱" />
-              <InfoRow label="Statut" value={profile.statut_compte} icon="🔒" />
+              <InfoRow label="Email" value={profile.email} icon={<Mail size={14} />} />
+              <InfoRow label="Téléphone" value={profile.telephone || '—'} icon={<Smartphone size={14} />} />
+              <InfoRow label="Statut" value={profile.statut_compte} icon={<Lock size={14} />} />
             </div>
 
             <div className="flex gap-3">
               <button onClick={() => setEdit(true)}
                 className="flex-1 rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                 style={{ background: '#1D9E75', color: '#fff', border: 'none' }}>
-                ✏️ Modifier
+                <Edit size={14} className="inline align-middle mr-1" /> Modifier
               </button>
               <button onClick={onLogout}
                 className="rounded-2xl py-3 px-5 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                 style={{ background: '#FDE8E2', color: '#D85A30', border: 'none' }}>
-                🚪
+                <LogOut size={16} />
               </button>
             </div>
           </>
@@ -782,7 +973,7 @@ function ProfilTab({ admin: initialAdmin, onLogout }) {
             <Field label="Téléphone" value={form.telephone} onChange={v => setForm(p => ({ ...p, telephone: v }))} />
 
             <hr className="border-t my-1" style={{ borderColor: 'var(--border)' }} />
-            <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>🔑 Changer le mot de passe (optionnel)</p>
+            <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Changer le mot de passe (optionnel)</p>
             <Field label="Nouveau mot de passe" type="password" value={form.mot_de_passe} onChange={v => setForm(p => ({ ...p, mot_de_passe: v }))} />
             <Field label="Confirmer le mot de passe" type="password" value={form.confirm} onChange={v => setForm(p => ({ ...p, confirm: v }))} />
 
@@ -790,7 +981,7 @@ function ProfilTab({ admin: initialAdmin, onLogout }) {
               <button type="submit" disabled={saving}
                 className="flex-1 rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                 style={{ background: '#1D9E75', color: '#fff', border: 'none', opacity: saving ? 0.7 : 1 }}>
-                {saving ? '⏳' : '💾 Enregistrer'}
+                {saving ? 'Enregistrement...' : 'Enregistrer'}
               </button>
               <button type="button" onClick={() => {
                 setEdit(false); setPhotoFile(null); setPhotoPreview('')
@@ -828,10 +1019,16 @@ function Field({ label, value, onChange, type = 'text' }) {
   )
 }
 
-function LitigesTab() {
+function LitigesTab({ initialFilter }) {
   const [litiges, setLitiges] = useState([])
   const [resolving, setResolving] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [statusFilter, setStatusFilter] = useState('tous')
+
+  useEffect(() => {
+    if (initialFilter?.status) setStatusFilter(initialFilter.status)
+  }, [initialFilter])
 
   function fetchLitiges() {
     setLoading(true)
@@ -848,11 +1045,22 @@ function LitigesTab() {
     } catch (e) { alert(e.message) }
   }
 
+  const visibleItems = litiges.filter(l => statusFilter === 'tous' || l.statut === statusFilter).slice(0, visibleCount)
+  const hasMore = litiges.filter(l => statusFilter === 'tous' || l.statut === statusFilter).length > visibleCount
+
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [statusFilter])
+
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex gap-2">
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+          className="rounded-2xl px-4 py-2.5 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+          {['tous', 'Ouvert', 'Resolu', 'Rejete'].map(s => <option key={s} value={s}>{s === 'tous' ? 'Tous les statuts' : s}</option>)}
+        </select>
+      </div>
       {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div> :
-       litiges.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun litige</div> :
-       litiges.map(l => (
+       litiges.filter(l => statusFilter === 'tous' || l.statut === statusFilter).length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun litige</div> :
+       visibleItems.map(l => (
          <div key={l.id_litige} className="rounded-2xl p-4 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
            <div className="flex items-start justify-between mb-2">
              <div>
@@ -885,21 +1093,28 @@ function LitigesTab() {
            )}
 
           {l.montant_rembourse > 0 && (
-             <div className="text-xs font-bold mb-2" style={{ color: '#D85A30' }}>Remboursement: {l.montant_rembourse.toLocaleString()} F</div>
-           )}
+              <div className="text-xs font-bold mb-2" style={{ color: '#D85A30' }}>Remboursement: {l.montant_rembourse.toLocaleString()} F</div>
+            )}
 
-           {l.statut === 'Ouvert' && (
-             resolving === l.id_litige ? (
-               <ResolveForm litige={l} onResolve={handleResolve} onCancel={() => setResolving(null)} />
-             ) : (
-               <button onClick={() => setResolving(l.id_litige)} className="text-xs font-bold px-4 py-2 rounded-full cursor-pointer border"
-                 style={{ borderColor: '#1D9E75', color: '#1D9E75', background: 'transparent' }}>
-                 Résoudre le litige
-               </button>
-             )
-           )}
-         </div>
-       ))}
+            {l.statut === 'Ouvert' && (
+              resolving === l.id_litige ? (
+                <ResolveForm litige={l} onResolve={handleResolve} onCancel={() => setResolving(null)} />
+              ) : (
+                <button onClick={() => setResolving(l.id_litige)} className="text-xs font-bold px-4 py-2 rounded-full cursor-pointer border"
+                  style={{ borderColor: '#1D9E75', color: '#1D9E75', background: 'transparent' }}>
+                  Résoudre le litige
+                </button>
+              )
+            )}
+          </div>
+        ))}
+        {hasMore && (
+          <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+            className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+            <ChevronDown size={16} /> Charger plus ({litiges.filter(l => statusFilter === 'tous' || l.statut === statusFilter).length - visibleCount} restant(s))
+          </button>
+        )}
     </div>
   )
 }
@@ -934,7 +1149,7 @@ function ResolveForm({ litige, onResolve, onCancel }) {
 }
 
 // ============================================================
-// 🗺️  MARKETS TAB — Admin creates / edits / deletes Marchés
+// MARKETS TAB — Admin creates / edits / deletes Marchés
 // ============================================================
 const EMPTY_FORM = { nom: '', latitude: '', longitude: '', image_url: '', description: '' }
 
@@ -946,10 +1161,13 @@ function MarketsTab() {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
+  const [toastType, setToastType] = useState('success')
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState('')
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
-  function flash(msg) {
+  function flash(msg, type = 'success') {
+    setToastType(type)
     setToast(msg)
     setTimeout(() => setToast(''), 3000)
   }
@@ -996,12 +1214,11 @@ function MarketsTab() {
 
   async function handleSave() {
     if (!form.nom || !form.latitude || !form.longitude) {
-      flash('⚠️ Nom, latitude et longitude sont requis.')
+      flash('Nom, latitude et longitude sont requis.', 'error')
       return
     }
     setSaving(true)
     try {
-      let res
       if (imageFile) {
         const body = new FormData()
         body.set('nom', form.nom)
@@ -1010,22 +1227,22 @@ function MarketsTab() {
         body.set('description', form.description || '')
         body.set('image', imageFile)
         if (editId) {
-          res = await api.put(`/admin/markets/${editId}`, body)
+          await api.put(`/admin/markets/${editId}`, body)
         } else {
-          res = await api.post('/admin/markets', body)
+          await api.post('/admin/markets', body)
         }
       } else {
         if (editId) {
-          res = await api.put(`/admin/markets/${editId}`, form)
+          await api.put(`/admin/markets/${editId}`, form)
         } else {
-          res = await api.post('/admin/markets', form)
+          await api.post('/admin/markets', form)
         }
       }
-      flash(`✅ Marché ${editId ? 'mis à jour' : 'créé avec succès'}.`)
+      flash(`Marché ${editId ? 'mis à jour' : 'créé avec succès'}.`, 'success')
       setShowForm(false)
       fetchMarkets()
     } catch (e) {
-      flash('❌ ' + e.message)
+      flash(e.message, 'error')
     } finally {
       setSaving(false)
     }
@@ -1035,10 +1252,10 @@ function MarketsTab() {
     if (!confirm(`Supprimer "${m.nom}" ? Les vendeurs de ce marché seront déliés.`)) return
     try {
       await api.delete(`/admin/markets/${m.id_marche}`)
-      flash('✅ Marché supprimé.')
+      flash('Marché supprimé.', 'success')
       fetchMarkets()
     } catch (e) {
-      flash('❌ ' + e.message)
+      flash(e.message, 'error')
     }
   }
 
@@ -1056,7 +1273,7 @@ function MarketsTab() {
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"
-          style={{ background: toast.startsWith('❌') ? '#D85A30' : '#1D9E75' }}>
+          style={{ background: toastType === 'error' ? '#D85A30' : '#1D9E75' }}>
           {toast}
         </div>
       )}
@@ -1088,7 +1305,7 @@ function MarketsTab() {
 
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-black" style={{ color: 'var(--text-primary)' }}>
-                {editId ? '✏️ Modifier le Marché' : '🏛️ Nouveau Localmart'}
+                {editId ? <span className="flex items-center gap-1.5"><Edit size={14} /> Modifier le Marché</span> : <span className="flex items-center gap-1.5"><Building size={14} /> Nouveau Marché</span>}
               </h3>
               <button onClick={() => setShowForm(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 cursor-pointer text-sm"
@@ -1148,7 +1365,7 @@ function MarketsTab() {
               )}
               {form.latitude && form.longitude && (
                 <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>
-                  📍 Aperçu: ({parseFloat(form.latitude).toFixed(4)}, {parseFloat(form.longitude).toFixed(4)}) ·
+                   <MapPin size={10} className="inline align-middle" /> Aperçu: ({parseFloat(form.latitude).toFixed(4)}, {parseFloat(form.longitude).toFixed(4)}) ·
                   <a href={`https://www.openstreetmap.org/?mlat=${form.latitude}&mlon=${form.longitude}#map=15/${form.latitude}/${form.longitude}`}
                     target="_blank" rel="noreferrer" className="ml-1 underline" style={{ color: '#1D9E75' }}>Vérifier sur OSM</a>
                 </p>
@@ -1165,7 +1382,7 @@ function MarketsTab() {
                     ) : form.image_url ? (
                       <img src={form.image_url} alt="" className="w-10 h-10 rounded-lg object-cover" />
                     ) : (
-                      <span className="text-lg">📷</span>
+                      <span className="text-lg"><Package size={18} style={{ color: 'var(--text-muted)' }} /></span>
                     )}
                     <span className="text-xs font-semibold flex-1" style={{ color: 'var(--text-muted)' }}>
                       {imagePreview ? 'Image sélectionnée' : form.image_url ? 'URL définie' : 'Choisir une image depuis l\'appareil'}
@@ -1227,7 +1444,7 @@ function MarketsTab() {
                       className="text-[9px] font-bold px-2.5 py-1.5 rounded-full cursor-pointer transition-all"
                       style={{ background: '#E1F5EE', color: '#0F6E56', border: '1px solid #9FE1CB' }}
                     >
-                      📍 {c.label}
+                      <MapPin size={8} className="inline align-middle" /> {c.label}
                     </button>
                   ))}
                 </div>
@@ -1251,15 +1468,16 @@ function MarketsTab() {
         <div className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement des marchés...</div>
       ) : markets.length === 0 ? (
         <div className="text-center py-16 rounded-3xl border-2 border-dashed" style={{ borderColor: 'var(--border)' }}>
-          <div className="text-5xl mb-3">🗺️</div>
+          <div className="mb-3 flex justify-center"><MapPin size={48} style={{ color: 'var(--text-muted)' }} /></div>
           <p className="font-bold text-sm mb-3" style={{ color: 'var(--text-muted)' }}>Aucun marché enregistré</p>
           <button onClick={openCreate}
             className="text-sm font-black px-5 py-2.5 rounded-2xl text-white cursor-pointer"
             style={{ background: '#1D9E75', border: 'none' }}>+ Créer le premier marché</button>
         </div>
       ) : (
+        <>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {markets.map(m => (
+          {markets.slice(0, visibleCount).map(m => (
             <div key={m.id_marche} className="rounded-2xl border overflow-hidden shadow-sm hover:shadow-md transition-all"
               style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
 
@@ -1268,7 +1486,7 @@ function MarketsTab() {
                 {m.image_url ? (
                   <img src={m.image_url} alt={m.nom} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl">🏛️</div>
+                  <div className="w-full h-full flex items-center justify-center"><Building size={32} style={{ color: 'var(--text-muted)' }} /></div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-3 left-3 right-3">
@@ -1277,14 +1495,14 @@ function MarketsTab() {
                 {/* Vendor count badge */}
                 <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-black"
                   style={{ background: 'rgba(255,255,255,0.92)', color: '#0F6E56' }}>
-                  🏪 {m._count?.vendeurs || 0} étals
+                  <Store size={10} className="inline align-middle" /> {m._count?.vendeurs || 0} étals
                 </div>
               </div>
 
               <div className="p-4">
                 {/* Coordinates */}
                 <div className="flex items-center gap-2 text-[10px] mb-2" style={{ color: 'var(--text-muted)' }}>
-                  <span>📍 {m.latitude.toFixed(4)}, {m.longitude.toFixed(4)}</span>
+                  <span><MapPin size={10} className="inline align-middle" /> {m.latitude.toFixed(4)}, {m.longitude.toFixed(4)}</span>
                   <a
                     href={`https://www.openstreetmap.org/?mlat=${m.latitude}&mlon=${m.longitude}#map=15/${m.latitude}/${m.longitude}`}
                     target="_blank" rel="noreferrer"
@@ -1303,23 +1521,31 @@ function MarketsTab() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => openEdit(m)}
-                    className="flex-1 text-xs font-bold py-2 rounded-xl cursor-pointer transition-all"
+                    className="flex-1 text-xs font-bold py-2 rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1"
                     style={{ background: '#E1F5EE', color: '#0F6E56', border: 'none' }}
                   >
-                    ✏️ Modifier
+                    <Edit size={12} /> Modifier
                   </button>
                   <button
                     onClick={() => handleDelete(m)}
-                    className="text-xs font-bold px-4 py-2 rounded-xl cursor-pointer transition-all"
+                    className="text-xs font-bold px-4 py-2 rounded-xl cursor-pointer transition-all flex items-center justify-center"
                     style={{ background: '#FDE8E2', color: '#D85A30', border: 'none' }}
                   >
-                    🗑️
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>
             </div>
           ))}
         </div>
+        {markets.length > visibleCount && (
+          <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+            className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+            <ChevronDown size={16} /> Charger plus ({markets.length - visibleCount} restant(s))
+          </button>
+        )}
+        </>
       )}
     </div>
   )

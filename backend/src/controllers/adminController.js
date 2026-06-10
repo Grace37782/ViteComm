@@ -149,10 +149,61 @@ export const getAdminDashboard = async (req, res) => {
     }));
     clientsLeaderboard.sort((a, b) => b.volume_achat - a.volume_achat);
 
+    // --- GLOBAL COUNTS ---
+    const [totalUsers, totalClients, totalVendors, totalDrivers, totalOrders, activeOrders, totalLivraisons] = await Promise.all([
+      prisma.utilisateur.count(),
+      prisma.client.count(),
+      prisma.vendeur.count(),
+      prisma.livreur.count(),
+      prisma.commande.count(),
+      prisma.commande.count({ where: { statut: { in: ['En attente', 'En cours', 'Validee'] } } }),
+      prisma.livraison.count({ where: { statut_livraison: 'Livree' } })
+    ]);
+
+    // --- VENDOR REPUTATION LEADERBOARD ---
+    const vendorsForReputation = await prisma.vendeur.findMany({
+      where: { score_reputation: { gt: 0 } },
+      include: {
+        utilisateur: {
+          select: { nom: true, prenom: true, photo_url: true }
+        }
+      },
+      orderBy: { score_reputation: 'desc' },
+      take: 5
+    });
+    const vendorReputationLeaderboard = vendorsForReputation.map(v => ({
+      id_user: v.id_user,
+      nom_etablissement: v.nom_etablissement,
+      nom: v.utilisateur.nom,
+      prenom: v.utilisateur.prenom,
+      photo_url: v.utilisateur.photo_url,
+      score_reputation: v.score_reputation
+    }));
+
+    // --- VENDOR PRODUCT COUNT ---
+    const vendorProductCounts = await prisma.produit.groupBy({
+      by: ['id_user_vendeur'],
+      _count: { id_produit: true }
+    });
+    const productCountMap = Object.fromEntries(vendorProductCounts.map(v => [v.id_user_vendeur, v._count.id_produit]));
+    const vendorsWithProductCount = vendorsLeaderboard.map(v => ({
+      ...v,
+      products_count: productCountMap[v.id_user] || 0
+    }));
+
     return res.json({
       financier: {
         total_ventes: totalVentes,
         total_commissions_plateforme: totalCommissions
+      },
+      compteur: {
+        total_utilisateurs: totalUsers,
+        total_clients: totalClients,
+        total_vendeurs: totalVendors,
+        total_livreurs: totalDrivers,
+        total_commandes: totalOrders,
+        commandes_actives: activeOrders,
+        total_livraisons: totalLivraisons
       },
       produits_populaires: popularProducts,
       produits_refuses: avoidedProducts,
@@ -161,9 +212,10 @@ export const getAdminDashboard = async (req, res) => {
         signalements_en_attente: pendingSignalements
       },
       classements: {
-        vendeurs: vendorsLeaderboard,
+        vendeurs: vendorsWithProductCount,
         livreurs: driversLeaderboard,
-        clients: clientsLeaderboard
+        clients: clientsLeaderboard,
+        vendeurs_reputation: vendorReputationLeaderboard
       }
     });
   } catch (error) {
@@ -308,7 +360,7 @@ export const getUserDetails = async (req, res) => {
     } else if (safeUser.client) {
       const orders = await prisma.commande.findMany({
         where: { id_user_client: userId },
-        orderBy: { date_validation: 'desc' },
+        orderBy: { date_creation: 'desc' },
         take: 20
       });
 
