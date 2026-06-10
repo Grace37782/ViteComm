@@ -235,11 +235,15 @@ export const clearCart = async (req, res) => {
 // --- 2.3. Passer une commande (Checkout - RG01, RG05, RG08, RG22, RG24) ---
 
 export const createOrder = async (req, res) => {
-  const { id_user_livreur, items } = req.body;
+  const { id_user_livreur, items, mode_paiement = 'ESPECES' } = req.body;
   // items: [{ id_produit, quantite_commandee }]
 
   if (!id_user_livreur || !items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'Détails de la commande invalides.' });
+  }
+
+  if (!['ESPECES', 'MOBILE_MONEY'].includes(mode_paiement)) {
+    return res.status(400).json({ error: 'mode_paiement invalide.' });
   }
 
   try {
@@ -286,7 +290,9 @@ export const createOrder = async (req, res) => {
           commission,
           code_verification: verificationCode,
           id_user_client: client.id_user,
-          statut: 'En attente'
+          statut: 'En attente',
+          mode_paiement,
+          mode_paiement_status: mode_paiement === 'MOBILE_MONEY' ? 'en_attente' : null,
         }
       });
 
@@ -325,7 +331,8 @@ export const createOrder = async (req, res) => {
     return res.status(201).json({
       message: 'Commande créée avec succès.',
       id_commande: command.id_commande,
-      code_verification: command.code_verification
+      code_verification: command.code_verification,
+      requires_payment: mode_paiement === 'MOBILE_MONEY',
     });
   } catch (error) {
     return res.status(400).json({ error: error.message });
