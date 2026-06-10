@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { AlertTriangle, ShoppingCart, Camera, Loader2, KeyRound, CheckCircle, Package, ChevronDown } from 'lucide-react'
+import { AlertTriangle, ShoppingCart, Camera, Loader2, KeyRound, CheckCircle, Package, ChevronDown, ShieldCheck } from 'lucide-react'
 
 const PAGE_SIZE = 10
 
@@ -15,6 +15,7 @@ export default function CommandesVendeur() {
   const [confirmes, setConfirmes] = useState({})
   const [errCodes, setErrCodes] = useState({})
   const [submitting, setSubmitting] = useState({})
+  const [validating, setValidating] = useState({})
   const [filtre, setFiltre] = useState('tous')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
@@ -42,7 +43,8 @@ export default function CommandesVendeur() {
 
   const filtres = {
     tous: commandes,
-    en_attente: commandes.filter((c) => c.statut_collecte === 'en_attente'),
+    a_valider: commandes.filter((c) => !c.validee_par_vendeur && c.statut_collecte === 'en_attente'),
+    en_attente: commandes.filter((c) => c.validee_par_vendeur && c.statut_collecte === 'en_attente'),
     collecte: commandes.filter((c) => c.statut_collecte === 'collecte' || confirmes[c.id]),
   }
 
@@ -77,6 +79,20 @@ export default function CommandesVendeur() {
       setErrCodes((p) => ({ ...p, [cmd.id]: err.message }))
     } finally {
       setSubmitting((p) => ({ ...p, [cmd.id]: false }))
+    }
+  }
+
+  async function validerCommande(cmd) {
+    try {
+      setValidating((p) => ({ ...p, [cmd.id]: true }))
+      await api.post(`/vendor/orders/${cmd.id}/validate`)
+      setCommandes((prev) =>
+        prev.map((c) => (c.id === cmd.id ? { ...c, validee_par_vendeur: true } : c))
+      )
+    } catch (err) {
+      setErrCodes((p) => ({ ...p, [cmd.id]: err.message }))
+    } finally {
+      setValidating((p) => ({ ...p, [cmd.id]: false }))
     }
   }
 
@@ -120,6 +136,7 @@ export default function CommandesVendeur() {
       <div className="flex gap-2">
         {[
           { id: 'tous', label: 'Toutes' },
+          { id: 'a_valider', label: 'À valider' },
           { id: 'en_attente', label: 'En attente' },
           { id: 'collecte', label: 'Collectées' },
         ].map((f) => (
@@ -202,8 +219,34 @@ export default function CommandesVendeur() {
               </div>
             </div>
 
-            {/* Zone validation (uniquement si pas encore collecté) */}
-            {!collecte && (
+            {/* Zone validation vendeur (avant la remise) */}
+            {!cmd.validee_par_vendeur && !collecte && (
+              <div className="px-4 pb-4 pt-3"
+                style={{ borderTop: '1px solid var(--border)' }}>
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-3"
+                  style={{ background: isDark ? 'rgba(234,179,8,0.12)' : '#FEF9C3' }}>
+                  <ShieldCheck size={16} style={{ color: isDark ? '#FACC15' : '#A16207' }} />
+                  <span className="text-xs font-semibold" style={{ color: isDark ? '#FACC15' : '#A16207' }}>
+                    Validez la disponibilité des articles avant la remise
+                  </span>
+                </div>
+                <button
+                  onClick={() => validerCommande(cmd)}
+                  disabled={validating[cmd.id]}
+                  className="w-full py-3 rounded-xl text-sm font-black transition-all"
+                  style={{
+                    background: validating[cmd.id] ? (isDark ? 'var(--border)' : '#D3D1C7') : (isDark ? '#2DC491' : '#0F6E56'),
+                    border: 'none',
+                    color: '#fff',
+                    cursor: validating[cmd.id] ? 'not-allowed' : 'pointer',
+                  }}>
+                  {validating[cmd.id] ? 'Validation…' : 'Articles disponibles →'}
+                </button>
+              </div>
+            )}
+
+            {/* Zone validation (uniquement si pas encore collecté ET déjà validé par vendeur) */}
+            {cmd.validee_par_vendeur && !collecte && (
               <div className="px-4 pb-4 flex flex-col gap-3"
                 style={{ borderTop: '1px solid var(--border)' }}>
                 <div className="pt-3" />

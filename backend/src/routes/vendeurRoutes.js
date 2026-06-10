@@ -12,6 +12,7 @@ import {
   getVendorCategories,
   createCategory,
   getVendorOrders,
+  validateOrder,
   verifyHandover,
   getVendorReturns,
   markReturnRecovered,
@@ -77,6 +78,7 @@ router.post('/categories', createCategory);
 
 // Commandes
 router.get('/orders', getVendorOrders);
+router.post('/orders/:id_commande/validate', validateOrder);
 router.post('/orders/:id_commande/verify-handover', upload.single('photo'), verifyHandover);
 
 // Retours

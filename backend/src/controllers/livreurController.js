@@ -27,8 +27,10 @@ export const getDriverDashboard = async (req, res) => {
       include: { commande: true }
     });
 
-    const totalGains = completedDeliveries.reduce((acc, curr) => acc + curr.commande.frais_livraison, 0);
-    const totalReturnFees = completedDeliveries.reduce((acc, curr) => acc + (curr.frais_retour_calcules || 0), 0);
+    // RG28: Gains are only credited after payment confirmation
+    const paidDeliveries = completedDeliveries.filter(d => d.commande.mode_paiement_status === 'paye');
+    const totalGains = paidDeliveries.reduce((acc, curr) => acc + curr.commande.frais_livraison, 0);
+    const totalReturnFees = paidDeliveries.reduce((acc, curr) => acc + (curr.frais_retour_calcules || 0), 0);
 
     const latestDispo = await prisma.disponibiliteLivreur.findFirst({
       where: { id_user_livreur: driverId },
@@ -71,7 +73,7 @@ export const getDriverDashboard = async (req, res) => {
       nb_avis: feedbacks.length,
       total_gains: totalGains,
       total_frais_retour: totalReturnFees,
-      courses_effectuees: completedDeliveries.length,
+      courses_effectuees: paidDeliveries.length,
       courses_actives: activeDeliveries,
       retours_en_attente: pendingReturns,
       vehicule: {
@@ -239,6 +241,11 @@ export const collectDelivery = async (req, res) => {
 
     if (command.livraison.statut_livraison !== 'En cours de collecte') {
       return res.status(400).json({ error: 'Cette livraison n\'est pas en phase de collecte.' });
+    }
+
+    // RG architecture: vendor must validate order availability before driver can collect
+    if (!command.validee_par_vendeur) {
+      return res.status(400).json({ error: 'Le vendeur n\'a pas encore validé la disponibilité des articles.' });
     }
 
     // For now, accept any code (vendor verification will be added later)
@@ -539,8 +546,10 @@ export const getLivreurHistorique = async (req, res) => {
     const failed = enrichedDeliveries.filter(d => d.statut_livraison === 'Echec');
     const inProgress = enrichedDeliveries.filter(d => d.statut_livraison !== 'Livree' && d.statut_livraison !== 'Echec');
 
-    const totalGains = completed.reduce((sum, d) => sum + d.commande.frais_livraison, 0);
-    const totalReturnFees = completed.reduce((sum, d) => sum + (d.frais_retour_calcules || 0), 0);
+    // RG28: Gains are only credited after payment confirmation
+    const paidCompleted = completed.filter(d => d.commande.mode_paiement_status === 'paye');
+    const totalGains = paidCompleted.reduce((sum, d) => sum + d.commande.frais_livraison, 0);
+    const totalReturnFees = paidCompleted.reduce((sum, d) => sum + (d.frais_retour_calcules || 0), 0);
 
     return res.json({
       livraisons: enrichedDeliveries,
@@ -775,7 +784,10 @@ export const getGainsDetailed = async (req, res) => {
       orderBy: { date_fin_reelle: 'desc' }
     });
 
-    const gains = completed.map(d => ({
+    // RG28: Gains are only credited after payment confirmation
+    const paid = completed.filter(d => d.commande.mode_paiement_status === 'paye');
+
+    const gains = paid.map(d => ({
       id_livraison: d.id_livraison,
       id_commande: d.commande.id_commande,
       client: d.commande.client?.utilisateur

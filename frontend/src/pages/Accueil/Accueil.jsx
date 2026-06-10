@@ -41,7 +41,7 @@ const FEATURES = [
   { icon: ShoppingCart, title: 'Panier multi-étals', desc: 'Commandez de plusieurs marchands en une seule course.' },
   { icon: MapPin, title: 'Suivi en direct', desc: 'Suivez votre livreur en temps réel sur la carte.' },
   { icon: ShieldCheck, title: 'Code de confirmation', desc: 'Sécurisez chaque échange avec un code unique.' },
-  { icon: Banknote, title: 'Paiement sécurisé', desc: 'Payez par Mobile Money ou à la livraison, à votre convenance.' },
+  { icon: Banknote, title: 'Paiement sécurisé', desc: 'Payez par Mobile Money directement depuis l\'application.' },
   { icon: Store, title: 'Étal en ligne', desc: 'Vendez vos produits sans gérer la logistique.' },
   { icon: Zap, title: 'Livraison zemidjan', desc: 'Livraison rapide par motards locaux certifiés.' },
 ]
@@ -61,7 +61,7 @@ const TESTIMONIALS = [
 const FAQ = [
   { q: 'Comment ça marche ?', a: 'Créez un compte gratuit, choisissez votre profil (client, vendeur ou livreur) et commencez à utiliser la plateforme immédiatement.' },
   { q: 'Quels sont les frais ?', a: 'Les clients paient uniquement les frais de livraison (à partir de 300 F). Les vendeurs paient 0.6% de commission sur les ventes finalisées. Les livreurs gardent 100% des frais de livraison.' },
-  { q: 'Comment est-ce sécurisé ?', a: 'Chaque transaction est protégée par un code de confirmation unique. Le paiement à la livraison élimine les risques de fraude en ligne.' },
+  { q: 'Comment est-ce sécurisé ?', a: 'Chaque transaction est protégée par un code de confirmation unique. Le paiement en ligne via Mobile Money élimine les risques de fraude.' },
   { q: 'Dans quelles villes ?', a: 'Nous opérons actuellement à Cotonou, Porto-Novo, Parakou et Abomey-Calavi. D\'autres villes arrivent bientôt.' },
   { q: 'Puis-je devenir livreur ?', a: 'Oui ! Il vous faut un zemidjan ou un véhicule, et une inscription gratuite. Vous commencez à livrer dans les 24h.' },
 ]

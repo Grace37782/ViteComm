@@ -143,6 +143,7 @@ model Commande {
   id_user_client       Int
   mode_paiement        String   @default("ESPECES")
   mode_paiement_status String?
+  validee_par_vendeur  Boolean  @default(false)
 
   client               Client               @relation(fields: [id_user_client], references: [id_user], onDelete: Cascade)
   detailsCommande      DetailCommande[]

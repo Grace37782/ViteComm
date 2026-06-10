@@ -425,6 +425,7 @@ export const getVendorOrders = async (req, res) => {
         id: o.id_commande,
         heure: formatHeure(o.date_creation),
         statut_collecte,
+        validee_par_vendeur: o.validee_par_vendeur,
         livreur,
         photo_collecte,
         code_correct: o.code_verification,
@@ -451,6 +452,55 @@ function formatHeure(date) {
   if (diffHours < 48) return 'Hier';
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
 }
+
+// Vendor validates order availability (RG architecture: validation_par_vendeur)
+export const validateOrder = async (req, res) => {
+  const { id_commande } = req.params;
+  const vendorId = req.user.id_user;
+
+  const commandId = parseInt(id_commande);
+  if (isNaN(commandId)) {
+    return res.status(400).json({ error: 'ID de commande invalide.' });
+  }
+
+  try {
+    const order = await prisma.commande.findUnique({
+      where: { id_commande: commandId },
+      include: {
+        detailsCommande: true,
+        client: true
+      }
+    });
+
+    if (!order) return res.status(404).json({ error: 'Commande introuvable.' });
+
+    // Verify vendor owns at least one product in this order
+    const vendorProducts = await prisma.detailCommande.findMany({
+      where: {
+        id_commande: commandId,
+        produit: { id_user_vendeur: vendorId }
+      }
+    });
+
+    if (vendorProducts.length === 0) {
+      return res.status(403).json({ error: 'Cette commande ne contient aucun de vos produits.' });
+    }
+
+    if (order.validee_par_vendeur) {
+      return res.status(400).json({ error: 'Cette commande a déjà été validée.' });
+    }
+
+    await prisma.commande.update({
+      where: { id_commande: commandId },
+      data: { validee_par_vendeur: true }
+    });
+
+    return res.json({ message: 'Commande validée. Les articles sont disponibles pour retrait.' });
+  } catch (error) {
+    console.error('validateOrder error:', error);
+    return res.status(500).json({ error: 'Erreur lors de la validation.' });
+  }
+};
 
 // Vendor validates handover by entering driver's verification code (RG06)
 export const verifyHandover = async (req, res) => {

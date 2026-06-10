@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCheck, Home } from 'lucide-react'
+import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCheck, Home, Smartphone } from 'lucide-react'
 
 const STATUT_STEPS = [
   { key: 'En attente', icon: Loader2, titre: 'En attente', desc: 'En attente d\'un livreur' },
@@ -155,6 +155,17 @@ export default function SuiviCommande() {
               className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer"
               style={{ background: '#D85A30', border: 'none', boxShadow: '0 4px 16px rgba(216,90,48,0.3)' }}>
                <Search size={16} className="inline" /> Inspecter les articles
+            </button>
+          )}
+          {statut === 'Livree' && order?.mode_paiement_status !== 'paye' && (
+            <button onClick={() => {
+              const total = (order?.detailsCommande || []).reduce((s, d) => s + (d.prix_vente_applique || 0) * d.quantite_commandee, 0)
+                + (order?.frais_livraison || 0)
+              navigate('/client/paiement', { state: { id_commande, total } })
+            }}
+              className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer"
+              style={{ background: '#1D9E75', border: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.3)' }}>
+               <Smartphone size={16} className="inline" /> Payer maintenant
             </button>
           )}
           <button onClick={() => navigate('/client/accueil')}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { ClipboardList, Inbox, ShoppingCart, ShieldCheck, Motorbike, CheckCircle, ChevronDown } from 'lucide-react'
+import { ClipboardList, Inbox, ShoppingCart, ShieldCheck, Motorbike, CheckCircle, ChevronDown, Smartphone } from 'lucide-react'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -240,8 +240,25 @@ export default function MesCommandes() {
                 {/* Footer action */}
                 <div style={{
                   borderTop: '1px solid var(--border)', padding: '10px 16px',
-                  display: 'flex', justifyContent: 'flex-end',
+                  display: 'flex', justifyContent: 'flex-end', gap: 8,
                 }}>
+                  {order.statut === 'Livree' && order.mode_paiement_status !== 'paye' && (
+                    <button
+                      onClick={() => {
+                        const total = (order.detailsCommande || []).reduce((s, d) => s + (d.prix_vente_applique || 0) * d.quantite_commandee, 0)
+                          + (order.frais_livraison || 0)
+                        navigate('/client/paiement', { state: { id_commande: order.id_commande, total } })
+                      }}
+                      style={{
+                        background: '#1D9E75', color: '#fff', borderRadius: 12,
+                        padding: '8px 14px', fontSize: 12, fontWeight: 800,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                        border: 'none',
+                      }}
+                    >
+                      <Smartphone size={12} className="inline" /> Payer
+                    </button>
+                  )}
                   <button
                     onClick={() => navigate('/client/suivi-commande', {
                       state: {
