@@ -26,6 +26,7 @@ import LivreurProfil from './pages/livreur/LivreurProfil'
 import Admin from './pages/admin/Admin'
 import Inscription from './pages/auth/Inscription'
 import ForgotPassword from './pages/auth/ForgotPassword'
+import CGU from './pages/auth/CGU'
 import Profil from './pages/client/Profil'
 import SuiviCommande from './pages/client/SuiviCommande'
 import MarcheDetail from './pages/client/MarcheDetail'
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="/connect" element={<Connexion />} />
         <Route path="/register" element={<Inscription />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/cgu" element={<CGU />} />
         {/* Connexion admin cachée */}
         <Route path="/admin-connect" element={<Connexion />} />
 

@@ -354,6 +354,12 @@ export default function Connexion() {
             >
               Créer un compte
             </button>
+            <p className="text-[11px] mt-3" style={{ color: 'var(--text-muted)' }}>
+              En vous connectant, vous acceptez nos{' '}
+              <span onClick={() => navigate('/cgu')} className="font-bold underline cursor-pointer" style={{ color: 'var(--accent)' }}>
+                CGU
+              </span>
+            </p>
           </div>
         </div>
       </div>

@@ -120,6 +120,7 @@ export default function Inscription() {
   })
   const [showMdp, setShowMdp]             = useState(false)
   const [loading, setLoading]             = useState(false)
+  const [acceptedCGU, setAcceptedCGU]     = useState(false)
   const [verifyToken, setVerifyToken]     = useState('')
   const [verifyEmail, setVerifyEmail]     = useState('')
   const [code, setCode]                   = useState('')
@@ -401,9 +402,23 @@ export default function Inscription() {
                   </>
                 )}
 
-                <button type="submit" disabled={loading}
+                <label className="flex items-start gap-3 cursor-pointer mt-1 p-3 rounded-xl transition-all"
+                  style={{ background: acceptedCGU ? '#1D9E7510' : 'transparent', border: `1px solid ${acceptedCGU ? '#1D9E7540' : 'var(--border)'}` }}>
+                  <input type="checkbox" checked={acceptedCGU} onChange={e => setAcceptedCGU(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded accent-[#1D9E75] flex-shrink-0 cursor-pointer" />
+                  <span className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                    J'accepte les{' '}
+                    <span onClick={e => { e.preventDefault(); navigate('/cgu') }}
+                      className="font-bold underline cursor-pointer" style={{ color: '#1D9E75' }}>
+                      Conditions Générales d'Utilisation
+                    </span>{' '}
+                    de ViteComm
+                  </span>
+                </label>
+
+                <button type="submit" disabled={loading || !acceptedCGU}
                   className="mt-1 rounded-xl py-3.5 text-sm font-black transition-all cursor-pointer"
-                  style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', border: 'none', opacity: loading ? 0.7 : 1, boxShadow: loading ? 'none' : '0 4px 16px rgba(29,158,117,0.3)' }}>
+                  style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', border: 'none', opacity: loading || !acceptedCGU ? 0.5 : 1, boxShadow: loading || !acceptedCGU ? 'none' : '0 4px 16px rgba(29,158,117,0.3)' }}>
                   {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> Envoi du code...</> : 'Créer mon compte →'}
                 </button>
               </form>
