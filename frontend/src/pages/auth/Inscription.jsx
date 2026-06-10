@@ -94,7 +94,7 @@ function CodeInput({ value, onChange, isDark }) {
             }
           }}
           id={`code-${i}`}
-          className="w-11 h-14 text-center text-xl font-black rounded-xl outline-none"
+          className="w-10 h-13 sm:w-11 sm:h-14 text-center text-lg sm:text-xl font-black rounded-xl outline-none"
           style={{
             background: d ? (isDark ? 'rgba(45,196,145,0.2)' : 'rgba(29,158,117,0.15)') : 'var(--surface-alt)',
             color: 'var(--text-primary)',
@@ -231,7 +231,7 @@ export default function Inscription() {
 
         {/* Back button */}
         <button onClick={() => navigate('/accueil')}
-          className="absolute top-5 left-5 z-20 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold cursor-pointer backdrop-blur-md"
+          className="absolute top-4 left-4 sm:top-5 sm:left-5 z-20 flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold cursor-pointer backdrop-blur-md"
           style={{
             background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
             color: 'var(--text-secondary)',
@@ -255,7 +255,7 @@ export default function Inscription() {
         )}
 
         {/* Main card */}
-        <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10"
+        <div className="relative z-10 w-full max-w-md rounded-3xl p-6 sm:p-8 md:p-10"
           style={{
             background: 'var(--surface)',
             border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
@@ -278,12 +278,12 @@ export default function Inscription() {
 
               {/* Profile selector */}
               <div className="mb-5">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
                   {profils.map(p => {
                     const actif = profil === p.id
                     return (
                       <button key={p.id} type="button" onClick={() => setProfil(p.id)}
-                        className="rounded-xl py-4 flex flex-col items-center gap-2 transition-all cursor-pointer"
+                        className="rounded-xl py-3 sm:py-4 flex flex-col items-center gap-1.5 sm:gap-2 transition-all cursor-pointer"
                         style={{
                           background: actif ? (isDark ? `${p.color}22` : `${p.color}15`) : 'var(--surface-alt)',
                           border: `1.5px solid ${actif ? p.color : 'var(--border)'}`,

@@ -300,14 +300,15 @@ export default function Accueil() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button onClick={() => navigate('/connect')}
-              className="px-4 py-2 rounded-full text-xs font-bold cursor-pointer transition-all"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold cursor-pointer transition-all"
               style={{ background: 'none', border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`, color: 'var(--text-primary)' }}>
-              Se connecter
+              <span className="hidden sm:inline">Se connecter</span>
+              <span className="sm:hidden">Connexion</span>
             </button>
             <button onClick={() => navigate('/register')}
-              className="px-4 py-2 rounded-full text-xs font-bold cursor-pointer transition-all"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold cursor-pointer transition-all"
               style={{ background: '#1D9E75', color: '#fff', border: 'none' }}>
               Rejoindre
             </button>
@@ -316,7 +317,7 @@ export default function Accueil() {
       </nav>
 
       {/* ─── Hero ────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden px-6 pt-16 pb-20 sm:pt-24 sm:pb-28"
+      <section className="relative overflow-hidden px-4 sm:px-6 pt-14 pb-16 sm:pt-24 sm:pb-28"
         style={{ background: isDark ? 'linear-gradient(135deg, #121311 0%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
 
         {/* Decorative blobs */}
@@ -331,42 +332,42 @@ export default function Accueil() {
             <Sparkles size={14} className="inline-block mr-1.5" /> La première marketplace locale au Bénin
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tight">
             Le marché de{' '}
-            <span className="inline-block min-w-[180px]" style={{ color: isDark ? '#2DC491' : '#A8EDCA' }}>
+            <span className="inline-block min-w-[120px] sm:min-w-[180px]" style={{ color: isDark ? '#2DC491' : '#A8EDCA' }}>
               {typedCity}<span className="animate-pulse">|</span>
             </span>
             <br />livré chez vous
           </h1>
 
-          <p className="text-base sm:text-lg leading-relaxed mb-8 max-w-2xl mx-auto" style={{ color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.8)' }}>
+          <p className="text-sm sm:text-lg leading-relaxed mb-6 sm:mb-8 max-w-2xl mx-auto" style={{ color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.8)' }}>
             ViteComm connecte les clients, les marchands locaux et les conducteurs de zemidjans
             pour des livraisons de produits frais, rapides et équitables.
           </p>
 
-          <div className="flex justify-center gap-3 flex-wrap">
+          <div className="flex justify-center gap-2 sm:gap-3 flex-wrap">
             <button onClick={() => navigate('/register')}
-              className="px-7 py-3 rounded-full text-sm font-black cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
+              className="px-5 sm:px-7 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-black cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
               style={{ background: '#fff', color: '#1D9E75', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
               Commencer gratuitement →
             </button>
             <button onClick={() => scrollTo('features')}
-              className="px-7 py-3 rounded-full text-sm font-bold cursor-pointer transition-all duration-300 hover:scale-105"
+              className="px-5 sm:px-7 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-bold cursor-pointer transition-all duration-300 hover:scale-105"
               style={{ background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.15)', color: '#fff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.3)'}` }}>
               Découvrir →
             </button>
           </div>
 
           {/* Trust badges */}
-          <div className="flex justify-center gap-6 mt-10 flex-wrap">
+          <div className="flex justify-center gap-4 sm:gap-6 mt-8 sm:mt-10 flex-wrap">
             {[
               { Icon: CheckCircle, text: 'Paiement sécurisé' },
               { Icon: MapPin, text: 'Suivi en temps réel' },
               { Icon: Camera, text: 'Photo de collecte' },
               { Icon: Zap, text: 'Livraison zemidjan' },
             ].map(b => (
-              <span key={b.text} className="text-[11px] font-semibold flex items-center gap-1.5" style={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.7)' }}>
-                <b.Icon size={12} /> {b.text}
+              <span key={b.text} className="text-[10px] sm:text-[11px] font-semibold flex items-center gap-1 sm:gap-1.5" style={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.7)' }}>
+                <b.Icon size={11} /> {b.text}
               </span>
             ))}
           </div>
@@ -374,7 +375,7 @@ export default function Accueil() {
       </section>
 
       {/* ─── Ecosystem Overview ──────────────────────────────────────── */}
-      <section id="ecosystem" className="px-6 py-16 sm:py-20" style={{ background: 'var(--surface)' }}>
+      <section id="ecosystem" className="px-4 sm:px-6 py-12 sm:py-16 md:py-20" style={{ background: 'var(--surface)' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>Un écosystème complet</h2>
@@ -404,7 +405,7 @@ export default function Accueil() {
       </section>
 
       {/* ─── Mock Dashboard ─────────────────────────────────────────── */}
-      <section className="px-6 py-16 sm:py-20" style={{ background: 'var(--bg)' }}>
+      <section className="px-4 sm:px-6 py-12 sm:py-16 md:py-20" style={{ background: 'var(--bg)' }}>
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>Découvrez l'expérience</h2>
@@ -415,7 +416,7 @@ export default function Accueil() {
       </section>
 
       {/* ─── Role Cards ─────────────────────────────────────────────── */}
-      <section className="px-6 py-16 sm:py-20" style={{ background: 'var(--surface)' }}>
+      <section className="px-4 sm:px-6 py-12 sm:py-16 md:py-20" style={{ background: 'var(--surface)' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>Choisissez votre profil</h2>
@@ -450,7 +451,7 @@ export default function Accueil() {
       </section>
 
       {/* ─── Features Grid ──────────────────────────────────────────── */}
-      <section id="features" className="px-6 py-16 sm:py-20" style={{ background: 'var(--bg)' }}>
+      <section id="features" className="px-4 sm:px-6 py-12 sm:py-16 md:py-20" style={{ background: 'var(--bg)' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>Pourquoi ViteComm ?</h2>
@@ -470,7 +471,7 @@ export default function Accueil() {
       </section>
 
       {/* ─── Platform Economics ──────────────────────────────────────── */}
-      <section id="pricing" className="px-6 py-16 sm:py-20" style={{ background: 'var(--surface)' }}>
+      <section id="pricing" className="px-4 sm:px-6 py-12 sm:py-16 md:py-20" style={{ background: 'var(--surface)' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>Tarifs transparents</h2>
@@ -498,7 +499,7 @@ export default function Accueil() {
       </section>
 
       {/* ─── Testimonials ───────────────────────────────────────────── */}
-      <section className="px-6 py-16 sm:py-20" style={{ background: 'var(--bg)' }}>
+      <section className="px-4 sm:px-6 py-12 sm:py-16 md:py-20" style={{ background: 'var(--bg)' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>Ils nous font confiance</h2>
@@ -521,7 +522,7 @@ export default function Accueil() {
       </section>
 
       {/* ─── FAQ ────────────────────────────────────────────────────── */}
-      <section id="faq" className="px-6 py-16 sm:py-20" style={{ background: 'var(--surface)' }}>
+      <section id="faq" className="px-4 sm:px-6 py-12 sm:py-16 md:py-20" style={{ background: 'var(--surface)' }}>
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>Questions fréquentes</h2>
@@ -534,22 +535,22 @@ export default function Accueil() {
       </section>
 
       {/* ─── Final CTA ──────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden px-6 py-16 sm:py-20"
+      <section className="relative overflow-hidden px-4 sm:px-6 py-12 sm:py-16 md:py-20"
         style={{ background: isDark ? 'linear-gradient(135deg, #121311 0%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
         <div className="absolute -top-20 -right-20 w-[300px] h-[300px] rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(45,196,145,0.06)' : 'rgba(255,255,255,0.08)', filter: 'blur(60px)' }} />
         <div className="relative z-10 max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-black text-white mb-3 tracking-tight">Prêt à rejoindre ViteComm ?</h2>
-          <p className="text-sm mb-8" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.8)' }}>
+          <h2 className="text-2xl sm:text-4xl font-black text-white mb-3 tracking-tight">Prêt à rejoindre ViteComm ?</h2>
+          <p className="text-xs sm:text-sm mb-6 sm:mb-8" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.8)' }}>
             Créez votre compte gratuit en 30 secondes. Aucune carte bancaire requise.
           </p>
-          <div className="flex justify-center gap-3 flex-wrap">
+          <div className="flex justify-center gap-2 sm:gap-3 flex-wrap">
             <button onClick={() => navigate('/register')}
-              className="px-8 py-3.5 rounded-full text-sm font-black cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
+              className="px-5 sm:px-8 py-2.5 sm:py-3.5 rounded-full text-xs sm:text-sm font-black cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
               style={{ background: '#fff', color: '#1D9E75', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
               Créer mon compte gratuit →
             </button>
             <button onClick={() => navigate('/connect')}
-              className="px-8 py-3.5 rounded-full text-sm font-bold cursor-pointer transition-all duration-300 hover:scale-105"
+              className="px-5 sm:px-8 py-2.5 sm:py-3.5 rounded-full text-xs sm:text-sm font-bold cursor-pointer transition-all duration-300 hover:scale-105"
               style={{ background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.15)', color: '#fff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.3)'}` }}>
               Se connecter
             </button>

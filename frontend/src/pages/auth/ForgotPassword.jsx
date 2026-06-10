@@ -79,7 +79,7 @@ export default function ForgotPassword() {
 
         {/* Back button */}
         <button onClick={() => navigate('/connect')}
-          className="absolute top-5 left-5 z-20 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold cursor-pointer backdrop-blur-md"
+          className="absolute top-4 left-4 sm:top-5 sm:left-5 z-20 flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold cursor-pointer backdrop-blur-md"
           style={{
             background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
             color: 'var(--text-secondary)',
@@ -103,7 +103,7 @@ export default function ForgotPassword() {
         )}
 
         {/* Main card */}
-        <div className="relative z-10 w-full max-w-sm rounded-3xl p-8 sm:p-10"
+        <div className="relative z-10 w-full max-w-sm rounded-3xl p-6 sm:p-8 md:p-10"
           style={{
             background: 'var(--surface)',
             border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
