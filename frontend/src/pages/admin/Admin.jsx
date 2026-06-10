@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import MobileDrawer from '../../components/MobileDrawer'
-import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User, DollarSign, TrendingUp, Store, Motorbike, ShoppingCart, Shield, Mail, Smartphone, Lock, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Building, ChevronDown, LogOut, ArrowRight, Star } from 'lucide-react'
+import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User, DollarSign, TrendingUp, Store, Motorbike, ShoppingCart, Shield, Mail, Smartphone, Lock, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Building, ChevronDown, LogOut, Star } from 'lucide-react'
 
 const TABS = [
   { id: 'dashboard', label: 'Tableau de bord', icon: <LayoutDashboard size={14} /> },
@@ -30,6 +30,7 @@ export default function Admin() {
   const navigate = useNavigate()
   const [tab, setTab] = useState('dashboard')
   const [tabFilter, setTabFilter] = useState(null)
+  const [leaderboardData, setLeaderboardData] = useState(null)
   const [admin] = useState(() => {
     const stored = localStorage.getItem('vc_user')
     const user = stored ? JSON.parse(stored) : null
@@ -51,8 +52,8 @@ export default function Admin() {
     <div className="min-h-screen font-sans" style={{ background: 'var(--bg)' }}>
       <Header admin={admin} onLogout={() => { localStorage.clear(); navigate('/accueil') }} tab={tab} onTabChange={(t) => { setTabFilter(null); setTab(t) }} />
       <main className="max-w-7xl mx-auto px-4 py-6 pb-24">
-        {tab === 'dashboard' && <DashboardTab onNavigate={navigateTo} />}
-        {tab === 'users' && <UsersTab initialFilter={tabFilter} />}
+        {tab === 'dashboard' && <DashboardTab onNavigate={navigateTo} onLeaderboardReady={setLeaderboardData} />}
+        {tab === 'users' && <UsersTab initialFilter={tabFilter} leaderboardData={leaderboardData} />}
         {tab === 'products' && <ProductsTab />}
         {tab === 'marchés' && <MarketsTab />}
         {tab === 'signalements' && <SignalementsTab initialFilter={tabFilter} />}
@@ -131,20 +132,20 @@ function StatCard({ label, value, icon, color, onClick }) {
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}18`, color }}>{icon}</div>
         <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{label}</span>
       </div>
-      <div className="flex items-center justify-between">
-        <div className="text-2xl font-black" style={{ color }}>{value}</div>
-        {onClick && <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />}
-      </div>
+      <div className="text-2xl font-black" style={{ color }}>{value}</div>
     </div>
   )
 }
 
-function DashboardTab({ onNavigate }) {
+function DashboardTab({ onNavigate, onLeaderboardReady }) {
   const [data, setData] = useState(null)
   const [err, setErr] = useState('')
 
   useEffect(() => {
-    api.get('/admin/dashboard').then(setData).catch(e => setErr(e.message))
+    api.get('/admin/dashboard').then(d => {
+      setData(d)
+      onLeaderboardReady?.(d.classements)
+    }).catch(e => setErr(e.message))
   }, [])
 
   if (err) return <div className="text-center py-12 text-sm font-semibold" style={{ color: '#D85A30' }}><AlertTriangle size={14} className="inline align-middle mr-1" />{err}</div>
@@ -155,17 +156,17 @@ function DashboardTab({ onNavigate }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Ventes totales" value={`${(financier.total_ventes || 0).toLocaleString()} F`} icon={<DollarSign size={20} />} color="#1D9E75" onClick={() => onNavigate('users', { role: 'vendeur' })} />
-        <StatCard label="Commissions" value={`${(financier.total_commissions_plateforme || 0).toLocaleString()} F`} icon={<TrendingUp size={20} />} color="#0F6E56" onClick={() => onNavigate('products')} />
+        <StatCard label="Ventes totales" value={`${(financier.total_ventes || 0).toLocaleString()} F`} icon={<DollarSign size={20} />} color="#1D9E75" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'ca_desc' })} />
+        <StatCard label="Commissions" value={`${(financier.total_commissions_plateforme || 0).toLocaleString()} F`} icon={<TrendingUp size={20} />} color="#0F6E56" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'ca_desc' })} />
         <StatCard label="Litiges ouverts" value={alertes.litiges_ouverts} icon={<Scale size={20} />} color="#D85A30" onClick={() => onNavigate('litiges', { status: 'Ouvert' })} />
         <StatCard label="Signalements en attente" value={alertes.signalements_en_attente} icon={<Flag size={20} />} color="#BA7517" onClick={() => onNavigate('signalements', { status: 'En attente' })} />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label="Utilisateurs" value={compteur?.total_utilisateurs || 0} icon={<Users size={20} />} color="#1D9E75" onClick={() => onNavigate('users')} />
-        <StatCard label="Vendeurs" value={compteur?.total_vendeurs || 0} icon={<Store size={20} />} color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur' })} />
-        <StatCard label="Livreurs" value={compteur?.total_livreurs || 0} icon={<Motorbike size={20} />} color="#D85A30" onClick={() => onNavigate('users', { role: 'livreur' })} />
-        <StatCard label="Commandes actives" value={compteur?.commandes_actives || 0} icon={<ShoppingCart size={20} />} color="#0F6E56" onClick={() => onNavigate('products')} />
+        <StatCard label="Vendeurs" value={compteur?.total_vendeurs || 0} icon={<Store size={20} />} color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'ca_desc' })} />
+        <StatCard label="Livreurs" value={compteur?.total_livreurs || 0} icon={<Motorbike size={20} />} color="#D85A30" onClick={() => onNavigate('users', { role: 'livreur', sortBy: 'volume_desc' })} />
+        <StatCard label="Commandes actives" value={compteur?.commandes_actives || 0} icon={<ShoppingCart size={20} />} color="#0F6E56" onClick={() => onNavigate('users', { sortBy: 'orders_desc' })} />
       </div>
 
       <LeaderboardSection data={classements} onNavigate={onNavigate} />
@@ -180,12 +181,12 @@ function LeaderboardSection({ data, onNavigate }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Store size={14} /> Vendeurs (CA)</span>} items={data.vendeurs} valueKey="chiffre_affaires" unit="F" color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur' })} />
-        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Motorbike size={14} /> Livreurs (Volume)</span>} items={data.livreurs} valueKey="volume_livre" unit="F" color="#D85A30" onClick={() => onNavigate('users', { role: 'livreur' })} />
-        <LeaderboardCard title={<span className="flex items-center gap-1.5"><ShoppingCart size={14} /> Clients (Achats)</span>} items={data.clients} valueKey="volume_achat" unit="F" color="#1D9E75" onClick={() => onNavigate('users', { role: 'client' })} />
+        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Store size={14} /> Vendeurs (CA)</span>} items={data.vendeurs} valueKey="chiffre_affaires" unit="F" color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'ca_desc' })} />
+        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Motorbike size={14} /> Livreurs (Volume)</span>} items={data.livreurs} valueKey="volume_livre" unit="F" color="#D85A30" onClick={() => onNavigate('users', { role: 'livreur', sortBy: 'volume_desc' })} />
+        <LeaderboardCard title={<span className="flex items-center gap-1.5"><ShoppingCart size={14} /> Clients (Achats)</span>} items={data.clients} valueKey="volume_achat" unit="F" color="#1D9E75" onClick={() => onNavigate('users', { role: 'client', sortBy: 'depense_desc' })} />
       </div>
       {data.vendeurs_reputation && data.vendeurs_reputation.length > 0 && (
-        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Star size={14} /> Vendeurs (Réputation)</span>} items={data.vendeurs_reputation} valueKey="score_reputation" unit="/100" color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur' })} />
+        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Star size={14} /> Vendeurs (Réputation)</span>} items={data.vendeurs_reputation} valueKey="score_reputation" unit="/100" color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'reputation_desc' })} />
       )}
     </div>
   )
@@ -199,7 +200,6 @@ function LeaderboardCard({ title, items, valueKey, unit, color, onClick }) {
       style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{title}</h3>
-        {onClick && <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />}
       </div>
       <div className="flex flex-col gap-2.5">
         {items.slice(0, 5).map((item, i) => (
@@ -253,11 +253,12 @@ function ProductRanking({ title, items, color }) {
 
 const PAGE_SIZE = 10
 
-function UsersTab({ initialFilter }) {
+function UsersTab({ initialFilter, leaderboardData }) {
   const [users, setUsers] = useState([])
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('tous')
   const [statusFilter, setStatusFilter] = useState('tous')
+  const [sortBy, setSortBy] = useState('name')
   const [selected, setSelected] = useState(null)
   const [details, setDetails] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -266,6 +267,7 @@ function UsersTab({ initialFilter }) {
   useEffect(() => {
     if (initialFilter?.role) setRoleFilter(initialFilter.role)
     if (initialFilter?.status) setStatusFilter(initialFilter.status)
+    if (initialFilter?.sortBy) setSortBy(initialFilter.sortBy)
   }, [initialFilter])
 
   function fetchUsers() {
@@ -275,10 +277,20 @@ function UsersTab({ initialFilter }) {
 
   useEffect(() => { fetchUsers() }, []) // eslint-disable-line react-hooks/set-state-in-effect
 
-  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search, roleFilter, statusFilter])
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search, roleFilter, statusFilter, sortBy])
 
   const roles = ['tous', 'client', 'vendeur', 'livreur', 'admin']
   const statuses = ['tous', 'Actif', 'Suspendu', 'Banni']
+
+  const sortOptions = [
+    { value: 'name', label: 'Nom (A-Z)' },
+    { value: 'ca_desc', label: 'CA décroissant' },
+    { value: 'ca_asc', label: 'CA croissant' },
+    { value: 'reputation_desc', label: 'Réputation ↓' },
+    { value: 'volume_desc', label: 'Volume livré ↓' },
+    { value: 'depense_desc', label: 'Dépenses ↓' },
+    { value: 'orders_desc', label: 'Commandes ↓' },
+  ]
 
   const filtered = users.filter(u => {
     const name = `${u.nom} ${u.prenom} ${u.email}`.toLowerCase()
@@ -288,8 +300,34 @@ function UsersTab({ initialFilter }) {
       (statusFilter === 'tous' || u.statut_compte === statusFilter)
   })
 
-  const visibleItems = filtered.slice(0, visibleCount)
-  const hasMore = filtered.length > visibleCount
+  const leaderboardMap = {
+    vendeur: leaderboardData?.vendeurs || [],
+    livreur: leaderboardData?.livreurs || [],
+    client: leaderboardData?.clients || [],
+  }
+  const reputationMap = leaderboardData?.vendeurs_reputation || []
+  const lbIndex = (id, list) => { const i = list.findIndex(x => x.id_user === id); return i >= 0 ? i : 9999 }
+
+  const sorted = [...filtered].sort((a, b) => {
+    const role = u => u.client ? 'client' : u.vendeur ? 'vendeur' : u.livreur ? 'livreur' : 'admin'
+    const aRole = role(a), bRole = role(b)
+    switch (sortBy) {
+      case 'ca_desc': return lbIndex(a.id_user, leaderboardMap[aRole]) - lbIndex(b.id_user, leaderboardMap[bRole])
+      case 'ca_asc': return lbIndex(b.id_user, leaderboardMap[aRole]) - lbIndex(a.id_user, leaderboardMap[bRole])
+      case 'reputation_desc': return lbIndex(a.id_user, reputationMap) - lbIndex(b.id_user, reputationMap)
+      case 'volume_desc': return lbIndex(a.id_user, leaderboardMap.livreur) - lbIndex(b.id_user, leaderboardMap.livreur)
+      case 'depense_desc': return lbIndex(a.id_user, leaderboardMap.client) - lbIndex(b.id_user, leaderboardMap.client)
+      case 'orders_desc': {
+        const aOrders = leaderboardMap.client.find(x => x.id_user === a.id_user)?.commandes_count || 0
+        const bOrders = leaderboardMap.client.find(x => x.id_user === b.id_user)?.commandes_count || 0
+        return bOrders - aOrders
+      }
+      default: return `${a.prenom} ${a.nom}`.localeCompare(`${b.prenom} ${b.nom}`)
+    }
+  })
+
+  const visibleItems = sorted.slice(0, visibleCount)
+  const hasMore = sorted.length > visibleCount
 
   function getRole(u) { return u.client ? 'client' : u.vendeur ? 'vendeur' : u.livreur ? 'livreur' : 'admin' }
   function getRoleIcon(u) { const r = getRole(u); return r === 'client' ? <ShoppingCart size={16} /> : r === 'vendeur' ? <Store size={16} /> : r === 'livreur' ? <Motorbike size={16} /> : <Shield size={16} /> }
@@ -333,6 +371,10 @@ function UsersTab({ initialFilter }) {
           className="rounded-2xl px-4 py-3 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
           {statuses.map(s => <option key={s} value={s}>{s === 'tous' ? 'Tous les statuts' : s}</option>)}
         </select>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+          className="rounded-2xl px-4 py-3 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+          {sortOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -372,7 +414,7 @@ function UsersTab({ initialFilter }) {
             <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
               className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
               style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-              <ChevronDown size={16} /> Charger plus ({filtered.length - visibleCount} restant(s))
+              <ChevronDown size={16} /> Charger plus ({sorted.length - visibleCount} restant(s))
             </button>
           )}
        </div>
