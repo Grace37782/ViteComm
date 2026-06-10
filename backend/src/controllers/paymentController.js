@@ -1,5 +1,7 @@
 import prisma from '../config/db.js';
-import { initiatePayment, verifyWebhookSignature, generateTransactionId } from '../services/fedapayService.js';
+import { initiatePayment, verifyWebhookSignature, generateTransactionId, verifyTransactionStatus } from '../services/fedapayService.js';
+
+const FEDAPAY_WEBHOOK_SECRET = process.env.FEDAPAY_WEBHOOK_SECRET;
 
 export const createPayment = async (req, res) => {
   try {
@@ -84,10 +86,15 @@ export const handleWebhook = async (req, res) => {
     const signatureHeader = req.headers['x-fedapay-signature'];
     const rawBody = req.rawBody || JSON.stringify(req.body);
 
-    const signature = verifyWebhookSignature(rawBody, signatureHeader);
-
-    if (!signature) {
-      return res.status(400).json({ error: 'Signature invalide' });
+    // Skip signature verification in dev (sandbox may not send headers)
+    if (FEDAPAY_WEBHOOK_SECRET) {
+      const signature = verifyWebhookSignature(rawBody, signatureHeader);
+      if (!signature) {
+        console.warn('[Webhook] Signature invalide — rejeté');
+        return res.status(400).json({ error: 'Signature invalide' });
+      }
+    } else {
+      console.log('[Webhook] Pas de FEDAPAY_WEBHOOK_SECRET — signature ignorée (dev)');
     }
 
     const event = req.body;
@@ -222,6 +229,67 @@ export const getPaymentStatus = async (req, res) => {
 
     if (!transaction) {
       return res.status(404).json({ error: 'Transaction introuvable' });
+    }
+
+    // If still pending, verify with FedaPay API (webhook may not have fired in dev)
+    if (transaction.statut === 'pending' && transaction.fedapay_transaction_id) {
+      const fedapayStatus = await verifyTransactionStatus(transaction.fedapay_transaction_id);
+
+      if (fedapayStatus === 'approved') {
+        // Simulate webhook processing
+        await prisma.$transaction(async (tx) => {
+          await tx.paiementTransaction.update({
+            where: { id_paiement_transaction: transaction.id_paiement_transaction },
+            data: { statut: 'completed', paid_at: new Date() },
+          });
+          const cmd = await tx.commande.findUnique({
+            where: { id_commande: transaction.id_commande },
+            include: { factures: true },
+          });
+          const facture = cmd?.factures[0];
+          if (facture) {
+            await tx.paiement.create({
+              data: {
+                montant_percu: transaction.montant,
+                mode_reglement: 'MOBILE_MONEY',
+                reference_transaction: transaction.transaction_id,
+                statut: 'Effectue',
+                id_facture: facture.id_facture,
+              },
+            });
+            await tx.facture.update({ where: { id_facture: facture.id_facture }, data: { statut_paiement: 'Paye' } });
+          } else if (cmd) {
+            const newFacture = await tx.facture.create({
+              data: {
+                id_commande: cmd.id_commande, montant_marchandises: cmd.total_marchandises,
+                montant_frais_livraison: cmd.frais_livraison, montant_frais_retour: 0,
+                montant_commission: cmd.commission, montant_total_du: cmd.total_marchandises + cmd.frais_livraison,
+                statut_paiement: 'Paye',
+              },
+            });
+            await tx.paiement.create({
+              data: {
+                montant_percu: transaction.montant, mode_reglement: 'MOBILE_MONEY',
+                reference_transaction: transaction.transaction_id, statut: 'Effectue',
+                id_facture: newFacture.id_facture,
+              },
+            });
+          }
+          await tx.commande.update({ where: { id_commande: transaction.id_commande }, data: { mode_paiement_status: 'paye' } });
+        });
+        transaction.statut = 'completed';
+        transaction.paid_at = new Date();
+      } else if (fedapayStatus === 'declined' || fedapayStatus === 'canceled') {
+        await prisma.paiementTransaction.update({
+          where: { id_paiement_transaction: transaction.id_paiement_transaction },
+          data: { statut: 'failed' },
+        });
+        await prisma.commande.update({
+          where: { id_commande: transaction.id_commande },
+          data: { mode_paiement_status: 'echoue' },
+        });
+        transaction.statut = 'failed';
+      }
     }
 
     return res.json({

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
@@ -14,6 +14,8 @@ export default function PaiementClient() {
 
   const [paymentStatus, setPaymentStatus] = useState(statusParam || 'pending')
   const [loading, setLoading] = useState(true)
+  const [attempts, setAttempts] = useState(0)
+  const intervalRef = useRef(null)
 
   useEffect(() => {
     if (!ref) {
@@ -27,21 +29,35 @@ export default function PaiementClient() {
       return
     }
 
-    const interval = setInterval(async () => {
+    intervalRef.current = setInterval(async () => {
       try {
         const res = await api.get(`/client/payment/status/${ref}`)
         setPaymentStatus(res.statut)
+        setAttempts(a => a + 1)
         if (res.statut === 'completed' || res.statut === 'failed' || res.statut === 'cancelled') {
-          clearInterval(interval)
+          clearInterval(intervalRef.current)
           setLoading(false)
         }
       } catch {
-        setLoading(false)
+        setAttempts(a => a + 1)
       }
-    }, 3000)
+    }, 4000)
 
-    return () => clearInterval(interval)
+    return () => clearInterval(intervalRef.current)
   }, [ref, statusParam, navigate])
+
+  function manualRefresh() {
+    setLoading(true)
+    api.get(`/client/payment/status/${ref}`)
+      .then(res => {
+        setPaymentStatus(res.statut)
+        if (res.statut === 'completed' || res.statut === 'failed' || res.statut === 'cancelled') {
+          setLoading(false)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }
 
   const isCompleted = paymentStatus === 'completed'
   const isFailed = paymentStatus === 'failed' || paymentStatus === 'cancelled'
@@ -64,6 +80,18 @@ export default function PaiementClient() {
             <p className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>
               Transaction : {ref}
             </p>
+            <div className="flex gap-2 mt-6 justify-center">
+              <button onClick={manualRefresh}
+                className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5"
+                style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+                <RefreshCw size={14} /> Vérifier
+              </button>
+              <button onClick={() => { clearInterval(intervalRef.current); navigate('/client/mes-commandes') }}
+                className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+                Annuler
+              </button>
+            </div>
           </div>
         )}
 

@@ -123,3 +123,18 @@ export function generateTransactionId() {
   }
   return result;
 }
+
+export async function verifyTransactionStatus(fedapayId) {
+  if (!fedapayId || !FEDAPAY_SECRET_KEY) return null;
+  try {
+    const response = await fetch(`${FEDAPAY_BASE_URL}/v1/transactions/${fedapayId}`, {
+      headers: { Authorization: `Bearer ${FEDAPAY_SECRET_KEY}` },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const tx = data?.['v1/transaction'] || data?.data?.transaction || data?.transaction || data;
+    return tx?.status || null;
+  } catch {
+    return null;
+  }
+}
