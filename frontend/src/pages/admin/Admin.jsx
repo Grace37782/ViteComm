@@ -31,6 +31,7 @@ export default function Admin() {
   const [tab, setTab] = useState('dashboard')
   const [tabFilter, setTabFilter] = useState(null)
   const [leaderboardData, setLeaderboardData] = useState(null)
+  const [productRankings, setProductRankings] = useState(null)
   const [admin] = useState(() => {
     const stored = localStorage.getItem('vc_user')
     const user = stored ? JSON.parse(stored) : null
@@ -52,9 +53,9 @@ export default function Admin() {
     <div className="min-h-screen font-sans" style={{ background: 'var(--bg)' }}>
       <Header admin={admin} onLogout={() => { localStorage.clear(); navigate('/accueil') }} tab={tab} onTabChange={(t) => { setTabFilter(null); setTab(t) }} />
       <main className="max-w-7xl mx-auto px-4 py-6 pb-24">
-        {tab === 'dashboard' && <DashboardTab onNavigate={navigateTo} onLeaderboardReady={setLeaderboardData} />}
+        {tab === 'dashboard' && <DashboardTab onNavigate={navigateTo} onLeaderboardReady={setLeaderboardData} onProductRankingsReady={setProductRankings} />}
         {tab === 'users' && <UsersTab initialFilter={tabFilter} leaderboardData={leaderboardData} />}
-        {tab === 'products' && <ProductsTab />}
+        {tab === 'products' && <ProductsTab initialFilter={tabFilter} productRankings={productRankings} />}
         {tab === 'marchés' && <MarketsTab />}
         {tab === 'signalements' && <SignalementsTab initialFilter={tabFilter} />}
         {tab === 'litiges' && <LitigesTab initialFilter={tabFilter} />}
@@ -137,7 +138,7 @@ function StatCard({ label, value, icon, color, onClick }) {
   )
 }
 
-function DashboardTab({ onNavigate, onLeaderboardReady }) {
+function DashboardTab({ onNavigate, onLeaderboardReady, onProductRankingsReady }) {
   const [data, setData] = useState(null)
   const [err, setErr] = useState('')
 
@@ -145,6 +146,7 @@ function DashboardTab({ onNavigate, onLeaderboardReady }) {
     api.get('/admin/dashboard').then(d => {
       setData(d)
       onLeaderboardReady?.(d.classements)
+      onProductRankingsReady?.({ populaires: d.produits_populaires, refuses: d.produits_refuses })
     }).catch(e => setErr(e.message))
   }, [])
 
@@ -170,8 +172,8 @@ function DashboardTab({ onNavigate, onLeaderboardReady }) {
       </div>
 
       <LeaderboardSection data={classements} onNavigate={onNavigate} />
-      <ProductRanking title="Produits les plus populaires" items={produits_populaires} color="#1D9E75" onClick={() => onNavigate('products')} />
-      <ProductRanking title="Produits les plus refusés" items={produits_refuses} color="#D85A30" onClick={() => onNavigate('products')} />
+      <ProductRanking title="Produits les plus populaires" items={produits_populaires} color="#1D9E75" onClick={() => onNavigate('products', { sortBy: 'popularite' })} />
+      <ProductRanking title="Produits les plus refusés" items={produits_refuses} color="#D85A30" onClick={() => onNavigate('products', { sortBy: 'refus' })} />
     </div>
   )
 }
@@ -628,24 +630,46 @@ function UserDetailModal({ details, onClose, onUpdateStatus, onDelete }) {
   )
 }
 
-function ProductsTab() {
+function ProductsTab({ initialFilter, productRankings }) {
   const [products, setProducts] = useState([])
   const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState('name')
   const [priceHistory, setPriceHistory] = useState(null)
   const [detailProduct, setDetailProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
+    if (initialFilter?.sortBy) setSortBy(initialFilter.sortBy)
+  }, [initialFilter])
+
+  useEffect(() => {
     api.get('/admin/products').then(d => { setProducts(d); setLoading(false) }).catch(() => setLoading(false))
   }, [])
 
-  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search])
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search, sortBy])
 
   const filtered = products.filter(p => p.nom?.toLowerCase().includes(search.toLowerCase()))
 
-  const visibleItems = filtered.slice(0, visibleCount)
-  const hasMore = filtered.length > visibleCount
+  const popularityMap = {}
+  const refusalMap = {}
+  if (productRankings?.populaires) productRankings.populaires.forEach((p, i) => { popularityMap[p.id_produit] = i })
+  if (productRankings?.refuses) productRankings.refuses.forEach((p, i) => { refusalMap[p.id_produit] = i })
+
+  const sorted = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case 'popularite': return (popularityMap[a.id_produit] ?? 9999) - (popularityMap[b.id_produit] ?? 9999)
+      case 'refus': return (refusalMap[a.id_produit] ?? 9999) - (refusalMap[b.id_produit] ?? 9999)
+      case 'prix_desc': return (b.prix_reference || 0) - (a.prix_reference || 0)
+      case 'prix_asc': return (a.prix_reference || 0) - (b.prix_reference || 0)
+      case 'stock_desc': return (b.stock_disponible || 0) - (a.stock_disponible || 0)
+      case 'stock_asc': return (a.stock_disponible || 0) - (b.stock_disponible || 0)
+      default: return (a.nom || '').localeCompare(b.nom || '')
+    }
+  })
+
+  const visibleItems = sorted.slice(0, visibleCount)
+  const hasMore = sorted.length > visibleCount
 
   async function showPriceHistory(id) {
     try {
@@ -656,11 +680,23 @@ function ProductsTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <input type="text" placeholder="Rechercher un produit..." value={search} onChange={e => setSearch(e.target.value)}
-        className="rounded-2xl px-4 py-3 text-sm outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input type="text" placeholder="Rechercher un produit..." value={search} onChange={e => setSearch(e.target.value)}
+          className="flex-1 rounded-2xl px-4 py-3 text-sm outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+          className="rounded-2xl px-4 py-3 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+          <option value="name">Nom (A-Z)</option>
+          <option value="popularite">Popularité décroissante</option>
+          <option value="refus">Refus décroissant</option>
+          <option value="prix_desc">Prix décroissant</option>
+          <option value="prix_asc">Prix croissant</option>
+          <option value="stock_desc">Stock décroissant</option>
+          <option value="stock_asc">Stock croissant</option>
+        </select>
+      </div>
 
       {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div> :
-       filtered.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun produit trouvé</div> :
+       sorted.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun produit trouvé</div> :
        <div className="flex flex-col gap-3">
          {visibleItems.map(p => (
            <div key={p.id_produit} className="rounded-2xl p-4 border flex items-center gap-4 cursor-pointer transition-all hover:shadow-sm"
@@ -872,7 +908,7 @@ function SignalementsTab({ initialFilter }) {
              <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
                className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
                style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-               <ChevronDown size={16} /> Charger plus ({filtered.length - visibleCount} restant(s))
+               <ChevronDown size={16} /> Charger plus ({sorted.length - visibleCount} restant(s))
              </button>
            )}
     </div>
