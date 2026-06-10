@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { Loader2, XCircle, Star, Phone, Banknote, Car, Motorbike, Frown, ChevronDown } from 'lucide-react'
+import { Loader2, XCircle, Star, Phone, Banknote, Car, Motorbike, Frown, ChevronDown, Smartphone } from 'lucide-react'
 
 const PAGE_SIZE = 10
 
@@ -20,6 +20,8 @@ export default function SelectionLivreur() {
   const [placing, setPlacing]   = useState(false)
   const [toast, setToast]       = useState('')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [modePaiement, setModePaiement] = useState('ESPECES')
+  const [telephone, setTelephone] = useState('')
 
   /* ── Load drivers from API ──────────────────────────── */
   useEffect(() => {
@@ -37,6 +39,10 @@ export default function SelectionLivreur() {
   /* ── Place order ────────────────────────────────────── */
   async function confirmerCommande() {
     if (!livreurId) return
+    if (modePaiement === 'MOBILE_MONEY' && !telephone.trim()) {
+      showToast('Veuillez saisir votre numéro de téléphone')
+      return
+    }
     setPlacing(true)
     try {
       const details = cart?.details || []
@@ -45,15 +51,26 @@ export default function SelectionLivreur() {
         quantite_commandee: d.quantite,
       }))
 
-      const res = await api.post('/client/orders', {
+      const orderRes = await api.post('/client/orders', {
         id_user_livreur: livreurId,
         items,
+        mode_paiement: modePaiement,
       })
+
+      if (orderRes.requires_payment) {
+        const payRes = await api.post('/client/payment/initiate', {
+          id_commande: orderRes.id_commande,
+          mode_paiement: modePaiement === 'MOBILE_MONEY' ? 'momo' : modePaiement,
+          telephone,
+        })
+        window.location.href = payRes.checkout_url
+        return
+      }
 
       navigate('/client/suivi-commande', {
         state: {
-          id_commande: res.id_commande,
-          code_verification: res.code_verification,
+          id_commande: orderRes.id_commande,
+          code_verification: orderRes.code_verification,
           livreur: drivers.find(d => d.id_user === livreurId),
         }
       })
@@ -208,8 +225,46 @@ export default function SelectionLivreur() {
         {/* RÉCAP */}
         {livreurSelected && (
           <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-            <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Récapitulatif final</h3>
-            <div className="flex flex-col gap-2">
+            <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Mode de paiement</h3>
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => setModePaiement('ESPECES')}
+                className="flex-1 py-3 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                style={{
+                  background: modePaiement === 'ESPECES' ? '#1D9E75' : 'var(--surface-alt)',
+                  color: modePaiement === 'ESPECES' ? '#fff' : 'var(--text-secondary)',
+                  border: `1.5px solid ${modePaiement === 'ESPECES' ? '#1D9E75' : 'var(--border)'}`,
+                }}
+              >
+                <Banknote size={14} /> Paiement à la livraison
+              </button>
+              <button
+                onClick={() => setModePaiement('MOBILE_MONEY')}
+                className="flex-1 py-3 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                style={{
+                  background: modePaiement === 'MOBILE_MONEY' ? '#1D9E75' : 'var(--surface-alt)',
+                  color: modePaiement === 'MOBILE_MONEY' ? '#fff' : 'var(--text-secondary)',
+                  border: `1.5px solid ${modePaiement === 'MOBILE_MONEY' ? '#1D9E75' : 'var(--border)'}`,
+                }}
+              >
+                <Smartphone size={14} /> Mobile Money
+              </button>
+            </div>
+
+            {modePaiement === 'MOBILE_MONEY' && (
+              <div className="mb-3">
+                <input
+                  type="tel"
+                  placeholder="Numéro de téléphone (ex: 0197000000)"
+                  value={telephone}
+                  onChange={(e) => setTelephone(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                  style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)' }}
+                />
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2" style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
               <div className="flex justify-between text-sm">
                 <span style={{ color: 'var(--text-muted)' }}>Articles</span>
                 <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(sousTotal)}</span>
@@ -219,7 +274,7 @@ export default function SelectionLivreur() {
                 <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(FRAIS_LIVRAISON)}</span>
               </div>
               <div className="flex justify-between pt-2 mt-1" style={{ borderTop: '1.5px solid var(--border)' }}>
-                <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>Total COD</span>
+                <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>Total à payer</span>
                 <span className="font-black text-base" style={{ color: '#1D9E75' }}>{formatPrice(totalFinal)}</span>
               </div>
             </div>
@@ -246,7 +301,9 @@ export default function SelectionLivreur() {
         </button>
 
         <p className="text-center text-xs pb-2" style={{ color: 'var(--text-muted)' }}>
-          <Banknote size={14} /> Vous payez {formatPrice(totalFinal)} en espèces à la réception
+          <Banknote size={14} /> {modePaiement === 'MOBILE_MONEY'
+            ? `Vous payez ${formatPrice(totalFinal)} par Mobile Money`
+            : `Vous payez ${formatPrice(totalFinal)} à la livraison`}
         </p>
       </div>
 

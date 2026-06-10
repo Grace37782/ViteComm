@@ -35,6 +35,7 @@ import VendeurLayout from './components/vendeur/VendeurLayout'
 import LivreurLayout from './components/livreur/LivreurLayout'
 import Evaluation from './pages/client/Evaluation'
 import Inspection from './pages/client/Inspection'
+import PaiementClient from './pages/client/PaiementClient'
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
@@ -76,6 +77,7 @@ export default function App() {
           <Route path="mes-commandes" element={<MesCommandes />} />
           <Route path="evaluation" element={<Evaluation />} />
           <Route path="inspection" element={<Inspection />} />
+          <Route path="paiement" element={<PaiementClient />} />
         </Route>
 
         <Route path="/vendeur" element={<VendeurLayout />}>
