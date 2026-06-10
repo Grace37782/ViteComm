@@ -1,0 +1,180 @@
+import { useState, useEffect, useCallback } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { api } from '../../services/api'
+import { useTheme } from '../../context/ThemeContext'
+import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCheck, Home, Smartphone } from 'lucide-react'
+
+const STATUT_STEPS = [
+  { key: 'En attente', icon: Loader2, titre: 'En attente', desc: 'En attente d\'un livreur' },
+  { key: 'Validee', icon: CheckCircle, titre: 'Validée', desc: 'Commande acceptée' },
+  { key: 'En cours de collecte', icon: Motorbike, titre: 'Collecte', desc: 'Le livreur se dirige vers les marchés' },
+  { key: 'Collectee', icon: Package, titre: 'Collectée', desc: 'Articles collectés, en route vers vous' },
+  { key: 'Inspectee', icon: Search, titre: 'Inspection', desc: 'Inspectez vos articles' },
+  { key: 'Livree', icon: PartyPopper, titre: 'Livrée', desc: 'Livraison terminée !' },
+]
+
+export default function SuiviCommande() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
+
+  const { id_commande, code_verification } = location.state || {}
+  const [order, setOrder] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const fetchOrder = useCallback(async () => {
+    if (!id_commande) return
+    try {
+      const data = await api.get('/client/orders')
+      const o = data.find(ord => ord.id_commande === id_commande)
+      if (o) setOrder(o)
+    } catch {}
+    finally { setLoading(false) }
+  }, [id_commande])
+
+  useEffect(() => {
+    fetchOrder()
+    const interval = setInterval(fetchOrder, 10000)
+    return () => clearInterval(interval)
+  }, [fetchOrder])
+
+  const statut = order?.statut || 'En attente'
+  const livreur = order?.livraison?.livreur
+  const livreurNom = livreur
+    ? `${livreur.utilisateur?.prenom} ${livreur.utilisateur?.nom}`
+    : 'Votre livreur'
+
+  const currentStepIndex = STATUT_STEPS.findIndex(s => s.key === statut)
+  const verificationCode = code_verification || order?.code_verification
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen font-sans flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
+
+      {/* HEADER */}
+      <div className="relative overflow-hidden px-5 pt-5 pb-5"
+        style={{ background: isDark ? 'linear-gradient(135deg, #164032 0%, #121311 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(45,196,145,0.1)' : 'rgba(255,255,255,0.1)' }} />
+        <div className="relative z-10 flex items-center gap-3">
+          <button onClick={() => navigate('/client/mes-commandes')}
+            className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
+            style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}>
+            <span className="text-white text-lg">←</span>
+          </button>
+          <div>
+            <div className="text-white font-black text-base">Suivi de commande</div>
+            <div className="text-white/70 text-xs">Commande #{id_commande} · Mise à jour toutes les 10s</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 py-4 flex flex-col gap-4">
+
+        {/* STATUT ACTUEL */}
+        <div className="rounded-2xl p-5 text-center"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <div className="text-4xl mb-2">{(() => { const step = STATUT_STEPS[Math.max(0, currentStepIndex)]; return step ? (step.key === 'En attente' ? <Loader2 size={36} className="animate-spin" /> : <step.icon size={36} />) : <Loader2 size={36} className="animate-spin" />; })()}</div>
+          <div className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>
+            {STATUT_STEPS[Math.max(0, currentStepIndex)]?.titre || statut}
+          </div>
+          <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+            {STATUT_STEPS[Math.max(0, currentStepIndex)]?.desc || ''}
+          </div>
+          <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+            {livreurNom}
+          </div>
+        </div>
+
+        {/* CODE DE VÉRIFICATION */}
+        {verificationCode && (
+          <div className="rounded-2xl p-5 text-center"
+            style={{ background: 'var(--surface)', border: '2px solid var(--accent)', boxShadow: isDark ? '0 4px 20px rgba(45,196,145,0.1)' : '0 4px 20px rgba(29,158,117,0.15)' }}>
+            <div className="text-[11px] font-extrabold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
+              <ShieldCheck size={14} className="inline" /> Code de vérification
+            </div>
+            <div className="text-3xl font-black tracking-[8px] font-mono" style={{ color: 'var(--accent)' }}>
+              {verificationCode}
+            </div>
+            <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+              Communiquez ce code au livreur lors de la remise.
+            </div>
+          </div>
+        )}
+
+        {/* PROGRESS BAR */}
+        <div className="rounded-2xl p-4"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <div className="text-[11px] font-extrabold uppercase tracking-widest mb-4" style={{ color: 'var(--text-muted)' }}>
+            Progression
+          </div>
+          <div className="flex flex-col gap-0">
+            {STATUT_STEPS.map((step, i) => {
+              const isActive = i === currentStepIndex
+              const isPast = i < currentStepIndex
+              const isFuture = i > currentStepIndex
+              return (
+                <div key={step.key} className="flex items-start gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 transition-all"
+                      style={{
+                        background: isPast ? '#1D9E75' : isActive ? 'var(--accent)' : 'var(--surface-alt)',
+                        color: isPast || isActive ? '#fff' : 'var(--text-muted)',
+                        border: `2px solid ${isPast || isActive ? 'var(--accent)' : 'var(--border)'}`,
+                        boxShadow: isActive ? (isDark ? '0 0 12px rgba(45,196,145,0.3)' : '0 0 12px rgba(29,158,117,0.2)') : 'none',
+                      }}>
+                      {isPast ? <CheckCircle size={14} /> : step.key === 'En attente' ? <Loader2 size={14} className="animate-spin" /> : <step.icon size={14} />}
+                    </div>
+                    {i < STATUT_STEPS.length - 1 && (
+                      <div className="w-0.5 h-5" style={{ background: isPast ? '#1D9E75' : 'var(--border)' }} />
+                    )}
+                  </div>
+                  <div className="pt-1">
+                    <div className="text-xs font-bold" style={{ color: isActive ? 'var(--accent)' : isPast ? '#1D9E75' : 'var(--text-muted)' }}>
+                      {step.titre}
+                    </div>
+                    <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{step.desc}</div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ACTIONS */}
+        <div className="flex flex-col gap-2">
+          {statut === 'Inspectee' && (
+            <button onClick={() => navigate('/client/inspection', { state: { id_commande } })}
+              className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer"
+              style={{ background: '#D85A30', border: 'none', boxShadow: '0 4px 16px rgba(216,90,48,0.3)' }}>
+               <Search size={16} className="inline" /> Inspecter les articles
+            </button>
+          )}
+          {statut === 'Livree' && order?.mode_paiement_status !== 'paye' && (
+            <button onClick={() => {
+              const total = (order?.detailsCommande || []).reduce((s, d) => s + (d.prix_vente_applique || 0) * d.quantite_commandee, 0)
+                + (order?.frais_livraison || 0)
+              navigate('/client/paiement', { state: { id_commande, total } })
+            }}
+              className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer"
+              style={{ background: '#1D9E75', border: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.3)' }}>
+               <Smartphone size={16} className="inline" /> Payer maintenant
+            </button>
+          )}
+          <button onClick={() => navigate('/client/accueil')}
+            className="w-full py-3.5 rounded-2xl font-black text-sm cursor-pointer"
+            style={{ background: 'var(--surface-alt)', color: 'var(--text-primary)', border: '1.5px solid var(--border)' }}>
+             <Home size={16} className="inline" /> Retour à l'accueil
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

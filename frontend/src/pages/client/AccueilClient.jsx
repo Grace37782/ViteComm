@@ -1,377 +1,516 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import BottomNav from '../../components/client/BottomNav'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
+import { api } from '../../services/api'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { Loader2, Search, Store, MapPin, Ruler, Mountain, ChevronDown } from 'lucide-react'
 
-// Fix icône Leaflet cassée avec Vite
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+/* ─── Profile helpers (moved from Profil.jsx for reuse) ─── */
+function initials(u) {
+  if (!u) return '?'
+  return ((u.prenom?.[0] || '') + (u.nom?.[0] || '')).toUpperCase() || '?'
+}
+
+function AvatarCircle({ user, size = 48 }) {
+  if (user?.photo_url) {
+    return (
+      <img
+        src={user.photo_url}
+        alt="Photo profil"
+        style={{
+          width: size, height: size,
+          borderRadius: '50%',
+          objectFit: 'cover',
+          border: '2px solid rgba(255,255,255,0.3)',
+        }}
+      />
+    )
+  }
+  return (
+    <div
+      style={{
+        width: size, height: size,
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #1D9E75, #0F6E56)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: size * 0.38, fontWeight: 900, color: '#fff',
+        border: '2px solid rgba(255,255,255,0.3)',
+        flexShrink: 0,
+      }}
+    >
+      {initials(user)}
+    </div>
+  )
+}
+
+// Custom Leaflet marker icons using divIcon (bypasses URL image path issues in Vite)
+const createMarketIcon = (isActive) => L.divIcon({
+  html: `<div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white shadow-lg text-white hover:scale-115 transition-transform ${
+    isActive ? 'bg-amber-500 scale-110 ring-4 ring-amber-300' : 'bg-emerald-650'
+  }"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path="M2 7h20"/><path="22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/></svg></div>`,
+  className: 'custom-div-icon',
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40]
 })
 
-/* ── Données statiques ( à remplacer par API) ───────────────── */
-const MARCHES = [
-  {
-    id: 1,
-    nom: 'Marché Dantokpa',
-    distance: '1.2 km',
-    etals: 42,
-    note: 4.8,
-    ouvert: true,
-    emoji: '🏪',
-    categories: ['🥬 Légumes', '🐟 Poisson', '🍌 Fruits', '🌶️ Épices'],
-    coords: { lat: 6.3654, lng: 2.4183 },
-  },
-  {
-    id: 2,
-    nom: 'Marché Missèbo',
-    distance: '2.1 km',
-    etals: 28,
-    note: 4.6,
-    ouvert: true,
-    emoji: '🛍️',
-    categories: ['🥬 Légumes', '🍳 Condiments', '🥚 Œufs'],
-    coords: { lat: 6.3701, lng: 2.4220 },
-  },
-  {
-    id: 3,
-    nom: 'Marché Ganhi',
-    distance: '3.4 km',
-    etals: 35,
-    note: 4.5,
-    ouvert: false,
-    emoji: '🏬',
-    categories: ['🍌 Fruits', '🐟 Poisson', '🌾 Céréales'],
-    coords: { lat: 6.3600, lng: 2.4100 },
-  },
-]
+const createUserIcon = () => L.divIcon({
+  html: `<div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 border-2 border-white shadow-lg text-white animate-bounce"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>`,
+  className: 'custom-div-icon',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32]
+})
 
-const CATEGORIES = ['Tout', '🥬 Légumes', '🐟 Poisson', '🍌 Fruits', '🌶️ Épices', '🥚 Œufs']
+function getDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371 // Earth radius in km
+  const dLat = deg2rad(lat2 - lat1)
+  const dLon = deg2rad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
 
-const PRODUITS_VEDETTE = [
-  { emoji: '🍅', nom: 'Tomates',  prix: '250 F/kg',   marche: 'Dantokpa' },
-  { emoji: '🐟', nom: 'Poisson',  prix: '1 800 F/kg', marche: 'Dantokpa' },
-  { emoji: '🧅', nom: 'Oignons',  prix: '180 F/kg',   marche: 'Missèbo'  },
-  { emoji: '🥬', nom: 'Gombo',    prix: '300 F/tas',  marche: 'Dantokpa' },
-  { emoji: '🌶️', nom: 'Piments',  prix: '150 F/tas',  marche: 'Ganhi'    },
-  { emoji: '🍌', nom: 'Bananes',  prix: '500 F/régime', marche: 'Missèbo' },
-]
+function deg2rad(deg) {
+  return deg * (Math.PI / 180)
+}
+
+function levenshteinDistance(str1, str2) {
+  const track = Array(str2.length + 1).fill(null).map(() =>
+    Array(str1.length + 1).fill(null));
+  for (let i = 0; i <= str1.length; i += 1) {
+    track[0][i] = i;
+  }
+  for (let j = 0; j <= str2.length; j += 1) {
+    track[j][0] = j;
+  }
+  for (let j = 1; j <= str2.length; j += 1) {
+    for (let i = 1; i <= str1.length; i += 1) {
+      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      track[j][i] = Math.min(
+        track[j][i - 1] + 1, // deletion
+        track[j - 1][i] + 1, // insertion
+        track[j - 1][i - 1] + indicator, // substitution
+      );
+    }
+  }
+  return track[str2.length][str1.length];
+}
+
+function fuzzyMatch(kw, target) {
+  if (target.includes(kw)) return true;
+  if (kw.length < 4) return false;
+  
+  const maxDistance = kw.length > 6 ? 2 : 1;
+  const targetWords = target.split(/\s+/);
+  
+  for (const tWord of targetWords) {
+    if (tWord.includes(kw) || kw.includes(tWord)) return true;
+    if (levenshteinDistance(kw, tWord) <= maxDistance) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function normalizeText(text) {
+  if (!text) return ''
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove accents/diacritics
+    .replace(/\bmart\b/g, 'marche')  // replace 'mart' with 'marche'
+    .replace(/\bmarket\b/g, 'marche') // replace 'market' with 'marche'
+}
+
+function getKeywords(recherche) {
+  return normalizeText(recherche).split(/\s+/).filter(Boolean)
+}
+
+function matchMarket(market, keywords) {
+  if (keywords.length === 0) return true
+  const normNom = normalizeText(market.nom)
+  const normDesc = market.description ? normalizeText(market.description) : ''
+  return keywords.every(kw => fuzzyMatch(kw, normNom) || fuzzyMatch(kw, normDesc))
+}
+
+const PAGE_SIZE = 10
+
+function MapRecenter({ center, zoomLevel }) {
+  const map = useMap()
+  useEffect(() => {
+    if (center) {
+      map.setView(center, zoomLevel || 13)
+    }
+  }, [center, zoomLevel, map])
+  return null
+}
 
 export default function AccueilClient() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
 
-  const [recherche,   setRecherche]   = useState('')
-  const [categorie,   setCategorie]   = useState('Tout')
-  const [geoLoading,  setGeoLoading]  = useState(false)
+  const [markets, setMarkets] = useState([])
+  const [cart, setCart] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const [recherche, setRecherche] = useState('')
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [geoPosition, setGeoPosition] = useState(null)
-  const [geoErreur,   setGeoErreur]   = useState('')
-  const [panierCount] = useState(3) // TODO: depuis le contexte panier
+  
+  const [mapCenter, setMapCenter] = useState([6.370, 2.430]) // Default Cotonou
+  const [mapZoom, setMapZoom] = useState(13)
+  const [activeMarket, setActiveMarket] = useState(null)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
-  /* ── Géolocalisation ─────────────────────────────────── */
-  function demanderPosition() {
-    if (!navigator.geolocation) {
-      setGeoErreur('Géolocalisation non disponible sur cet appareil.')
-      return
+  const panierCount = cart?.details?.reduce((s, d) => s + d.quantite, 0) || 0
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [marketsRes, cartRes] = await Promise.all([
+          api.get('/client/markets'),
+          api.get('/client/cart'),
+        ])
+        setMarkets(marketsRes)
+        setCart(cartRes)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
     }
-    setGeoLoading(true)
-    setGeoErreur('')
+    loadData()
+    demanderPosition()
+  }, [])
+
+  // Auto-selection of market when exactly 1 market matches the search term
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE)
+    const keywords = getKeywords(recherche)
+    if (keywords.length > 0 && recherche.trim().length >= 2) {
+      const matched = markets.filter(m => matchMarket(m, keywords))
+      if (matched.length === 1) {
+        const singleMarket = matched[0]
+        setActiveMarket(singleMarket)
+        setMapCenter([singleMarket.latitude, singleMarket.longitude])
+        setMapZoom(15)
+      }
+    } else if (recherche.trim().length === 0) {
+      setActiveMarket(null)
+      setMapZoom(13)
+    }
+  }, [recherche, markets])
+
+  function demanderPosition() {
+    if (!navigator.geolocation) return
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setGeoPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-        setGeoLoading(false)
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setGeoPosition(coords)
+        setMapCenter([coords.lat, coords.lng])
+        setMapZoom(14)
       },
-      () => {
-        setGeoErreur('Impossible d\'obtenir votre position.')
-        setGeoLoading(false)
-      }
+      () => {}
     )
   }
 
-  /* ── Filtrage marchés ────────────────────────────────── */
-  const marchesFiltres = MARCHES.filter((m) => {
-    const matchRecherche = m.nom.toLowerCase().includes(recherche.toLowerCase())
-    const matchCat = categorie === 'Tout' || m.categories.some((c) => c.includes(categorie.split(' ')[1] || categorie))
-    return matchRecherche && matchCat
+  // Calculate distances
+  const marketsWithDistance = markets.map(m => {
+    if (geoPosition) {
+      const dist = getDistanceKm(geoPosition.lat, geoPosition.lng, m.latitude, m.longitude)
+      return { ...m, distance: dist }
+    }
+    return { ...m, distance: null }
   })
 
+  // Sort closest first
+  const sortedMarkets = [...marketsWithDistance].sort((a, b) => {
+    if (a.distance !== null && b.distance !== null) {
+      return a.distance - b.distance
+    }
+    return 0
+  })
+
+  // Filter based on search query
+  const keywords = getKeywords(recherche)
+  const marketsFiltered = sortedMarkets.filter(m => matchMarket(m, keywords))
+
+  const visibleItems = marketsFiltered.slice(0, visibleCount)
+  const hasMore = visibleCount < marketsFiltered.length
+
+  const suggestions = recherche
+    ? markets.filter(m => matchMarket(m, keywords))
+    : []
+
+  const handleSelectMarket = (m) => {
+    setActiveMarket(m)
+    setMapCenter([m.latitude, m.longitude])
+    setMapZoom(15)
+    setShowSuggestions(false)
+    setRecherche(m.nom)
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      if (marketsFiltered.length > 0) {
+        handleSelectMarket(marketsFiltered[0])
+      }
+      setShowSuggestions(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <div className="text-center">
+          <div className="text-4xl mb-3 animate-spin"><Loader2 size={32} /></div>
+          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Chargement de la carte et des marchés…</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: '#F7F8F3', paddingBottom: 72 }}>
-
-      {/* ══ HEADER VERT ══ */}
-      <div
-        className="relative overflow-hidden px-5 pt-5 pb-5"
-        style={{ background: 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}
-      >
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />
-
-        {/* Top bar */}
-        <div className="relative z-10 flex items-center justify-between mb-4">
-          <div>
-            <div className="text-white font-black text-lg leading-tight">
-              Bonjour Félicia 👋
-            </div>
-            {geoPosition ? (
-              <div className="text-white/70 text-xs mt-0.5 flex items-center gap-1">
-                📍 Position détectée
-              </div>
-            ) : (
-              <div className="text-white/70 text-xs mt-0.5">Akpakpa, Cotonou</div>
+    <div className="w-full font-sans flex flex-col pb-6" style={{ background: 'var(--bg)' }}>
+      {/* Header Panel - Search */}
+      <div className="bg-emerald-800 text-white px-4 pt-3 pb-3 shadow-md flex-shrink-0">
+        {/* Search wrapper */}
+        <div className="relative">
+          <div className="flex items-center gap-2 bg-emerald-900/60 border border-emerald-700/80 px-4 py-2.5 rounded-2xl">
+            <span className="text-gray-300"><Search size={16} /></span>
+            <input
+              type="text"
+              placeholder="Rechercher un marché (Dantokpa, Ganhi...)..."
+              value={recherche}
+              onFocus={() => setShowSuggestions(true)}
+              onKeyDown={handleKeyDown}
+              onChange={(e) => {
+                setRecherche(e.target.value)
+                setShowSuggestions(true)
+              }}
+              className="flex-1 bg-transparent outline-none text-sm text-white placeholder-emerald-300/80 font-medium"
+            />
+            {recherche && (
+              <button
+                onClick={() => {
+                  setRecherche('')
+                  setActiveMarket(null)
+                  setShowSuggestions(false)
+                }}
+                className="text-white hover:text-gray-200 text-xs cursor-pointer"
+              >
+                ✕
+              </button>
             )}
           </div>
-          <button
-            onClick={() => navigate('/client/panier')}
-            className="relative w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer"
-            style={{ background: 'rgba(255,255,255,0.2)' }}
-          >
-            <span className="text-xl">🛒</span>
-            {panierCount > 0 && (
-              <div
-                className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white font-black flex items-center justify-center"
-                style={{ background: '#E24B4A', fontSize: 9 }}
-              >
-                {panierCount}
-              </div>
-            )}
-          </button>
-        </div>
 
-        {/* Barre de recherche */}
-        <div
-          className="relative z-10 flex items-center gap-2 px-4 py-3 rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)' }}
-        >
-          <span className="text-base">🔍</span>
-          <input
-            type="text"
-            placeholder="Chercher un marché ou produit…"
-            value={recherche}
-            onChange={(e) => setRecherche(e.target.value)}
-            className="flex-1 bg-transparent outline-none text-sm font-medium"
-            style={{ color: '#fff' }}
-          />
-          <span className="text-base cursor-pointer">🎤</span>
-        </div>
-
-        {/* Bouton géoloc */}
-        <div className="relative z-10 mt-3">
-          <button
-            onClick={demanderPosition}
-            disabled={geoLoading}
-            className="flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer text-xs font-semibold"
-            style={{
-              background: 'rgba(255,255,255,0.18)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              color: '#fff',
-              opacity: geoLoading ? 0.7 : 1,
-            }}
-          >
-            <span>{geoLoading ? '⏳' : '📍'}</span>
-            {geoLoading ? 'Localisation en cours…' : geoPosition ? 'Position détectée ✓' : 'Utiliser ma position'}
-          </button>
-          {geoErreur && (
-            <p className="text-xs mt-1.5" style={{ color: '#FFD6D6' }}>⚠️ {geoErreur}</p>
+          {/* Autocomplete Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-xl border overflow-hidden z-50"
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+              {suggestions.map((m) => (
+                <div
+                  key={m.id_marche}
+                  onClick={() => handleSelectMarket(m)}
+                  className="px-4 py-3 cursor-pointer flex items-center justify-between border-b last:border-b-0"
+                  style={{
+                    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                    borderColor: 'var(--border-light)',
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  <div>
+                    <p className="font-bold text-xs">{m.nom}</p>
+                    <p className="text-[10px] truncate max-w-xs" style={{ color: 'var(--text-muted)' }}>{m.description}</p>
+                  </div>
+                  <span className="text-xs"><Store size={14} /></span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
 
-      {/* ══ CARTE LEAFLET ══ */}
-      <div className="px-4 -mt-3 relative z-10 mb-4">
-        <div
-          className="w-full rounded-2xl overflow-hidden flex items-center justify-center flex-col gap-2"
-          style={{
-            height: 140,
-            background: '#E1F5EE',
-            border: '1.5px solid #9FE1CB',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-          }}
-        >
-          {/* Placeholder carte */}
-      <div
-  className="w-full rounded-2xl overflow-hidden"
-  style={{
-    height: 140,
-    border: '1.5px solid #9FE1CB',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-  }}
->
-  <MapContainer
-    center={geoPosition
-      ? [geoPosition.lat, geoPosition.lng]
-      : [6.3654, 2.4183]}
-    zoom={14}
-    style={{ height: '100%', width: '100%' }}
-    zoomControl={false}
-    scrollWheelZoom={false}
-  >
-    <TileLayer
-      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      attribution="© OpenStreetMap"
-    />
-    {MARCHES.map((m) => (
-      <Marker key={m.id} position={[m.coords.lat, m.coords.lng]}>
-        <Popup>
-          <div style={{ fontWeight: 700, fontSize: 13 }}>{m.nom}</div>
-          <div style={{ fontSize: 12, color: '#1D9E75' }}>📍 {m.distance} · ⭐ {m.note}</div>
-        </Popup>
-      </Marker>
-    ))}
-  </MapContainer>
-</div>
-</div>
+      {/* 🗺️ Interactive Map Container with absolute selection drawer overlay */}
+      <div className="w-full h-96 relative shadow-inner flex-shrink-0"
+        style={{ borderBottom: `1px solid ${isDark ? 'var(--border)' : '#e5e7eb'}` }}>
+        <MapContainer center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%', zIndex: 10 }}>
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          
+          <MapRecenter center={mapCenter} zoomLevel={mapZoom} />
 
+          {/* User Location Pin */}
+          {geoPosition && (
+            <Marker position={[geoPosition.lat, geoPosition.lng]} icon={createUserIcon()}>
+              <Popup>
+                <div className="p-1 text-center">
+                  <p className="text-xs font-black text-blue-700">Votre position actuelle</p>
+                </div>
+              </Popup>
+            </Marker>
+          )}
 
-      {/* ══ FILTRES CATÉGORIES ══ */}
-      <div className="px-4 mb-4 overflow-x-auto">
-        <div className="flex gap-2 pb-1" style={{ width: 'max-content' }}>
-          {CATEGORIES.map((cat) => (
+          {/* Markets Pins */}
+          {marketsFiltered.map(m => {
+            const isActive = activeMarket?.id_marche === m.id_marche
+            return (
+              <Marker
+                key={m.id_marche}
+                position={[m.latitude, m.longitude]}
+                icon={createMarketIcon(isActive)}
+                eventHandlers={{
+                  click: () => {
+                    setActiveMarket(m)
+                    setMapCenter([m.latitude, m.longitude])
+                    setMapZoom(15)
+                    setRecherche(m.nom)
+                    setShowSuggestions(false)
+                  }
+                }}
+              />
+            )
+          })}
+        </MapContainer>
+
+        {/* 🌟 Premium Selected Market Map Overlay Card */}
+        {activeMarket && (
+          <div className="absolute bottom-5 left-4 right-4 backdrop-blur-md rounded-3xl p-4 shadow-2xl z-20 transition-all duration-300 animate-slide-up flex gap-3 items-center"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <img
+              src={activeMarket.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=120&q=80'}
+              alt={activeMarket.nom}
+              className="w-16 h-16 rounded-2xl object-cover flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-1">
+                <h4 className="font-extrabold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{activeMarket.nom}</h4>
+                <button
+                  onClick={() => {
+                    setActiveMarket(null)
+                    setRecherche('')
+                  }}
+                  className="text-xs w-5 h-5 rounded-full flex items-center justify-center cursor-pointer"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-[10px] line-clamp-1 mt-0.5" style={{ color: 'var(--text-muted)' }}>{activeMarket.description}</p>
+              
+              <div className="flex items-center gap-3 mt-2">
+                <span className="text-[9px] font-bold text-emerald-700 px-2 py-0.5 rounded-full"
+                  style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#D1FAE5' }}>
+                  <Store size={10} className="inline" /> {activeMarket._count?.vendeurs || 0} étals actifs
+                </span>
+                {geoPosition && (
+                  <span className="text-[9px] font-bold" style={{ color: 'var(--text-muted)' }}>
+                    <Ruler size={10} className="inline" /> {getDistanceKm(geoPosition.lat, geoPosition.lng, activeMarket.latitude, activeMarket.longitude).toFixed(1)} km
+                  </span>
+                )}
+              </div>
+            </div>
+            
             <button
-              key={cat}
-              onClick={() => setCategorie(cat)}
-              className="px-4 py-2 rounded-full text-xs font-bold cursor-pointer whitespace-nowrap transition-all"
-              style={{
-                background: categorie === cat ? '#1D9E75' : '#fff',
-                color:      categorie === cat ? '#fff'    : '#5F5E5A',
-                border:     `1.5px solid ${categorie === cat ? '#1D9E75' : '#E8E6DF'}`,
-              }}
+              onClick={() => navigate('/client/market/' + activeMarket.id_marche)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-3 rounded-2xl transition-all flex-shrink-0 cursor-pointer shadow-lg shadow-emerald-600/20"
             >
-              {cat}
+              Visiter →
             </button>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* ══ MARCHÉS PROCHES ══ */}
-      <div className="px-4 mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-black text-base" style={{ color: '#2C2C2A' }}>
-            Marchés proches de vous
-          </h2>
-          <span className="text-xs font-semibold" style={{ color: '#1D9E75' }}>
-            {marchesFiltres.length} trouvés
+      {/* List Section */}
+      <div className="px-5 mt-6 flex-1">
+        <h3 className="font-black text-base mb-3 flex items-center justify-between" style={{ color: 'var(--text-primary)' }}>
+          <span>Marchés Disponibles</span>
+          <span className="text-xs font-semibold text-emerald-600 px-2.5 py-1 rounded-full"
+            style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#D1FAE5' }}>
+            {marketsFiltered.length} localmarts
           </span>
-        </div>
+        </h3>
 
-        <div className="flex flex-col gap-3">
-          {marchesFiltres.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-2">🔍</div>
-              <p className="text-sm font-semibold" style={{ color: '#888780' }}>
-                Aucun marché trouvé pour "{recherche}"
-              </p>
-            </div>
-          ) : (
-            marchesFiltres.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => navigate(`/client/catalogue/${m.id}`)}
-                className="w-full text-left rounded-2xl p-4 cursor-pointer transition-all hover:-translate-y-0.5 active:scale-98"
-                style={{
-                  background: '#fff',
-                  border: '1.5px solid #E8E6DF',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-                }}
-              >
-                <div className="flex items-start gap-3">
-                  {/* Icône marché */}
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-                    style={{ background: '#E1F5EE' }}
-                  >
-                    {m.emoji}
-                  </div>
-
-                  {/* Infos */}
+        {marketsFiltered.length === 0 ? (
+          <div className="text-center py-10 rounded-3xl shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <span className="text-4xl"><Mountain size={40} /></span>
+            <p className="text-xs font-bold mt-2" style={{ color: 'var(--text-muted)' }}>Aucun marché ne correspond à ce secteur.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {visibleItems.map((m) => {
+              const isSelected = activeMarket?.id_marche === m.id_marche
+              return (
+                <div
+                  key={m.id_marche}
+                  onClick={() => handleSelectMarket(m)}
+                  className={`flex items-center gap-3 p-3 rounded-2xl transition-all shadow-sm cursor-pointer ${
+                    isSelected ? 'border-amber-400 ring-2 ring-amber-200' : 'border-emerald-300'
+                  }`}
+                  style={{
+                    background: 'var(--surface)',
+                    borderColor: isSelected ? undefined : 'var(--border)',
+                  }}
+                >
+                  <img
+                    src={m.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=150&q=80'}
+                    alt={m.nom}
+                    className="w-20 h-20 rounded-xl object-cover flex-shrink-0"
+                  />
+                  
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <h3 className="font-black text-sm truncate" style={{ color: '#2C2C2A' }}>
-                        {m.nom}
-                      </h3>
-                      <span
-                        className="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-                        style={{
-                          background: m.ouvert ? '#E1F5EE' : '#F1EFE8',
-                          color:      m.ouvert ? '#0F6E56' : '#888780',
-                        }}
-                      >
-                        {m.ouvert ? '🟢 Ouvert' : '🔴 Fermé'}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-xs font-semibold" style={{ color: '#1D9E75' }}>
-                        📍 {m.distance}
-                      </span>
-                      <span className="text-xs" style={{ color: '#888780' }}>
-                        🏪 {m.etals} étals
-                      </span>
-                      <span className="text-xs" style={{ color: '#888780' }}>
-                        ⭐ {m.note}
-                      </span>
-                    </div>
-
-                    {/* Catégories */}
-                    <div className="flex gap-1.5 flex-wrap">
-                      {m.categories.slice(0, 3).map((c) => (
-                        <span
-                          key={c}
-                          className="text-xs px-2 py-0.5 rounded-lg font-medium"
-                          style={{ background: '#F7F8F3', color: '#5F5E5A' }}
-                        >
-                          {c}
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-extrabold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{m.nom}</h4>
+                      {m.distance !== null && (
+                        <span className="text-[10px] font-bold text-emerald-600 flex-shrink-0">
+                          <Ruler size={10} className="inline" /> {m.distance.toFixed(1)} km
                         </span>
-                      ))}
+                      )}
+                    </div>
+                    
+                    <p className="text-[10px] line-clamp-2 mt-0.5 leading-normal" style={{ color: 'var(--text-muted)' }}>{m.description}</p>
+                    
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ color: 'var(--text-muted)', background: isDark ? 'rgba(255,255,255,0.06)' : '#F3F4F6' }}>
+                        <Store size={10} className="inline" /> {m._count?.vendeurs || 0} étals actifs
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate('/client/market/' + m.id_marche)
+                        }}
+                        className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 rounded-xl cursor-pointer transition-all shadow-sm"
+                      >
+                        Entrer →
+                      </button>
                     </div>
                   </div>
                 </div>
+              )
+            })}
+
+            {hasMore && (
+              <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+                className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+                style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+                <ChevronDown size={14} /> Charger plus ({marketsFiltered.length - visibleCount} restant{marketsFiltered.length - visibleCount > 1 ? 's' : ''})
               </button>
-            ))
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* ══ PRODUITS VEDETTE ══ */}
-      <div className="px-4 mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-black text-base" style={{ color: '#2C2C2A' }}>
-            Produits populaires
-          </h2>
-          <button
-            onClick={() => navigate('/client/catalogue')}
-            className="text-xs font-semibold cursor-pointer"
-            style={{ color: '#1D9E75', background: 'none', border: 'none' }}
-          >
-            Voir tout →
-          </button>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          {PRODUITS_VEDETTE.map((p) => (
-            <button
-              key={p.nom}
-              onClick={() => navigate('/client/catalogue')}
-              className="rounded-2xl p-3 text-center cursor-pointer transition-all hover:shadow-md active:scale-95"
-              style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}
-            >
-              <div className="text-3xl mb-2">{p.emoji}</div>
-              <div className="font-black text-xs mb-0.5" style={{ color: '#2C2C2A' }}>{p.nom}</div>
-              <div className="text-xs font-medium" style={{ color: '#1D9E75' }}>{p.prix}</div>
-              <div className="text-xs mt-0.5" style={{ color: '#888780' }}>{p.marche}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ══ BOTTOM NAV ══ */}
-      <BottomNav panierCount={panierCount} />
-   
-
-</div>
-  
-</div>
+    </div>
   )
 }

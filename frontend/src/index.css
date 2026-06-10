@@ -1,4 +1,121 @@
 @import "tailwindcss";
+
+/* ── Theme Variables ── */
+:root {
+  --bg: #F7F8F3;
+  --surface: #FFFFFF;
+  --surface-alt: #FAFAF7;
+  --text-primary: #2C2C2A;
+  --text-secondary: #5F5E5A;
+  --text-muted: #888780;
+  --border: #E8E6DF;
+  --border-light: #F1EFE8;
+  --accent: #1D9E75;
+  --accent-dark: #0F6E56;
+  --shadow: rgba(0, 0, 0, 0.04);
+}
+
+.dark {
+  --bg: #1A1B19;
+  --surface: #252623;
+  --surface-alt: #2C2D2A;
+  --text-primary: #E8E6DF;
+  --text-secondary: #B0AFA8;
+  --text-muted: #7A7972;
+  --border: #3A3B38;
+  --border-light: #333431;
+  --accent: #2DC491;
+  --accent-dark: #1FA876;
+  --shadow: rgba(0, 0, 0, 0.2);
+}
+
+html, body, #root {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* ── Smooth theme transition ── */
+*,
+*::before,
+*::after {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* ── Leaflet fix ── */
 .leaflet-container {
   z-index: 0;
+}
+
+/* ── Scrollbar styling ── */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Global themed scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-dark);
+}
+
+/* ── Role-adaptive accent colors ── */
+html.role-client {
+  --accent: #1D9E75;
+  --accent-dark: #0F6E56;
+}
+html.role-client.dark {
+  --accent: #2DC491;
+  --accent-dark: #1FA876;
+}
+
+html.role-vendeur {
+  --accent: #BA7517;
+  --accent-dark: #854F0B;
+}
+html.role-vendeur.dark {
+  --accent: #D4922A;
+  --accent-dark: #BA7517;
+}
+
+html.role-livreur {
+  --accent: #D85A30;
+  --accent-dark: #993C1D;
+}
+html.role-livreur.dark {
+  --accent: #E87D55;
+  --accent-dark: #D85A30;
+}
+
+/* ── Override webkit autofill styling to match active theme ── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--surface-alt) inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ── Select/option theme override ── */
+select, select option {
+  color: var(--text-primary);
+  background-color: var(--surface-alt);
 }
