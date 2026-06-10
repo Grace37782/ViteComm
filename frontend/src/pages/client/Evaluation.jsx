@@ -215,7 +215,7 @@ export default function Evaluation() {
                   <span className="font-black text-base" style={{ color: 'var(--accent)' }}>
                     {total.toLocaleString()} F
                   </span>
-                  <span className="text-xs ml-2" style={{ color: 'var(--text-muted)' }}>COD</span>
+                  <span className="text-xs ml-2" style={{ color: 'var(--text-muted)' }}>Payé</span>
                 </div>
                 <div className="flex gap-2">
                   {livreur && (

@@ -204,12 +204,8 @@ export default function Panier() {
               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
                 style={{ background: '#BA7517' }}><Banknote size={20} /></div>
               <div>
-                <div className="font-black text-sm" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Paiement à la livraison</div>
-                <div className="text-xs" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Vous payez en espèces quand vous recevez vos articles</div>
-              </div>
-              <div className="ml-auto w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: '#BA7517' }}>
-                <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>
+                <div className="font-black text-sm" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Mode de paiement</div>
+                <div className="text-xs" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Choisissez votre mode de paiement à l'étape suivante</div>
               </div>
             </div>
           </div>

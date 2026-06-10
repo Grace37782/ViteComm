@@ -111,7 +111,7 @@ export default function Footer() {
             </div>
             <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--text-secondary)' }}>
               Commandez à Dantokpa, Missèbo et Akpakpa.
-              Livraison rapide par zemidjan, paiement à la livraison.
+              Livraison rapide par zemidjan, paiement sécurisé.
             </p>
             <div className="flex gap-2">
               <a href="mailto:support@vitecomm.bj"

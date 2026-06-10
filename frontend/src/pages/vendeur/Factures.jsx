@@ -234,7 +234,7 @@ export default function Factures() {
               <div className="flex items-center gap-2">
                 <Loader2 size={20} style={{ color: '#854F0B' }} className="animate-spin" />
                 <div className="text-xs font-bold" style={{ color: '#854F0B' }}>
-                  Paiement en attente — le livreur collectera le montant à la livraison (COD).
+                  Paiement en attente — le paiement sera collecté à la livraison.
                 </div>
               </div>
             </div>

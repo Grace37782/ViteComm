@@ -41,7 +41,7 @@ const FEATURES = [
   { icon: ShoppingCart, title: 'Panier multi-étals', desc: 'Commandez de plusieurs marchands en une seule course.' },
   { icon: MapPin, title: 'Suivi en direct', desc: 'Suivez votre livreur en temps réel sur la carte.' },
   { icon: ShieldCheck, title: 'Code de confirmation', desc: 'Sécurisez chaque échange avec un code unique.' },
-  { icon: Banknote, title: 'Paiement à la livraison', desc: 'Payez en espèces ou mobile money, à votre convenance.' },
+  { icon: Banknote, title: 'Paiement sécurisé', desc: 'Payez par Mobile Money ou à la livraison, à votre convenance.' },
   { icon: Store, title: 'Étal en ligne', desc: 'Vendez vos produits sans gérer la logistique.' },
   { icon: Zap, title: 'Livraison zemidjan', desc: 'Livraison rapide par motards locaux certifiés.' },
 ]
@@ -239,7 +239,7 @@ const getRoleTheme = (id, isDark) => ({
 }[id])
 
 const roles = [
-  { id: 'client', Icon: ShoppingCart, nom: 'Je suis client', desc: 'Commandez vos produits frais livrés directement à votre porte.', features: ['Panier multi-étals', 'Suivi en direct', 'Paiement à la livraison'], tag: 'Gratuit', route: '/register?role=client' },
+  { id: 'client', Icon: ShoppingCart, nom: 'Je suis client', desc: 'Commandez vos produits frais livrés directement à votre porte.', features: ['Panier multi-étals', 'Suivi en direct', 'Paiement sécurisé'], tag: 'Gratuit', route: '/register?role=client' },
   { id: 'vendeur', Icon: Store, nom: 'Je suis vendeur', desc: 'Vendez vos produits sans vous occuper de la livraison.', features: ['Étal en ligne', 'Gestion des stocks', 'Paiement sécurisé'], tag: 'Étal virtuel', route: '/register?role=vendeur' },
   { id: 'livreur', Icon: Motorbike, nom: 'Je suis livreur', desc: 'Collectez et livrez les commandes. Gagnez à chaque course.', features: ['Itinéraire optimisé', 'Commissions directes', 'Carte GPS intégrée'], tag: 'Gagner plus', route: '/register?role=livreur' },
 ]
@@ -360,7 +360,7 @@ export default function Accueil() {
           {/* Trust badges */}
           <div className="flex justify-center gap-6 mt-10 flex-wrap">
             {[
-              { Icon: CheckCircle, text: 'Paiement à la livraison' },
+              { Icon: CheckCircle, text: 'Paiement sécurisé' },
               { Icon: MapPin, text: 'Suivi en temps réel' },
               { Icon: Camera, text: 'Photo de collecte' },
               { Icon: Zap, text: 'Livraison zemidjan' },
