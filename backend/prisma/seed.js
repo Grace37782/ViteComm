@@ -304,6 +304,32 @@ async function main() {
   }
   console.log(`  -> ${allProducts.length} produits crees`);
 
+  // Pre-populate immaculee's cart with items from different vendors
+  console.log('Panier immaculee...');
+  const cartItems = [];
+  const usedVendors = new Set();
+  for (const p of allProducts) {
+    if (cartItems.length >= 4) break;
+    if (usedVendors.has(p.id_user_vendeur)) continue;
+    usedVendors.add(p.id_user_vendeur);
+    cartItems.push(p);
+  }
+  // If not enough from different vendors, add more
+  for (const p of allProducts) {
+    if (cartItems.length >= 5) break;
+    if (cartItems.find(c => c.id_produit === p.id_produit)) continue;
+    cartItems.push(p);
+  }
+  const immaculeeCart = await prisma.panier.findUnique({ where: { id_user_client: immaculee.id_user } });
+  if (immaculeeCart) {
+    for (const p of cartItems) {
+      await prisma.detailPanier.create({
+        data: { id_panier: immaculeeCart.id_panier, id_produit: p.id_produit, quantite: rand(1, 3) }
+      });
+    }
+    console.log(`  -> ${cartItems.length} articles dans le panier immaculee`);
+  }
+
   console.log('Commandes (~300)...');
   let orderCount = 0;
 
