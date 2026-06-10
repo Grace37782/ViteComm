@@ -65,7 +65,10 @@ export async function initiatePayment(transaction) {
     throw new Error(data.message || 'Erreur lors de l\'initiation du paiement');
   }
 
+  const txData = data?.['v1/transaction'] || data?.data?.transaction || data?.transaction || data;
+
   const checkoutUrl =
+    txData?.payment_url ||
     data?.data?.payment_url ||
     data?.transaction?.payment_url ||
     data?.transaction?.url ||
@@ -77,7 +80,7 @@ export async function initiatePayment(transaction) {
     throw new Error('Aucune URL de paiement reçue de FedaPay');
   }
 
-  return { checkout_url: checkoutUrl, fedapay_id: data?.data?.id || data?.transaction?.id };
+  return { checkout_url: checkoutUrl, fedapay_id: String(txData?.id || data?.data?.id || data?.transaction?.id) };
 }
 
 export function verifyWebhookSignature(payload, signatureHeader) {

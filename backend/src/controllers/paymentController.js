@@ -32,11 +32,9 @@ export const createPayment = async (req, res) => {
     }
 
     const facture = commande.factures[0];
-    if (!facture) {
-      return res.status(400).json({ error: 'Aucune facture associée à cette commande' });
-    }
-
-    const montant = facture.montant_total_du;
+    const montant = facture
+      ? facture.montant_total_du
+      : commande.total_marchandises + commande.frais_livraison;
     const transaction_id = generateTransactionId();
 
     const transaction = await prisma.paiementTransaction.create({
@@ -132,6 +130,7 @@ export const handleWebhook = async (req, res) => {
         });
 
         const facture = paiementTransaction.commande.factures[0];
+        let factureId;
         if (facture) {
           await tx.paiement.create({
             data: {
@@ -142,11 +141,34 @@ export const handleWebhook = async (req, res) => {
               id_facture: facture.id_facture,
             },
           });
-
           await tx.facture.update({
             where: { id_facture: facture.id_facture },
             data: { statut_paiement: 'Paye' },
           });
+          factureId = facture.id_facture;
+        } else {
+          const cmd = paiementTransaction.commande;
+          const newFacture = await tx.facture.create({
+            data: {
+              id_commande: cmd.id_commande,
+              montant_marchandises: cmd.total_marchandises,
+              montant_frais_livraison: cmd.frais_livraison,
+              montant_frais_retour: 0,
+              montant_commission: cmd.commission,
+              montant_total_du: cmd.total_marchandises + cmd.frais_livraison,
+              statut_paiement: 'Paye',
+            },
+          });
+          await tx.paiement.create({
+            data: {
+              montant_percu: paiementTransaction.montant,
+              mode_reglement: 'MOBILE_MONEY',
+              reference_transaction: paiementTransaction.transaction_id,
+              statut: 'Effectue',
+              id_facture: newFacture.id_facture,
+            },
+          });
+          factureId = newFacture.id_facture;
         }
 
         await tx.commande.update({
