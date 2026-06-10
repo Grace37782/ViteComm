@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import MobileDrawer from '../../components/MobileDrawer'
-import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User, DollarSign, TrendingUp, Store, Motorbike, ShoppingCart, Shield, Mail, Smartphone, Lock, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Building, ChevronDown, LogOut, Star } from 'lucide-react'
+import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User, DollarSign, TrendingUp, Store, Motorbike, ShoppingCart, Shield, Mail, Smartphone, Lock, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Building, ChevronDown, LogOut, Star, ArrowRight } from 'lucide-react'
 
 const TABS = [
   { id: 'dashboard', label: 'Tableau de bord', icon: <LayoutDashboard size={14} /> },
@@ -200,6 +200,7 @@ function LeaderboardCard({ title, items, valueKey, unit, color, onClick }) {
       style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+        {onClick && <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />}
       </div>
       <div className="flex flex-col gap-2.5">
         {items.slice(0, 5).map((item, i) => (
