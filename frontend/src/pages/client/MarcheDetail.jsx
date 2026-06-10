@@ -366,6 +366,7 @@ export default function MarcheDetail() {
             <p className="text-[10px] font-bold mt-2" style={{ color: 'var(--text-muted)' }}>Aucun produit disponible dans ce marché.</p>
           </div>
         ) : (
+          <>
           <div className="grid grid-cols-3 gap-3">
             {visibleItems.map(p => {
               const PIcon = productIcon(p.nom);
@@ -403,6 +404,7 @@ export default function MarcheDetail() {
               <ChevronDown size={14} /> Charger plus ({productsFiltered.length - visibleCount} restant{productsFiltered.length - visibleCount > 1 ? 's' : ''})
             </button>
           )}
+          </>
         )}
       </div>
 

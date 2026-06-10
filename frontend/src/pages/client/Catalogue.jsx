@@ -257,6 +257,7 @@ export default function Catalogue() {
             </p>
           </div>
         ) : (
+          <>
           <div className="grid grid-cols-2 gap-3">
             {visibleItems.map((prod) => {
               const qteAuPanier = cartItems[prod.id_produit] || 0
@@ -339,6 +340,7 @@ export default function Catalogue() {
               <ChevronDown size={14} /> Charger plus ({productsFiltered.length - visibleCount} restant{productsFiltered.length - visibleCount > 1 ? 's' : ''})
             </button>
           )}
+          </>
         )}
       </div>
 

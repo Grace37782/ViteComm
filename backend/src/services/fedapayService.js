@@ -1,9 +1,10 @@
 import crypto from 'crypto';
 
 const FEDAPAY_BASE_URL =
-  process.env.FEDAPAY_ENVIRONMENT === 'production'
+  process.env.FEDAPAY_BASE_URL ||
+  (process.env.FEDAPAY_ENVIRONMENT === 'production'
     ? 'https://api.fedapay.com'
-    : 'https://sandbox-api.fedapay.com';
+    : 'https://sandbox-api.fedapay.com');
 
 const FEDAPAY_SECRET_KEY = process.env.FEDAPAY_SECRET_KEY;
 const FEDAPAY_WEBHOOK_SECRET = process.env.FEDAPAY_WEBHOOK_SECRET;
