@@ -720,9 +720,8 @@ function ProductsTab({ initialFilter, productRankings }) {
              <div className="text-right flex-shrink-0">
                <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>{p.prix_reference?.toLocaleString()} F</div>
                <div className="text-[10px] font-semibold" style={{ color: p.stock_disponible > 0 ? '#1D9E75' : '#D85A30' }}>Stock: {p.stock_disponible}</div>
-             </div>
-             <ChevronDown size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-           </div>
+              </div>
+            </div>
          ))}
        </div>
       }
