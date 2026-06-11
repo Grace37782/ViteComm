@@ -62,11 +62,17 @@ export async function login(credentials) {
 }
 
 export async function googleLogin(credential) {
-  const data = await request('/auth/google', {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+  const res = await fetch(`${API_BASE}/auth/google`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ credential }),
-    headers: {}
   })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Erreur de connexion Google.' }))
+    throw new Error(err.error || `Erreur ${res.status}`)
+  }
+  const data = await res.json()
   localStorage.setItem('vc_user', JSON.stringify(data.user))
   localStorage.setItem('vc_token', data.token)
   return data

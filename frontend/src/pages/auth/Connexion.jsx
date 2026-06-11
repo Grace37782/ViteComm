@@ -342,7 +342,10 @@ export default function Connexion() {
 
           {/* Google */}
           <GoogleSignInButton
-            onError={(msg) => setErreur({ texte: msg, type: 'erreur' })}
+            onError={(msg) => {
+              const isGoogleProvider = msg.includes('Google') || msg.includes('connexion Google')
+              setErreur({ texte: msg, type: isGoogleProvider ? 'google' : 'erreur' })
+            }}
             onStart={() => setErreur(null)}
             disabled={loading}
           />

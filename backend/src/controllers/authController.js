@@ -1,7 +1,6 @@
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { OAuth2Client } from 'google-auth-library';
 import prisma from '../config/db.js';
 import { sendVerificationCode, sendPasswordResetCode } from '../services/mail.js';
 import { moveToPermanent } from '../middleware/upload.js';
@@ -649,25 +648,28 @@ export const updateProfile = async (req, res) => {
 
 // ────────────────────────────────────────────────────────────
 // POST /auth/google
-// Google OAuth - reçoit un access_token, vérifie, connecte ou crée l'utilisateur
+// Google OAuth - reçoit un access_token, vérifie via Google userinfo, connecte ou crée l'utilisateur
 // Body: { credential: access_token }
 // ────────────────────────────────────────────────────────────
 export const googleAuth = async (req, res) => {
   const { credential } = req.body;
-  const { GOOGLE_CLIENT_ID } = process.env;
 
   if (!credential) {
     return res.status(400).json({ error: 'Token Google requis.' });
   }
 
   try {
-    const client = new OAuth2Client(GOOGLE_CLIENT_ID);
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: GOOGLE_CLIENT_ID,
+    // Verify the access_token by calling Google's userinfo endpoint
+    const googleRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${credential}` },
     });
-    const payload = ticket.getPayload();
-    const { email, given_name, family_name, sub } = payload;
+
+    if (!googleRes.ok) {
+      return res.status(401).json({ error: 'Token Google invalide ou expiré.' });
+    }
+
+    const profile = await googleRes.json();
+    const { email, given_name, family_name, sub } = profile;
 
     if (!email) {
       return res.status(400).json({ error: 'Email requis pour la connexion Google.' });

@@ -61,7 +61,7 @@ function GoogleSignInButtonInner({ onError, onStart, disabled }) {
       }
     },
     onError: () => onError?.('Échec de la connexion Google.'),
-    flow: 'auth-code',
+    flow: 'implicit',
   })
 
   return (
