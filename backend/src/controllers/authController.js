@@ -681,8 +681,11 @@ export const googleAuth = async (req, res) => {
       include: { client: true, vendeur: true, livreur: true },
     });
 
+    let isNewGoogleUser = false;
+
     if (!user) {
       // Auto-create account as client with Google data
+      isNewGoogleUser = true;
       user = await prisma.$transaction(async (tx) => {
         const created = await tx.utilisateur.create({
           data: {
@@ -731,9 +734,102 @@ export const googleAuth = async (req, res) => {
       message: 'Connexion Google réussie.',
       token,
       user: await buildUserPayload(user),
+      is_new_google_user: isNewGoogleUser,
     });
   } catch (error) {
     return res.status(400).json({ error: error.message || 'Échec de l\'authentification Google.' });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// POST /auth/google/complete-registration
+// After first Google login, user chooses role: client/vendeur/livreur
+// Body: { role: 'client'|'vendeur'|'livreur', nom_etablissement?, localisation_marche?, type_vehicule?, immatriculation? }
+// ────────────────────────────────────────────────────────────
+export const completeGoogleRegistration = async (req, res) => {
+  const { role, nom_etablissement, localisation_marche, type_vehicule, immatriculation } = req.body;
+
+  if (!role || !['client', 'vendeur', 'livreur'].includes(role)) {
+    return res.status(400).json({ error: 'Rôle invalide. Choisissez: client, vendeur ou livreur.' });
+  }
+
+  try {
+    const user = await prisma.utilisateur.findUnique({
+      where: { id_user: req.user.id_user },
+      include: { client: true, vendeur: true, livreur: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé.' });
+    }
+
+    // If already has the requested role, just return
+    if ((role === 'client' && user.client) ||
+        (role === 'vendeur' && user.vendeur) ||
+        (role === 'livreur' && user.livreur)) {
+      return res.json({
+        message: 'Rôle déjà configuré.',
+        user: await buildUserPayload(user),
+      });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Remove existing role rows
+      if (user.client) {
+        // Delete cart first ( FK constraint )
+        await tx.panier.deleteMany({ where: { id_user_client: user.id_user } });
+        await tx.client.delete({ where: { id_user: user.id_user } });
+      }
+      if (user.vendeur) {
+        await tx.vendeur.delete({ where: { id_user: user.id_user } });
+      }
+      if (user.livreur) {
+        await tx.disponibiliteLivreur.deleteMany({ where: { id_user_livreur: user.id_user } });
+        await tx.livreur.delete({ where: { id_user: user.id_user } });
+      }
+
+      // Create the new role row
+      if (role === 'client') {
+        await tx.client.create({
+          data: { id_user: user.id_user, adresse_livraison: '' }
+        });
+        await tx.panier.create({ data: { id_user_client: user.id_user } });
+      } else if (role === 'vendeur') {
+        if (!nom_etablissement || !localisation_marche) {
+          throw new Error('Pour devenir vendeur, nom_etablissement et localisation_marche sont requis.');
+        }
+        await tx.vendeur.create({
+          data: {
+            id_user: user.id_user,
+            nom_etablissement,
+            localisation_marche,
+          }
+        });
+      } else if (role === 'livreur') {
+        if (!type_vehicule || !immatriculation) {
+          throw new Error('Pour devenir livreur, type_vehicule et immatriculation sont requis.');
+        }
+        await tx.livreur.create({
+          data: {
+            id_user: user.id_user,
+            type_vehicule,
+            immatriculation,
+          }
+        });
+      }
+    });
+
+    const updated = await prisma.utilisateur.findUnique({
+      where: { id_user: req.user.id_user },
+      include: { client: true, vendeur: true, livreur: true },
+    });
+
+    return res.json({
+      message: `Compte ${role} configuré avec succès.`,
+      user: await buildUserPayload(updated),
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
   }
 };
 

@@ -78,6 +78,23 @@ export async function googleLogin(credential) {
   return data
 }
 
+export async function completeGoogleRegistration(roleData) {
+  const token = localStorage.getItem('vc_token')
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+  const res = await fetch(`${API_BASE}/auth/google/complete-registration`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(roleData),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Erreur de configuration du rôle.' }))
+    throw new Error(err.error || `Erreur ${res.status}`)
+  }
+  const data = await res.json()
+  localStorage.setItem('vc_user', JSON.stringify(data.user))
+  return data
+}
+
 export async function register(data) {
   const res = await request('/auth/register', {
     method: 'POST',

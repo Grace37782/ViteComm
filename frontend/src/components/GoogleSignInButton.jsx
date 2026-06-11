@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useGoogleLogin } from '@react-oauth/google'
 import { googleLogin } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
+import GoogleRoleSelection from './GoogleRoleSelection'
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
@@ -41,6 +43,7 @@ function GoogleSignInButtonInner({ onError, onStart, disabled }) {
   const { login: updateAuthContext } = useAuth()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const [newGoogleUser, setNewGoogleUser] = useState(null)
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -48,6 +51,12 @@ function GoogleSignInButtonInner({ onError, onStart, disabled }) {
       try {
         const data = await googleLogin(tokenResponse.access_token)
         updateAuthContext(data.user, data.token)
+
+        if (data.is_new_google_user) {
+          setNewGoogleUser(data.user)
+          return
+        }
+
         const role = data.user?.role || data.role
         const redirects = {
           admin:   '/admin/dashboard',
@@ -63,6 +72,10 @@ function GoogleSignInButtonInner({ onError, onStart, disabled }) {
     onError: () => onError?.('Échec de la connexion Google.'),
     flow: 'implicit',
   })
+
+  if (newGoogleUser) {
+    return <GoogleRoleSelection user={newGoogleUser} onComplete={() => setNewGoogleUser(null)} />
+  }
 
   return (
     <button
