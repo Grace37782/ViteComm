@@ -7,13 +7,15 @@ import { sendVerificationCode, sendPasswordResetCode } from '../services/mail.js
 import { moveToPermanent } from '../middleware/upload.js';
 import { errorMessage, internalError } from '../utils/errors.js';
 
-const { JWT_SECRET, JWT_EXPIRES_IN, GOOGLE_CLIENT_ID } = process.env;
+const { JWT_SECRET, JWT_EXPIRES_IN, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL } = process.env;
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET is not defined in environment variables.');
 }
 const JWT_EXPIRES = JWT_EXPIRES_IN || '7d';
 
-const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
+const googleClient = GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET
+  ? new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL)
+  : null;
 
 // Derive role from user specialization rows (RG17)
 const deriveRole = (user) => {
@@ -758,6 +760,121 @@ export const googleAuth = async (req, res) => {
     });
   } catch (error) {
     return res.status(400).json({ error: errorMessage(error, 'Échec de l\'authentification Google.') });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// GET /auth/google — Redirect to Google consent screen
+// ────────────────────────────────────────────────────────────
+export const googleRedirect = (req, res) => {
+  if (!googleClient) {
+    return res.status(500).json({ error: 'Google OAuth non configuré côté serveur.' });
+  }
+
+  const authUrl = googleClient.generateAuthUrl({
+    access_type: 'offline',
+    scope: ['openid', 'email', 'profile'],
+    prompt: 'select_account',
+  });
+
+  res.redirect(authUrl);
+};
+
+// ────────────────────────────────────────────────────────────
+// GET /auth/google/callback — Handle Google redirect, exchange code, login/create user
+// ────────────────────────────────────────────────────────────
+export const googleCallback = async (req, res) => {
+  const { code, error } = req.query;
+
+  if (error) {
+    const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+    return res.redirect(`${frontendUrl}/connect?error=google_cancelled`);
+  }
+
+  if (!code || !googleClient) {
+    const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+    return res.redirect(`${frontendUrl}/connect?error=google_failed`);
+  }
+
+  try {
+    const { tokens } = await googleClient.getToken(code);
+    const ticket = await googleClient.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    const { email, given_name, family_name, sub } = payload;
+
+    if (!email) {
+      const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/connect?error=google_no_email`);
+    }
+
+    let user = await prisma.utilisateur.findUnique({
+      where: { email },
+      include: { client: true, vendeur: true, livreur: true },
+    });
+
+    let isNewGoogleUser = false;
+
+    if (!user) {
+      isNewGoogleUser = true;
+      user = await prisma.$transaction(async (tx) => {
+        const created = await tx.utilisateur.create({
+          data: {
+            nom: family_name || sub,
+            prenom: given_name || 'Utilisateur',
+            telephone: '',
+            email,
+            mot_de_passe: await bcryptjs.hash(crypto.randomUUID(), 12),
+            statut_compte: 'Actif',
+            est_admin: false,
+            auth_provider: 'google',
+          }
+        });
+        await tx.client.create({
+          data: { id_user: created.id_user, adresse_livraison: '' }
+        });
+        await tx.panier.create({ data: { id_user_client: created.id_user } });
+        return tx.utilisateur.findUnique({
+          where: { id_user: created.id_user },
+          include: { client: true, vendeur: true, livreur: true },
+        });
+      });
+    } else {
+      if (user.auth_provider === 'local') {
+        const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+        return res.redirect(`${frontendUrl}/connect?error=google_wrong_account`);
+      }
+      if (!user.auth_provider || user.auth_provider === 'local') {
+        await prisma.utilisateur.update({ where: { id_user: user.id_user }, data: { auth_provider: 'google' } });
+      }
+    }
+
+    if (user.statut_compte !== 'Actif') {
+      const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/connect?error=account_suspended`);
+    }
+
+    const role = deriveRole(user);
+    const token = jwt.sign(
+      { id_user: user.id_user, role },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES }
+    );
+
+    const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+    const params = new URLSearchParams({
+      token,
+      user: JSON.stringify(await buildUserPayload(user)),
+      new: String(isNewGoogleUser),
+    });
+    res.redirect(`${frontendUrl}/auth/google/callback?${params.toString()}`);
+  } catch (err) {
+    console.error('Google callback error:', err);
+    const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/connect?error=google_failed`);
   }
 };
 
