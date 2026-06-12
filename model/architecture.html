@@ -388,6 +388,11 @@
         <td>nom, prenom, telephone, email, statut_compte, est_admin</td>
       </tr>
       <tr>
+        <td>MARCHE</td>
+        <td>id_marche</td>
+        <td>nom, latitude, longitude, image_url, description</td>
+      </tr>
+      <tr>
         <td>CLIENT</td>
         <td>#id_user</td>
         <td>adresse_livraison</td>
@@ -395,7 +400,7 @@
       <tr>
         <td>VENDEUR</td>
         <td>#id_user</td>
-        <td>nom_etablissement, localisation_marche, score_reputation</td>
+        <td>nom_etablissement, localisation_marche, score_reputation, #id_marche</td>
       </tr>
       <tr>
         <td>LIVREUR</td>
@@ -498,9 +503,11 @@
   <pre>
 id_user → nom, prenom, telephone, email, statut_compte, est_admin
 
+id_marche → nom, latitude, longitude, image_url, description
+
 id_user (CLIENT) → adresse_livraison
 
-id_user (VENDEUR) → nom_etablissement, localisation_marche, score_reputation
+id_user (VENDEUR) → nom_etablissement, localisation_marche, score_reputation, #id_marche
 
 id_user (LIVREUR) → type_vehicule, immatriculation, score_reputation
 
@@ -558,6 +565,8 @@ id_produit → #id_user_vendeur
 
 id_produit → #id_categorie
 
+id_user_vendeur → #id_marche
+
 id_dispo → #id_user_livreur
 
 id_litige → #id_livraison
@@ -592,9 +601,11 @@ id_bon → #id_livraison</pre>
   <pre>
 id_user → nom, prenom, telephone, email, statut_compte, est_admin
 
+id_marche → nom, latitude, longitude, image_url, description
+
 id_user (CLIENT) → adresse_livraison
 
-id_user (VENDEUR) → nom_etablissement, localisation_marche, score_reputation
+id_user (VENDEUR) → nom_etablissement, localisation_marche, score_reputation, #id_marche
 
 id_user (LIVREUR) → type_vehicule, immatriculation, score_reputation
 
@@ -641,9 +652,11 @@ id_bon → date_emission, date_signature_client, statut_bon, observations_livreu
   <pre>
 UTILISATEUR ( <u>id_user</u>, nom, prenom, telephone, email, statut_compte, est_admin)
 
+MARCHE ( <u>id_marche</u>, nom, latitude, longitude, image_url, description)
+
 CLIENT ( <u>#id_user</u>, adresse_livraison)
 
-VENDEUR ( <u>#id_user</u>, nom_etablissement, localisation_marche, score_reputation)
+VENDEUR ( <u>#id_user</u>, nom_etablissement, localisation_marche, score_reputation, #id_marche)
 
 LIVREUR ( <u>#id_user</u>, type_vehicule, immatriculation, score_reputation)
 
