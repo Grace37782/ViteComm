@@ -6,14 +6,13 @@ export default function InstallPrompt() {
   const [showModal, setShowModal] = useState(false)
   const [showButton, setShowButton] = useState(false)
   const [isInstalling, setIsInstalling] = useState(false)
-  const [isStandalone, setIsStandalone] = useState(false)
+  const [isStandalone] = useState(() =>
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true
+  )
 
   useEffect(() => {
-    const isStandaloneMode =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true
-    setIsStandalone(isStandaloneMode)
-    if (isStandaloneMode) return
+    if (isStandalone) return
 
     const dismissed = localStorage.getItem('pwa-install-dismissed')
     if (dismissed) return
