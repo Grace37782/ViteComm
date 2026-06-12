@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import prisma from '../config/db.js';
 import { sendVerificationCode, sendPasswordResetCode } from '../services/mail.js';
 import { moveToPermanent } from '../middleware/upload.js';
+import { errorMessage, internalError } from '../utils/errors.js';
 
 const { JWT_SECRET, JWT_EXPIRES_IN } = process.env;
 if (!JWT_SECRET) {
@@ -198,7 +199,7 @@ export const register = async (req, res) => {
       token, // frontend uses this to verify later
     });
   } catch (error) {
-    return res.status(400).json({ error: 'Une erreur est survenue.' });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -312,7 +313,7 @@ export const verifyEmail = async (req, res) => {
       user: userPayload,
     });
   } catch (error) {
-    return res.status(400).json({ error: 'Une erreur est survenue.' });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -349,7 +350,7 @@ export const resendCode = async (req, res) => {
 
     return res.json({ message: 'Nouveau code envoyé par email.' });
   } catch (error) {
-    return res.status(400).json({ error: 'Une erreur est survenue.' });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -387,7 +388,7 @@ export const forgotPassword = async (req, res) => {
 
     return res.json({ message: 'Code de réinitialisation envoyé par email.', token });
   } catch (error) {
-    return res.status(400).json({ error: 'Une erreur est survenue.' });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -431,7 +432,7 @@ export const resetPassword = async (req, res) => {
 
     return res.json({ message: 'Mot de passe réinitialisé avec succès.' });
   } catch (error) {
-    return res.status(400).json({ error: 'Une erreur est survenue.' });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -498,7 +499,7 @@ export const login = async (req, res) => {
       user: userPayload
     });
   } catch (error) {
-    return res.status(400).json({ error: 'Une erreur est survenue.' });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -514,7 +515,7 @@ export const getMarkets = async (req, res) => {
     });
     return res.json(markets);
   } catch (error) {
-    return res.status(500).json({ error: 'Une erreur interne est survenue.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -529,7 +530,7 @@ export const getProfile = async (req, res) => {
 
     return res.json(await buildUserPayload(user));
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur serveur.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -642,7 +643,7 @@ export const updateProfile = async (req, res) => {
       user: await buildUserPayload(updated)
     });
   } catch (error) {
-    return res.status(400).json({ error: 'Une erreur est survenue.' });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -737,7 +738,7 @@ export const googleAuth = async (req, res) => {
       is_new_google_user: isNewGoogleUser,
     });
   } catch (error) {
-    return res.status(400).json({ error: 'Échec de l\'authentification Google.' });
+    return res.status(400).json({ error: errorMessage(error, 'Échec de l\'authentification Google.') });
   }
 };
 
@@ -829,7 +830,7 @@ export const completeGoogleRegistration = async (req, res) => {
       user: await buildUserPayload(updated),
     });
   } catch (error) {
-    return res.status(400).json({ error: 'Une erreur est survenue.' });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 

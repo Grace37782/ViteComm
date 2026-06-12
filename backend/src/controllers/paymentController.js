@@ -1,5 +1,6 @@
 import prisma from '../config/db.js';
 import { initiatePayment, verifyWebhookSignature, generateTransactionId, verifyTransactionStatus } from '../services/fedapayService.js';
+import { errorMessage, internalError } from '../utils/errors.js';
 
 const FEDAPAY_WEBHOOK_SECRET = process.env.FEDAPAY_WEBHOOK_SECRET;
 
@@ -77,7 +78,7 @@ export const createPayment = async (req, res) => {
       transaction_id,
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Une erreur interne est survenue.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -299,7 +300,7 @@ export const getPaymentStatus = async (req, res) => {
       paid_at: transaction.paid_at,
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Une erreur interne est survenue.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 

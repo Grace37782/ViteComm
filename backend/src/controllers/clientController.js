@@ -1,4 +1,5 @@
 import prisma from '../config/db.js';
+import { errorMessage, internalError } from '../utils/errors.js';
 
 // --- 2.1. Tableau de bord Client - Recherche de produits et marchés ---
 
@@ -46,7 +47,7 @@ export const getProducts = async (req, res) => {
 
     return res.json(products);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la récupération des produits.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -61,7 +62,7 @@ export const getProductPriceHistory = async (req, res) => {
     });
     return res.json(history);
   } catch (error) {
-    return res.status(500).json({ error: "Erreur lors du chargement de l'historique des prix." });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -83,7 +84,7 @@ export const getVendorById = async (req, res) => {
     if (!vendor) return res.status(404).json({ error: 'Vendeur introuvable.' });
     return res.json(vendor);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement du vendeur.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -106,7 +107,7 @@ export const getVendors = async (req, res) => {
     });
     return res.json(vendors);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des vendeurs.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -121,7 +122,7 @@ export const getCategories = async (req, res) => {
     });
     return res.json(categories);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des catégories.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -149,7 +150,7 @@ export const getDrivers = async (req, res) => {
     });
     return res.json(drivers);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des livreurs.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -173,7 +174,7 @@ export const getCart = async (req, res) => {
     });
     return res.json(cart || { details: [] });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement du panier.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -216,7 +217,7 @@ export const upsertCartItem = async (req, res) => {
 
     return res.json({ message: 'Panier mis à jour.' });
   } catch (error) {
-    return res.status(400).json({ error: 'Une erreur est survenue.' });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -228,7 +229,7 @@ export const clearCart = async (req, res) => {
     }
     return res.json({ message: 'Panier vidé.' });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du vidage du panier.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -334,7 +335,7 @@ export const createOrder = async (req, res) => {
       code_verification: command.code_verification,
     });
   } catch (error) {
-    return res.status(400).json({ error: 'Une erreur est survenue.' });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -376,7 +377,7 @@ export const getMyOrders = async (req, res) => {
 
     return res.json(orders);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des commandes.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -460,7 +461,7 @@ export const createFeedback = async (req, res) => {
 
     return res.json({ message: 'Évaluation enregistrée avec succès.' });
   } catch (error) {
-    return res.status(400).json({ error: 'Une erreur est survenue.' });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -492,7 +493,7 @@ export const createSignalement = async (req, res) => {
       id_signalement: signalement.id_signalement
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du signalement.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -613,7 +614,7 @@ export const inspectionOrder = async (req, res) => {
       total_final: result.totalFinal,
     });
   } catch (error) {
-    return res.status(400).json({ error: 'Une erreur est survenue.' });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -630,7 +631,7 @@ export const getMarkets = async (req, res) => {
     });
     return res.json(markets);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des marchés.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -665,6 +666,6 @@ export const getMarketById = async (req, res) => {
     if (!market) return res.status(404).json({ error: 'Marché introuvable.' });
     return res.json(market);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement du marché.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };

@@ -11,6 +11,7 @@ import livreurRoutes from './routes/livreurRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import { handleWebhook } from './controllers/paymentController.js';
+import { internalError } from './utils/errors.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -63,7 +64,7 @@ app.use('/api/admin', adminRoutes);
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
-    error: 'Une erreur interne est survenue.'
+    error: internalError(err)
   });
 });
 
