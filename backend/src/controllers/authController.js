@@ -663,33 +663,16 @@ export const googleAuth = async (req, res) => {
   }
 
   try {
-    let email, given_name, family_name, sub;
-
-    if (googleClient) {
-      // Proper verification: check token audience matches our client ID
-      const ticket = await googleClient.verifyIdToken({
-        idToken: credential,
-        audience: GOOGLE_CLIENT_ID,
-      });
-      const payload = ticket.getPayload();
-      email = payload.email;
-      given_name = payload.given_name;
-      family_name = payload.family_name;
-      sub = payload.sub;
-    } else {
-      // Fallback: verify via userinfo endpoint (no audience check)
-      const googleRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: `Bearer ${credential}` },
-      });
-      if (!googleRes.ok) {
-        return res.status(401).json({ error: 'Token Google invalide ou expiré.' });
-      }
-      const profile = await googleRes.json();
-      email = profile.email;
-      given_name = profile.given_name;
-      family_name = profile.family_name;
-      sub = profile.sub;
+    // Frontend sends access_token (useGoogleLogin with flow:'implicit')
+    // Verify it by calling Google's userinfo endpoint
+    const googleRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${credential}` },
+    });
+    if (!googleRes.ok) {
+      return res.status(401).json({ error: 'Token Google invalide ou expiré.' });
     }
+    const profile = await googleRes.json();
+    const { email, given_name, family_name, sub } = profile;
 
     if (!email) {
       return res.status(400).json({ error: 'Email requis pour la connexion Google.' });
