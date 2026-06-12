@@ -13,9 +13,7 @@ if (!JWT_SECRET) {
 }
 const JWT_EXPIRES = JWT_EXPIRES_IN || '7d';
 
-const googleClient = GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET
-  ? new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL)
-  : null;
+const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 // Derive role from user specialization rows (RG17)
 const deriveRole = (user) => {
@@ -767,11 +765,12 @@ export const googleAuth = async (req, res) => {
 // GET /auth/google — Redirect to Google consent screen
 // ────────────────────────────────────────────────────────────
 export const googleRedirect = (req, res) => {
-  if (!googleClient) {
-    return res.status(500).json({ error: 'Google OAuth non configuré côté serveur.' });
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REDIRECT_URL) {
+    return res.status(500).json({ error: 'Google OAuth redirect non configuré côté serveur.' });
   }
 
-  const authUrl = googleClient.generateAuthUrl({
+  const oauth2 = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL);
+  const authUrl = oauth2.generateAuthUrl({
     access_type: 'offline',
     scope: ['openid', 'email', 'profile'],
     prompt: 'select_account',
@@ -791,14 +790,15 @@ export const googleCallback = async (req, res) => {
     return res.redirect(`${frontendUrl}/connect?error=google_cancelled`);
   }
 
-  if (!code || !googleClient) {
+  if (!code || !GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REDIRECT_URL) {
     const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
     return res.redirect(`${frontendUrl}/connect?error=google_failed`);
   }
 
   try {
-    const { tokens } = await googleClient.getToken(code);
-    const ticket = await googleClient.verifyIdToken({
+    const oauth2 = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL);
+    const { tokens } = await oauth2.getToken(code);
+    const ticket = await oauth2.verifyIdToken({
       idToken: tokens.id_token,
       audience: GOOGLE_CLIENT_ID,
     });
