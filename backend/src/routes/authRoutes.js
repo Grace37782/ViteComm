@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import {
-  register, verifyEmail, resendCode, login, googleAuth,
+  register, verifyEmail, resendCode, login, googleAuth, completeGoogleRegistration,
   getProfile, updateProfile, logout,
   forgotPassword, resetPassword,
   getMarkets
@@ -25,6 +25,7 @@ router.post('/login', login);
 
 // Google OAuth
 router.post('/google', googleAuth);
+router.post('/google/complete-registration', requireAuth, completeGoogleRegistration);
 
 // Mot de passe oublié
 router.post('/forgot-password', forgotPassword);

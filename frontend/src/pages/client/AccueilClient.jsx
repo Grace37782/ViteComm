@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { Loader2, Search, Store, MapPin, Ruler, Mountain, ChevronDown } from 'lucide-react'
 
 /* ─── Profile helpers (moved from Profil.jsx for reuse) ─── */
 function initials(u) {
@@ -46,9 +48,9 @@ function AvatarCircle({ user, size = 48 }) {
 
 // Custom Leaflet marker icons using divIcon (bypasses URL image path issues in Vite)
 const createMarketIcon = (isActive) => L.divIcon({
-  html: `<div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white shadow-lg text-white font-bold text-lg hover:scale-115 transition-transform ${
+  html: `<div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white shadow-lg text-white hover:scale-115 transition-transform ${
     isActive ? 'bg-amber-500 scale-110 ring-4 ring-amber-300' : 'bg-emerald-650'
-  }">🏪</div>`,
+  }"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path="M2 7h20"/><path="22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/></svg></div>`,
   className: 'custom-div-icon',
   iconSize: [40, 40],
   iconAnchor: [20, 40],
@@ -56,7 +58,7 @@ const createMarketIcon = (isActive) => L.divIcon({
 })
 
 const createUserIcon = () => L.divIcon({
-  html: `<div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 border-2 border-white shadow-lg text-white text-sm animate-bounce">📍</div>`,
+  html: `<div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 border-2 border-white shadow-lg text-white animate-bounce"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>`,
   className: 'custom-div-icon',
   iconSize: [32, 32],
   iconAnchor: [16, 32],
@@ -138,6 +140,8 @@ function matchMarket(market, keywords) {
   return keywords.every(kw => fuzzyMatch(kw, normNom) || fuzzyMatch(kw, normDesc))
 }
 
+const PAGE_SIZE = 10
+
 function MapRecenter({ center, zoomLevel }) {
   const map = useMap()
   useEffect(() => {
@@ -151,6 +155,8 @@ function MapRecenter({ center, zoomLevel }) {
 export default function AccueilClient() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
 
   const [markets, setMarkets] = useState([])
   const [cart, setCart] = useState(null)
@@ -163,6 +169,7 @@ export default function AccueilClient() {
   const [mapCenter, setMapCenter] = useState([6.370, 2.430]) // Default Cotonou
   const [mapZoom, setMapZoom] = useState(13)
   const [activeMarket, setActiveMarket] = useState(null)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   const panierCount = cart?.details?.reduce((s, d) => s + d.quantite, 0) || 0
 
@@ -187,6 +194,7 @@ export default function AccueilClient() {
 
   // Auto-selection of market when exactly 1 market matches the search term
   useEffect(() => {
+    setVisibleCount(PAGE_SIZE)
     const keywords = getKeywords(recherche)
     if (keywords.length > 0 && recherche.trim().length >= 2) {
       const matched = markets.filter(m => matchMarket(m, keywords))
@@ -236,6 +244,9 @@ export default function AccueilClient() {
   const keywords = getKeywords(recherche)
   const marketsFiltered = sortedMarkets.filter(m => matchMarket(m, keywords))
 
+  const visibleItems = marketsFiltered.slice(0, visibleCount)
+  const hasMore = visibleCount < marketsFiltered.length
+
   const suggestions = recherche
     ? markets.filter(m => matchMarket(m, keywords))
     : []
@@ -259,23 +270,23 @@ export default function AccueilClient() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
-          <div className="text-4xl mb-3 animate-spin">⏳</div>
-          <div className="font-bold text-sm text-gray-500">Chargement de la carte et des marchés…</div>
+          <div className="text-4xl mb-3 animate-spin"><Loader2 size={32} /></div>
+          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Chargement de la carte et des marchés…</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="w-full font-sans bg-gray-50 flex flex-col pb-6">
+      <div className="w-full font-sans flex flex-col pb-6 mx-auto max-w-7xl" style={{ background: 'var(--bg)' }}>
       {/* Header Panel - Search */}
       <div className="bg-emerald-800 text-white px-4 pt-3 pb-3 shadow-md flex-shrink-0">
         {/* Search wrapper */}
         <div className="relative">
           <div className="flex items-center gap-2 bg-emerald-900/60 border border-emerald-700/80 px-4 py-2.5 rounded-2xl">
-            <span className="text-gray-300">🔍</span>
+            <span className="text-gray-300"><Search size={16} /></span>
             <input
               type="text"
               placeholder="Rechercher un marché (Dantokpa, Ganhi...)..."
@@ -304,18 +315,24 @@ export default function AccueilClient() {
 
           {/* Autocomplete Dropdown */}
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 text-gray-805">
+            <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-xl border overflow-hidden z-50"
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
               {suggestions.map((m) => (
                 <div
                   key={m.id_marche}
                   onClick={() => handleSelectMarket(m)}
-                  className="px-4 py-3 hover:bg-gray-100 cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-b-0 text-gray-800"
+                  className="px-4 py-3 cursor-pointer flex items-center justify-between border-b last:border-b-0"
+                  style={{
+                    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                    borderColor: 'var(--border-light)',
+                    color: 'var(--text-primary)',
+                  }}
                 >
                   <div>
                     <p className="font-bold text-xs">{m.nom}</p>
-                    <p className="text-[10px] text-gray-400 truncate max-w-xs">{m.description}</p>
+                    <p className="text-[10px] truncate max-w-xs" style={{ color: 'var(--text-muted)' }}>{m.description}</p>
                   </div>
-                  <span className="text-xs">🏪</span>
+                  <span className="text-xs"><Store size={14} /></span>
                 </div>
               ))}
             </div>
@@ -324,7 +341,8 @@ export default function AccueilClient() {
       </div>
 
       {/* 🗺️ Interactive Map Container with absolute selection drawer overlay */}
-      <div className="w-full h-96 relative shadow-inner border-b border-gray-200 flex-shrink-0">
+      <div className="w-full h-72 md:h-96 relative shadow-inner flex-shrink-0"
+        style={{ borderBottom: `1px solid ${isDark ? 'var(--border)' : '#e5e7eb'}` }}>
         <MapContainer center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%', zIndex: 10 }}>
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -338,7 +356,7 @@ export default function AccueilClient() {
             <Marker position={[geoPosition.lat, geoPosition.lng]} icon={createUserIcon()}>
               <Popup>
                 <div className="p-1 text-center">
-                  <p className="text-xs font-black text-blue-700">📍 Votre position actuelle</p>
+                  <p className="text-xs font-black text-blue-700">Votre position actuelle</p>
                 </div>
               </Popup>
             </Marker>
@@ -368,7 +386,8 @@ export default function AccueilClient() {
 
         {/* 🌟 Premium Selected Market Map Overlay Card */}
         {activeMarket && (
-          <div className="absolute bottom-5 left-4 right-4 bg-white/90 backdrop-blur-md border border-gray-200 rounded-3xl p-4 shadow-2xl z-20 transition-all duration-300 animate-slide-up flex gap-3 items-center">
+          <div className="absolute bottom-5 left-4 right-4 backdrop-blur-md rounded-3xl p-4 shadow-2xl z-20 transition-all duration-300 animate-slide-up flex gap-3 items-center"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <img
               src={activeMarket.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=120&q=80'}
               alt={activeMarket.nom}
@@ -376,26 +395,28 @@ export default function AccueilClient() {
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-1">
-                <h4 className="font-extrabold text-sm text-gray-800 truncate">{activeMarket.nom}</h4>
+                <h4 className="font-extrabold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{activeMarket.nom}</h4>
                 <button
                   onClick={() => {
                     setActiveMarket(null)
                     setRecherche('')
                   }}
-                  className="text-gray-400 hover:text-gray-600 text-xs w-5 h-5 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer"
+                  className="text-xs w-5 h-5 rounded-full flex items-center justify-center cursor-pointer"
+                  style={{ color: 'var(--text-muted)' }}
                 >
                   ✕
                 </button>
               </div>
-              <p className="text-[10px] text-gray-500 line-clamp-1 mt-0.5">{activeMarket.description}</p>
+              <p className="text-[10px] line-clamp-1 mt-0.5" style={{ color: 'var(--text-muted)' }}>{activeMarket.description}</p>
               
               <div className="flex items-center gap-3 mt-2">
-                <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                  🏪 {activeMarket._count?.vendeurs || 0} étals actifs
+                <span className="text-[9px] font-bold text-emerald-700 px-2 py-0.5 rounded-full"
+                  style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#D1FAE5' }}>
+                  <Store size={10} className="inline" /> {activeMarket._count?.vendeurs || 0} étals actifs
                 </span>
                 {geoPosition && (
-                  <span className="text-[9px] font-bold text-gray-500">
-                    📏 {getDistanceKm(geoPosition.lat, geoPosition.lng, activeMarket.latitude, activeMarket.longitude).toFixed(1)} km
+                  <span className="text-[9px] font-bold" style={{ color: 'var(--text-muted)' }}>
+                    <Ruler size={10} className="inline" /> {getDistanceKm(geoPosition.lat, geoPosition.lng, activeMarket.latitude, activeMarket.longitude).toFixed(1)} km
                   </span>
                 )}
               </div>
@@ -413,29 +434,34 @@ export default function AccueilClient() {
 
       {/* List Section */}
       <div className="px-5 mt-6 flex-1">
-        <h3 className="font-black text-gray-850 text-base mb-3 flex items-center justify-between">
+        <h3 className="font-black text-base mb-3 flex items-center justify-between" style={{ color: 'var(--text-primary)' }}>
           <span>Marchés Disponibles</span>
-          <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+          <span className="text-xs font-semibold text-emerald-600 px-2.5 py-1 rounded-full"
+            style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#D1FAE5' }}>
             {marketsFiltered.length} localmarts
           </span>
         </h3>
 
         {marketsFiltered.length === 0 ? (
-          <div className="text-center py-10 bg-white rounded-3xl border border-gray-150 shadow-sm">
-            <span className="text-4xl">🏜️</span>
-            <p className="text-xs font-bold text-gray-400 mt-2">Aucun marché ne correspond à ce secteur.</p>
+          <div className="text-center py-10 rounded-3xl shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <span className="text-4xl"><Mountain size={40} /></span>
+            <p className="text-xs font-bold mt-2" style={{ color: 'var(--text-muted)' }}>Aucun marché ne correspond à ce secteur.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
-            {marketsFiltered.map((m) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {visibleItems.map((m) => {
               const isSelected = activeMarket?.id_marche === m.id_marche
               return (
                 <div
                   key={m.id_marche}
                   onClick={() => handleSelectMarket(m)}
-                  className={`flex items-center gap-3 p-3 bg-white rounded-2xl border transition-all shadow-sm cursor-pointer ${
-                    isSelected ? 'border-amber-400 ring-2 ring-amber-200' : 'border-gray-150 hover:border-emerald-300'
+                  className={`flex items-center gap-3 p-3 rounded-2xl transition-all shadow-sm cursor-pointer ${
+                    isSelected ? 'border-amber-400 ring-2 ring-amber-200' : 'border-emerald-300'
                   }`}
+                  style={{
+                    background: 'var(--surface)',
+                    borderColor: isSelected ? undefined : 'var(--border)',
+                  }}
                 >
                   <img
                     src={m.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=150&q=80'}
@@ -445,19 +471,20 @@ export default function AccueilClient() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
-                      <h4 className="font-extrabold text-sm text-gray-800 truncate">{m.nom}</h4>
+                      <h4 className="font-extrabold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{m.nom}</h4>
                       {m.distance !== null && (
                         <span className="text-[10px] font-bold text-emerald-600 flex-shrink-0">
-                          📏 {m.distance.toFixed(1)} km
+                          <Ruler size={10} className="inline" /> {m.distance.toFixed(1)} km
                         </span>
                       )}
                     </div>
                     
-                    <p className="text-[10px] text-gray-400 line-clamp-2 mt-0.5 leading-normal">{m.description}</p>
+                    <p className="text-[10px] line-clamp-2 mt-0.5 leading-normal" style={{ color: 'var(--text-muted)' }}>{m.description}</p>
                     
                     <div className="flex items-center justify-between mt-2">
-                      <span className="text-[10px] font-bold text-gray-450 bg-gray-100 px-2 py-0.5 rounded-full">
-                        🏪 {m._count?.vendeurs || 0} étals actifs
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ color: 'var(--text-muted)', background: isDark ? 'rgba(255,255,255,0.06)' : '#F3F4F6' }}>
+                        <Store size={10} className="inline" /> {m._count?.vendeurs || 0} étals actifs
                       </span>
                       <button
                         onClick={(e) => {
@@ -473,6 +500,14 @@ export default function AccueilClient() {
                 </div>
               )
             })}
+
+            {hasMore && (
+              <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+                className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+                style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+                <ChevronDown size={14} /> Charger plus ({marketsFiltered.length - visibleCount} restant{marketsFiltered.length - visibleCount > 1 ? 's' : ''})
+              </button>
+            )}
           </div>
         )}
       </div>

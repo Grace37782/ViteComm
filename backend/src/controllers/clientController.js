@@ -235,11 +235,15 @@ export const clearCart = async (req, res) => {
 // --- 2.3. Passer une commande (Checkout - RG01, RG05, RG08, RG22, RG24) ---
 
 export const createOrder = async (req, res) => {
-  const { id_user_livreur, items } = req.body;
+  const { id_user_livreur, items, mode_paiement = 'MOBILE_MONEY' } = req.body;
   // items: [{ id_produit, quantite_commandee }]
 
   if (!id_user_livreur || !items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'Détails de la commande invalides.' });
+  }
+
+  if (!['ESPECES', 'MOBILE_MONEY'].includes(mode_paiement)) {
+    return res.status(400).json({ error: 'mode_paiement invalide.' });
   }
 
   try {
@@ -286,7 +290,9 @@ export const createOrder = async (req, res) => {
           commission,
           code_verification: verificationCode,
           id_user_client: client.id_user,
-          statut: 'En attente'
+          statut: 'En attente',
+          mode_paiement,
+          mode_paiement_status: null,
         }
       });
 
@@ -325,7 +331,7 @@ export const createOrder = async (req, res) => {
     return res.status(201).json({
       message: 'Commande créée avec succès.',
       id_commande: command.id_commande,
-      code_verification: command.code_verification
+      code_verification: command.code_verification,
     });
   } catch (error) {
     return res.status(400).json({ error: error.message });
@@ -340,7 +346,17 @@ export const getMyOrders = async (req, res) => {
       where: { id_user_client: req.user.id_user },
       include: {
         detailsCommande: {
-          include: { produit: true }
+          include: {
+            produit: {
+              include: {
+                vendeur: {
+                  include: {
+                    utilisateur: { select: { nom: true, prenom: true } }
+                  }
+                }
+              }
+            }
+          }
         },
         livraison: {
           include: {
@@ -477,6 +493,127 @@ export const createSignalement = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors du signalement.' });
+  }
+};
+
+// --- 2.5. Inspection à la livraison (RG07, RG09, RG21, RG25, RG27) ---
+
+export const inspectionOrder = async (req, res) => {
+  const { id_commande } = req.params;
+  const { statuts, motifs } = req.body;
+  // statuts: { [id_produit]: 'accepte' | 'rejete' }
+  // motifs:  { [id_produit]: string } (required for rejected items)
+
+  if (!statuts || typeof statuts !== 'object') {
+    return res.status(400).json({ error: 'statuts requis (objet id_produit -> accepte/rejete).' });
+  }
+
+  try {
+    const commande = await prisma.commande.findUnique({
+      where: { id_commande: parseInt(id_commande, 10) },
+      include: {
+        detailsCommande: true,
+        livraison: true,
+      }
+    });
+
+    if (!commande) return res.status(404).json({ error: 'Commande introuvable.' });
+    if (commande.id_user_client !== req.user.id_user) {
+      return res.status(403).json({ error: 'Accès interdit.' });
+    }
+    if (!commande.livraison) {
+      return res.status(400).json({ error: 'Aucune livraison associée à cette commande.' });
+    }
+
+    // Validate all items have a status
+    for (const detail of commande.detailsCommande) {
+      if (!statuts[detail.id_produit]) {
+        return res.status(400).json({ error: `Article ${detail.id_produit} non inspecté.` });
+      }
+      if (statuts[detail.id_produit] === 'rejete' && (!motifs || !motifs[detail.id_produit]?.trim())) {
+        return res.status(400).json({ error: `Motif de rejet requis pour l'article ${detail.id_produit}.` });
+      }
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      let fraisRetour = 0;
+      const FRAIS_RETOUR_PAR_ARTICLE = 500; // RG28
+
+      for (const detail of commande.detailsCommande) {
+        const statut = statuts[detail.id_produit];
+
+        if (statut === 'accepte') {
+          // Update detail line to accepted
+          await tx.detailCommande.update({
+            where: { id_commande_id_produit: { id_commande: commande.id_commande, id_produit: detail.id_produit } },
+            data: { statut_acceptation: 'Accepte' }
+          });
+        } else {
+          // Rejected — create litige (RG09, RG21)
+          const litige = await tx.litige.create({
+            data: {
+              description: motifs[detail.id_produit] || 'Article rejeté par le client',
+              id_livraison: commande.livraison.id_livraison,
+              statut: 'Ouvert',
+              montant_rembourse: detail.prix_vente_applique * detail.quantite_commandee,
+            }
+          });
+
+          // Link detail to litige
+          await tx.detailCommande.update({
+            where: { id_commande_id_produit: { id_commande: commande.id_commande, id_produit: detail.id_produit } },
+            data: { statut_acceptation: 'Rejete', id_litige: litige.id_litige }
+          });
+
+          fraisRetour += FRAIS_RETOUR_PAR_ARTICLE;
+        }
+      }
+
+      // Update delivery: mark as delivered + return fees (RG27, RG28)
+      await tx.livraison.update({
+        where: { id_livraison: commande.livraison.id_livraison },
+        data: {
+          statut_livraison: 'Livree',
+          date_fin_reelle: new Date(),
+          frais_retour_calcules: fraisRetour
+        }
+      });
+
+      // Update order statut to Livree (delivery complete after inspection)
+      await tx.commande.update({
+        where: { id_commande: commande.id_commande },
+        data: { statut: 'Livree' }
+      });
+
+      // Generate facture (RG25) — only after inspection
+      const acceptedDetails = commande.detailsCommande.filter(d => statuts[d.id_produit] === 'accepte');
+      const totalMarchandises = acceptedDetails.reduce((s, d) => s + d.prix_vente_applique * d.quantite_commandee, 0);
+      const fraisLivraison = commande.frais_livraison;
+      const commission = parseFloat((totalMarchandises * 0.006).toFixed(2));
+      const montantTotalDu = totalMarchandises + fraisLivraison + fraisRetour;
+
+      await tx.facture.create({
+        data: {
+          montant_marchandises: totalMarchandises,
+          montant_frais_livraison: fraisLivraison,
+          montant_frais_retour: fraisRetour,
+          montant_commission: commission,
+          montant_total_du: montantTotalDu,
+          statut_paiement: 'En attente',
+          id_commande: commande.id_commande,
+        }
+      });
+
+      return { fraisRetour, totalFinal: montantTotalDu };
+    });
+
+    return res.json({
+      message: 'Inspection enregistrée.',
+      frais_retour: result.fraisRetour,
+      total_final: result.totalFinal,
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
   }
 };
 

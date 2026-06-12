@@ -1,7 +1,6 @@
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { OAuth2Client } from 'google-auth-library';
 import prisma from '../config/db.js';
 import { sendVerificationCode, sendPasswordResetCode } from '../services/mail.js';
 import { moveToPermanent } from '../middleware/upload.js';
@@ -33,6 +32,7 @@ const buildUserPayload = async (user) => {
     statut_compte: user.statut_compte,
     est_admin: user.est_admin,
     photo_url: user.photo_url,
+    auth_provider: user.auth_provider || 'local',
     role
   };
 
@@ -463,6 +463,11 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Identifiants invalides.' });
     }
 
+    // Block Google-only accounts from traditional login
+    if (user.auth_provider === 'google') {
+      return res.status(403).json({ error: 'Ce compte utilise uniquement la connexion Google. Veuillez cliquer sur "Continuer avec Google".' });
+    }
+
     // Block suspended/banned accounts (guide §1.2 - gestion du statut_compte)
     if (user.statut_compte !== 'Actif') {
       return res.status(403).json({
@@ -549,6 +554,11 @@ export const updateProfile = async (req, res) => {
 
   // Validate new password if provided
   if (mot_de_passe) {
+    // Block password change for Google OAuth users
+    const currentUser = await prisma.utilisateur.findUnique({ where: { id_user: req.user.id_user } });
+    if (currentUser.auth_provider === 'google') {
+      return res.status(403).json({ error: 'Les comptes Google ne peuvent pas modifier leur mot de passe. Utilisez la connexion Google.' });
+    }
     if (mot_de_passe_confirmation !== undefined && mot_de_passe !== mot_de_passe_confirmation) {
       return res.status(400).json({ error: 'Les mots de passe ne correspondent pas.' });
     }
@@ -638,25 +648,28 @@ export const updateProfile = async (req, res) => {
 
 // ────────────────────────────────────────────────────────────
 // POST /auth/google
-// Google OAuth - reçoit un access_token, vérifie, connecte ou crée l'utilisateur
+// Google OAuth - reçoit un access_token, vérifie via Google userinfo, connecte ou crée l'utilisateur
 // Body: { credential: access_token }
 // ────────────────────────────────────────────────────────────
 export const googleAuth = async (req, res) => {
   const { credential } = req.body;
-  const { GOOGLE_CLIENT_ID } = process.env;
 
   if (!credential) {
     return res.status(400).json({ error: 'Token Google requis.' });
   }
 
   try {
-    const client = new OAuth2Client(GOOGLE_CLIENT_ID);
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: GOOGLE_CLIENT_ID,
+    // Verify the access_token by calling Google's userinfo endpoint
+    const googleRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${credential}` },
     });
-    const payload = ticket.getPayload();
-    const { email, given_name, family_name, sub } = payload;
+
+    if (!googleRes.ok) {
+      return res.status(401).json({ error: 'Token Google invalide ou expiré.' });
+    }
+
+    const profile = await googleRes.json();
+    const { email, given_name, family_name, sub } = profile;
 
     if (!email) {
       return res.status(400).json({ error: 'Email requis pour la connexion Google.' });
@@ -668,8 +681,11 @@ export const googleAuth = async (req, res) => {
       include: { client: true, vendeur: true, livreur: true },
     });
 
+    let isNewGoogleUser = false;
+
     if (!user) {
       // Auto-create account as client with Google data
+      isNewGoogleUser = true;
       user = await prisma.$transaction(async (tx) => {
         const created = await tx.utilisateur.create({
           data: {
@@ -680,6 +696,7 @@ export const googleAuth = async (req, res) => {
             mot_de_passe: await bcryptjs.hash(crypto.randomUUID(), 12),
             statut_compte: 'Actif',
             est_admin: false,
+            auth_provider: 'google',
           }
         });
         await tx.client.create({
@@ -691,6 +708,15 @@ export const googleAuth = async (req, res) => {
           include: { client: true, vendeur: true, livreur: true },
         });
       });
+    } else {
+      // Existing user — check auth_provider
+      if (user.auth_provider === 'local') {
+        return res.status(403).json({ error: 'Ce compte utilise une connexion par email/mot de passe. Veuillez vous connecter normalement.' });
+      }
+      // Mark as Google user if not yet set (backward compat)
+      if (!user.auth_provider || user.auth_provider === 'local') {
+        await prisma.utilisateur.update({ where: { id_user: user.id_user }, data: { auth_provider: 'google' } });
+      }
     }
 
     if (user.statut_compte !== 'Actif') {
@@ -708,9 +734,102 @@ export const googleAuth = async (req, res) => {
       message: 'Connexion Google réussie.',
       token,
       user: await buildUserPayload(user),
+      is_new_google_user: isNewGoogleUser,
     });
   } catch (error) {
     return res.status(400).json({ error: error.message || 'Échec de l\'authentification Google.' });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// POST /auth/google/complete-registration
+// After first Google login, user chooses role: client/vendeur/livreur
+// Body: { role: 'client'|'vendeur'|'livreur', nom_etablissement?, localisation_marche?, type_vehicule?, immatriculation? }
+// ────────────────────────────────────────────────────────────
+export const completeGoogleRegistration = async (req, res) => {
+  const { role, nom_etablissement, localisation_marche, type_vehicule, immatriculation } = req.body;
+
+  if (!role || !['client', 'vendeur', 'livreur'].includes(role)) {
+    return res.status(400).json({ error: 'Rôle invalide. Choisissez: client, vendeur ou livreur.' });
+  }
+
+  try {
+    const user = await prisma.utilisateur.findUnique({
+      where: { id_user: req.user.id_user },
+      include: { client: true, vendeur: true, livreur: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé.' });
+    }
+
+    // If already has the requested role, just return
+    if ((role === 'client' && user.client) ||
+        (role === 'vendeur' && user.vendeur) ||
+        (role === 'livreur' && user.livreur)) {
+      return res.json({
+        message: 'Rôle déjà configuré.',
+        user: await buildUserPayload(user),
+      });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Remove existing role rows
+      if (user.client) {
+        // Delete cart first ( FK constraint )
+        await tx.panier.deleteMany({ where: { id_user_client: user.id_user } });
+        await tx.client.delete({ where: { id_user: user.id_user } });
+      }
+      if (user.vendeur) {
+        await tx.vendeur.delete({ where: { id_user: user.id_user } });
+      }
+      if (user.livreur) {
+        await tx.disponibiliteLivreur.deleteMany({ where: { id_user_livreur: user.id_user } });
+        await tx.livreur.delete({ where: { id_user: user.id_user } });
+      }
+
+      // Create the new role row
+      if (role === 'client') {
+        await tx.client.create({
+          data: { id_user: user.id_user, adresse_livraison: '' }
+        });
+        await tx.panier.create({ data: { id_user_client: user.id_user } });
+      } else if (role === 'vendeur') {
+        if (!nom_etablissement || !localisation_marche) {
+          throw new Error('Pour devenir vendeur, nom_etablissement et localisation_marche sont requis.');
+        }
+        await tx.vendeur.create({
+          data: {
+            id_user: user.id_user,
+            nom_etablissement,
+            localisation_marche,
+          }
+        });
+      } else if (role === 'livreur') {
+        if (!type_vehicule || !immatriculation) {
+          throw new Error('Pour devenir livreur, type_vehicule et immatriculation sont requis.');
+        }
+        await tx.livreur.create({
+          data: {
+            id_user: user.id_user,
+            type_vehicule,
+            immatriculation,
+          }
+        });
+      }
+    });
+
+    const updated = await prisma.utilisateur.findUnique({
+      where: { id_user: req.user.id_user },
+      include: { client: true, vendeur: true, livreur: true },
+    });
+
+    return res.json({
+      message: `Compte ${role} configuré avec succès.`,
+      user: await buildUserPayload(updated),
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
   }
 };
 

@@ -16,6 +16,7 @@ model Utilisateur {
   statut_compte String  @default("Actif")
   est_admin     Boolean @default(false)
   photo_url     String?
+  auth_provider String  @default("local")
 
   client           Client?
   vendeur          Vendeur?
@@ -29,9 +30,10 @@ model Client {
   utilisateur       Utilisateur @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
   adresse_livraison String
 
-  commandes Commande[]
-  feedbacks Feedback[]
-  panier    Panier?
+  commandes             Commande[]
+  feedbacks             Feedback[]
+  panier                Panier?
+  paiementTransactions  PaiementTransaction[]
 }
 
 model Marche {
@@ -97,9 +99,11 @@ model Produit {
   description      String
   prix_reference   Float
   stock_disponible Int
+  unite            String @default("kg")
   id_user_vendeur  Int
   id_categorie     Int
   photo_url        String?
+  created_at       DateTime @default(now())
 
   vendeur         Vendeur          @relation(fields: [id_user_vendeur], references: [id_user], onDelete: Cascade)
   categorie       Categorie        @relation(fields: [id_categorie], references: [id_categorie], onDelete: Restrict)
@@ -130,20 +134,24 @@ model DetailPanier {
 }
 
 model Commande {
-  id_commande        Int      @id @default(autoincrement())
-  date_creation      DateTime @default(now())
-  statut             String   @default("En attente")
-  total_marchandises Float
-  frais_livraison    Float
-  commission         Float    @default(0.0)
-  code_verification  String
-  id_user_client     Int
+  id_commande          Int      @id @default(autoincrement())
+  date_creation        DateTime @default(now())
+  statut               String   @default("En attente")
+  total_marchandises   Float
+  frais_livraison      Float
+  commission           Float    @default(0.0)
+  code_verification    String
+  id_user_client       Int
+  mode_paiement        String   @default("ESPECES")
+  mode_paiement_status String?
+  validee_par_vendeur  Boolean  @default(false)
 
-  client          Client           @relation(fields: [id_user_client], references: [id_user], onDelete: Cascade)
-  detailsCommande DetailCommande[]
-  livraison       Livraison?
-  preuvesCollecte PreuveCollecte[]
-  factures        Facture[]
+  client               Client               @relation(fields: [id_user_client], references: [id_user], onDelete: Cascade)
+  detailsCommande      DetailCommande[]
+  livraison            Livraison?
+  preuvesCollecte      PreuveCollecte[]
+  factures             Facture[]
+  paiementTransactions PaiementTransaction[]
 }
 
 model Livraison {
@@ -204,6 +212,7 @@ model Litige {
   description       String
   date_ouverture    DateTime @default(now())
   statut            String   @default("Ouvert")
+  statut_retour     String   @default("a_recuperer")
   decision_admin    String?
   montant_rembourse Float    @default(0.0)
   id_preuve         Int?
@@ -277,6 +286,28 @@ model Paiement {
   id_facture           Int
 
   facture Facture @relation(fields: [id_facture], references: [id_facture], onDelete: Cascade)
+}
+
+model PaiementTransaction {
+  id_paiement_transaction Int      @id @default(autoincrement())
+  id_user_client          Int
+  id_commande             Int
+  montant                 Float
+  devise                  String   @default("XOF")
+  mode_paiement           String
+  telephone               String?
+  transaction_id          String   @unique
+  fedapay_transaction_id  String?
+  statut                  String   @default("pending")
+  provider                String   @default("fedapay")
+  provider_response       Json?
+  failure_reason          String?
+  paid_at                 DateTime?
+  created_at              DateTime @default(now())
+  updated_at              DateTime @updatedAt
+
+  client   Client   @relation(fields: [id_user_client], references: [id_user], onDelete: Cascade)
+  commande Commande @relation(fields: [id_commande], references: [id_commande], onDelete: Cascade)
 }
 
 model VerificationToken {

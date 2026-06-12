@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
+import { useTheme } from '../../context/ThemeContext'
+import { ClipboardList, Inbox, ShoppingCart, ShieldCheck, Motorbike, CheckCircle, ChevronDown, Smartphone } from 'lucide-react'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -12,18 +14,43 @@ function formatDate(d) {
   })
 }
 
-const STATUS_LABELS = {
-  'En attente': { label: 'En attente', color: '#F59E0B', bg: '#FEF3C7' },
-  'Validee': { label: 'Validée', color: '#3B82F6', bg: '#DBEAFE' },
-  'En cours de collecte': { label: 'Collecte en cours', color: '#8B5CF6', bg: '#EDE9FE' },
-  'Collectee': { label: 'Collectée', color: '#F59E0B', bg: '#FEF3C7' },
-  'Livree': { label: 'Livrée', color: '#1D9E75', bg: '#D1FAE5' },
-  'Annulee': { label: 'Annulée', color: '#E24B4A', bg: '#FEE2E2' },
+function getStatusConfig(statut, isDark) {
+  const MAP = {
+    'En attente': {
+      label: 'En attente',
+      color: isDark ? '#FBBF24' : '#F59E0B',
+      bg: isDark ? 'rgba(251,191,36,0.15)' : '#FEF3C7',
+    },
+    'Validee': {
+      label: 'Validée',
+      color: isDark ? '#60A5FA' : '#3B82F6',
+      bg: isDark ? 'rgba(96,165,250,0.15)' : '#DBEAFE',
+    },
+    'En cours de collecte': {
+      label: 'Collecte en cours',
+      color: isDark ? '#A78BFA' : '#8B5CF6',
+      bg: isDark ? 'rgba(167,139,250,0.15)' : '#EDE9FE',
+    },
+    'Collectee': {
+      label: 'Collectée',
+      color: isDark ? '#FBBF24' : '#F59E0B',
+      bg: isDark ? 'rgba(251,191,36,0.15)' : '#FEF3C7',
+    },
+    'Livree': {
+      label: 'Livrée',
+      color: isDark ? '#34D399' : '#1D9E75',
+      bg: isDark ? 'rgba(52,211,153,0.15)' : '#D1FAE5',
+    },
+    'Annulee': {
+      label: 'Annulée',
+      color: isDark ? '#F87171' : '#E24B4A',
+      bg: isDark ? 'rgba(248,113,113,0.15)' : '#FEE2E2',
+    },
+  }
+  return MAP[statut] || { label: statut, color: 'var(--text-muted)', bg: 'var(--surface-alt)' }
 }
 
-function getStatusConfig(statut) {
-  return STATUS_LABELS[statut] || { label: statut, color: '#888780', bg: '#F3F4F6' }
-}
+const PAGE_SIZE = 10
 
 function copyCode(code) {
   navigator.clipboard?.writeText(code)
@@ -31,9 +58,12 @@ function copyCode(code) {
 
 export default function MesCommandes() {
   const navigate = useNavigate()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [copiedId, setCopiedId] = useState(null)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
     api.get('/client/orders')
@@ -42,19 +72,22 @@ export default function MesCommandes() {
       .finally(() => setLoading(false))
   }, [])
 
+  const visibleItems = orders.slice(0, visibleCount)
+  const hasMore = visibleCount < orders.length
+
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F8F3' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
-          <div style={{ fontWeight: 700, color: '#888780', fontSize: 13 }}>Chargement de vos commandes…</div>
+          <div style={{ fontSize: 40, marginBottom: 12 }}><ClipboardList size={40} /></div>
+          <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>Chargement de vos commandes…</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F7F8F3', fontFamily: 'sans-serif', paddingBottom: 80 }}>
+    <div className="mx-auto max-w-3xl" style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'sans-serif', paddingBottom: 80 }}>
 
       {/* HEADER */}
       <div style={{
@@ -81,10 +114,10 @@ export default function MesCommandes() {
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
         {orders.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', background: '#fff', borderRadius: 24, border: '1.5px solid #E8E6DF' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
-            <div style={{ fontWeight: 900, fontSize: 16, color: '#2C2C2A', marginBottom: 6 }}>Aucune commande</div>
-            <div style={{ fontSize: 13, color: '#888780', marginBottom: 20 }}>
+          <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--surface)', borderRadius: 24, border: '1.5px solid var(--border)' }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}><Inbox size={48} /></div>
+            <div style={{ fontWeight: 900, fontSize: 16, color: 'var(--text-primary)', marginBottom: 6 }}>Aucune commande</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
               Vous n'avez pas encore passé de commande.
             </div>
             <button
@@ -94,12 +127,12 @@ export default function MesCommandes() {
                 padding: '14px 28px', fontSize: 14, fontWeight: 900, cursor: 'pointer',
               }}
             >
-              🛒 Découvrir les marchés
+              <ShoppingCart size={16} className="inline" /> Découvrir les marchés
             </button>
           </div>
         ) : (
-          orders.map(order => {
-            const sc = getStatusConfig(order.statut)
+          visibleItems.map(order => {
+            const sc = getStatusConfig(order.statut, isDark)
             const livreur = order.livraison?.livreur
             const livreurNom = livreur
               ? `${livreur.utilisateur?.prenom} ${livreur.utilisateur?.nom}`
@@ -109,8 +142,8 @@ export default function MesCommandes() {
               <div
                 key={order.id_commande}
                 style={{
-                  background: '#fff', borderRadius: 20,
-                  border: '1.5px solid #E8E6DF', overflow: 'hidden',
+                  background: 'var(--surface)', borderRadius: 20,
+                  border: '1.5px solid var(--border)', overflow: 'hidden',
                 }}
               >
                 {/* Status bar */}
@@ -119,8 +152,8 @@ export default function MesCommandes() {
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 16 }}>📋</span>
-                    <span style={{ fontWeight: 900, fontSize: 13, color: '#2C2C2A' }}>
+                    <span style={{ fontSize: 16 }}><ClipboardList size={16} /></span>
+                    <span style={{ fontWeight: 900, fontSize: 13, color: sc.color }}>
                       #{String(order.id_commande).padStart(5, '0')}
                     </span>
                   </div>
@@ -137,13 +170,13 @@ export default function MesCommandes() {
                 <div style={{ padding: '14px 16px' }}>
                   {/* Code verification */}
                   <div style={{
-                    background: '#F7F8F3', borderRadius: 14,
+                    background: 'var(--surface-alt)', borderRadius: 14,
                     padding: '12px 14px', marginBottom: 12,
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   }}>
                     <div>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: '#888780', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        🔐 Code de vérification
+                      <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                        <ShieldCheck size={12} className="inline" /> Code de vérification
                       </div>
                       <div style={{
                         fontSize: 24, fontWeight: 900, letterSpacing: 6,
@@ -159,29 +192,29 @@ export default function MesCommandes() {
                         setTimeout(() => setCopiedId(null), 2000)
                       }}
                       style={{
-                        background: copiedId === order.id_commande ? '#D1FAE5' : '#fff',
-                        border: `1.5px solid ${copiedId === order.id_commande ? '#1D9E75' : '#E8E6DF'}`,
+                        background: copiedId === order.id_commande ? (isDark ? 'rgba(29,158,117,0.15)' : '#D1FAE5') : 'var(--surface)',
+                        border: `1.5px solid ${copiedId === order.id_commande ? '#1D9E75' : 'var(--border)'}`,
                         borderRadius: 12, padding: '10px 14px',
                         fontSize: 12, fontWeight: 800, cursor: 'pointer',
-                        color: copiedId === order.id_commande ? '#1D9E75' : '#5F5E5A',
+                        color: copiedId === order.id_commande ? '#1D9E75' : 'var(--text-secondary)',
                         display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
                       }}
                     >
-                      {copiedId === order.id_commande ? '✓ Copié' : '📋 Copier'}
+                      {copiedId === order.id_commande ? <><CheckCircle size={12} className="inline" /> Copié</> : <><ClipboardList size={12} className="inline" /> Copier</>}
                     </button>
                   </div>
 
                   {/* Details */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, color: '#888780' }}>Date</span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#2C2C2A' }}>{formatDate(order.date_creation)}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Date</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{formatDate(order.date_creation)}</span>
                     </div>
 
                     {livreurNom && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: 12, color: '#888780' }}>🏍️ Livreur</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#2C2C2A' }}>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}><Motorbike size={12} className="inline" /> Livreur</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
                           {livreurNom}
                           {livreur?.utilisateur?.telephone && ` · ${livreur.utilisateur.telephone}`}
                         </span>
@@ -189,14 +222,14 @@ export default function MesCommandes() {
                     )}
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, color: '#888780' }}>Articles</span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#2C2C2A' }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Articles</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
                         {order.detailsCommande?.reduce((s, d) => s + d.quantite_commandee, 0)} produit(s)
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid #E8E6DF' }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: '#2C2C2A' }}>Total</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>Total</span>
                       <span style={{ fontSize: 14, fontWeight: 900, color: '#1D9E75' }}>
                         {formatPrice(order.total_marchandises + order.frais_livraison)}
                       </span>
@@ -206,9 +239,26 @@ export default function MesCommandes() {
 
                 {/* Footer action */}
                 <div style={{
-                  borderTop: '1px solid #E8E6DF', padding: '10px 16px',
-                  display: 'flex', justifyContent: 'flex-end',
+                  borderTop: '1px solid var(--border)', padding: '10px 16px',
+                  display: 'flex', justifyContent: 'flex-end', gap: 8,
                 }}>
+                  {order.statut === 'Livree' && order.mode_paiement_status !== 'paye' && (
+                    <button
+                      onClick={() => {
+                        const total = (order.detailsCommande || []).reduce((s, d) => s + (d.prix_vente_applique || 0) * d.quantite_commandee, 0)
+                          + (order.frais_livraison || 0)
+                        navigate('/client/paiement', { state: { id_commande: order.id_commande, total } })
+                      }}
+                      style={{
+                        background: '#1D9E75', color: '#fff', borderRadius: 12,
+                        padding: '8px 14px', fontSize: 12, fontWeight: 800,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                        border: 'none',
+                      }}
+                    >
+                      <Smartphone size={12} className="inline" /> Payer
+                    </button>
+                  )}
                   <button
                     onClick={() => navigate('/client/suivi-commande', {
                       state: {
@@ -229,6 +279,14 @@ export default function MesCommandes() {
               </div>
             )
           })
+        )}
+
+        {hasMore && (
+          <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+            className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+            style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+            <ChevronDown size={14} /> Charger plus ({orders.length - visibleCount} restant{orders.length - visibleCount > 1 ? 's' : ''})
+          </button>
         )}
       </div>
 

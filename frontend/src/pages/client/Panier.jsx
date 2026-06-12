@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
+import { ShoppingCart, Store, Package, Banknote, Lock, Loader2, XCircle } from 'lucide-react'
 
 const FRAIS_LIVRAISON = 1500
 const COMMISSION_RATE = 0.006
@@ -11,6 +13,8 @@ function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 export default function Panier() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
 
   const [cart, setCart]       = useState(null)
   const [loading, setLoading] = useState(true)
@@ -20,7 +24,7 @@ export default function Panier() {
   useEffect(() => {
     api.get('/client/cart')
       .then(setCart)
-      .catch(err => showToast('❌ ' + err.message))
+      .catch(err => showToast(<><XCircle size={14} style={{verticalAlign: 'middle', marginRight: 4}} />{err.message}</>))
       .finally(() => setLoading(false))
   }, [])
 
@@ -36,7 +40,7 @@ export default function Panier() {
       const updated = await api.get('/client/cart')
       setCart(updated)
     } catch (err) {
-      showToast('❌ ' + err.message)
+      showToast(<><XCircle size={14} style={{verticalAlign: 'middle', marginRight: 4}} />{err.message}</>)
     }
   }
 
@@ -45,7 +49,7 @@ export default function Panier() {
       await api.delete('/client/cart')
       setCart({ details: [] })
     } catch (err) {
-      showToast('❌ ' + err.message)
+      showToast(<><XCircle size={14} style={{verticalAlign: 'middle', marginRight: 4}} />{err.message}</>)
     }
   }
 
@@ -68,23 +72,23 @@ export default function Panier() {
   /* ── Loading ─────────────────────────────────────────── */
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F8F3' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
-          <div style={{ fontWeight: 700, color: '#888780', fontSize: 13 }}>Chargement du panier…</div>
+          <div style={{ fontSize: 40, marginBottom: 12 }}><Loader2 size={40} className="animate-spin" /></div>
+          <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>Chargement du panier…</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: '#F7F8F3', paddingBottom: 80 }}>
+    <div className="w-full min-h-screen font-sans mx-auto max-w-3xl" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {/* TOAST */}
       {toast && (
         <div style={{
           position: 'fixed', top: 16, left: 16, right: 16, zIndex: 100,
-          background: '#2C2C2A', color: '#fff', borderRadius: 16,
+          background: isDark ? '#1a1a18' : '#2C2C2A', color: '#fff', borderRadius: 16,
           padding: '14px 20px', fontWeight: 700, fontSize: 14, textAlign: 'center',
           boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
         }}>{toast}</div>
@@ -124,9 +128,9 @@ export default function Panier() {
       {/* EMPTY */}
       {details.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-          <div className="text-6xl mb-4">🛒</div>
-          <h2 className="font-black text-lg mb-2" style={{ color: '#2C2C2A' }}>Votre panier est vide</h2>
-          <p className="text-sm mb-6" style={{ color: '#888780' }}>
+          <div className="text-6xl mb-4"><ShoppingCart size={64} /></div>
+          <h2 className="font-black text-lg mb-2" style={{ color: 'var(--text-primary)' }}>Votre panier est vide</h2>
+          <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
             Ajoutez des produits depuis les catalogues des marchés.
           </p>
           <button
@@ -143,27 +147,27 @@ export default function Panier() {
           {/* ARTICLES PAR ÉTAL */}
           {Object.entries(parVendeur).map(([vid, etal]) => (
             <div key={vid} className="rounded-2xl overflow-hidden"
-              style={{ background: '#fff', border: '1.5px solid #E8E6DF', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+              style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow)' }}>
               <div className="flex items-center gap-2 px-4 py-3"
-                style={{ background: '#F7F8F3', borderBottom: '1px solid #E8E6DF' }}>
-                <span className="text-lg">🏪</span>
-                <span className="font-black text-sm flex-1" style={{ color: '#2C2C2A' }}>{etal.nom}</span>
+                style={{ background: 'var(--surface-alt)', borderBottom: '1px solid var(--border)' }}>
+                <Store size={18} />
+                <span className="font-black text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{etal.nom}</span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: '#E1F5EE', color: '#0F6E56' }}>
+                  style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56' }}>
                   {etal.items.length} article{etal.items.length > 1 ? 's' : ''}
                 </span>
               </div>
 
-              <div className="flex flex-col divide-y" style={{ borderColor: '#F1EFE8' }}>
+              <div className="flex flex-col divide-y" style={{ borderColor: 'var(--border-light)' }}>
                 {etal.items.map((d) => (
                   <div key={d.id_produit} className="flex items-center gap-3 px-4 py-3">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-                      style={{ background: '#F7F8F3' }}>
-                      📦
+                      style={{ background: 'var(--surface-alt)' }}>
+                      <Package size={20} />
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="font-black text-sm truncate" style={{ color: '#2C2C2A' }}>{d.produit.nom}</div>
+                      <div className="font-black text-sm truncate" style={{ color: 'var(--text-primary)' }}>{d.produit.nom}</div>
                       <div className="text-xs font-medium" style={{ color: '#1D9E75' }}>
                         {formatPrice(d.produit.prix_reference)} / unité
                       </div>
@@ -173,15 +177,15 @@ export default function Panier() {
                     <div className="flex items-center gap-1">
                       <button onClick={() => setQte(d.id_produit, d.quantite - 1)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center font-black cursor-pointer text-sm"
-                        style={{ background: '#F1EFE8', border: 'none', color: '#5F5E5A' }}>−</button>
-                      <span className="w-6 text-center font-black text-sm" style={{ color: '#2C2C2A' }}>{d.quantite}</span>
+                        style={{ background: 'var(--border-light)', border: 'none', color: 'var(--text-secondary)' }}>−</button>
+                      <span className="w-6 text-center font-black text-sm" style={{ color: 'var(--text-primary)' }}>{d.quantite}</span>
                       <button onClick={() => setQte(d.id_produit, d.quantite + 1)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-sm cursor-pointer"
                         style={{ background: '#1D9E75', border: 'none', color: '#fff' }}>+</button>
                     </div>
 
                     <div className="text-right ml-2 flex-shrink-0">
-                      <div className="font-black text-sm" style={{ color: '#2C2C2A' }}>
+                      <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
                         {formatPrice(d.produit.prix_reference * d.quantite)}
                       </div>
                       <button onClick={() => setQte(d.id_produit, 0)}
@@ -195,39 +199,35 @@ export default function Panier() {
           ))}
 
           {/* MODE PAIEMENT */}
-          <div className="rounded-2xl p-4" style={{ background: '#FAEEDA', border: '1.5px solid #FAC775' }}>
+          <div className="rounded-2xl p-4" style={{ background: isDark ? 'rgba(186,117,23,0.08)' : '#FAEEDA', border: `1.5px solid ${isDark ? 'rgba(243,168,59,0.2)' : '#FAC775'}` }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                style={{ background: '#BA7517' }}>💵</div>
+                style={{ background: '#BA7517' }}><Banknote size={20} /></div>
               <div>
-                <div className="font-black text-sm" style={{ color: '#854F0B' }}>Paiement à la livraison</div>
-                <div className="text-xs" style={{ color: '#854F0B' }}>Vous payez en espèces quand vous recevez vos articles</div>
-              </div>
-              <div className="ml-auto w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: '#BA7517' }}>
-                <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>
+                <div className="font-black text-sm" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Mode de paiement</div>
+                <div className="text-xs" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Choisissez votre mode de paiement à l'étape suivante</div>
               </div>
             </div>
           </div>
 
           {/* RÉCAPITULATIF */}
-          <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1.5px solid #E8E6DF' }}>
-            <h3 className="font-black text-sm mb-3" style={{ color: '#2C2C2A' }}>Récapitulatif</h3>
+          <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+            <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Récapitulatif</h3>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#888780' }}>Sous-total ({panierCount} articles)</span>
-                <span className="font-semibold" style={{ color: '#2C2C2A' }}>{formatPrice(sousTotal)}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Sous-total ({panierCount} articles)</span>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(sousTotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#888780' }}>Frais de livraison</span>
-                <span className="font-semibold" style={{ color: '#2C2C2A' }}>{formatPrice(FRAIS_LIVRAISON)}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Frais de livraison</span>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(FRAIS_LIVRAISON)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#888780' }}>Commission plateforme (0,6%)</span>
-                <span className="font-semibold" style={{ color: '#2C2C2A' }}>{formatPrice(commission)}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Commission plateforme (0,6%)</span>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(commission)}</span>
               </div>
-              <div className="flex justify-between pt-2 mt-1" style={{ borderTop: '1.5px solid #E8E6DF' }}>
-                <span className="font-black text-base" style={{ color: '#2C2C2A' }}>Total à payer</span>
+              <div className="flex justify-between pt-2 mt-1" style={{ borderTop: '1.5px solid var(--border)' }}>
+                <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>Total à payer</span>
                 <span className="font-black text-base" style={{ color: '#1D9E75' }}>{formatPrice(total)}</span>
               </div>
             </div>
@@ -242,8 +242,8 @@ export default function Panier() {
             Choisir un livreur — {formatPrice(total)} →
           </button>
 
-          <p className="text-center text-xs pb-2" style={{ color: '#888780' }}>
-            🔒 Paiement sécurisé · Vous inspectez avant de payer
+          <p className="text-center text-xs pb-2" style={{ color: 'var(--text-muted)' }}>
+            <Lock size={14} style={{verticalAlign: 'middle', marginRight: 4}} /> Paiement sécurisé · Vous inspectez avant de payer
           </p>
 
         </div>

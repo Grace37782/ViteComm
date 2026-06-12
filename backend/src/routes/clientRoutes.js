@@ -13,6 +13,7 @@ import {
   getMyOrders,
   createFeedback,
   createSignalement,
+  inspectionOrder,
   getMarkets,
   getMarketById
 } from '../controllers/clientController.js';
@@ -46,6 +47,7 @@ router.delete('/cart', requireAuth, requireRole(['client']), clearCart);
 // Orders
 router.post('/orders', requireAuth, requireRole(['client']), createOrder);
 router.get('/orders', requireAuth, requireRole(['client']), getMyOrders);
+router.post('/orders/:id_commande/inspection', requireAuth, requireRole(['client']), inspectionOrder);
 
 // Feedback (RG23)
 router.post('/feedbacks', requireAuth, requireRole(['client']), createFeedback);

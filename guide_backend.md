@@ -9,7 +9,7 @@ Ce document sert de feuille de route pour l'architecture **backend MVC** de Vite
 ```
 backend/
 ├── prisma/
-│   ├── schema.prisma          # Modèle de données (16 entités + 3 tables pivot)
+│   ├── schema.prisma          # Modèle de données (18 entités + 3 tables pivot)
 │   ├── seed.js                # Peuplement DB de démonstration
 │   └── migrations/            # Migrations Prisma générées
 ├── src/
@@ -20,18 +20,21 @@ backend/
 │   │   ├── auth.js            # requireAuth + requireRole (JWT, vérification statut, déduction du rôle)
 │   │   └── upload.js          # Multer config (avatars, images marchés — upload temporaire puis permanent)
 │   ├── services/
-│   │   └── mail.js            # Nodemailer (envoi code vérification + réinitialisation mot de passe)
+│   │   ├── mail.js            # Nodemailer (envoi code vérification + réinitialisation mot de passe)
+│   │   └── fedapayService.js  # FedaPay Mobile Money (initiation paiement, vérification webhook, API status)
 │   ├── controllers/
 │   │   ├── authController.js  # Authentification & Profil
 │   │   ├── clientController.js
 │   │   ├── vendeurController.js
 │   │   ├── livreurController.js
+│   │   ├── paymentController.js  # Paiement Mobile Money (FedaPay)
 │   │   └── adminController.js
 │   └── routes/
 │       ├── authRoutes.js
 │       ├── clientRoutes.js
 │       ├── vendeurRoutes.js
 │       ├── livreurRoutes.js
+│       ├── paymentRoutes.js   # Paiement client (initiate, status, callback)
 │       └── adminRoutes.js
 ```
 
@@ -39,25 +42,27 @@ backend/
 
 ## 1. Point d'Entrée — `src/index.js`
 
-Monte les 5 routeurs sur les préfixes suivants :
+Monte les 6 routeurs + webhook sur les préfixes suivants :
 | Routeur | Préfixe |
 |---|---|
 | `authRoutes` | `/api/auth` |
 | `clientRoutes` | `/api/client` |
+| `paymentRoutes` | `/api/client/payment` |
 | `vendeurRoutes` | `/api/vendor` |
-| `livreurRoutes` | `/api/driver` |
+| `livreurRoutes` | `/api/livreur` |
 | `adminRoutes` | `/api/admin` |
+| Webhook FedaPay | `/api/webhooks/fedapay` (avant auth, vérifié par signature HMAC) |
 
 ---
 
 ## 2. Modèle de Données — `prisma/schema.prisma`
 
-17 modèles (SQLite via Better-SQLite3) :
+18 modèles (SQLite via Better-SQLite3) :
 
 | Modèle | Clé / Particularité |
 |---|---|
 | `Utilisateur` | Table pivot rôles : `client?`, `vendeur?`, `livreur?`. `est_admin` pour admin. |
-| `Client` | FK → `Utilisateur`. Lien 1:1 → `Panier`, 1:N → `Commande`, `Feedback`. |
+| `Client` | FK → `Utilisateur`. Lien 1:1 → `Panier`, 1:N → `Commande`, `Feedback`, `PaiementTransaction`. |
 | `Vendeur` | FK → `Utilisateur`. Lien 1:N → `Produit`, `Feedback`. Score réputation. |
 | `Livreur` | FK → `Utilisateur`. Lien 1:N → `Livraison`, `DisponibiliteLivreur`. Score réputation. |
 | `DisponibiliteLivreur` | FK → `Livreur`. Historique des disponibilités (RG29). |
@@ -66,7 +71,7 @@ Monte les 5 routeurs sur les préfixes suivants :
 | `Produit` | FK → `Vendeur`, `Categorie`. Lien 1:N → `DetailCommande`, `DetailPanier`, `HistoriquePrix`. |
 | `Panier` | FK → `Client` (unique). Lien 1:N → `DetailPanier`. |
 | `DetailPanier` | PK composite `(id_panier, id_produit)`. |
-| `Commande` | FK → `Client`. Lien 1:1 → `Livraison`, 1:N → `DetailCommande`, `PreuveCollecte`, `Facture`. |
+| `Commande` | FK → `Client`. Lien 1:1 → `Livraison`, 1:N → `DetailCommande`, `PreuveCollecte`, `Facture`, `PaiementTransaction`. Champs `mode_paiement`, `mode_paiement_status`, `validee_par_vendeur`. |
 | `DetailCommande` | PK composite `(id_commande, id_produit)`. FK → `Litige?`, `Feedback?`. |
 | `Livraison` | FK → `Commande` (unique), `Livreur`. Lien 1:N → `Litige`, `Feedback`, `BonDeLivraison`. |
 | `PreuveCollecte` | FK → `Commande`. Lien 1:N → `MediaPreuve`, `Litige`. |
@@ -77,6 +82,7 @@ Monte les 5 routeurs sur les préfixes suivants :
 | `HistoriquePrix` | FK → `Produit`. Traçabilité des prix (RG24). |
 | `Facture` | FK → `Commande`. 1:N → `Paiement`. |
 | `Paiement` | FK → `Facture`. |
+| `PaiementTransaction` | FK → `Client`, `Commande`. Transactions FedaPay (Mobile Money). Statuts: pending → completed/failed/cancelled. |
 | `VerificationToken` | Token + code à 6 chiffres pour inscription email. |
 | `PasswordResetToken` | Token + code pour réinitialisation mot de passe. |
 | `BonDeLivraison` | FK → `Livraison`. Reçu de livraison signé (RG27). |
@@ -100,6 +106,13 @@ Monte les 5 routeurs sur les préfixes suivants :
 ### `src/services/mail.js`
 - `sendVerificationCode(email, code, prenom)` : Email HTML avec code 6 chiffres (inscription).
 - `sendPasswordResetCode(email, code, prenom)` : Email HTML avec code 6 chiffres (reset password).
+
+### `src/services/fedapayService.js`
+- `initiatePayment(transaction)` : Appel API FedaPay `POST /v1/transactions` pour initier un paiement Mobile Money. Retourne `checkout_url` et `fedapay_id`.
+- `verifyWebhookSignature(payload, signatureHeader)` : Vérification HMAC-SHA256 avec timing-safe comparison. Format header : `t=TIMESTAMP,s=SIGNATURE`.
+- `generateTransactionId()` : Génère un ID unique `TXN-XXXXXXXXXXXX`.
+- `verifyTransactionStatus(fedapayId)` : Vérifie le statut d'une transaction via l'API FedaPay (fallback si webhook non reçu en dev).
+- `formatPhoneForBenin(phone)` : Formate le numéro pour le Bénin (+229).
 
 ---
 
@@ -143,19 +156,39 @@ Monte les 5 routeurs sur les préfixes suivants :
 | GET | `/cart` | `getCart` | §2.2 Panier | Panier du client (regroupé par vendeur) |
 | POST | `/cart/item` | `upsertCartItem` | §2.2 Panier | Ajouter/modifier/supprimer ligne panier |
 | DELETE | `/cart` | `clearCart` | §2.2 Panier | Vider le panier |
-| POST | `/orders` | `createOrder` | §2.3 Checkout | Création commande (multi-vendeurs, choix livreur, RG01/05/08/22/24) |
+| POST | `/orders` | `createOrder` | §2.3 Checkout | Création commande (multi-vendeurs, choix livreur, mode_paiement MOBILE_MONEY) |
 | GET | `/orders` | `getMyOrders` | §2.4 Suivi | Commandes du client avec timeline |
+| POST | `/orders/:id_commande/inspection` | `inspectionOrder` | §2.4 Suivi | Inspection face-à-face : accepte/rejette articles, crée litiges, facture |
 | POST | `/feedbacks` | `createFeedback` | §2.6 Évaluation | Création feedback LIVREUR/VENDEUR (RG10/15/20/23) |
 | POST | `/signalements` | `createSignalement` | §2.7 Signalement | Signalement (RG14) |
 
 **Logique clé** :
-- `createOrder` : transaction complète → déduction stock, gel prix (RG24), code vérification (RG06), commission 0.6% (RG08), création livraison, vidage panier (RG22).
+- `createOrder` : transaction complète → déduction stock, gel prix (RG24), code vérification (RG06), commission 0.6% (RG08), création livraison, vidage panier (RG22). `mode_paiement` défaut `MOBILE_MONEY`, `mode_paiement_status` défaut `null`.
+- `inspectionOrder` : inspection face-à-face → accepte/rejette articles, crée litiges pour rejetés (RG21), crée facture.
 - `createFeedback` : met à jour `score_reputation` du livreur ou vendeur (RG10, RG15).
 - `getDrivers` : filtre par dernière disponibilité active dans `DisponibiliteLivreur` (RG29).
 
 ---
 
-### 5.3. Espace Vendeur — `vendeurRoutes.js` (prefixe: `/api/vendor`)
+### 5.3. Paiement Mobile Money — `paymentRoutes.js` (prefixe: `/api/client/payment`)
+
+| Méthode | Endpoint | Controller | Description |
+|---|---|---|---|
+| POST | `/initiate` | `createPayment` | Initie un paiement FedaPay (momo/moov/celtis). Retourne `checkout_url` + `transaction_id`. |
+| GET | `/status/:transaction_id` | `getPaymentStatus` | Statut d'une transaction. Vérifie avec l'API FedaPay si toujours en attente. |
+| GET | `/callback` | `handleCallback` | Callback FedaPay après paiement. Redirige vers `/client/paiement`. |
+| POST | `/api/webhooks/fedapay` | `handleWebhook` | Webhook FedaPay (avant auth middleware). Met à jour `PaiementTransaction` + `Commande.mode_paiement_status`. |
+
+**Logique clé** :
+- `createPayment` : crée `PaiementTransaction` (statut `pending`), appelle FedaPay API, retourne `checkout_url`.
+- `handleWebhook` : vérifie signature HMAC (skip en dev), traite `transaction.approved` (crée `Paiement` + `Facture` si nécessaire, met à jour `mode_paiement_status` → `paye`), `transaction.declined`/`transaction.canceled` → `echoue`.
+- `getPaymentStatus` : fallback — si `pending` et `fedapay_transaction_id` existe, vérifie via l'API FedaPay.
+- Map paiement : `momo → mtn_bj`, `moov → moov_bj`, `celtis → celtis_bj`.
+- Le paiement est déclenché APRÈS livraison + inspection, pas au checkout.
+
+---
+
+### 5.4. Espace Vendeur — `vendeurRoutes.js` (prefixe: `/api/vendor`)
 
 | Méthode | Endpoint | Controller | Guide Frontend | Description |
 |---|---|---|---|---|
@@ -164,34 +197,42 @@ Monte les 5 routeurs sur les préfixes suivants :
 | POST | `/products` | `createProduct` | §3.2 Catalogue | Création produit + enregistrement prix initial (RG24) |
 | PUT | `/products/:id` | `updateProduct` | §3.2 Catalogue | Modification produit + log si prix changé (RG24) |
 | DELETE | `/products/:id` | `deleteProduct` | §3.2 Catalogue | Suppression produit |
-| GET | `/orders` | `getVendorOrders` | §3.3 Commandes | Commandes contenant les produits du vendeur |
+| GET | `/orders` | `getVendorOrders` | §3.3 Commandes | Commandes contenant les produits du vendeur (inclut `validee_par_vendeur`) |
+| POST | `/orders/:id_commande/validate` | `validateOrder` | §3.3 Commandes | Validation disponibilité articles — le livreur ne peut collecter qu'après validation |
 | POST | `/orders/:id_commande/verify-handover` | `verifyHandover` | §3.3 Collecte | Validation remise : code vérification (RG06) + preuve photo (RG07) |
 | GET | `/returns` | `getVendorReturns` | §3.4 Retours | Articles rejetés (RG16) |
 | POST | `/signalements` | `createSignalement` | §3.5 Signalement | Signalement (RG14) |
 
 **Logique clé** :
+- `validateOrder` : vérifie ownership (`id_user_vendeur`), vérifie pas déjà validé (`validee_par_vendeur`), met à jour `Commande.validee_par_vendeur = true`. NaN-safe avec `parseInt` + vérification `isNaN`.
 - `verifyHandover` : vérifie le code de vérification, crée `PreuveCollecte` + `MediaPreuve`, avance le statut commande à "En transit" si tous les vendeurs ont validé.
 - `getVendorDashboard` : calcule `total_brut`, `total_pertes` (articles Rejete), commission 0.6%, `gains_nets`.
 
 ---
 
-### 5.4. Espace Livreur — `livreurRoutes.js` (prefixe: `/api/driver`)
+### 5.5. Espace Livreur — `livreurRoutes.js` (prefixe: `/api/livreur`)
 
 | Méthode | Endpoint | Controller | Guide Frontend | Description |
 |---|---|---|---|---|
-| GET | `/dashboard` | `getDriverDashboard` | §4.1 Dashboard | Gains, courses, réputation, dispo (RG19) |
+| GET | `/dashboard` | `getDriverDashboard` | §4.1 Dashboard | Gains (RG28: uniquement livraisons payées), courses, réputation, dispo (RG19) |
 | PUT | `/availability` | `updateAvailability` | §4.1 Dashboard | Crée enregistrement `DisponibiliteLivreur` (RG29) |
 | GET | `/deliveries/available` | `getAvailableDeliveries` | §4.2 Marketplace | Commandes en attente sans livreur (RG05) |
 | GET | `/deliveries` | `getMyDeliveries` | §4.2 Marketplace | Livraisons assignées (actives + historique) |
+| POST | `/deliveries/:id_commande/collect` | `collectDelivery` | §4.3 Collecte | Collecte articles — **bloqué** tant que vendeur n'a pas validé (`validee_par_vendeur`) |
+| POST | `/deliveries/:id_commande/depart` | `departDelivery` | §4.3 Collecte | Départ pour livraison |
 | POST | `/deliveries/:id_commande/finalize` | `finalizeDelivery` | §4.4 Livraison | Finalisation face-à-face (RG06/08/09/16/21) |
-| POST | `/signalements` | `createSignalement` | §4.5 Signalement | Signalement (RG14) |
+| GET | `/gains` | `getGainsDetailed` | §4.5 Gains | Gains détaillés (RG28: filtre `mode_paiement_status === 'paye'`) |
+| GET | `/historique` | `getLivreurHistorique` | §4.6 Historique | Historique livraisons (RG28: filtre payées uniquement) |
+| POST | `/signalements` | `createSignalement` | — | Signalement (RG14) |
 
 **Logique clé** :
+- `collectDelivery` : **gate vendor validation** — vérifie `commande.validee_par_vendeur === true` avant de permettre la collecte. Erreur 400 si non validé.
+- `getGainsDetailed` / `getDriverDashboard` / `getLivreurHistorique` : **RG28** — filtre les livraisons terminées avec `mode_paiement_status === 'paye'` uniquement. Les gains ne sont crédités qu'après confirmation de paiement.
 - `finalizeDelivery` : transaction → marque chaque ligne Acceptée/Rejetée (RG09), crée `Litige` pour les rejetés (RG21), recalcule les frais, met à jour le statut, marque le livreur disponible via `DisponibiliteLivreur` (RG29).
 
 ---
 
-### 5.5. Espace Administrateur — `adminRoutes.js` (prefixe: `/api/admin`)
+### 5.6. Espace Administrateur — `adminRoutes.js` (prefixe: `/api/admin`)
 
 | Méthode | Endpoint | Controller | Guide Frontend | Description |
 |---|---|---|---|---|
@@ -232,7 +273,7 @@ Monte les 5 routeurs sur les préfixes suivants :
 | RG05 | Attribution unique d'un livreur à une commande | `clientController.createOrder`, `livreurController.getAvailableDeliveries` |
 | RG06 | Code de vérification unique pour remise/livraison | `vendeurController.verifyHandover`, `livreurController.finalizeDelivery` |
 | RG07 | Preuve photographique obligatoire à la collecte | `vendeurController.verifyHandover`, `mediaPreuve` |
-| RG08 | Commission plateforme 0.6%, paiement COD | `createOrder`, `getVendorDashboard`, `getAdminDashboard` |
+| RG08 | Commission plateforme 0.6%, paiement Mobile Money (FedaPay) | `createOrder`, `getVendorDashboard`, `getAdminDashboard`, `paymentController` |
 | RG09 | Rejet granulaire d'articles individuels | `livreurController.finalizeDelivery` |
 | RG10 | Mise à jour score de réputation via feedbacks | `clientController.createFeedback` |
 | RG11 | Confidentialité stricte client (admin voit pas l'historique) | `adminController.getUserDetails` (safeUser) |
@@ -249,33 +290,35 @@ Monte les 5 routeurs sur les préfixes suivants :
 | RG22 | Panier verrouillé → commande, panier vidé | `clientController.createOrder` |
 | RG23 | Évaluation séparée livreur/vendeur par le client | `clientController.createFeedback` |
 | RG24 | Historique des prix tracé à chaque modification | `vendeurController.createProduct`, `updateProduct`, `clientController.getProductPriceHistory` |
-| RG25 | Génération automatique de facture | `prisma/schema.prisma` (modèle Facture) |
-| RG26 | Paiement à la livraison (COD) | `livreurController.finalizeDelivery` |
+| RG25 | Génération automatique de facture | `clientController.inspectionOrder`, `paymentController.handleWebhook` |
+| RG26 | Paiement Mobile Money via FedaPay (MTN BJ, Moov BJ, Celtis BJ) — déclenché après livraison + inspection | `paymentController.createPayment`, `paymentController.handleWebhook`, `fedapayService` |
 | RG27 | Bon de livraison signé | `prisma/schema.prisma` (modèle BonDeLivraison) |
+| RG28 | Gains livreur crédités uniquement après confirmation de paiement (`mode_paiement_status === 'paye'`) | `livreurController.getGainsDetailed`, `getDriverDashboard`, `getLivreurHistorique` |
 | RG29 | Disponibilité livreur dans table historique `DisponibiliteLivreur` | `livreurController`, `clientController.getDrivers` |
+| RG30 | Validation vendeur obligatoire avant collecte livreur (`validee_par_vendeur`) | `vendeurController.validateOrder`, `livreurController.collectDelivery` |
 
 ---
 
 ## 7. Peuplement de la Base — `prisma/seed.js`
 
-Comptes de test créés :
+Données de démonstration :
+- 81 utilisateurs (20 clients, 50 vendeurs, 10 livreurs, 1 admin)
+- 8 marchés locaux (Dantokpa, Ganhi, Saint Michel, Ouando, Gbegamey, Kodjoviakopé, Akpakpa, Haie-Vive)
+- 6 catégories, 184 produits avec historiques de prix
+- 300 commandes avec livraisons et statuts variés
+- 2 signalements
+- Factures + paiements + bons de livraison pour les commandes livrées
+
+Comptes de test principaux :
 
 | Rôle | Email | Mot de passe |
 |---|---|---|
 | Admin | admin@vitecomm.com | admin123 |
 | Client | immaculee@gmail.com | password123 |
 | Client | pierre.kamdem@yahoo.com | password123 |
-| Vendeur | samuel.eto@boutique.com | password123 |
-| Vendeur | rigobert.song@shop.com | password123 |
-| Vendeur | jean.kamga@shop.com | password123 |
-| Vendeur | marie.ngo@shop.com | password123 |
-| Vendeur | marc.tchinda@shop.com | password123 |
-| Livreur | vincent.aboubakar@express.com | password123 |
-| Livreur | karl.toko@delivery.com | password123 |
+| Vendeur | adela.agbeke0@shop.com | password123 |
+| Vendeur | bodjona.koudjo1@shop.com | password123 |
+| Livreur | vincent.aboubakar0@express.com | password123 |
+| Livreur | karl.toko0@delivery.com | password123 |
 
-Données de démonstration :
-- 4 marchés locaux (Dantokpa, Ganhi, Saint Michel, Ouando)
-- 3 catégories, 8 produits avec historiques de prix
-- 2 commandes (1 livrée acceptée, 1 litige)
-- 2 signalements
-- Facture + paiement + bon de livraison pour la commande livrée
+Pattern emails vendeurs : `prenom.lower()nom.lower()index@shop.com`

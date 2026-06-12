@@ -1,118 +1,180 @@
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { api } from '../../services/api'
+import { useTheme } from '../../context/ThemeContext'
+import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCheck, Home, Smartphone } from 'lucide-react'
+
+const STATUT_STEPS = [
+  { key: 'En attente', icon: Loader2, titre: 'En attente', desc: 'En attente d\'un livreur' },
+  { key: 'Validee', icon: CheckCircle, titre: 'Validée', desc: 'Commande acceptée' },
+  { key: 'En cours de collecte', icon: Motorbike, titre: 'Collecte', desc: 'Le livreur se dirige vers les marchés' },
+  { key: 'Collectee', icon: Package, titre: 'Collectée', desc: 'Articles collectés, en route vers vous' },
+  { key: 'Inspectee', icon: Search, titre: 'Inspection', desc: 'Inspectez vos articles' },
+  { key: 'Livree', icon: PartyPopper, titre: 'Livrée', desc: 'Livraison terminée !' },
+]
 
 export default function SuiviCommande() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { id_commande, code_verification, livreur } = location.state || {}
+  const { resolved } = useTheme()
+  const isDark = resolved === 'dark'
 
+  const { id_commande, code_verification } = location.state || {}
+  const [order, setOrder] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const fetchOrder = useCallback(async () => {
+    if (!id_commande) return
+    try {
+      const data = await api.get('/client/orders')
+      const o = data.find(ord => ord.id_commande === id_commande)
+      if (o) setOrder(o)
+    } catch {}
+    finally { setLoading(false) }
+  }, [id_commande])
+
+  useEffect(() => {
+    fetchOrder()
+    const interval = setInterval(fetchOrder, 10000)
+    return () => clearInterval(interval)
+  }, [fetchOrder])
+
+  const statut = order?.statut || 'En attente'
+  const livreur = order?.livraison?.livreur
   const livreurNom = livreur
     ? `${livreur.utilisateur?.prenom} ${livreur.utilisateur?.nom}`
-    : 'votre livreur'
+    : 'Votre livreur'
+
+  const currentStepIndex = STATUT_STEPS.findIndex(s => s.key === statut)
+  const verificationCode = code_verification || order?.code_verification
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen font-sans flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div>
+      </div>
+    )
+  }
 
   return (
-    <div className="w-full min-h-screen font-sans" style={{ background: '#F7F8F3', paddingBottom: 80 }}>
+    <div className="w-full min-h-screen font-sans mx-auto max-w-3xl" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {/* HEADER */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)',
-        padding: '24px 20px',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-        <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          <div style={{ fontSize: 56, marginBottom: 8 }}>🎉</div>
-          <div style={{ fontWeight: 900, fontSize: 22, color: '#fff' }}>Commande confirmée !</div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>
-            {livreurNom} va collecter vos articles
+      <div className="relative overflow-hidden px-5 pt-5 pb-5"
+        style={{ background: isDark ? 'linear-gradient(135deg, #164032 0%, #121311 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(45,196,145,0.1)' : 'rgba(255,255,255,0.1)' }} />
+        <div className="relative z-10 flex items-center gap-3">
+          <button onClick={() => navigate('/client/mes-commandes')}
+            className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
+            style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}>
+            <span className="text-white text-lg">←</span>
+          </button>
+          <div>
+            <div className="text-white font-black text-base">Suivi de commande</div>
+            <div className="text-white/70 text-xs">Commande #{id_commande} · Mise à jour toutes les 10s</div>
           </div>
         </div>
       </div>
 
-      {/* CONTENT */}
-      <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="px-4 py-4 flex flex-col gap-4">
 
-        {/* Code verification */}
-        {code_verification && (
-          <div style={{
-            background: '#fff', border: '2px solid #1D9E75', borderRadius: 24,
-            padding: 24, textAlign: 'center',
-            boxShadow: '0 4px 20px rgba(29,158,117,0.15)',
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#888780', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
-              🔐 Code de vérification
-            </div>
-            <div style={{
-              fontSize: 36, fontWeight: 900, letterSpacing: 8, color: '#1D9E75',
-              fontFamily: 'monospace', padding: '12px 0',
-            }}>
-              {code_verification}
-            </div>
-            <div style={{ fontSize: 12, color: '#888780', marginTop: 4 }}>
-              Communiquez ce code au livreur lors de la remise de vos articles.
-            </div>
+        {/* STATUT ACTUEL */}
+        <div className="rounded-2xl p-5 text-center"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <div className="text-4xl mb-2">{(() => { const step = STATUT_STEPS[Math.max(0, currentStepIndex)]; return step ? (step.key === 'En attente' ? <Loader2 size={36} className="animate-spin" /> : <step.icon size={36} />) : <Loader2 size={36} className="animate-spin" />; })()}</div>
+          <div className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>
+            {STATUT_STEPS[Math.max(0, currentStepIndex)]?.titre || statut}
           </div>
-        )}
-
-        {/* Numéro commande */}
-        {id_commande && (
-          <div style={{
-            background: '#fff', borderRadius: 20, padding: 16,
-            border: '1.5px solid #E8E6DF',
-            display: 'flex', alignItems: 'center', gap: 12,
-          }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: 14,
-              background: '#E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, flexShrink: 0,
-            }}>📋</div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#888780' }}>Numéro de commande</div>
-              <div style={{ fontSize: 16, fontWeight: 900, color: '#2C2C2A' }}>
-                #{String(id_commande).padStart(5, '0')}
-              </div>
-            </div>
+          <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+            {STATUT_STEPS[Math.max(0, currentStepIndex)]?.desc || ''}
           </div>
-        )}
-
-        {/* Étapes */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: 20, border: '1.5px solid #E8E6DF' }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#888780', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
-            Prochaines étapes
+          <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+            {livreurNom}
           </div>
-          {[
-            { icon: '🏍️', titre: 'Collecte en cours', desc: `${livreurNom} se dirige vers les marchés` },
-            { icon: '📦', titre: 'Vérification', desc: 'Inspectez vos articles avant de payer' },
-            { icon: '💵', titre: 'Paiement COD', desc: `Payez en espèces et donnez le code "${code_verification}"` },
-          ].map((step, i) => (
-            <div key={i} style={{ display: 'flex', gap: 12, marginBottom: i < 2 ? 16 : 0, alignItems: 'flex-start' }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 12,
-                background: '#F7F8F3', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 18, flexShrink: 0,
-              }}>{step.icon}</div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 13, color: '#2C2C2A' }}>{step.titre}</div>
-                <div style={{ fontSize: 12, color: '#888780', marginTop: 2 }}>{step.desc}</div>
-              </div>
-            </div>
-          ))}
         </div>
 
-        {/* Actions */}
-        <button
-          onClick={() => navigate('/client/accueil')}
-          style={{
-            background: '#1D9E75', color: '#fff', border: 'none', borderRadius: 18,
-            padding: '16px', fontSize: 15, fontWeight: 900, cursor: 'pointer',
-            boxShadow: '0 4px 16px rgba(29,158,117,0.3)',
-          }}
-        >
-          🏠 Retour à l'accueil
-        </button>
+        {/* CODE DE VÉRIFICATION */}
+        {verificationCode && (
+          <div className="rounded-2xl p-5 text-center"
+            style={{ background: 'var(--surface)', border: '2px solid var(--accent)', boxShadow: isDark ? '0 4px 20px rgba(45,196,145,0.1)' : '0 4px 20px rgba(29,158,117,0.15)' }}>
+            <div className="text-[11px] font-extrabold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
+              <ShieldCheck size={14} className="inline" /> Code de vérification
+            </div>
+            <div className="text-3xl font-black tracking-[8px] font-mono" style={{ color: 'var(--accent)' }}>
+              {verificationCode}
+            </div>
+            <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+              Communiquez ce code au livreur lors de la remise.
+            </div>
+          </div>
+        )}
 
+        {/* PROGRESS BAR */}
+        <div className="rounded-2xl p-4"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <div className="text-[11px] font-extrabold uppercase tracking-widest mb-4" style={{ color: 'var(--text-muted)' }}>
+            Progression
+          </div>
+          <div className="flex flex-col gap-0">
+            {STATUT_STEPS.map((step, i) => {
+              const isActive = i === currentStepIndex
+              const isPast = i < currentStepIndex
+              const isFuture = i > currentStepIndex
+              return (
+                <div key={step.key} className="flex items-start gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 transition-all"
+                      style={{
+                        background: isPast ? '#1D9E75' : isActive ? 'var(--accent)' : 'var(--surface-alt)',
+                        color: isPast || isActive ? '#fff' : 'var(--text-muted)',
+                        border: `2px solid ${isPast || isActive ? 'var(--accent)' : 'var(--border)'}`,
+                        boxShadow: isActive ? (isDark ? '0 0 12px rgba(45,196,145,0.3)' : '0 0 12px rgba(29,158,117,0.2)') : 'none',
+                      }}>
+                      {isPast ? <CheckCircle size={14} /> : step.key === 'En attente' ? <Loader2 size={14} className="animate-spin" /> : <step.icon size={14} />}
+                    </div>
+                    {i < STATUT_STEPS.length - 1 && (
+                      <div className="w-0.5 h-5" style={{ background: isPast ? '#1D9E75' : 'var(--border)' }} />
+                    )}
+                  </div>
+                  <div className="pt-1">
+                    <div className="text-xs font-bold" style={{ color: isActive ? 'var(--accent)' : isPast ? '#1D9E75' : 'var(--text-muted)' }}>
+                      {step.titre}
+                    </div>
+                    <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{step.desc}</div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ACTIONS */}
+        <div className="flex flex-col gap-2">
+          {statut === 'Inspectee' && (
+            <button onClick={() => navigate('/client/inspection', { state: { id_commande } })}
+              className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer"
+              style={{ background: '#D85A30', border: 'none', boxShadow: '0 4px 16px rgba(216,90,48,0.3)' }}>
+               <Search size={16} className="inline" /> Inspecter les articles
+            </button>
+          )}
+          {statut === 'Livree' && order?.mode_paiement_status !== 'paye' && (
+            <button onClick={() => {
+              const total = (order?.detailsCommande || []).reduce((s, d) => s + (d.prix_vente_applique || 0) * d.quantite_commandee, 0)
+                + (order?.frais_livraison || 0)
+              navigate('/client/paiement', { state: { id_commande, total } })
+            }}
+              className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer"
+              style={{ background: '#1D9E75', border: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.3)' }}>
+               <Smartphone size={16} className="inline" /> Payer maintenant
+            </button>
+          )}
+          <button onClick={() => navigate('/client/accueil')}
+            className="w-full py-3.5 rounded-2xl font-black text-sm cursor-pointer"
+            style={{ background: 'var(--surface-alt)', color: 'var(--text-primary)', border: '1.5px solid var(--border)' }}>
+             <Home size={16} className="inline" /> Retour à l'accueil
+          </button>
+        </div>
       </div>
-
-
     </div>
   )
 }
