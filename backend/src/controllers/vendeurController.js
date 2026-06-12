@@ -566,7 +566,7 @@ export const verifyHandover = async (req, res) => {
       statut_collecte: 'collecte'
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 

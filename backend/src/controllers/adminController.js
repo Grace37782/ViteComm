@@ -219,7 +219,7 @@ export const getAdminDashboard = async (req, res) => {
       }
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du calcul du dashboard: ' + error.message });
+    return res.status(500).json({ error: 'Erreur lors du calcul du dashboard.' });
   }
 };
 
@@ -382,7 +382,7 @@ export const getUserDetails = async (req, res) => {
       roleData
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des détails utilisateur: ' + error.message });
+    return res.status(500).json({ error: 'Erreur lors du chargement des détails utilisateur.' });
   }
 };
 
@@ -480,7 +480,7 @@ export const updateAdminProfile = async (req, res) => {
     });
     return res.json(updated);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la mise à jour du profil: ' + error.message });
+    return res.status(500).json({ error: 'Erreur lors de la mise à jour du profil.' });
   }
 };
 
@@ -658,7 +658,7 @@ export const resolveLitige = async (req, res) => {
 
     return res.json({ message: 'Litige résolu avec succès.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -674,7 +674,7 @@ export const getMarketsAdmin = async (req, res) => {
     });
     return res.json(markets);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des marchés: ' + error.message });
+    return res.status(500).json({ error: 'Erreur lors du chargement des marchés.' });
   }
 };
 
@@ -701,7 +701,7 @@ export const createMarket = async (req, res) => {
     const market = await prisma.marche.create({ data });
     return res.status(201).json(market);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la création du marché: ' + error.message });
+    return res.status(500).json({ error: 'Erreur lors de la création du marché.' });
   }
 };
 
@@ -727,7 +727,7 @@ export const updateMarket = async (req, res) => {
     });
     return res.json(market);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la mise à jour du marché: ' + error.message });
+    return res.status(500).json({ error: 'Erreur lors de la mise à jour du marché.' });
   }
 };
 
@@ -739,6 +739,6 @@ export const deleteMarket = async (req, res) => {
     });
     return res.json({ message: 'Marché supprimé avec succès.' });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la suppression du marché: ' + error.message });
+    return res.status(500).json({ error: 'Erreur lors de la suppression du marché.' });
   }
 };

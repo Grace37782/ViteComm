@@ -20,7 +20,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Middlewares
-app.use(cors({ origin: '*' })); // Allow all origins for the MVP
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+  : [];
+const isDev = process.env.APP_ENV === 'local' || process.env.APP_ENV === 'development';
+app.use(cors({
+  origin: isDev ? true : (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json({
   verify: (req, res, buf) => { req.rawBody = buf.toString(); }
 }));
@@ -50,7 +63,7 @@ app.use('/api/admin', adminRoutes);
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
-    error: err.message || 'Une erreur interne est survenue.'
+    error: 'Une erreur interne est survenue.'
   });
 });
 

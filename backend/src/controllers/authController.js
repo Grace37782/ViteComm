@@ -198,7 +198,7 @@ export const register = async (req, res) => {
       token, // frontend uses this to verify later
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -312,7 +312,7 @@ export const verifyEmail = async (req, res) => {
       user: userPayload,
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -349,7 +349,7 @@ export const resendCode = async (req, res) => {
 
     return res.json({ message: 'Nouveau code envoyé par email.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -387,7 +387,7 @@ export const forgotPassword = async (req, res) => {
 
     return res.json({ message: 'Code de réinitialisation envoyé par email.', token });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -431,7 +431,7 @@ export const resetPassword = async (req, res) => {
 
     return res.json({ message: 'Mot de passe réinitialisé avec succès.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -498,7 +498,7 @@ export const login = async (req, res) => {
       user: userPayload
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -514,7 +514,7 @@ export const getMarkets = async (req, res) => {
     });
     return res.json(markets);
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: 'Une erreur interne est survenue.' });
   }
 };
 
@@ -642,7 +642,7 @@ export const updateProfile = async (req, res) => {
       user: await buildUserPayload(updated)
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -737,7 +737,7 @@ export const googleAuth = async (req, res) => {
       is_new_google_user: isNewGoogleUser,
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message || 'Échec de l\'authentification Google.' });
+    return res.status(400).json({ error: 'Échec de l\'authentification Google.' });
   }
 };
 
@@ -829,7 +829,7 @@ export const completeGoogleRegistration = async (req, res) => {
       user: await buildUserPayload(updated),
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 

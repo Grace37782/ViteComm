@@ -209,7 +209,7 @@ export const acceptDelivery = async (req, res) => {
 
     return res.status(201).json({ message: 'Course acceptée.', livraison });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -288,7 +288,7 @@ export const collectDelivery = async (req, res) => {
 
     return res.json({ message: 'Collecte enregistrée avec preuve photo.', preuve_id: preuve.id_preuve });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -322,7 +322,7 @@ export const departDelivery = async (req, res) => {
 
     return res.json({ message: 'Départ enregistré. En route vers le client.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -460,7 +460,7 @@ export const finalizeDelivery = async (req, res) => {
 
     return res.json({ message: 'Livraison finalisée avec succès.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 

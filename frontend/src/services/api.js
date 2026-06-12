@@ -22,10 +22,10 @@ async function request(endpoint, options = {}) {
       localStorage.removeItem('vc_user')
       localStorage.removeItem('vc_token')
       window.location.href = '/connect'
-      return new Promise(() => {})
+      throw new Error('AUTH_ERROR')
     }
-    const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error(err.error || `Erreur ${res.status}`)
+    const err = await res.json().catch(() => ({ error: 'Erreur du serveur.' }))
+    throw new Error(err.error || 'Une erreur est survenue.')
   }
   return res.json()
 }

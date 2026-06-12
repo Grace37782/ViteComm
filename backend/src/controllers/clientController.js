@@ -216,7 +216,7 @@ export const upsertCartItem = async (req, res) => {
 
     return res.json({ message: 'Panier mis à jour.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -334,7 +334,7 @@ export const createOrder = async (req, res) => {
       code_verification: command.code_verification,
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -460,7 +460,7 @@ export const createFeedback = async (req, res) => {
 
     return res.json({ message: 'Évaluation enregistrée avec succès.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 
@@ -613,7 +613,7 @@ export const inspectionOrder = async (req, res) => {
       total_final: result.totalFinal,
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Une erreur est survenue.' });
   }
 };
 

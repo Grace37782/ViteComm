@@ -77,7 +77,7 @@ export const createPayment = async (req, res) => {
       transaction_id,
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'Erreur lors de l\'initiation du paiement' });
+    return res.status(500).json({ error: 'Une erreur interne est survenue.' });
   }
 };
 
@@ -299,7 +299,7 @@ export const getPaymentStatus = async (req, res) => {
       paid_at: transaction.paid_at,
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: 'Une erreur interne est survenue.' });
   }
 };
 
