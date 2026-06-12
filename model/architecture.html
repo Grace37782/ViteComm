@@ -175,17 +175,17 @@
     <tbody>
       <tr>
         <td>RG01</td>
-        <td>Un client peut commander des articles provenant de plusieurs vendeurs au sein d'une même transaction.</td>
+        <td>Un client peut commander des articles provenant de plusieurs vendeurs d'un même marché (<code>MARCHE</code>) ou de marchés différents, au sein d'une même transaction.</td>
       </tr>
       <tr>
         <td>RG02</td>
-        <td>Un vendeur gère un catalogue de produits et un stock associé.</td>
+        <td>Un vendeur est associé à un marché (<code>MARCHE</code>) et gère un catalogue de produits et un stock associé au sein de ce marché.</td>
       </tr>
       <tr>
         <td>RG03</td>
-        <td>Chaque article appartient exclusivement au catalogue d'un seul vendeur. Si deux vendeurs proposent un
+        <td>Chaque article appartient exclusivement au catalogue d'un seul vendeur, lequel est rattaché à un marché (<code>MARCHE</code>). Si deux vendeurs de marchés différents proposent un
           article identique, ils sont traités comme deux produits distincts avec des identifiants uniques (distinction
-          architecturale de l'offre).</td>
+          architecturale de l'offre par vendeur et par marché).</td>
       </tr>
       <tr>
         <td>RG04</td>
