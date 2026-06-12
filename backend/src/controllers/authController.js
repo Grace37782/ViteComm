@@ -1,16 +1,19 @@
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import prisma from '../config/db.js';
 import { sendVerificationCode, sendPasswordResetCode } from '../services/mail.js';
 import { moveToPermanent } from '../middleware/upload.js';
 import { errorMessage, internalError } from '../utils/errors.js';
 
-const { JWT_SECRET, JWT_EXPIRES_IN } = process.env;
+const { JWT_SECRET, JWT_EXPIRES_IN, GOOGLE_CLIENT_ID } = process.env;
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET is not defined in environment variables.');
 }
 const JWT_EXPIRES = JWT_EXPIRES_IN || '7d';
+
+const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 // Derive role from user specialization rows (RG17)
 const deriveRole = (user) => {
@@ -660,17 +663,33 @@ export const googleAuth = async (req, res) => {
   }
 
   try {
-    // Verify the access_token by calling Google's userinfo endpoint
-    const googleRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: `Bearer ${credential}` },
-    });
+    let email, given_name, family_name, sub;
 
-    if (!googleRes.ok) {
-      return res.status(401).json({ error: 'Token Google invalide ou expiré.' });
+    if (googleClient) {
+      // Proper verification: check token audience matches our client ID
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      email = payload.email;
+      given_name = payload.given_name;
+      family_name = payload.family_name;
+      sub = payload.sub;
+    } else {
+      // Fallback: verify via userinfo endpoint (no audience check)
+      const googleRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${credential}` },
+      });
+      if (!googleRes.ok) {
+        return res.status(401).json({ error: 'Token Google invalide ou expiré.' });
+      }
+      const profile = await googleRes.json();
+      email = profile.email;
+      given_name = profile.given_name;
+      family_name = profile.family_name;
+      sub = profile.sub;
     }
-
-    const profile = await googleRes.json();
-    const { email, given_name, family_name, sub } = profile;
 
     if (!email) {
       return res.status(400).json({ error: 'Email requis pour la connexion Google.' });
