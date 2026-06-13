@@ -7,7 +7,7 @@ import { sendVerificationCode, sendPasswordResetCode } from '../services/mail.js
 import { moveToPermanent } from '../middleware/upload.js';
 import { errorMessage, internalError } from '../utils/errors.js';
 
-const { JWT_SECRET, JWT_EXPIRES_IN, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL } = process.env;
+const { JWT_SECRET, JWT_EXPIRES_IN, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL, FRONTEND_URL } = process.env;
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET is not defined in environment variables.');
 }
@@ -769,12 +769,12 @@ export const googleCallback = async (req, res) => {
   const { code, error } = req.query;
 
   if (error) {
-    const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+    const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
     return res.redirect(`${frontendUrl}/connect?error=google_cancelled`);
   }
 
   if (!code || !GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REDIRECT_URL) {
-    const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+    const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
     return res.redirect(`${frontendUrl}/connect?error=google_failed`);
   }
 
@@ -790,7 +790,7 @@ export const googleCallback = async (req, res) => {
     const { email, given_name, family_name, sub } = payload;
 
     if (!email) {
-      const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+      const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
       return res.redirect(`${frontendUrl}/connect?error=google_no_email`);
     }
 
@@ -827,7 +827,7 @@ export const googleCallback = async (req, res) => {
       });
     } else {
       if (user.auth_provider === 'local') {
-        const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+        const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
         return res.redirect(`${frontendUrl}/connect?error=google_wrong_account`);
       }
       if (!user.auth_provider || user.auth_provider === 'local') {
@@ -836,7 +836,7 @@ export const googleCallback = async (req, res) => {
     }
 
     if (user.statut_compte !== 'Actif') {
-      const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+      const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
       return res.redirect(`${frontendUrl}/connect?error=account_suspended`);
     }
 
@@ -847,7 +847,7 @@ export const googleCallback = async (req, res) => {
       { expiresIn: JWT_EXPIRES }
     );
 
-    const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+    const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
     const params = new URLSearchParams({
       token,
       user: JSON.stringify(await buildUserPayload(user)),
@@ -856,7 +856,7 @@ export const googleCallback = async (req, res) => {
     res.redirect(`${frontendUrl}/auth/google/callback?${params.toString()}`);
   } catch (err) {
     console.error('Google callback error:', err);
-    const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+    const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/connect?error=google_failed`);
   }
 };

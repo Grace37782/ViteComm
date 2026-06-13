@@ -34,7 +34,7 @@ export async function initiatePayment(transaction) {
     currency: { iso: transaction.devise || 'XOF' },
     reference: transaction.transaction_id,
     callback_url: `${process.env.APP_URL}/api/webhooks/fedapay`,
-    return_url: `${process.env.APP_URL.replace(':5000', ':5173')}/client/paiement?ref=${transaction.transaction_id}`,
+    return_url: `${process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173'}/client/paiement?ref=${transaction.transaction_id}`,
   };
 
   if (phone) {
