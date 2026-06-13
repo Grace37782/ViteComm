@@ -96,6 +96,10 @@ export default defineConfig({
         target: `http://${process.env.VITE_BACKEND_HOST || '127.0.0.1'}:${process.env.VITE_BACKEND_PORT || '5000'}`,
         changeOrigin: true,
       },
+      '/uploads': {
+        target: `http://${process.env.VITE_BACKEND_HOST || '127.0.0.1'}:${process.env.VITE_BACKEND_PORT || '5000'}`,
+        changeOrigin: true,
+      },
     },
   },
 })
