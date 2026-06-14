@@ -575,20 +575,20 @@ export const inspectionOrder = async (req, res) => {
         }
       }
 
-      // Update delivery: mark as Inspectee + return fees (RG27, RG28)
+      // Update delivery: mark as Livree + return fees (RG27, RG28)
       await tx.livraison.update({
         where: { id_livraison: commande.livraison.id_livraison },
         data: {
-          statut_livraison: 'Inspectee',
+          statut_livraison: 'Livree',
           date_fin_reelle: new Date(),
           frais_retour_calcules: fraisRetour
         }
       });
 
-      // Update order statut to Inspectee (delivery inspected after face-to-face)
+      // Update order statut to Livree (delivery complete after inspection)
       await tx.commande.update({
         where: { id_commande: commande.id_commande },
-        data: { statut: 'Inspectee' }
+        data: { statut: 'Livree' }
       });
 
       // Save client proof photos (RG31)
