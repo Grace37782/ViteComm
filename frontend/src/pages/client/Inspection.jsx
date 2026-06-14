@@ -37,6 +37,7 @@ export default function Inspection() {
   const [statuts, setStatuts] = useState({})
   const [motifs, setMotifs] = useState({})
   const [photos, setPhotos] = useState([])
+  const [photoFiles, setPhotoFiles] = useState([])
   const [toast, setToast] = useState('')
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export default function Inspection() {
     const files = Array.from(e.target.files || [])
     const urls = files.map((f) => URL.createObjectURL(f))
     setPhotos((p) => [...p, ...urls])
+    setPhotoFiles((p) => [...p, ...files])
   }
 
   const articles = commande?.detailsCommande || []
@@ -82,14 +84,17 @@ export default function Inspection() {
     if (!tousDefinis || motifManquant || !commande) return
     setSubmitting(true)
     try {
+      const fd = new FormData()
       const statutsPayload = {}
       for (const a of articles) {
         statutsPayload[a.id_produit] = statuts[a.id_produit] === 'accepte' ? 'accepte' : 'rejete'
       }
-      await api.post(`/client/orders/${commande.id_commande}/inspection`, {
-        statuts: statutsPayload,
-        motifs,
-      })
+      fd.append('statuts', JSON.stringify(statutsPayload))
+      fd.append('motifs', JSON.stringify(motifs))
+      for (const file of photoFiles) {
+        fd.append('photos', file)
+      }
+      await api.post(`/client/orders/${commande.id_commande}/inspection`, fd)
       showToast('Inspection confirmée !')
       setTimeout(() => navigate('/client/paiement', {
         state: { id_commande: commande.id_commande, total: totalFinal }

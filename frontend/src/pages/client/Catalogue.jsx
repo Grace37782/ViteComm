@@ -269,8 +269,15 @@ export default function Catalogue() {
                   className="rounded-xl p-3 flex flex-col"
                   style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}
                 >
-                  {/* Emoji produit */}
-                  <div className="text-4xl text-center mb-2">{productEmoji(prod.nom)}</div>
+                  {/* Product photo or emoji fallback */}
+                  <div className="w-full h-24 rounded-xl flex items-center justify-center mb-2 overflow-hidden"
+                    style={{ background: 'var(--surface-alt)' }}>
+                    {prod.photo_url ? (
+                      <img src={prod.photo_url} alt={prod.nom} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-4xl">{productEmoji(prod.nom)}</div>
+                    )}
+                  </div>
 
                   {/* Nom */}
                   <div className="font-black text-xs mb-0.5 text-center" style={{ color: 'var(--text-primary)' }}>

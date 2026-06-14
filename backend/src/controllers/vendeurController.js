@@ -1,5 +1,10 @@
 import prisma from '../config/db.js';
 import { errorMessage, internalError } from '../utils/errors.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Shared helper: extract emoji from photo_url (handles URLs from seed data)
 function safeEmoji(photoUrl) {
@@ -339,6 +344,16 @@ export const uploadProductPhoto = async (req, res) => {
 
     if (!req.file) {
       return res.status(400).json({ error: 'Aucun fichier image fourni.' });
+    }
+
+    // Move file to products subdirectory
+    const fs = await import('fs');
+    const productsDir = path.join(__dirname, '../../uploads/products');
+    fs.default.mkdirSync(productsDir, { recursive: true });
+    const srcPath = req.file.path;
+    const destPath = path.join(productsDir, req.file.filename);
+    if (fs.default.existsSync(srcPath)) {
+      fs.default.renameSync(srcPath, destPath);
     }
 
     const updated = await prisma.produit.update({

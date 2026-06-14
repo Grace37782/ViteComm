@@ -322,3 +322,43 @@ Comptes de test principaux :
 | Livreur | karl.toko0@delivery.com | password123 |
 
 Pattern emails vendeurs : `prenom.lower()nom.lower()index@shop.com`
+
+---
+
+## 8. Commandes de Base de Données Utiles (Prisma)
+
+Pour gérer la base de données locale (SQLite) en développement, voici les principales commandes à exécuter depuis le dossier `backend` :
+
+### Peuplement et Réinitialisation (Clean & Seed)
+*   **Réinitialiser la base de données (Clean + Re-run migrations + Seed) :**
+    ```bash
+    npx prisma migrate reset
+    ```
+    *Cette commande supprime `dev.db`, recrée la structure propre et exécute automatiquement le script de peuplement `prisma/seed.js`.*
+
+*   **Peupler la base de données uniquement (Seeding) :**
+    ```bash
+    npx prisma db seed
+    ```
+    *À utiliser si la base de données est vide après un `npx prisma migrate deploy` afin de charger les marchés, produits et utilisateurs de test.*
+
+### Administration et Visualisation
+*   **Ouvrir l'explorateur de données (Prisma Studio) :**
+    ```bash
+    npx prisma studio
+    ```
+    *Ouvre une interface web d'administration locale sur `http://localhost:5555` pour inspecter, modifier ou supprimer des enregistrements de la base de données.*
+
+### Gestion du Schéma et Client
+*   **Créer et appliquer une nouvelle migration :**
+    ```bash
+    npx prisma migrate dev --name <nom_de_la_migration>
+    ```
+    *Détecte les modifications apportées dans `prisma/schema.prisma`, génère le script SQL correspondant et met à jour la base de données.*
+
+*   **Générer le client Prisma :**
+    ```bash
+    npx prisma generate
+    ```
+    *Met à jour le client Prisma local (`@prisma/client`) après une modification de structure pour obtenir l'autocomplétion JavaScript.*
+

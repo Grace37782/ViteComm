@@ -249,8 +249,10 @@ export const collectDelivery = async (req, res) => {
       return res.status(400).json({ error: 'Le vendeur n\'a pas encore validé la disponibilité des articles.' });
     }
 
-    // For now, accept any code (vendor verification will be added later)
-    // In production, compare with vendor's generated code
+    // Verify the code matches the order's code_verification (RG06)
+    if (command.code_verification !== code_verification) {
+      return res.status(400).json({ error: 'Code de vérification invalide.' });
+    }
 
     // Create PreuveCollecte with uploaded photos (RG07)
     const preuve = await prisma.preuveCollecte.create({
@@ -416,15 +418,16 @@ export const finalizeDelivery = async (req, res) => {
       const returnFees = rejectedCount * 500;
       const finalCommission = parseFloat((acceptedGoodsValue * 0.006).toFixed(2));
 
+      // Set status to Inspectee — the client will create the invoice after inspection
       await tx.commande.update({
         where: { id_commande: commandId },
-        data: { statut: 'Livree', commission: finalCommission }
+        data: { statut: 'Inspectee', commission: finalCommission }
       });
 
       await tx.livraison.update({
         where: { id_livraison: livraisonId },
         data: {
-          statut_livraison: 'Livree',
+          statut_livraison: 'Inspectee',
           date_fin_reelle: new Date(),
           frais_retour_calcules: returnFees
         }
