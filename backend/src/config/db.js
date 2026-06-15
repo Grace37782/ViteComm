@@ -1,10 +1,13 @@
 import { PrismaClient } from '@prisma/client';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
-const databaseUrl = process.env.DATABASE_URL || 'file:./dev.db';
-
-const adapter = new PrismaBetterSqlite3({
-  url: databaseUrl
+const adapter = new PrismaMariaDb({
+  host: 'localhost',
+  port: 3306,
+  user: 'vitecomm',
+  password: 'ViteComm@2026!',
+  database: 'vitecomm',
+  connectionLimit: 5,
 });
 
 const prisma = new PrismaClient({ adapter });
