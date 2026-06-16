@@ -18,7 +18,7 @@ async function request(endpoint, options = {}) {
   }
 
   if (!res.ok) {
-    if ((res.status === 401 || res.status === 403) && token) {
+    if (res.status === 401 && token) {
       localStorage.removeItem('vc_user')
       localStorage.removeItem('vc_token')
       window.location.href = '/connect'

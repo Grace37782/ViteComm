@@ -77,7 +77,7 @@ export default function LivreurProfil() {
       setPhotoPreview('')
       // Update auth context if nom/prenom changed
       if (res.nom && res.prenom) {
-        updateCtx({ ...ctxUser, nom: res.nom, prenom: res.prenom, photo_url: res.photo_url || ctxUser?.photo_url })
+        updateCtx({ ...ctxUser, nom: res.nom, prenom: res.prenom, photo_url: res.photo_url || ctxUser?.photo_url }, localStorage.getItem('vc_token'))
       }
     } catch (e) { showToast(e.message) }
     finally { setSaving(false) }
