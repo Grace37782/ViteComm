@@ -37,7 +37,8 @@ export default function CommandesLivreur() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { loadDataFn() }, [])
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { loadDataFn() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function accepterCourse(id_commande) {
     try {

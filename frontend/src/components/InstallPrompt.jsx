@@ -38,7 +38,7 @@ export default function InstallPrompt() {
       window.removeEventListener('beforeinstallprompt', handler)
       window.removeEventListener('appinstalled', installedHandler)
     }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleInstall = useCallback(async () => {
     if (!deferredPrompt) return

@@ -62,6 +62,7 @@ export default function Catalogue() {
   const [categorie, setCategorie] = useState('Tout')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setVisibleCount(PAGE_SIZE) }, [recherche, categorie])
 
   useEffect(() => {

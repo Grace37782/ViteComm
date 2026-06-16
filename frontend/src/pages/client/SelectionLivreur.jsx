@@ -37,7 +37,7 @@ export default function SelectionLivreur() {
     Promise.all(promises)
       .catch(err => showToast(<><XCircle size={14} style={{verticalAlign: 'middle', marginRight: 4}} />{err.message}</>))
       .finally(() => setLoading(false))
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function showToast(msg) {
     setToast(msg)

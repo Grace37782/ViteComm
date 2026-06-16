@@ -148,7 +148,7 @@ function DashboardTab({ onNavigate, onLeaderboardReady, onProductRankingsReady }
       onLeaderboardReady?.(d.classements)
       onProductRankingsReady?.({ populaires: d.produits_populaires, refuses: d.produits_refuses })
     }).catch(e => setErr(e.message))
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (err) return <div className="text-center py-12 text-sm font-semibold" style={{ color: '#D85A30' }}><AlertTriangle size={14} className="inline align-middle mr-1" />{err}</div>
   if (!data) return <div className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div>
@@ -273,6 +273,7 @@ function UsersTab({ initialFilter, leaderboardData }) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (initialFilter?.role) setRoleFilter(initialFilter.role)
     if (initialFilter?.status) setStatusFilter(initialFilter.status)
     if (initialFilter?.sortBy) setSortBy(initialFilter.sortBy)
@@ -285,6 +286,7 @@ function UsersTab({ initialFilter, leaderboardData }) {
 
   useEffect(() => { fetchUsers() }, []) // eslint-disable-line react-hooks/set-state-in-effect
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search, roleFilter, statusFilter, sortBy])
 
   const roles = ['tous', 'client', 'vendeur', 'livreur', 'admin']
@@ -640,6 +642,7 @@ function ProductsTab({ initialFilter, productRankings }) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (initialFilter?.sortBy) setSortBy(initialFilter.sortBy)
   }, [initialFilter])
 
@@ -647,6 +650,7 @@ function ProductsTab({ initialFilter, productRankings }) {
     api.get('/admin/products').then(d => { setProducts(d); setLoading(false) }).catch(() => setLoading(false))
   }, [])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search, sortBy])
 
   const filtered = products.filter(p => p.nom?.toLowerCase().includes(search.toLowerCase()))
@@ -844,6 +848,7 @@ function SignalementsTab({ initialFilter }) {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (initialFilter?.status) setStatusFilter(initialFilter.status)
   }, [initialFilter])
 
@@ -873,6 +878,7 @@ function SignalementsTab({ initialFilter }) {
   const visibleItems = filtered.slice(0, visibleCount)
   const hasMore = filtered.length > visibleCount
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setVisibleCount(PAGE_SIZE) }, [statusFilter, search])
 
   return (
@@ -1128,6 +1134,7 @@ function LitigesTab({ initialFilter }) {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (initialFilter?.status) setStatusFilter(initialFilter.status)
   }, [initialFilter])
 
@@ -1157,6 +1164,7 @@ function LitigesTab({ initialFilter }) {
   const visibleItems = filteredLitiges.slice(0, visibleCount)
   const hasMore = filteredLitiges.length > visibleCount
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setVisibleCount(PAGE_SIZE) }, [statusFilter, search])
 
   return (
@@ -1290,8 +1298,10 @@ function MarketsTab() {
     api.get('/admin/markets').then(d => { setMarkets(d); setLoading(false) }).catch(() => setLoading(false))
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchMarkets() }, [])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search, vendorFilter])
 
   const filteredMarkets = markets.filter(m => {

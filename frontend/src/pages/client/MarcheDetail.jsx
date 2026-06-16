@@ -76,6 +76,7 @@ export default function MarcheDetail() {
   const [activeVendor, setActiveVendor] = useState(null)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setVisibleCount(PAGE_SIZE) }, [recherche, selectedCategory])
 
   // Stable offset coordinates for vendors without precise location

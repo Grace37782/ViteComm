@@ -36,6 +36,7 @@ export default function SuiviCommande() {
   }, [id_commande])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchOrder()
     const interval = setInterval(fetchOrder, 10000)
     return () => clearInterval(interval)

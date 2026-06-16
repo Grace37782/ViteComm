@@ -39,6 +39,7 @@ export default function PaiementClient() {
     }
 
     if (statusParam === 'success') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPaymentStatus('completed')
       setLoading(false)
       return

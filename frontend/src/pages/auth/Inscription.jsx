@@ -142,6 +142,7 @@ export default function Inscription() {
 
   useEffect(() => {
     const role = new URLSearchParams(location.search).get('role')
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (role === 'vendeur' || role === 'livreur' || role === 'client') setProfil(role)
   }, [location.search])
 

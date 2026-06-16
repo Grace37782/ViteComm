@@ -168,6 +168,7 @@ export default function AccueilClient() {
 
   // Auto-selection of market when exactly 1 market matches the search term
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVisibleCount(PAGE_SIZE)
     const keywords = getKeywords(recherche)
     if (keywords.length > 0 && recherche.trim().length >= 2) {

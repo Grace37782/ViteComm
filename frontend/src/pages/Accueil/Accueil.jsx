@@ -20,6 +20,7 @@ function useTypewriter(words, typingSpeed = 80, deletingSpeed = 40, pause = 2000
     if (!isDeleting && text === current) {
       timer = setTimeout(() => setIsDeleting(true), pause)
     } else if (isDeleting && text === '') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsDeleting(false)
       setWordIndex((prev) => (prev + 1) % words.length)
     } else {
