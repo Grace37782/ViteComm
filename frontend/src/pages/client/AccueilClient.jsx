@@ -5,7 +5,7 @@ import { api } from '../../services/api'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Loader2, Search, Store, Ruler, Mountain, ChevronDown, Package, ShoppingCart, ClipboardList, User, Star, ArrowRight } from 'lucide-react'
+import { Loader2, Search, Store, Ruler, Mountain, ChevronDown, Package, ShoppingCart, ClipboardList, User, Star, ArrowRight, Truck } from 'lucide-react'
 
 // Custom Leaflet marker icons using divIcon (bypasses URL image path issues in Vite)
 const createMarketIcon = (isActive) => L.divIcon({
@@ -72,8 +72,8 @@ function fuzzyMatch(kw, target) {
   const targetWords = target.split(/\s+/);
   
   for (const tWord of targetWords) {
-    if (tWord.includes(kw) || kw.includes(tWord)) return true;
-    if (levenshteinDistance(kw, tWord) <= maxDistance) {
+    if (tWord.includes(kw)) return true;
+    if (tWord.length >= 3 && levenshteinDistance(kw, tWord) <= maxDistance) {
       return true;
     }
   }
@@ -121,6 +121,7 @@ export default function AccueilClient() {
   const [markets, setMarkets] = useState([])
   const [products, setProducts] = useState([])
   const [vendors, setVendors] = useState([])
+  const [drivers, setDrivers] = useState([])
   const [loading, setLoading] = useState(true)
 
   const [recherche, setRecherche] = useState('')
@@ -148,14 +149,16 @@ export default function AccueilClient() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [marketsRes, productsRes, vendorsRes] = await Promise.all([
+        const [marketsRes, productsRes, vendorsRes, driversRes] = await Promise.all([
           api.get('/client/markets'),
           api.get('/client/products'),
           api.get('/client/vendors'),
+          api.get('/client/drivers'),
         ])
         setMarkets(marketsRes)
         setProducts(productsRes)
         setVendors(vendorsRes)
+        setDrivers(driversRes)
       } catch (err) {
         console.error(err)
       } finally {
@@ -193,12 +196,26 @@ export default function AccueilClient() {
     { id: 'catalogue', label: 'Catalogue', icon: Package, path: '/client/catalogue', keywords: ['catalogue', 'produits', 'products'] },
   ], [])
 
-  // Unified search across markets, products, vendors, and actions
+  // Unified search across markets, products, vendors, drivers, and actions
   const unifiedSuggestions = useMemo(() => {
-    if (!recherche || recherche.trim().length < 2) return { markets: [], products: [], vendors: [], actions: [] }
+    if (!recherche || recherche.trim().length < 2) return { markets: [], products: [], vendors: [], drivers: [], actions: [] }
     
     const keywords = getKeywords(recherche)
-    const results = { markets: [], products: [], vendors: [], actions: [] }
+    const results = { markets: [], products: [], vendors: [], drivers: [], actions: [] }
+    
+    // Search drivers (prioritized — direct name matches first)
+    results.drivers = drivers.filter(d => {
+      const nom = normalizeText((d.utilisateur?.prenom || '') + ' ' + (d.utilisateur?.nom || ''))
+      return keywords.every(kw => fuzzyMatch(kw, nom))
+    }).slice(0, 3)
+    
+    // Search vendors
+    results.vendors = vendors.filter(v => {
+      const nom = normalizeText((v.utilisateur?.prenom || '') + ' ' + (v.utilisateur?.nom || ''))
+      const etab = normalizeText(v.nom_etablissement || '')
+      const marche = normalizeText(v.marche?.nom || '')
+      return keywords.every(kw => fuzzyMatch(kw, nom) || fuzzyMatch(kw, etab) || fuzzyMatch(kw, marche))
+    }).slice(0, 3)
     
     // Search markets
     results.markets = markets.filter(m => matchMarket(m, keywords)).slice(0, 3)
@@ -210,25 +227,18 @@ export default function AccueilClient() {
       return keywords.every(kw => fuzzyMatch(kw, nom) || fuzzyMatch(kw, desc))
     }).slice(0, 4)
     
-    // Search vendors
-    results.vendors = vendors.filter(v => {
-      const nom = normalizeText(v.utilisateur?.prenom + ' ' + v.utilisateur?.nom || '')
-      const etab = normalizeText(v.nom_etablissement || '')
-      const marche = normalizeText(v.marche?.nom || '')
-      return keywords.every(kw => fuzzyMatch(kw, nom) || fuzzyMatch(kw, etab) || fuzzyMatch(kw, marche))
-    }).slice(0, 3)
-    
     // Search quick actions
     results.actions = quickActions.filter(a => 
       a.keywords.some(kw => normalizeText(kw).includes(normalizeText(recherche)))
     ).slice(0, 2)
     
     return results
-  }, [recherche, markets, products, vendors, quickActions])
+  }, [recherche, markets, products, vendors, drivers, quickActions])
 
   const hasSuggestions = unifiedSuggestions.markets.length > 0 || 
                         unifiedSuggestions.products.length > 0 || 
-                        unifiedSuggestions.vendors.length > 0 || 
+                        unifiedSuggestions.vendors.length > 0 ||
+                        unifiedSuggestions.drivers.length > 0 ||
                         unifiedSuggestions.actions.length > 0
 
   // Calculate distances
@@ -275,6 +285,11 @@ export default function AccueilClient() {
     navigate('/client/catalogue/' + v.id_user)
   }
 
+  const handleSelectDriver = () => {
+    setShowSuggestions(false)
+    setRecherche('')
+  }
+
   const handleSelectAction = (action) => {
     setShowSuggestions(false)
     setRecherche('')
@@ -284,13 +299,15 @@ export default function AccueilClient() {
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       if (hasSuggestions) {
-        // Prioritize: market > product > vendor > action
-        if (unifiedSuggestions.markets.length > 0) {
+        // Prioritize: driver > vendor > market > product > action
+        if (unifiedSuggestions.drivers.length > 0) {
+          handleSelectDriver(unifiedSuggestions.drivers[0])
+        } else if (unifiedSuggestions.vendors.length > 0) {
+          handleSelectVendor(unifiedSuggestions.vendors[0])
+        } else if (unifiedSuggestions.markets.length > 0) {
           handleSelectMarket(unifiedSuggestions.markets[0])
         } else if (unifiedSuggestions.products.length > 0) {
           handleSelectProduct(unifiedSuggestions.products[0])
-        } else if (unifiedSuggestions.vendors.length > 0) {
-          handleSelectVendor(unifiedSuggestions.vendors[0])
         } else if (unifiedSuggestions.actions.length > 0) {
           handleSelectAction(unifiedSuggestions.actions[0])
         }
@@ -303,7 +320,7 @@ export default function AccueilClient() {
 
   // Group label helper
   const getGroupLabel = (type) => {
-    const labels = { markets: 'Marchés', products: 'Produits', vendors: 'Vendeurs', actions: 'Actions rapides' }
+    const labels = { markets: 'Marchés', products: 'Produits', vendors: 'Vendeurs', drivers: 'Livreurs', actions: 'Actions rapides' }
     return labels[type] || type
   }
 
@@ -418,6 +435,36 @@ export default function AccueilClient() {
                         style={{ background: isDark ? 'rgba(245,158,11,0.15)' : '#FEF3C7', color: '#D97706' }}>
                         Produit
                       </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Drivers Section */}
+              {unifiedSuggestions.drivers.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5"
+                    style={{ color: 'var(--text-muted)', background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}>
+                    <Truck size={10} /> {getGroupLabel('drivers')}
+                  </div>
+                  {unifiedSuggestions.drivers.map((d) => (
+                    <div
+                      key={`driver-${d.id_user}`}
+                      onClick={() => handleSelectDriver(d)}
+                      className="px-4 py-2.5 cursor-pointer flex items-center gap-3 border-b last:border-b-0 hover:bg-emerald-500/10 transition-colors"
+                      style={{ borderColor: 'var(--border-light)' }}
+                    >
+                      <img src={d.utilisateur?.photo_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=60&q=80'} 
+                        alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-xs truncate" style={{ color: 'var(--text-primary)' }}>
+                          {d.utilisateur?.prenom} {d.utilisateur?.nom}
+                        </p>
+                        <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
+                          Livreur • {d.utilisateur?.telephone}
+                        </p>
+                      </div>
+                      <Truck size={14} style={{ color: '#1D9E75' }} />
                     </div>
                   ))}
                 </div>
