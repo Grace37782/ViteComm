@@ -25,7 +25,7 @@ export default function CommandesLivreur() {
   const scannerRef = useRef(null)
   const fileRef = useRef(null)
 
-  useEffect(() => { loadDataFn() }, [])
+  function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   function loadDataFn() {
     setLoading(true)
@@ -37,7 +37,7 @@ export default function CommandesLivreur() {
       .finally(() => setLoading(false))
   }
 
-  function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000) }
+  useEffect(() => { loadDataFn() }, [])
 
   async function accepterCourse(id_commande) {
     try {
