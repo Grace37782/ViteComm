@@ -1,4 +1,8 @@
 import prisma from '../config/db.js';
+import QRCode from 'qrcode';
+import path from 'path';
+import fs from 'fs';
+import { errorMessage, internalError } from '../utils/errors.js';
 
 // --- 2.1. Tableau de bord Client - Recherche de produits et marchés ---
 
@@ -46,7 +50,7 @@ export const getProducts = async (req, res) => {
 
     return res.json(products);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la récupération des produits.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -61,7 +65,7 @@ export const getProductPriceHistory = async (req, res) => {
     });
     return res.json(history);
   } catch (error) {
-    return res.status(500).json({ error: "Erreur lors du chargement de l'historique des prix." });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -83,7 +87,7 @@ export const getVendorById = async (req, res) => {
     if (!vendor) return res.status(404).json({ error: 'Vendeur introuvable.' });
     return res.json(vendor);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement du vendeur.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -106,7 +110,7 @@ export const getVendors = async (req, res) => {
     });
     return res.json(vendors);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des vendeurs.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -121,7 +125,7 @@ export const getCategories = async (req, res) => {
     });
     return res.json(categories);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des catégories.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -149,7 +153,7 @@ export const getDrivers = async (req, res) => {
     });
     return res.json(drivers);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des livreurs.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -173,7 +177,7 @@ export const getCart = async (req, res) => {
     });
     return res.json(cart || { details: [] });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement du panier.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -216,7 +220,7 @@ export const upsertCartItem = async (req, res) => {
 
     return res.json({ message: 'Panier mis à jour.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -228,7 +232,7 @@ export const clearCart = async (req, res) => {
     }
     return res.json({ message: 'Panier vidé.' });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du vidage du panier.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -334,7 +338,7 @@ export const createOrder = async (req, res) => {
       code_verification: command.code_verification,
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -376,7 +380,7 @@ export const getMyOrders = async (req, res) => {
 
     return res.json(orders);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des commandes.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -460,7 +464,7 @@ export const createFeedback = async (req, res) => {
 
     return res.json({ message: 'Évaluation enregistrée avec succès.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -492,7 +496,7 @@ export const createSignalement = async (req, res) => {
       id_signalement: signalement.id_signalement
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du signalement.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -500,7 +504,9 @@ export const createSignalement = async (req, res) => {
 
 export const inspectionOrder = async (req, res) => {
   const { id_commande } = req.params;
-  const { statuts, motifs } = req.body;
+  // statuts/motifs come as JSON strings from FormData
+  const statuts = typeof req.body.statuts === 'string' ? JSON.parse(req.body.statuts) : req.body.statuts;
+  const motifs = typeof req.body.motifs === 'string' ? JSON.parse(req.body.motifs) : req.body.motifs;
   // statuts: { [id_produit]: 'accepte' | 'rejete' }
   // motifs:  { [id_produit]: string } (required for rejected items)
 
@@ -569,7 +575,7 @@ export const inspectionOrder = async (req, res) => {
         }
       }
 
-      // Update delivery: mark as delivered + return fees (RG27, RG28)
+      // Update delivery: mark as Livree + return fees (RG27, RG28)
       await tx.livraison.update({
         where: { id_livraison: commande.livraison.id_livraison },
         data: {
@@ -584,6 +590,32 @@ export const inspectionOrder = async (req, res) => {
         where: { id_commande: commande.id_commande },
         data: { statut: 'Livree' }
       });
+
+      // Save client proof photos (RG31)
+      if (req.files && req.files.length > 0) {
+        const preuve = await tx.preuveCollecte.create({
+          data: {
+            id_commande: commande.id_commande,
+            statut_validation: 'Validée'
+          }
+        });
+        for (const file of req.files) {
+          // Move file to permanent location
+          const proofsDir = path.join(process.cwd(), 'uploads/proofs');
+          const destPath = path.join(proofsDir, file.filename);
+          if (fs.existsSync(file.path)) {
+            fs.mkdirSync(proofsDir, { recursive: true });
+            fs.renameSync(file.path, destPath);
+          }
+          await tx.mediaPreuve.create({
+            data: {
+              id_preuve: preuve.id_preuve,
+              url_media: `/uploads/proofs/${file.filename}`,
+              type_media: 'photo'
+            }
+          });
+        }
+      }
 
       // Generate facture (RG25) — only after inspection
       const acceptedDetails = commande.detailsCommande.filter(d => statuts[d.id_produit] === 'accepte');
@@ -613,7 +645,7 @@ export const inspectionOrder = async (req, res) => {
       total_final: result.totalFinal,
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -630,7 +662,7 @@ export const getMarkets = async (req, res) => {
     });
     return res.json(markets);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des marchés.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -665,6 +697,85 @@ export const getMarketById = async (req, res) => {
     if (!market) return res.status(404).json({ error: 'Marché introuvable.' });
     return res.json(market);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement du marché.' });
+    return res.status(500).json({ error: internalError(error) });
+  }
+};
+
+// --- QR Code generation (RG06) ---
+
+export const getOrderQRCode = async (req, res) => {
+  const { id_commande } = req.params;
+
+  try {
+    const order = await prisma.commande.findUnique({
+      where: { id_commande: parseInt(id_commande, 10) },
+    });
+
+    if (!order) return res.status(404).json({ error: 'Commande introuvable.' });
+    if (order.id_user_client !== req.user.id_user) {
+      return res.status(403).json({ error: 'Accès interdit.' });
+    }
+
+    const qrDataUrl = await QRCode.toDataURL(order.code_verification, {
+      width: 300,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' }
+    });
+
+    return res.json({ qrcode: qrDataUrl, code: order.code_verification });
+  } catch (error) {
+    return res.status(500).json({ error: internalError(error) });
+  }
+};
+
+// --- Cancel order (RG17) ---
+
+export const cancelOrder = async (req, res) => {
+  const { id_commande } = req.params;
+
+  try {
+    const order = await prisma.commande.findUnique({
+      where: { id_commande: parseInt(id_commande, 10) },
+      include: { livraison: true }
+    });
+
+    if (!order) return res.status(404).json({ error: 'Commande introuvable.' });
+    if (order.id_user_client !== req.user.id_user) {
+      return res.status(403).json({ error: 'Accès interdit.' });
+    }
+    if (!['En attente', 'Validee'].includes(order.statut)) {
+      return res.status(400).json({ error: 'Commande ne peut plus être annulée.' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Restore stock
+      const details = await tx.detailCommande.findMany({
+        where: { id_commande: order.id_commande }
+      });
+      for (const d of details) {
+        await tx.produit.update({
+          where: { id_produit: d.id_produit },
+          data: { stock_disponible: { increment: d.quantite_commandee } }
+        });
+      }
+
+      // Cancel order
+      await tx.commande.update({
+        where: { id_commande: order.id_commande },
+        data: { statut: 'Annulee' }
+      });
+
+      // Cancel delivery if exists
+      if (order.livraison) {
+        await tx.livraison.update({
+          where: { id_livraison: order.livraison.id_livraison },
+          data: { statut_livraison: 'Echec' }
+        });
+      }
+    });
+
+    return res.json({ message: 'Commande annulée.' });
+  } catch (error) {
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };

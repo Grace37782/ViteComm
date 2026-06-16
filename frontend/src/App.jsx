@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
+import InstallPrompt from './components/InstallPrompt'
 import Footer from './components/Footer'
 import Accueil from './pages/Accueil/Accueil'
 import Connexion from './pages/auth/Connexion'
@@ -53,6 +54,7 @@ export default function App() {
     <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
+        <InstallPrompt />
         <Routes>
 
         {/* Accueil */}

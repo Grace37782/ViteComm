@@ -3,6 +3,7 @@ import bcryptjs from 'bcryptjs';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { errorMessage, internalError } from '../utils/errors.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -89,7 +90,7 @@ export const getDriverDashboard = async (req, res) => {
     });
   } catch (error) {
     console.error('getDriverDashboard error:', error);
-    return res.status(500).json({ error: 'Erreur lors du calcul des statistiques.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -116,7 +117,7 @@ export const updateAvailability = async (req, res) => {
 
     return res.json({ message: 'Disponibilité mise à jour.', disponibilite: newDispo });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la mise à jour de la disponibilité.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -129,7 +130,7 @@ export const getAvailabilityHistory = async (req, res) => {
     });
     return res.json(history);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement de l\'historique.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -159,7 +160,7 @@ export const getAvailableDeliveries = async (req, res) => {
     });
     return res.json(available);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des courses.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -209,7 +210,7 @@ export const acceptDelivery = async (req, res) => {
 
     return res.status(201).json({ message: 'Course acceptée.', livraison });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -248,8 +249,10 @@ export const collectDelivery = async (req, res) => {
       return res.status(400).json({ error: 'Le vendeur n\'a pas encore validé la disponibilité des articles.' });
     }
 
-    // For now, accept any code (vendor verification will be added later)
-    // In production, compare with vendor's generated code
+    // Verify the code matches the order's code_verification (RG06)
+    if (command.code_verification !== code_verification) {
+      return res.status(400).json({ error: 'Code de vérification invalide.' });
+    }
 
     // Create PreuveCollecte with uploaded photos (RG07)
     const preuve = await prisma.preuveCollecte.create({
@@ -288,7 +291,7 @@ export const collectDelivery = async (req, res) => {
 
     return res.json({ message: 'Collecte enregistrée avec preuve photo.', preuve_id: preuve.id_preuve });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -322,7 +325,7 @@ export const departDelivery = async (req, res) => {
 
     return res.json({ message: 'Départ enregistré. En route vers le client.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -415,15 +418,16 @@ export const finalizeDelivery = async (req, res) => {
       const returnFees = rejectedCount * 500;
       const finalCommission = parseFloat((acceptedGoodsValue * 0.006).toFixed(2));
 
+      // Set status to Inspectee — the client will create the invoice after inspection
       await tx.commande.update({
         where: { id_commande: commandId },
-        data: { statut: 'Livree', commission: finalCommission }
+        data: { statut: 'Inspectee', commission: finalCommission }
       });
 
       await tx.livraison.update({
         where: { id_livraison: livraisonId },
         data: {
-          statut_livraison: 'Livree',
+          statut_livraison: 'Inspectee',
           date_fin_reelle: new Date(),
           frais_retour_calcules: returnFees
         }
@@ -460,7 +464,7 @@ export const finalizeDelivery = async (req, res) => {
 
     return res.json({ message: 'Livraison finalisée avec succès.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -498,7 +502,7 @@ export const getMyDeliveries = async (req, res) => {
 
     return res.json(deliveries);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des livraisons.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -565,7 +569,7 @@ export const getLivreurHistorique = async (req, res) => {
     });
   } catch (error) {
     console.error('getLivreurHistorique error:', error);
-    return res.status(500).json({ error: 'Erreur lors du chargement de l\'historique.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -648,7 +652,7 @@ export const getReturns = async (req, res) => {
     return res.json(formatted);
   } catch (error) {
     console.error('getReturns error:', error);
-    return res.status(500).json({ error: 'Erreur lors du chargement des retours.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -728,7 +732,7 @@ export const getLivreurRetours = async (req, res) => {
     });
   } catch (error) {
     console.error('getLivreurRetours error:', error);
-    return res.status(500).json({ error: 'Erreur lors du chargement des retours.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -760,7 +764,7 @@ export const updateReturnStatus = async (req, res) => {
 
     return res.json({ message: 'Statut du retour mis à jour.' });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la mise à jour.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -810,7 +814,7 @@ export const getGainsDetailed = async (req, res) => {
       livraisons: gains
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des gains.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -844,7 +848,7 @@ export const getFeedbacks = async (req, res) => {
 
     return res.json(formatted);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des avis.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -882,7 +886,7 @@ export const getLivreurProfil = async (req, res) => {
       nb_avis: feedbacks.length
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement du profil.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -965,7 +969,7 @@ export const updateLivreurProfil = async (req, res) => {
     });
   } catch (error) {
     console.error('updateLivreurProfil error:', error);
-    return res.status(500).json({ error: 'Erreur lors de la mise à jour du profil.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -999,6 +1003,6 @@ export const createSignalement = async (req, res) => {
       id_signalement: signalement.id_signalement
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du signalement.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };

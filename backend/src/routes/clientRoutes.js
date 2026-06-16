@@ -1,4 +1,7 @@
 import { Router } from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import {
   getProducts,
   getProductPriceHistory,
@@ -15,11 +18,34 @@ import {
   createSignalement,
   inspectionOrder,
   getMarkets,
-  getMarketById
+  getMarketById,
+  getOrderQRCode,
+  cancelOrder
 } from '../controllers/clientController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = Router();
+
+// Multer for inspection proof photos
+const proofStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(process.cwd(), 'uploads/proofs');
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, unique + path.extname(file.originalname));
+  }
+});
+const uploadProof = multer({
+  storage: proofStorage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) cb(null, true);
+    else cb(new Error('Seules les images et vidéos sont acceptées.'));
+  },
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
 
 // Public product browsing
 router.get('/products', requireAuth, requireRole(['client']), getProducts);
@@ -47,7 +73,9 @@ router.delete('/cart', requireAuth, requireRole(['client']), clearCart);
 // Orders
 router.post('/orders', requireAuth, requireRole(['client']), createOrder);
 router.get('/orders', requireAuth, requireRole(['client']), getMyOrders);
-router.post('/orders/:id_commande/inspection', requireAuth, requireRole(['client']), inspectionOrder);
+router.post('/orders/:id_commande/inspection', requireAuth, requireRole(['client']), uploadProof.array('photos', 5), inspectionOrder);
+router.get('/orders/:id_commande/qrcode', requireAuth, requireRole(['client']), getOrderQRCode);
+router.post('/orders/:id_commande/cancel', requireAuth, requireRole(['client']), cancelOrder);
 
 // Feedback (RG23)
 router.post('/feedbacks', requireAuth, requireRole(['client']), createFeedback);

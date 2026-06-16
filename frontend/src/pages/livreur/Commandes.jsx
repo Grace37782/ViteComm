@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { XCircle, CheckCircle, AlertTriangle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, X, ChevronDown } from 'lucide-react'
+import { XCircle, CheckCircle, AlertTriangle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, X, ChevronDown, QrCode, Camera } from 'lucide-react'
+import { Html5QrcodeScanner } from 'html5-qrcode'
 
 const PAGE_SIZE = 10
 
@@ -13,11 +14,16 @@ export default function CommandesLivreur() {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
   const [finalizeOpen, setFinalizeOpen] = useState(null)
+  const [collectOpen, setCollectOpen] = useState(null)
   const [codeVerification, setCodeVerification] = useState('')
   const [rejections, setRejections] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState('actives')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [proofPhotos, setProofPhotos] = useState([])
+  const [scanResult, setScanResult] = useState(null)
+  const scannerRef = useRef(null)
+  const fileRef = useRef(null)
 
   useEffect(() => { loadData() }, [])
 
@@ -43,10 +49,45 @@ export default function CommandesLivreur() {
 
   async function marquerCollectee(id_commande) {
     try {
-      await api.post(`/livreur/deliveries/${id_commande}/collect`, { code_verification: 'VendeurOK' })
+      await api.post(`/livreur/deliveries/${id_commande}/collect`, { code_verification: codeVerification })
       showToast('Collecte confirmée !')
+      setCollectOpen(null); setCodeVerification(''); setProofPhotos([]); setScanResult(null)
       loadData()
     } catch (e) { showToast(e.message) }
+  }
+
+  function openCollect(delivery) {
+    setCollectOpen(delivery)
+    setCodeVerification('')
+    setProofPhotos([])
+    setScanResult(null)
+  }
+
+  function handleProofPhotos(e) {
+    const files = Array.from(e.target.files || [])
+    setProofPhotos(prev => [...prev, ...files])
+  }
+
+  function removeProofPhoto(idx) {
+    setProofPhotos(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  async function submitCollection() {
+    if (!codeVerification.trim()) return showToast('Entrez le code de vérification')
+    if (!collectOpen) return
+    setSubmitting(true)
+    try {
+      const fd = new FormData()
+      fd.append('code_verification', codeVerification)
+      for (const file of proofPhotos) {
+        fd.append('photos', file)
+      }
+      await api.post(`/livreur/deliveries/${collectOpen.commande.id_commande}/collect`, fd)
+      showToast('Collecte confirmée avec preuve !')
+      setCollectOpen(null); setCodeVerification(''); setProofPhotos([]); setScanResult(null)
+      loadData()
+    } catch (e) { showToast(e.message) }
+    finally { setSubmitting(false) }
   }
 
   async function marquerEnRoute(id_commande) {
@@ -105,7 +146,7 @@ export default function CommandesLivreur() {
 
   function nextAction(d) {
     const s = d.statut_livraison
-    if (s === 'En cours de collecte') return { label: <><Package size={14} className="inline align-middle" /> Confirmer la collecte</>, fn: () => marquerCollectee(d.commande.id_commande) }
+    if (s === 'En cours de collecte') return { label: <><Package size={14} className="inline align-middle" /> Confirmer la collecte</>, fn: () => openCollect(d) }
     if (s === 'Collectee') return { label: <><Truck size={14} className="inline align-middle" /> Partir en livraison</>, fn: () => marquerEnRoute(d.commande.id_commande) }
     if (s === 'En cours de livraison') return { label: <><CheckCircle size={14} className="inline align-middle" /> Finaliser la livraison</>, fn: () => openFinalize(d) }
     return null
@@ -113,7 +154,7 @@ export default function CommandesLivreur() {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
+      <div className="px-4 py-4 flex flex-col gap-4 ">
         <div className="grid grid-cols-3 gap-3">{[1,2,3].map(i => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />)}</div>
         <div className="rounded-2xl h-40 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />
       </div>
@@ -121,7 +162,7 @@ export default function CommandesLivreur() {
   }
 
   return (
-    <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
+    <div className="px-4 py-4 flex flex-col gap-4 ">
 
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl" style={{ background: '#D85A30' }}>
@@ -334,6 +375,107 @@ export default function CommandesLivreur() {
                   border: 'none', opacity: submitting ? 0.7 : 1,
                 }}>
                 {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Envoi…</> : <><CheckCircle size={14} className="inline align-middle" /> Confirmer la livraison</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* COLLECT MODAL — QR Scanner + Proof Photos */}
+      {collectOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setCollectOpen(null)}>
+          <div className="w-full max-w-lg rounded-t-[28px] overflow-y-auto" style={{ background: 'var(--surface)', maxHeight: '85vh' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
+            </div>
+            <div className="px-5 pb-8 pt-3">
+              <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Confirmer la collecte</h2>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{collectOpen.commande?.id_commande}</p>
+
+              {/* QR Scanner */}
+              <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+                <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  <QrCode size={12} /> Scanner le QR code du vendeur
+                </div>
+                {scanResult ? (
+                  <div className="rounded-xl p-3 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
+                    <CheckCircle size={20} className="mx-auto mb-1" style={{ color: '#1D9E75' }} />
+                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>Code scanné : {scanResult}</div>
+                  </div>
+                ) : (
+                  <div id="qr-reader" className="rounded-xl overflow-hidden" />
+                )}
+                {!scanResult && (
+                  <button onClick={() => {
+                    const scanner = new Html5QrcodeScanner('qr-reader', { fps: 10, qrbox: 250 }, false)
+                    scanner.render(
+                      (decodedText) => {
+                        setScanResult(decodedText)
+                        setCodeVerification(decodedText)
+                        scanner.clear()
+                      },
+                      () => {}
+                    )
+                    scannerRef.current = scanner
+                  }}
+                    className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
+                    style={{ background: '#BA7517', color: '#fff', border: 'none' }}>
+                    <QrCode size={14} className="inline align-middle" /> Lancer le scanner
+                  </button>
+                )}
+              </div>
+
+              {/* Manual code entry */}
+              <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Lock size={12} className="inline align-middle" /> Ou saisir le code manuellement</div>
+                <input type="text" value={codeVerification} onChange={e => { setCodeVerification(e.target.value); setScanResult(null) }}
+                  placeholder="Code de vérification"
+                  className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"
+                  style={{ background: 'var(--surface)', border: '2px solid var(--border)', color: 'var(--text-primary)' }} />
+              </div>
+
+              {/* Proof Photos */}
+              <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-bold flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+                    <Camera size={12} /> Photos de preuve
+                  </div>
+                  <button onClick={() => fileRef.current?.click()}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer"
+                    style={{ background: '#BA7517', color: '#fff', border: 'none' }}>
+                    + Ajouter
+                  </button>
+                  <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleProofPhotos} />
+                </div>
+                {proofPhotos.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {proofPhotos.map((file, i) => (
+                      <div key={i} className="relative rounded-xl overflow-hidden aspect-square">
+                        <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
+                        <button onClick={() => removeProofPhoto(i)}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer"
+                          style={{ background: 'rgba(0,0,0,0.6)', border: 'none' }}>
+                          <X size={10} color="white" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-3">
+                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Photos optionnelles mais recommandées</p>
+                  </div>
+                )}
+              </div>
+
+              <button onClick={submitCollection} disabled={submitting || !codeVerification.trim()}
+                className="w-full py-4 rounded-2xl text-white font-black text-sm cursor-pointer transition-all active:scale-98"
+                style={{
+                  background: (!codeVerification.trim() || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
+                  border: 'none', opacity: submitting ? 0.7 : 1,
+                }}>
+                {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Envoi…</> : <><CheckCircle size={14} className="inline align-middle" /> Confirmer la collecte</>}
               </button>
             </div>
           </div>

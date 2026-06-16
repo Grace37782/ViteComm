@@ -1,4 +1,10 @@
 import prisma from '../config/db.js';
+import { errorMessage, internalError } from '../utils/errors.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Shared helper: extract emoji from photo_url (handles URLs from seed data)
 function safeEmoji(photoUrl) {
@@ -71,7 +77,7 @@ export const getVendorDashboard = async (req, res) => {
       }))
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du calcul des statistiques.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -125,7 +131,7 @@ export const getMyProducts = async (req, res) => {
     });
     return res.json(products.map(formatProduct));
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des produits.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -184,7 +190,7 @@ export const createProduct = async (req, res) => {
 
     return res.status(201).json(formatProduct(full));
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la création du produit.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -243,7 +249,7 @@ export const updateProduct = async (req, res) => {
 
     return res.json(formatProduct(full));
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la mise à jour.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -261,7 +267,7 @@ export const deleteProduct = async (req, res) => {
     await prisma.produit.delete({ where: { id_produit: productId } });
     return res.json({ message: 'Produit supprimé avec succès.' });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la suppression.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -285,7 +291,7 @@ export const getVendorCategories = async (req, res) => {
       nb_produits: c._count.produits
     })));
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des catégories.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -319,7 +325,7 @@ export const createCategory = async (req, res) => {
       nb_produits: 0
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la création de la catégorie.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -340,6 +346,16 @@ export const uploadProductPhoto = async (req, res) => {
       return res.status(400).json({ error: 'Aucun fichier image fourni.' });
     }
 
+    // Move file to products subdirectory
+    const fs = await import('fs');
+    const productsDir = path.join(__dirname, '../../uploads/products');
+    fs.default.mkdirSync(productsDir, { recursive: true });
+    const srcPath = req.file.path;
+    const destPath = path.join(productsDir, req.file.filename);
+    if (fs.default.existsSync(srcPath)) {
+      fs.default.renameSync(srcPath, destPath);
+    }
+
     const updated = await prisma.produit.update({
       where: { id_produit: productId },
       data: { photo_url: `/uploads/products/${req.file.filename}` }
@@ -347,7 +363,7 @@ export const uploadProductPhoto = async (req, res) => {
 
     return res.json({ photo_url: updated.photo_url });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de l\'upload de la photo.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -435,7 +451,7 @@ export const getVendorOrders = async (req, res) => {
 
     return res.json(formatted);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des commandes.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -498,7 +514,7 @@ export const validateOrder = async (req, res) => {
     return res.json({ message: 'Commande validée. Les articles sont disponibles pour retrait.' });
   } catch (error) {
     console.error('validateOrder error:', error);
-    return res.status(500).json({ error: 'Erreur lors de la validation.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -566,7 +582,7 @@ export const verifyHandover = async (req, res) => {
       statut_collecte: 'collecte'
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -615,7 +631,7 @@ export const getVendorReturns = async (req, res) => {
 
     return res.json(formatted);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des retours.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -646,7 +662,7 @@ export const markReturnRecovered = async (req, res) => {
 
     return res.json({ message: 'Retour marqué comme récupéré.' });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la mise à jour du retour.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -700,7 +716,7 @@ export const getVendorRecentOrders = async (req, res) => {
 
     return res.json(formatted);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des commandes récentes.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -748,7 +764,7 @@ export const getVendorStatistiques = async (req, res) => {
 
     return res.json(stats);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du calcul des statistiques.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -830,7 +846,7 @@ export const getVendorFactures = async (req, res) => {
     return res.json(factures.map(formatFacture));
   } catch (error) {
     console.error('getVendorFactures error:', error);
-    return res.status(500).json({ error: 'Erreur lors du chargement des factures.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -891,7 +907,7 @@ export const getVendorFactureSummary = async (req, res) => {
     });
   } catch (error) {
     console.error('getVendorFactureSummary error:', error);
-    return res.status(500).json({ error: 'Erreur lors du résumé des factures.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -940,7 +956,7 @@ export const getVendorFactureDetail = async (req, res) => {
     return res.json(formatted);
   } catch (error) {
     console.error('getVendorFactureDetail error:', error);
-    return res.status(500).json({ error: 'Erreur lors du chargement de la facture.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -1052,7 +1068,7 @@ export const recordPayment = async (req, res) => {
     });
   } catch (error) {
     console.error('recordPayment error:', error);
-    return res.status(500).json({ error: "Erreur lors de l'enregistrement du paiement." });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -1110,7 +1126,7 @@ export const updateFactureStatus = async (req, res) => {
     });
   } catch (error) {
     console.error('updateFactureStatus error:', error);
-    return res.status(500).json({ error: 'Erreur lors de la mise à jour du statut.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -1148,7 +1164,7 @@ export const getVendorPriceHistory = async (req, res) => {
 
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement de l\'historique.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -1191,7 +1207,7 @@ export const getVendorSignalements = async (req, res) => {
     return res.json(result);
   } catch (error) {
     console.error('getVendorSignalements error:', error);
-    return res.status(500).json({ error: 'Erreur lors du chargement des signalements.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -1270,7 +1286,7 @@ export const createSignalement = async (req, res) => {
     });
   } catch (error) {
     console.error('createSignalement error:', error);
-    return res.status(500).json({ error: 'Erreur lors du signalement.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -1307,7 +1323,7 @@ export const deleteSignalement = async (req, res) => {
     return res.json({ message: 'Signalement supprimé.' });
   } catch (error) {
     console.error('deleteSignalement error:', error);
-    return res.status(500).json({ error: 'Erreur lors de la suppression.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -1379,7 +1395,7 @@ export const getVendorProfil = async (req, res) => {
     });
   } catch (error) {
     console.error('getVendorProfil error:', error);
-    return res.status(500).json({ error: 'Erreur lors du chargement du profil.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -1420,6 +1436,6 @@ export const updateVendorProfil = async (req, res) => {
     });
   } catch (error) {
     console.error('updateVendorProfil error:', error);
-    return res.status(500).json({ error: 'Erreur lors de la mise à jour du profil.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };

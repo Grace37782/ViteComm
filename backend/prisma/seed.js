@@ -1,9 +1,15 @@
 import { PrismaClient } from '@prisma/client';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import bcryptjs from 'bcryptjs';
 
-const databaseUrl = process.env.DATABASE_URL || 'file:./dev.db';
-const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
+const adapter = new PrismaMariaDb({
+  host: 'localhost',
+  port: 3306,
+  user: 'vitecomm',
+  password: 'ViteComm@2026!',
+  database: 'vitecomm',
+  connectionLimit: 5,
+});
 const prisma = new PrismaClient({ adapter });
 
 const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -80,6 +86,13 @@ const categorieData = [
   { nom: 'Tubercules & Racines', desc: 'Igname, manioc, taro, patate douce' },
   { nom: 'Fruits', desc: 'Mangue, ananas, banane, agrumes' },
   { nom: 'Proteines Animales', desc: 'Poisson, crevette, poulet, boeuf' },
+  { nom: 'Vetements & Accessoires', desc: 'Vetements, chaussures, bijoux' },
+  { nom: 'Electronique & Multimédia', desc: 'Telephones, ordinateurs, accessoires' },
+  { nom: 'Maison & Decoration', desc: 'Meubles, objets deco, menager' },
+  { nom: 'Sante & Beaute', desc: 'Produits pharmaceutiques et bien-etre' },
+  { nom: 'Beaute & Cosmétiques', desc: 'Maquillage, soins, parfums' },
+  { nom: 'Scolaire & Bureau', desc: 'Fournitures, papeterie, materiel' },
+  { nom: 'Outillage & Bricolage', desc: 'Outils, quincaillerie, materiel' },
 ];
 const productTemplates = [
   { cat: 0, items: ['Tomates Fraiches (Panier)', 'Piment Rouge (Sachet)', 'Gombo Frais (Sachet)', 'Oignons Verts (Botte)', 'Aubergines (Panier)', 'Carottes Fraiches (Kg)', 'Chou Blanc (Piece)', 'Laitue Verte (Botte)', 'Haricots Verts (Sachet)', 'Okra Seche (Sachet)'], basePrice: [2500, 500, 800, 300, 1200, 1000, 750, 600, 900, 400] },
@@ -88,6 +101,13 @@ const productTemplates = [
   { cat: 3, items: ['Igname Blanche (Kg)', 'Igname Viandox (Kg)', 'Manioc Frais (Kg)', 'Taro (Kg)', 'Patate Douce (Kg)', 'Feuilles de Manioc (Botte)'], basePrice: [800, 1200, 400, 600, 500, 300] },
   { cat: 4, items: ['Mangue Julie (Piece)', 'Ananas (Piece)', 'Banane Douce (Regime)', 'Agrumes (Sac)', 'Papaye (Piece)', 'Citron Vert (Sachet)', 'Fruit de la Passion (Sachet)'], basePrice: [1500, 1000, 2000, 3000, 1200, 400, 800] },
   { cat: 5, items: ['Poisson Frais (Kg)', 'Crevettes Sechees (Kg)', 'Poulet Entier (Piece)', 'Boeuf Decoupe (Kg)', 'Tilapia (Kg)', 'Crabe Vivant (Kg)', 'Corne de Buffle (Kg)', 'Sardines (Kg)'], basePrice: [3000, 5000, 2500, 4500, 2800, 4000, 3500, 1500] },
+  { cat: 6, items: ['T-Shirt Coton (Piece)', 'Pagne wax (3m)', 'Chapeau paille (Piece)', 'Sandales cuir (Paire)', 'Robe wax (Piece)', 'Short sport (Piece)', 'Sac a main (Piece)', 'Ceinture cuir (Piece)'], basePrice: [2500, 4000, 1500, 5000, 6000, 2000, 3500, 2500] },
+  { cat: 7, items: ['Smartphone Android (Piece)', 'Ecouteurs Bluetooth (Piece)', 'Chargeur universel (Piece)', 'Coque telephone (Piece)', 'Powerbank 10000mAh (Piece)', 'Classeur USB (Piece)', 'Lampe solaire (Piece)', 'Radio FM (Piece)'], basePrice: [45000, 5000, 2500, 1500, 8000, 3000, 4000, 6000] },
+  { cat: 8, items: ['Lampe de table (Piece)', 'Miroir mural (Piece)', 'Tapis sol (Piece)', 'Coussin canape (Piece)', 'Vase fleurs (Piece)', 'Horloge murale (Piece)', 'Rideau fenetre (Piece)', 'Bougeoir (Piece)'], basePrice: [5000, 7000, 4000, 2500, 3000, 6000, 4500, 1500] },
+  { cat: 9, items: ['Savon noir (Piece)', 'Huile essentialielle (Flacon)', 'Sirop bio (Flacon)', 'The vert (Boite)', 'Miel pur (Pot)', 'Vitamine C (Boite)', 'Gel douche (Flacon)', 'Creme solaire (Tube)'], basePrice: [500, 3000, 2000, 1500, 4000, 2500, 1800, 3500] },
+  { cat: 10, items: ['Rouge a levres (Piece)', 'Mascara (Piece)', 'Parfum femme (Flacon)', 'Creme visage (Pot)', 'Poudre libre (Piece)', 'Vernis a ongles (Piece)', 'Huile cheveux (Flacon)', 'Savon beton (Piece)'], basePrice: [1500, 2000, 8000, 3500, 2500, 1000, 2000, 800] },
+  { cat: 11, items: ['Cahier 200p (Piece)', 'Stylo bille (Piece)', 'Ruler 30cm (Piece)', 'Tolerance geometrique (Livre)', 'Calculatrice (Piece)', 'Sac a dos ecole (Piece)', 'Crayon a bois (Boite)', 'Gomme (Piece)'], basePrice: [300, 100, 200, 2500, 4000, 5000, 500, 50] },
+  { cat: 12, items: ['Marteau (Piece)', 'Tournevis (Piece)', 'Scie manuelle (Piece)', 'Pince multiprise (Piece)', 'Perceuse electrique (Piece)', 'Tapis soudures (Piece)', 'Mesure ruban (Piece)', 'Vis assortment (Boite)'], basePrice: [2000, 800, 3000, 2500, 15000, 4000, 1000, 1500] },
 ];
 const photoUrls = [
   'https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=300&h=200&q=80',

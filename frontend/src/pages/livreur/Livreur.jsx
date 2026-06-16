@@ -60,7 +60,7 @@ export default function Livreur() {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
+      <div className="px-4 py-4 flex flex-col gap-4 ">
         <div className="rounded-2xl p-4 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl" style={{ background: 'var(--border)' }} />
@@ -90,7 +90,7 @@ export default function Livreur() {
   const score = dash?.score_reputation || 0
 
   return (
-    <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
+    <div className="px-4 py-4 flex flex-col gap-4 ">
 
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl" style={{ background: '#D85A30' }}>

@@ -39,7 +39,7 @@ export default function Historique() {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
+      <div className="px-4 py-4 flex flex-col gap-4 ">
         <div className="grid grid-cols-3 gap-3">{[1,2,3].map(i => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />)}</div>
         <div className="rounded-2xl h-40 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />
       </div>
@@ -47,7 +47,7 @@ export default function Historique() {
   }
 
   return (
-    <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
+    <div className="px-4 py-4 flex flex-col gap-4 ">
 
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">

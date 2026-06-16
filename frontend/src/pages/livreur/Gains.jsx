@@ -29,7 +29,7 @@ export default function Gains() {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
+      <div className="px-4 py-4 flex flex-col gap-4 ">
         <div className="rounded-2xl h-32 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />
         <div className="grid grid-cols-2 gap-3">{[1,2].map(i => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }} />)}</div>
       </div>
@@ -37,7 +37,7 @@ export default function Gains() {
   }
 
   return (
-    <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-4xl">
+    <div className="px-4 py-4 flex flex-col gap-4 ">
 
       {/* TOTAL */}
       <div className="rounded-2xl p-6 text-center transition-all hover:shadow-md"

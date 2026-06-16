@@ -1,15 +1,19 @@
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import prisma from '../config/db.js';
 import { sendVerificationCode, sendPasswordResetCode } from '../services/mail.js';
 import { moveToPermanent } from '../middleware/upload.js';
+import { errorMessage, internalError } from '../utils/errors.js';
 
-const { JWT_SECRET, JWT_EXPIRES_IN } = process.env;
+const { JWT_SECRET, JWT_EXPIRES_IN, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL, FRONTEND_URL } = process.env;
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET is not defined in environment variables.');
 }
 const JWT_EXPIRES = JWT_EXPIRES_IN || '7d';
+
+const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 // Derive role from user specialization rows (RG17)
 const deriveRole = (user) => {
@@ -198,7 +202,7 @@ export const register = async (req, res) => {
       token, // frontend uses this to verify later
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -312,7 +316,7 @@ export const verifyEmail = async (req, res) => {
       user: userPayload,
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -349,7 +353,7 @@ export const resendCode = async (req, res) => {
 
     return res.json({ message: 'Nouveau code envoyé par email.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -387,7 +391,7 @@ export const forgotPassword = async (req, res) => {
 
     return res.json({ message: 'Code de réinitialisation envoyé par email.', token });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -431,7 +435,7 @@ export const resetPassword = async (req, res) => {
 
     return res.json({ message: 'Mot de passe réinitialisé avec succès.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -498,7 +502,7 @@ export const login = async (req, res) => {
       user: userPayload
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -514,7 +518,7 @@ export const getMarkets = async (req, res) => {
     });
     return res.json(markets);
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -529,7 +533,7 @@ export const getProfile = async (req, res) => {
 
     return res.json(await buildUserPayload(user));
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur serveur.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -642,7 +646,7 @@ export const updateProfile = async (req, res) => {
       user: await buildUserPayload(updated)
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -659,15 +663,14 @@ export const googleAuth = async (req, res) => {
   }
 
   try {
-    // Verify the access_token by calling Google's userinfo endpoint
+    // Frontend sends access_token (useGoogleLogin with flow:'implicit')
+    // Verify it by calling Google's userinfo endpoint
     const googleRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${credential}` },
     });
-
     if (!googleRes.ok) {
       return res.status(401).json({ error: 'Token Google invalide ou expiré.' });
     }
-
     const profile = await googleRes.json();
     const { email, given_name, family_name, sub } = profile;
 
@@ -737,7 +740,124 @@ export const googleAuth = async (req, res) => {
       is_new_google_user: isNewGoogleUser,
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message || 'Échec de l\'authentification Google.' });
+    return res.status(400).json({ error: errorMessage(error, 'Échec de l\'authentification Google.') });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// GET /auth/google — Redirect to Google consent screen
+// ────────────────────────────────────────────────────────────
+export const googleRedirect = (req, res) => {
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REDIRECT_URL) {
+    return res.status(500).json({ error: 'Google OAuth redirect non configuré côté serveur.' });
+  }
+
+  const oauth2 = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL);
+  const authUrl = oauth2.generateAuthUrl({
+    access_type: 'offline',
+    scope: ['openid', 'email', 'profile'],
+    prompt: 'select_account',
+  });
+
+  res.redirect(authUrl);
+};
+
+// ────────────────────────────────────────────────────────────
+// GET /auth/google/callback — Handle Google redirect, exchange code, login/create user
+// ────────────────────────────────────────────────────────────
+export const googleCallback = async (req, res) => {
+  const { code, error } = req.query;
+
+  if (error) {
+    const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
+    return res.redirect(`${frontendUrl}/connect?error=google_cancelled`);
+  }
+
+  if (!code || !GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REDIRECT_URL) {
+    const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
+    return res.redirect(`${frontendUrl}/connect?error=google_failed`);
+  }
+
+  try {
+    const oauth2 = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL);
+    const { tokens } = await oauth2.getToken(code);
+    const ticket = await oauth2.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    const { email, given_name, family_name, sub } = payload;
+
+    if (!email) {
+      const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/connect?error=google_no_email`);
+    }
+
+    let user = await prisma.utilisateur.findUnique({
+      where: { email },
+      include: { client: true, vendeur: true, livreur: true },
+    });
+
+    let isNewGoogleUser = false;
+
+    if (!user) {
+      isNewGoogleUser = true;
+      user = await prisma.$transaction(async (tx) => {
+        const created = await tx.utilisateur.create({
+          data: {
+            nom: family_name || sub,
+            prenom: given_name || 'Utilisateur',
+            telephone: '',
+            email,
+            mot_de_passe: await bcryptjs.hash(crypto.randomUUID(), 12),
+            statut_compte: 'Actif',
+            est_admin: false,
+            auth_provider: 'google',
+          }
+        });
+        await tx.client.create({
+          data: { id_user: created.id_user, adresse_livraison: '' }
+        });
+        await tx.panier.create({ data: { id_user_client: created.id_user } });
+        return tx.utilisateur.findUnique({
+          where: { id_user: created.id_user },
+          include: { client: true, vendeur: true, livreur: true },
+        });
+      });
+    } else {
+      if (user.auth_provider === 'local') {
+        const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
+        return res.redirect(`${frontendUrl}/connect?error=google_wrong_account`);
+      }
+      if (!user.auth_provider || user.auth_provider === 'local') {
+        await prisma.utilisateur.update({ where: { id_user: user.id_user }, data: { auth_provider: 'google' } });
+      }
+    }
+
+    if (user.statut_compte !== 'Actif') {
+      const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/connect?error=account_suspended`);
+    }
+
+    const role = deriveRole(user);
+    const token = jwt.sign(
+      { id_user: user.id_user, role },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES }
+    );
+
+    const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
+    const params = new URLSearchParams({
+      token,
+      user: JSON.stringify(await buildUserPayload(user)),
+      new: String(isNewGoogleUser),
+    });
+    res.redirect(`${frontendUrl}/auth/google/callback?${params.toString()}`);
+  } catch (err) {
+    console.error('Google callback error:', err);
+    const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/connect?error=google_failed`);
   }
 };
 
@@ -829,7 +949,7 @@ export const completeGoogleRegistration = async (req, res) => {
       user: await buildUserPayload(updated),
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 

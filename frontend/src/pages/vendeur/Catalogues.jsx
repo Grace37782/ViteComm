@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
-import { Apple, Flame, Leaf, Fish, Drumstick, Egg, Wheat, Package, Citrus, Carrot, Droplets, Bean, CircleDot, Salad, Cherry, AlertTriangle, Search, Folder, Pencil, Trash2, ChevronDown } from 'lucide-react'
+import { Apple, Flame, Leaf, Fish, Drumstick, Egg, Wheat, Package, Citrus, Carrot, Droplets, Bean, CircleDot, Salad, Cherry, AlertTriangle, Search, Folder, Pencil, Trash2, ChevronDown, Camera } from 'lucide-react'
 
 const PAGE_SIZE = 10
 const EMOJIS = [Apple, Flame, Leaf, Fish, Drumstick, Egg, Wheat, Package, Citrus, Carrot, Droplets, Bean, CircleDot, Salad, Cherry]
@@ -12,6 +12,9 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
   const [form, setForm] = useState(initial || vide)
   const [erreurs, setErreurs] = useState({})
   const [saving, setSaving] = useState(false)
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(initial?.photo_url || null)
+  const fileRef = useRef(null)
 
   function set(k, v) {
     setForm((p) => ({ ...p, [k]: v }))
@@ -28,11 +31,24 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
     return Object.keys(e).length === 0
   }
 
+  function handlePhotoChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    setPhotoPreview(URL.createObjectURL(file))
+  }
+
   async function handleSave() {
     if (!valider()) return
     setSaving(true)
     try {
-      await onSave({ ...form, prix: +form.prix, stock: +form.stock })
+      const result = await onSave({ ...form, prix: +form.prix, stock: +form.stock })
+      // Upload photo if a new one was selected and we have a product ID
+      if (photoFile && result?.id) {
+        const fd = new FormData()
+        fd.append('photo', photoFile)
+        await api.post(`/vendor/products/${result.id}/photo`, fd)
+      }
     } finally {
       setSaving(false)
     }
@@ -44,6 +60,36 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
   return (
     <div className="rounded-2xl p-4 flex flex-col gap-3"
       style={{ background: 'var(--surface)', border: '2px solid #BA7517' }}>
+
+      <div>
+        <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>Photo du produit</div>
+        <div className="flex items-center gap-3">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 cursor-pointer"
+            style={{ background: 'var(--surface-alt)', border: '1.5px dashed var(--border)' }}
+            onClick={() => fileRef.current?.click()}>
+            {photoPreview ? (
+              <img src={photoPreview} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <Camera size={20} style={{ color: '#BA7517' }} />
+            )}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+          <div className="flex flex-col gap-1">
+            <button type="button" onClick={() => fileRef.current?.click()}
+              className="text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer"
+              style={{ background: '#FAEEDA', color: '#BA7517', border: 'none' }}>
+              {photoPreview ? 'Changer' : 'Ajouter'}
+            </button>
+            {photoPreview && (
+              <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(null) }}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer"
+                style={{ background: 'var(--surface-alt)', color: 'var(--text-muted)', border: 'none' }}>
+                Supprimer
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
       <div>
         <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>Icône du produit</div>
@@ -178,12 +224,14 @@ export default function CatalogueVendeur() {
     const created = await api.post('/vendor/products', data)
     setProduits((p) => [...p, created])
     setMode(null)
+    return created
   }
 
   async function modifier(data) {
     const updated = await api.put(`/vendor/products/${data.id}`, data)
     setProduits((p) => p.map((x) => x.id === data.id ? updated : x))
     setMode(null)
+    return updated
   }
 
   async function supprimer(id) {

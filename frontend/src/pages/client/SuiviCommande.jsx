@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCheck, Home, Smartphone } from 'lucide-react'
+import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCheck, Home, Smartphone, QrCode, XCircle, Ban } from 'lucide-react'
 
 const STATUT_STEPS = [
   { key: 'En attente', icon: Loader2, titre: 'En attente', desc: 'En attente d\'un livreur' },
@@ -22,6 +22,8 @@ export default function SuiviCommande() {
   const { id_commande, code_verification } = location.state || {}
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [qrCode, setQrCode] = useState(null)
+  const [showQR, setShowQR] = useState(false)
 
   const fetchOrder = useCallback(async () => {
     if (!id_commande) return
@@ -39,6 +41,12 @@ export default function SuiviCommande() {
     return () => clearInterval(interval)
   }, [fetchOrder])
 
+  useEffect(() => {
+    if (showQR && id_commande && !qrCode) {
+      api.get(`/client/orders/${id_commande}/qrcode`).then(setQrCode).catch(() => {})
+    }
+  }, [showQR, id_commande, qrCode])
+
   const statut = order?.statut || 'En attente'
   const livreur = order?.livraison?.livreur
   const livreurNom = livreur
@@ -47,6 +55,18 @@ export default function SuiviCommande() {
 
   const currentStepIndex = STATUT_STEPS.findIndex(s => s.key === statut)
   const verificationCode = code_verification || order?.code_verification
+  const canCancel = ['En attente', 'Validee'].includes(statut)
+  const [cancelling, setCancelling] = useState(false)
+
+  async function handleCancel() {
+    if (!confirm('Annuler cette commande ?')) return
+    setCancelling(true)
+    try {
+      await api.post(`/client/orders/${id_commande}/cancel`)
+      fetchOrder()
+    } catch (e) { showToast(e.message) }
+    finally { setCancelling(false) }
+  }
 
   if (loading) {
     return (
@@ -104,7 +124,43 @@ export default function SuiviCommande() {
               {verificationCode}
             </div>
             <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-              Communiquez ce code au livreur lors de la remise.
+              Communiquez ce code au vendeur/livreur lors de la collecte.
+            </div>
+            {['En attente', 'Validee', 'En cours de collecte'].includes(statut) && (
+              <button onClick={() => setShowQR(true)}
+                className="mt-3 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5 mx-auto"
+                style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', border: 'none' }}>
+                <QrCode size={14} /> Afficher le QR code
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* QR CODE MODAL */}
+        {showQR && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}
+            onClick={() => setShowQR(false)}>
+            <div className="rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: 'var(--surface)' }}
+              onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-4">
+                <div className="font-black text-base" style={{ color: 'var(--text-primary)' }}>QR Code</div>
+                <button onClick={() => setShowQR(false)} className="cursor-pointer" style={{ background: 'none', border: 'none' }}>
+                  <XCircle size={20} style={{ color: 'var(--text-muted)' }} />
+                </button>
+              </div>
+              {qrCode?.qrcode ? (
+                <>
+                  <img src={qrCode.qrcode} alt="QR Code" className="mx-auto rounded-2xl mb-3" style={{ maxWidth: 250 }} />
+                  <div className="text-xs font-bold tracking-[6px] font-mono mb-2" style={{ color: 'var(--accent)' }}>
+                    {qrCode.code}
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    Montrez ce QR code au vendeur/livreur pour la collecte
+                  </div>
+                </>
+              ) : (
+                <div className="py-8"><Loader2 size={24} className="animate-spin mx-auto" /></div>
+              )}
             </div>
           </div>
         )}
@@ -166,6 +222,13 @@ export default function SuiviCommande() {
               className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer"
               style={{ background: '#1D9E75', border: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.3)' }}>
                <Smartphone size={16} className="inline" /> Payer maintenant
+            </button>
+          )}
+          {canCancel && (
+            <button onClick={handleCancel} disabled={cancelling}
+              className="w-full py-3.5 rounded-2xl font-black text-sm cursor-pointer"
+              style={{ background: 'var(--surface)', color: '#D85A30', border: '1.5px solid #D85A30', opacity: cancelling ? 0.6 : 1 }}>
+               <Ban size={16} className="inline" /> {cancelling ? 'Annulation…' : 'Annuler la commande'}
             </button>
           )}
           <button onClick={() => navigate('/client/accueil')}

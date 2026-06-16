@@ -378,7 +378,14 @@ export default function MarcheDetail() {
                   style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
                 >
                   <div className="text-center">
-                    <div className="mb-1.5 flex justify-center"><PIcon size={24} /></div>
+                    <div className="w-full h-16 rounded-xl flex items-center justify-center mb-1.5 overflow-hidden"
+                      style={{ background: isDark ? 'rgba(255,255,255,0.06)' : '#F8F8F6' }}>
+                      {p.photo_url ? (
+                        <img src={p.photo_url} alt={p.nom} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="mb-1.5 flex justify-center"><PIcon size={24} /></div>
+                      )}
+                    </div>
                     <h4 className="font-extrabold text-[10px] line-clamp-2 leading-tight" style={{ color: 'var(--text-primary)' }}>{p.nom}</h4>
                     <p className="text-[8px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{p.vendeur?.nom_etablissement}</p>
                   </div>
