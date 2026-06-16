@@ -12,7 +12,7 @@ function getStoredTheme() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored === 'light' || stored === 'dark' || stored === 'system') return stored
-  } catch {}
+  } catch { /* localStorage unavailable */ }
   return 'system'
 }
 
@@ -24,7 +24,7 @@ export function ThemeProvider({ children }) {
 
   function setTheme(newTheme) {
     setThemeState(newTheme)
-    try { localStorage.setItem(STORAGE_KEY, newTheme) } catch {}
+    try { localStorage.setItem(STORAGE_KEY, newTheme) } catch { /* localStorage unavailable */ }
   }
 
   useEffect(() => {

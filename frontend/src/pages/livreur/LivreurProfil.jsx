@@ -365,7 +365,7 @@ function InfoRow({ label, value, icon }) {
   )
 }
 
-function Field({ label, value, onChange, type = 'text', isDark }) {
+function Field({ label, value, onChange, type = 'text' }) {
   return (
     <div className="flex flex-col gap-1">
       <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{label}</label>

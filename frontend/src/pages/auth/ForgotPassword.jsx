@@ -44,7 +44,7 @@ export default function ForgotPassword() {
     if (!/[A-Z]/.test(mdp)) return showError('Une majuscule requise.')
     if (!/[a-z]/.test(mdp)) return showError('Une minuscule requise.')
     if (!/\d/.test(mdp)) return showError('Un chiffre requis.')
-    if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'/`~]/.test(mdp))
+    if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'/`~]/.test(mdp)) // eslint-disable-line no-useless-escape
       return showError('Un caractère spécial requis.')
     setLoading(true); setError('')
     try {

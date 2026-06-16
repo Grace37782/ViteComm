@@ -4,7 +4,7 @@ import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
 import { Star, CheckCircle, Search, Package, Flag, Motorbike, Store, Loader2, ChevronDown } from 'lucide-react'
 
-function Etoiles({ note, onChange, isDark }) {
+function Etoiles({ note, onChange }) {
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((n) => (
@@ -187,6 +187,7 @@ export default function Evaluation() {
         {visibleItems.map((c) => {
           const st = STATUT_STYLE[c.statut] || STATUT_STYLE['Livree']
           const livreur = getLivreur(c)
+          // eslint-disable-next-line no-unused-vars
           const vendeurs = getVendeurs(c)
           const nbArticles = c.detailsCommande?.length || 0
           const total = c.total_marchandises || 0

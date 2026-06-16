@@ -13,6 +13,7 @@ const STATUT_STYLE = {
 
 export default function Factures() {
   const { resolved } = useTheme()
+  // eslint-disable-next-line no-unused-vars
   const isDark = resolved === 'dark'
   const [factures, setFactures] = useState([])
   const [loading, setLoading] = useState(true)

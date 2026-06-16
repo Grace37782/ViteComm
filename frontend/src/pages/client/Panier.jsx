@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
-import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { ShoppingCart, Store, Package, Banknote, Lock, Loader2, XCircle } from 'lucide-react'
 
@@ -12,7 +11,6 @@ function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
 export default function Panier() {
   const navigate = useNavigate()
-  const { user } = useAuth()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
 

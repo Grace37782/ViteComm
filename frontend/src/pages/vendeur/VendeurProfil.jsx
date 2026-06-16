@@ -13,7 +13,7 @@ const MOTIFS_REPUTATION = [
 
 export default function VendeurProfil() {
   const navigate = useNavigate()
-  const { user: ctxUser, login: updateCtx, logout: ctxLogout } = useAuth()
+  const { user: ctxUser, logout: ctxLogout } = useAuth()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)

@@ -306,6 +306,7 @@ export default function AccueilClient() {
     return labels[type] || type
   }
 
+  // eslint-disable-next-line no-unused-vars
   const getGroupIcon = (type) => {
     const icons = { markets: Store, products: Package, vendors: User, actions: ArrowRight }
     return icons[type] || Search

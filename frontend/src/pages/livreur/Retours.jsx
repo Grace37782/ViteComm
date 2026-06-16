@@ -14,14 +14,14 @@ export default function RetourLivreur() {
   const [toast, setToast] = useState(null)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
+  function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000) }
+
   useEffect(() => {
     api.get('/livreur/retours')
       .then(data => { setRetours(data.retours || []); setStats(data.stats || null) })
       .catch(e => showToast(e.message))
       .finally(() => setLoading(false))
   }, [])
-
-  function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
   async function changerStatut(id_litige, current) {
     const next = current === 'a_recuperer' ? 'en_cours' : current === 'en_cours' ? 'recupere' : null

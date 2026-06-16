@@ -31,7 +31,7 @@ export default function SuiviCommande() {
       const data = await api.get('/client/orders')
       const o = data.find(ord => ord.id_commande === id_commande)
       if (o) setOrder(o)
-    } catch {}
+    } catch { /* ignore */ }
     finally { setLoading(false) }
   }, [id_commande])
 
@@ -64,7 +64,7 @@ export default function SuiviCommande() {
     try {
       await api.post(`/client/orders/${id_commande}/cancel`)
       fetchOrder()
-    } catch (e) { showToast(e.message) }
+    } catch { /* ignore */ }
     finally { setCancelling(false) }
   }
 
@@ -175,7 +175,6 @@ export default function SuiviCommande() {
             {STATUT_STEPS.map((step, i) => {
               const isActive = i === currentStepIndex
               const isPast = i < currentStepIndex
-              const isFuture = i > currentStepIndex
               return (
                 <div key={step.key} className="flex items-start gap-3">
                   <div className="flex flex-col items-center">

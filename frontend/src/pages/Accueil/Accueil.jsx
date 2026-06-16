@@ -4,7 +4,7 @@ import { useTheme } from '../../context/ThemeContext'
 import {
   ShoppingCart, MapPin, ShieldCheck, Banknote, Store, Zap,
   Motorbike, Sparkles, CheckCircle, Camera, Route, AlertTriangle,
-  Package, KeyRound, Eye, EyeOff,
+  Package, KeyRound,
 } from 'lucide-react'
 
 // ─── Typewriter Hook ────────────────────────────────────────────────────────────
@@ -35,6 +35,7 @@ function useTypewriter(words, typingSpeed = 80, deletingSpeed = 40, pause = 2000
 
 // ─── Data ───────────────────────────────────────────────────────────────────────
 const CITIES = ['Cotonou', 'Porto-Novo', 'Parakou', 'Abomey-Calavi', 'votre quartier']
+// eslint-disable-next-line no-unused-vars
 const ACTIONS = ['Acheter frais', 'Vendre en direct', 'Livrer par Zem']
 
 const FEATURES = [

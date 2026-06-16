@@ -916,7 +916,7 @@ function SignalementsTab({ initialFilter }) {
              <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
                className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
                style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-               <ChevronDown size={16} /> Charger plus ({sorted.length - visibleCount} restant(s))
+                <ChevronDown size={16} /> Charger plus ({filtered.length - visibleCount} restant(s))
              </button>
            )}
     </div>
@@ -1065,7 +1065,7 @@ function ProfilTab({ onLogout }) {
             <Field label="Téléphone" value={form.telephone} onChange={v => setForm(p => ({ ...p, telephone: v }))} />
 
             <hr className="border-t my-1" style={{ borderColor: 'var(--border)' }} />
-            {admin?.auth_provider === 'google' ? (
+            {profile?.auth_provider === 'google' ? (
               <div className="text-center py-3">
                 <p className="text-xs font-bold" style={{ color: '#4285F4' }}>Compte Google — mot de passe géré par Google</p>
               </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { XCircle, CheckCircle, AlertTriangle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, X, ChevronDown, QrCode, Camera } from 'lucide-react'
+import { XCircle, CheckCircle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, X, ChevronDown, QrCode, Camera } from 'lucide-react'
 import { Html5QrcodeScanner } from 'html5-qrcode'
 
 const PAGE_SIZE = 10
@@ -25,9 +25,9 @@ export default function CommandesLivreur() {
   const scannerRef = useRef(null)
   const fileRef = useRef(null)
 
-  useEffect(() => { loadData() }, [])
+  useEffect(() => { loadDataFn() }, [])
 
-  function loadData() {
+  function loadDataFn() {
     setLoading(true)
     Promise.all([
       api.get('/livreur/deliveries/available'),
@@ -43,16 +43,17 @@ export default function CommandesLivreur() {
     try {
       await api.post(`/livreur/deliveries/${id_commande}/accept`)
       showToast('Course acceptée !')
-      loadData()
+      loadDataFn()
     } catch (e) { showToast(e.message) }
   }
 
+  // eslint-disable-next-line no-unused-vars
   async function marquerCollectee(id_commande) {
     try {
       await api.post(`/livreur/deliveries/${id_commande}/collect`, { code_verification: codeVerification })
       showToast('Collecte confirmée !')
       setCollectOpen(null); setCodeVerification(''); setProofPhotos([]); setScanResult(null)
-      loadData()
+      loadDataFn()
     } catch (e) { showToast(e.message) }
   }
 
@@ -85,7 +86,7 @@ export default function CommandesLivreur() {
       await api.post(`/livreur/deliveries/${collectOpen.commande.id_commande}/collect`, fd)
       showToast('Collecte confirmée avec preuve !')
       setCollectOpen(null); setCodeVerification(''); setProofPhotos([]); setScanResult(null)
-      loadData()
+      loadDataFn()
     } catch (e) { showToast(e.message) }
     finally { setSubmitting(false) }
   }
@@ -94,7 +95,7 @@ export default function CommandesLivreur() {
     try {
       await api.post(`/livreur/deliveries/${id_commande}/depart`)
       showToast('Départ enregistré !')
-      loadData()
+      loadDataFn()
     } catch (e) { showToast(e.message) }
   }
 
@@ -120,7 +121,7 @@ export default function CommandesLivreur() {
         code_verification: codeVerification, rejections: rejArray.length > 0 ? rejArray : undefined,
       })
       showToast('Livraison finalisée !')
-      setFinalizeOpen(null); loadData()
+      setFinalizeOpen(null); loadDataFn()
     } catch (e) { showToast(e.message) }
     finally { setSubmitting(false) }
   }

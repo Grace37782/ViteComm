@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { Apple, Flame, Leaf, Fish, Drumstick, Egg, Wheat, Package, Citrus, Carrot, Droplets, Bean, CircleDot, Salad, Cherry, AlertTriangle, Search, Folder, Pencil, Trash2, ChevronDown, Camera } from 'lucide-react'
 
@@ -178,7 +177,6 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
 }
 
 export default function CatalogueVendeur() {
-  const navigate = useNavigate()
   const [produits, setProduits] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)

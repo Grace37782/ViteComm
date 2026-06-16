@@ -26,6 +26,7 @@ export default function SelectionLivreur() {
 
   const FRAIS_LIVRAISON = 1500
   const sousTotal = stateSousTotal || cart?.details?.reduce((s, d) => s + (d.produit?.prix_reference || 0) * d.quantite, 0) || 0
+  // eslint-disable-next-line no-unused-vars
   const totalMarchandises = stateTotal || sousTotal
 
   useEffect(() => {

@@ -16,7 +16,7 @@ const PWD_RULES = [
   { key: 'upper', label: 'A',      test: v => /[A-Z]/.test(v) },
   { key: 'lower', label: 'a',      test: v => /[a-z]/.test(v) },
   { key: 'digit', label: '1',      test: v => /\d/.test(v) },
-  { key: 'sym',   label: '!@#',    test: v => /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'/`~]/.test(v) },
+  { key: 'sym',   label: '!@#',    test: v => /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'/`~]/.test(v) }, // eslint-disable-line no-useless-escape
 ]
 
 function PasswordChecklist({ value, isDark }) {

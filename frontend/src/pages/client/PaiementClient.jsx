@@ -13,17 +13,21 @@ export default function PaiementClient() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
 
+  // eslint-disable-next-line no-unused-vars
   const stateOrderId = location.state?.id_commande
+  // eslint-disable-next-line no-unused-vars
   const stateTotal = location.state?.total
   const ref = searchParams.get('ref')
   const statusParam = searchParams.get('status')
 
-  const [idCommande, setIdCommande] = useState(stateOrderId || null)
+  const [idCommande] = useState(stateOrderId || null)
+  // eslint-disable-next-line no-unused-vars
   const [total, setTotal] = useState(stateTotal || 0)
   const [telephone, setTelephone] = useState('')
   const [initiating, setInitiating] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState(statusParam || null)
   const [loading, setLoading] = useState(!!ref)
+  // eslint-disable-next-line no-unused-vars
   const [attempts, setAttempts] = useState(0)
   const [toast, setToast] = useState('')
   const intervalRef = useRef(null)

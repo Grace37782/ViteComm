@@ -5,7 +5,7 @@ import { useTheme } from '../../context/ThemeContext'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Package, Loader2, XCircle, Building2, Search, Star, MapPin, Home, Leaf, Flame, Droplets, Wheat, Fish, Egg, Beef, Apple, ChevronDown } from 'lucide-react'
+import { Package, Loader2, XCircle, Building2, Search, Star, Home, Leaf, Flame, Droplets, Wheat, Fish, Egg, Beef, Apple, ChevronDown } from 'lucide-react'
 
 const CATEGORY_ICONS = {
   'Légumes': Leaf,
@@ -116,6 +116,7 @@ export default function MarcheDetail() {
     load()
   }, [marketId])
 
+  // eslint-disable-next-line no-unused-vars
   const panierCount = cart?.details?.reduce((s, d) => s + d.quantite, 0) || 0
 
   // Collect all products from all vendors in this market
