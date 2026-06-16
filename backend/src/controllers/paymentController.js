@@ -1,6 +1,6 @@
 import prisma from '../config/db.js';
 import { initiatePayment, verifyWebhookSignature, generateTransactionId, verifyTransactionStatus } from '../services/fedapayService.js';
-import { errorMessage, internalError } from '../utils/errors.js';
+import { internalError } from '../utils/errors.js';
 
 const FEDAPAY_WEBHOOK_SECRET = process.env.FEDAPAY_WEBHOOK_SECRET;
 
@@ -138,7 +138,6 @@ export const handleWebhook = async (req, res) => {
         });
 
         const facture = paiementTransaction.commande.factures[0];
-        let factureId;
         if (facture) {
           await tx.paiement.create({
             data: {
@@ -153,7 +152,6 @@ export const handleWebhook = async (req, res) => {
             where: { id_facture: facture.id_facture },
             data: { statut_paiement: 'Paye' },
           });
-          factureId = facture.id_facture;
         } else {
           const cmd = paiementTransaction.commande;
           const newFacture = await tx.facture.create({
@@ -176,7 +174,6 @@ export const handleWebhook = async (req, res) => {
               id_facture: newFacture.id_facture,
             },
           });
-          factureId = newFacture.id_facture;
         }
 
         await tx.commande.update({
@@ -211,7 +208,7 @@ export const handleWebhook = async (req, res) => {
     }
 
     return res.status(200).json({ received: true });
-  } catch (error) {
+  } catch {
     return res.status(200).json({ received: true });
   }
 };
@@ -321,7 +318,7 @@ export const handleCallback = async (req, res) => {
     }
 
     return res.redirect(`/client/paiement?ref=${reference}&status=pending`);
-  } catch (error) {
+  } catch {
     return res.redirect('/client/panier');
   }
 };

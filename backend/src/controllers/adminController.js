@@ -270,6 +270,7 @@ export const getUserDetails = async (req, res) => {
 
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
 
+    // eslint-disable-next-line no-unused-vars
     const { mot_de_passe, ...safeUser } = user;
 
     // Feedback history for reputation
@@ -398,7 +399,7 @@ export const getUsers = async (req, res) => {
     });
 
     // Strip passwords; strip client order history (RG11)
-    const parsedUsers = users.map(({ mot_de_passe, ...safeUser }) => safeUser);
+    const parsedUsers = users.map(({ mot_de_passe: _, ...safeUser }) => safeUser);
     return res.json(parsedUsers);
   } catch (error) {
     return res.status(500).json({ error: internalError(error) });

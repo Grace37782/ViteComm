@@ -13,8 +13,6 @@ if (!JWT_SECRET) {
 }
 const JWT_EXPIRES = JWT_EXPIRES_IN || '7d';
 
-const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
-
 // Derive role from user specialization rows (RG17)
 const deriveRole = (user) => {
   if (user.client) return 'client';
@@ -413,7 +411,7 @@ export const resetPassword = async (req, res) => {
   if (!/[A-Z]/.test(mot_de_passe)) return res.status(400).json({ error: 'Une majuscule requise.' });
   if (!/[a-z]/.test(mot_de_passe)) return res.status(400).json({ error: 'Une minuscule requise.' });
   if (!/\d/.test(mot_de_passe)) return res.status(400).json({ error: 'Un chiffre requis.' });
-  if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'/`~]/.test(mot_de_passe))
+  if (!/[!@#$%^&*(),.?":{}|<>_\-+=\\[\]\\;'/`~]/.test(mot_de_passe))
     return res.status(400).json({ error: 'Un caractère spécial requis.' });
 
   try {

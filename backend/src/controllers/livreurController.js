@@ -625,10 +625,8 @@ export const getReturns = async (req, res) => {
     // Format for frontend
     const formatted = returns.map(r => {
       const cmd = r.livraison?.commande;
-      const cmdDetails = detailsByCommand[cmd?.id_commande] || [];
       const lines = detailsMap2[r.id_litige] || [];
       const line = lines[0];
-      const rejectedProductIds = new Set(lines.map(d => d.id_produit));
       return {
         id_litige: r.id_litige,
         id_commande: cmd?.id_commande,

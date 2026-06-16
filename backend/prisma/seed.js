@@ -70,14 +70,14 @@ const adresses = [
   'Fidjrossè C2', 'Akpakpa Ganhi', 'Togba C3', 'Calavi Kpota', 'Godomey H9',
 ];
 const marcheData = [
-  { nom: 'Marche Dantokpa', lat: 6.3764, lon: 2.4430, desc: "Le plus grand marche a ciel ouvert d\'Afrique de l\'Ouest." },
-  { nom: 'Marche Ganhi', lat: 6.3532, lon: 2.4340, desc: "Marche historique de Cotonou, au coeur du quartier commercial." },
-  { nom: 'Marche Saint Michel', lat: 6.3685, lon: 2.4180, desc: "Marche populaire repu pour les produits artisanaux et frais." },
-  { nom: 'Marche de Ouando', lat: 6.5120, lon: 2.6170, desc: "Grand marche de Porto-Novo, carrefour d\'echanges agricoles." },
-  { nom: 'Marche Missebo', lat: 6.3600, lon: 2.4250, desc: "Marche bio et local, specialise en produits du terroir beninois." },
-  { nom: 'Marche Togba', lat: 6.4400, lon: 2.3500, desc: "Marche d\'Abomey-Calavi, vivier de produits frais du sud." },
-  { nom: 'Marche Aklakou', lat: 6.4900, lon: 2.6300, desc: "Marche de Porto-Novo, specialite en tubercules et racines." },
-  { nom: 'Marche Djegbanje', lat: 6.3100, lon: 2.5900, desc: "Marche cotier de Semme-Kpodji, repu pour ses poissons frais." },
+   { nom: 'Marche Dantokpa', lat: 6.3764, lon: 2.4430, desc: "Le plus grand marche a ciel ouvert d'Afrique de l'Ouest." },
+   { nom: 'Marche Ganhi', lat: 6.3532, lon: 2.4340, desc: "Marche historique de Cotonou, au coeur du quartier commercial." },
+   { nom: 'Marche Saint Michel', lat: 6.3685, lon: 2.4180, desc: "Marche populaire repu pour les produits artisanaux et frais." },
+   { nom: 'Marche de Ouando', lat: 6.5120, lon: 2.6170, desc: "Grand marche de Porto-Novo, carrefour d'echanges agricoles." },
+   { nom: 'Marche Missebo', lat: 6.3600, lon: 2.4250, desc: "Marche bio et local, specialise en produits du terroir beninois." },
+   { nom: 'Marche Togba', lat: 6.4400, lon: 2.3500, desc: "Marche d'Abomey-Calavi, vivier de produits frais du sud." },
+   { nom: 'Marche Aklakou', lat: 6.4900, lon: 2.6300, desc: "Marche de Porto-Novo, specialite en tubercules et racines." },
+   { nom: 'Marche Djegbanje', lat: 6.3100, lon: 2.5900, desc: "Marche cotier de Semme-Kpodji, repu pour ses poissons frais." },
 ];
 const categorieData = [
   { nom: 'Legumes', desc: 'Produits maraichers frais' },
@@ -96,8 +96,8 @@ const categorieData = [
 ];
 const productTemplates = [
   { cat: 0, items: ['Tomates Fraiches (Panier)', 'Piment Rouge (Sachet)', 'Gombo Frais (Sachet)', 'Oignons Verts (Botte)', 'Aubergines (Panier)', 'Carottes Fraiches (Kg)', 'Chou Blanc (Piece)', 'Laitue Verte (Botte)', 'Haricots Verts (Sachet)', 'Okra Seche (Sachet)'], basePrice: [2500, 500, 800, 300, 1200, 1000, 750, 600, 900, 400] },
-  { cat: 1, items: ['Epices de Ndole (Kit)', 'Poivre Noir de Penja', 'Gingembre Moulu (Sachet)', 'Curcuma Bio (Pot)', 'Piment vif (Sachet)', 'Seloide (Kg)', 'Cube Maggi (Boite)', "Huile d\'arachide (Litre)"], basePrice: [1200, 3500, 800, 1500, 400, 300, 500, 2000] },
-  { cat: 2, items: ['Huile de Palme (Litre)', 'Huile de coco (Litre)', 'Beurre de Karite (Pot)', 'Saindoux (Kg)', "Huile d\'arachide raffinee (Litre)"], basePrice: [1500, 2500, 3000, 1800, 2200] },
+  { cat: 1, items: ['Epices de Ndole (Kit)', 'Poivre Noir de Penja', 'Gingembre Moulu (Sachet)', 'Curcuma Bio (Pot)', 'Piment vif (Sachet)', 'Seloide (Kg)', 'Cube Maggi (Boite)', "Huile d'arachide (Litre)"], basePrice: [1200, 3500, 800, 1500, 400, 300, 500, 2000] },
+  { cat: 2, items: ['Huile de Palme (Litre)', 'Huile de coco (Litre)', 'Beurre de Karite (Pot)', 'Saindoux (Kg)', "Huile d'arachide raffinee (Litre)"], basePrice: [1500, 2500, 3000, 1800, 2200] },
   { cat: 3, items: ['Igname Blanche (Kg)', 'Igname Viandox (Kg)', 'Manioc Frais (Kg)', 'Taro (Kg)', 'Patate Douce (Kg)', 'Feuilles de Manioc (Botte)'], basePrice: [800, 1200, 400, 600, 500, 300] },
   { cat: 4, items: ['Mangue Julie (Piece)', 'Ananas (Piece)', 'Banane Douce (Regime)', 'Agrumes (Sac)', 'Papaye (Piece)', 'Citron Vert (Sachet)', 'Fruit de la Passion (Sachet)'], basePrice: [1500, 1000, 2000, 3000, 1200, 400, 800] },
   { cat: 5, items: ['Poisson Frais (Kg)', 'Crevettes Sechees (Kg)', 'Poulet Entier (Piece)', 'Boeuf Decoupe (Kg)', 'Tilapia (Kg)', 'Crabe Vivant (Kg)', 'Corne de Buffle (Kg)', 'Sardines (Kg)'], basePrice: [3000, 5000, 2500, 4500, 2800, 4000, 3500, 1500] },

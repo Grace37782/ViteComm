@@ -40,7 +40,7 @@ function startServer(appDebug) {
         resolve(proc);
       }
     });
-    proc.stderr.on('data', (chunk) => {
+    proc.stderr.on('data', () => {
       // suppress
     });
     setTimeout(() => { if (!started) reject(new Error('Server start timeout')); }, 8000);
