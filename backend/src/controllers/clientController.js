@@ -157,6 +157,113 @@ export const getDrivers = async (req, res) => {
   }
 };
 
+// Get user details by ID (driver, vendor, or client profile)
+export const getUserById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const userId = parseInt(id, 10);
+    const user = await prisma.utilisateur.findUnique({
+      where: { id_user: userId },
+      include: { client: true, vendeur: true, livreur: true }
+    });
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
+
+    // eslint-disable-next-line no-unused-vars
+    const { mot_de_passe, ...safeUser } = user;
+
+    let roleData = {};
+
+    if (safeUser.vendeur) {
+      const market = safeUser.vendeur.id_marche ? await prisma.marche.findUnique({
+        where: { id_marche: safeUser.vendeur.id_marche },
+        select: { id_marche: true, nom: true }
+      }) : null;
+
+      const productCount = await prisma.produit.count({
+        where: { id_user_vendeur: userId }
+      });
+
+      const products = await prisma.produit.findMany({
+        where: { id_user_vendeur: userId },
+        take: 10,
+        orderBy: { nom: 'asc' }
+      });
+
+      const feedbacks = await prisma.feedback.findMany({
+        where: { id_user_vendeur: userId },
+        include: {
+          livraison: {
+            include: {
+              commande: { include: { client: { include: { utilisateur: { select: { nom: true, prenom: true } } } } } }
+            }
+          }
+        },
+        orderBy: { date_publication: 'desc' },
+        take: 10
+      });
+
+      roleData = {
+        type: 'vendeur',
+        vendorId: userId,
+        nom_etablissement: safeUser.vendeur.nom_etablissement,
+        score_reputation: safeUser.vendeur.score_reputation,
+        marche: market,
+        productCount,
+        products,
+        feedbacks
+      };
+    } else if (safeUser.livreur) {
+      const dispo = await prisma.disponibiliteLivreur.findFirst({
+        where: { id_user_livreur: userId },
+        orderBy: { date_mise_a_jour: 'desc' }
+      });
+
+      const livraisonCount = await prisma.livraison.count({
+        where: { id_user_livreur: userId }
+      });
+
+      const feedbacks = await prisma.feedback.findMany({
+        where: { livraison: { id_user_livreur: userId } },
+        include: {
+          livraison: {
+            include: {
+              commande: { include: { client: { include: { utilisateur: { select: { nom: true, prenom: true } } } } } }
+            }
+          }
+        },
+        orderBy: { date_publication: 'desc' },
+        take: 10
+      });
+
+      roleData = {
+        type: 'livreur',
+        type_vehicule: safeUser.livreur.type_vehicule,
+        immatriculation: safeUser.livreur.immatriculation,
+        score_reputation: safeUser.livreur.score_reputation,
+        est_disponible: dispo?.est_disponible ?? false,
+        livraisonCount,
+        feedbacks
+      };
+    } else if (safeUser.client) {
+      const orderCount = await prisma.commande.count({
+        where: { id_user_client: userId }
+      });
+
+      roleData = {
+        type: 'client',
+        adresse_livraison: safeUser.client.adresse_livraison,
+        orderCount
+      };
+    } else {
+      roleData = { type: 'admin' };
+    }
+
+    return res.json({ user: safeUser, roleData });
+  } catch (error) {
+    return res.status(500).json({ error: internalError(error) });
+  }
+};
+
 // --- 2.2. Gestion du Panier (RG22) ---
 
 export const getCart = async (req, res) => {

@@ -282,12 +282,13 @@ export default function AccueilClient() {
   const handleSelectVendor = (v) => {
     setShowSuggestions(false)
     setRecherche('')
-    navigate('/client/catalogue/' + v.id_user)
+    navigate('/client/user/' + v.id_user)
   }
 
   const handleSelectDriver = (d) => {
     setShowSuggestions(false)
-    setRecherche(d.utilisateur?.prenom + ' ' + d.utilisateur?.nom)
+    setRecherche('')
+    navigate('/client/user/' + d.id_user)
   }
 
   const handleSelectAction = (action) => {

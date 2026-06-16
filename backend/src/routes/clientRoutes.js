@@ -9,6 +9,7 @@ import {
   getVendorById,
   getCategories,
   getDrivers,
+  getUserById,
   getCart,
   upsertCartItem,
   clearCart,
@@ -64,6 +65,9 @@ router.get('/categories', requireAuth, requireRole(['client']), getCategories);
 
 // Driver selection for checkout
 router.get('/drivers', requireAuth, requireRole(['client']), getDrivers);
+
+// User profile detail (driver/vendor/client)
+router.get('/users/:id', requireAuth, requireRole(['client']), getUserById);
 
 // Cart management (RG22)
 router.get('/cart', requireAuth, requireRole(['client']), getCart);
