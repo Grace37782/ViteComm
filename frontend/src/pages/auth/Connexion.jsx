@@ -98,7 +98,7 @@ export default function Connexion() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
       {/* Hero section */}
-      <div className="relative flex-1 flex items-center justify-center px-4 py-12 sm:py-0 overflow-hidden">
+      <div className="relative flex-1 flex items-center justify-center px-4 py-12 sm:py-8 overflow-hidden">
         {/* Decorative background elements — theme-aware */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div

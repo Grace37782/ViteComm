@@ -1,5 +1,6 @@
 import prisma from '../config/db.js';
 import { moveToPermanent, moveMarketImage } from '../middleware/upload.js';
+import { errorMessage, internalError } from '../utils/errors.js';
 
 // --- 5.1. Tableau de bord Administrateur (RG08, RG12) ---
 
@@ -219,7 +220,7 @@ export const getAdminDashboard = async (req, res) => {
       }
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du calcul du dashboard: ' + error.message });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -245,7 +246,7 @@ export const getAllProducts = async (req, res) => {
     });
     return res.json(products);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des produits.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -382,7 +383,7 @@ export const getUserDetails = async (req, res) => {
       roleData
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des détails utilisateur: ' + error.message });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -400,7 +401,7 @@ export const getUsers = async (req, res) => {
     const parsedUsers = users.map(({ mot_de_passe, ...safeUser }) => safeUser);
     return res.json(parsedUsers);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des utilisateurs.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -424,7 +425,7 @@ export const updateUserStatus = async (req, res) => {
     await prisma.utilisateur.update({ where: { id_user: userId }, data: { statut_compte } });
     return res.json({ message: `Statut mis à jour : ${statut_compte}` });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la mise à jour.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -441,7 +442,7 @@ export const getAdminMe = async (req, res) => {
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
     return res.json(user);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement du profil.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -480,7 +481,7 @@ export const updateAdminProfile = async (req, res) => {
     });
     return res.json(updated);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la mise à jour du profil: ' + error.message });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -499,7 +500,7 @@ export const deleteUser = async (req, res) => {
     await prisma.utilisateur.delete({ where: { id_user: userId } });
     return res.json({ message: 'Compte supprimé avec succès.' });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la suppression.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -514,7 +515,7 @@ export const getVendorCatalogue = async (req, res) => {
     });
     return res.json(products);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement du catalogue.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -532,7 +533,7 @@ export const getPriceHistory = async (req, res) => {
     });
     return res.json(history);
   } catch (error) {
-    return res.status(500).json({ error: "Erreur lors du chargement de l'historique des prix." });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -549,7 +550,7 @@ export const getSignalements = async (req, res) => {
     });
     return res.json(reports);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des signalements.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -568,7 +569,7 @@ export const updateSignalementStatus = async (req, res) => {
     });
     return res.json(updated);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur de mise à jour du signalement.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -603,7 +604,7 @@ export const getLitiges = async (req, res) => {
     });
     return res.json(litiges);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des litiges.' });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -658,7 +659,7 @@ export const resolveLitige = async (req, res) => {
 
     return res.json({ message: 'Litige résolu avec succès.' });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
 };
 
@@ -674,7 +675,7 @@ export const getMarketsAdmin = async (req, res) => {
     });
     return res.json(markets);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors du chargement des marchés: ' + error.message });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -701,7 +702,7 @@ export const createMarket = async (req, res) => {
     const market = await prisma.marche.create({ data });
     return res.status(201).json(market);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la création du marché: ' + error.message });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -727,7 +728,7 @@ export const updateMarket = async (req, res) => {
     });
     return res.json(market);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la mise à jour du marché: ' + error.message });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 
@@ -739,6 +740,6 @@ export const deleteMarket = async (req, res) => {
     });
     return res.json({ message: 'Marché supprimé avec succès.' });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la suppression du marché: ' + error.message });
+    return res.status(500).json({ error: internalError(error) });
   }
 };
