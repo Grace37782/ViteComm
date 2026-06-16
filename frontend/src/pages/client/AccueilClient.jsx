@@ -285,9 +285,9 @@ export default function AccueilClient() {
     navigate('/client/catalogue/' + v.id_user)
   }
 
-  const handleSelectDriver = () => {
+  const handleSelectDriver = (d) => {
     setShowSuggestions(false)
-    setRecherche('')
+    setRecherche(d.utilisateur?.prenom + ' ' + d.utilisateur?.nom)
   }
 
   const handleSelectAction = (action) => {
