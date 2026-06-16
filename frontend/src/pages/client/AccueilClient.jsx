@@ -1,50 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Loader2, Search, Store, MapPin, Ruler, Mountain, ChevronDown } from 'lucide-react'
-
-/* ─── Profile helpers (moved from Profil.jsx for reuse) ─── */
-function initials(u) {
-  if (!u) return '?'
-  return ((u.prenom?.[0] || '') + (u.nom?.[0] || '')).toUpperCase() || '?'
-}
-
-function AvatarCircle({ user, size = 48 }) {
-  if (user?.photo_url) {
-    return (
-      <img
-        src={user.photo_url}
-        alt="Photo profil"
-        style={{
-          width: size, height: size,
-          borderRadius: '50%',
-          objectFit: 'cover',
-          border: '2px solid rgba(255,255,255,0.3)',
-        }}
-      />
-    )
-  }
-  return (
-    <div
-      style={{
-        width: size, height: size,
-        borderRadius: '50%',
-        background: 'linear-gradient(135deg, #1D9E75, #0F6E56)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: size * 0.38, fontWeight: 900, color: '#fff',
-        border: '2px solid rgba(255,255,255,0.3)',
-        flexShrink: 0,
-      }}
-    >
-      {initials(user)}
-    </div>
-  )
-}
+import { Loader2, Search, Store, Ruler, Mountain, ChevronDown, Package, ShoppingCart, ClipboardList, User, Star, ArrowRight } from 'lucide-react'
 
 // Custom Leaflet marker icons using divIcon (bypasses URL image path issues in Vite)
 const createMarketIcon = (isActive) => L.divIcon({
@@ -154,12 +115,12 @@ function MapRecenter({ center, zoomLevel }) {
 
 export default function AccueilClient() {
   const navigate = useNavigate()
-  const { user } = useAuth()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
 
   const [markets, setMarkets] = useState([])
-  const [cart, setCart] = useState(null)
+  const [products, setProducts] = useState([])
+  const [vendors, setVendors] = useState([])
   const [loading, setLoading] = useState(true)
 
   const [recherche, setRecherche] = useState('')
@@ -171,17 +132,30 @@ export default function AccueilClient() {
   const [activeMarket, setActiveMarket] = useState(null)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
-  const panierCount = cart?.details?.reduce((s, d) => s + d.quantite, 0) || 0
+  function demanderPosition() {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setGeoPosition(coords)
+        setMapCenter([coords.lat, coords.lng])
+        setMapZoom(14)
+      },
+      () => {}
+    )
+  }
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [marketsRes, cartRes] = await Promise.all([
+        const [marketsRes, productsRes, vendorsRes] = await Promise.all([
           api.get('/client/markets'),
-          api.get('/client/cart'),
+          api.get('/client/products'),
+          api.get('/client/vendors'),
         ])
         setMarkets(marketsRes)
-        setCart(cartRes)
+        setProducts(productsRes)
+        setVendors(vendorsRes)
       } catch (err) {
         console.error(err)
       } finally {
@@ -210,18 +184,51 @@ export default function AccueilClient() {
     }
   }, [recherche, markets])
 
-  function demanderPosition() {
-    if (!navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-        setGeoPosition(coords)
-        setMapCenter([coords.lat, coords.lng])
-        setMapZoom(14)
-      },
-      () => {}
-    )
-  }
+  // Quick actions for search
+  const quickActions = useMemo(() => [
+    { id: 'cart', label: 'Mon panier', icon: ShoppingCart, path: '/client/panier', keywords: ['panier', 'cart', 'commande'] },
+    { id: 'orders', label: 'Mes commandes', icon: ClipboardList, path: '/client/commandes', keywords: ['commandes', 'orders', 'suivi'] },
+    { id: 'profile', label: 'Mon profil', icon: User, path: '/client/profil', keywords: ['profil', 'profile', 'compte'] },
+    { id: 'catalogue', label: 'Catalogue', icon: Package, path: '/client/catalogue', keywords: ['catalogue', 'produits', 'products'] },
+  ], [])
+
+  // Unified search across markets, products, vendors, and actions
+  const unifiedSuggestions = useMemo(() => {
+    if (!recherche || recherche.trim().length < 2) return { markets: [], products: [], vendors: [], actions: [] }
+    
+    const keywords = getKeywords(recherche)
+    const results = { markets: [], products: [], vendors: [], actions: [] }
+    
+    // Search markets
+    results.markets = markets.filter(m => matchMarket(m, keywords)).slice(0, 3)
+    
+    // Search products
+    results.products = products.filter(p => {
+      const nom = normalizeText(p.nom || '')
+      const desc = normalizeText(p.description || '')
+      return keywords.every(kw => fuzzyMatch(kw, nom) || fuzzyMatch(kw, desc))
+    }).slice(0, 4)
+    
+    // Search vendors
+    results.vendors = vendors.filter(v => {
+      const nom = normalizeText(v.utilisateur?.prenom + ' ' + v.utilisateur?.nom || '')
+      const etab = normalizeText(v.nom_etablissement || '')
+      const marche = normalizeText(v.marche?.nom || '')
+      return keywords.every(kw => fuzzyMatch(kw, nom) || fuzzyMatch(kw, etab) || fuzzyMatch(kw, marche))
+    }).slice(0, 3)
+    
+    // Search quick actions
+    results.actions = quickActions.filter(a => 
+      a.keywords.some(kw => normalizeText(kw).includes(normalizeText(recherche)))
+    ).slice(0, 2)
+    
+    return results
+  }, [recherche, markets, products, vendors, quickActions])
+
+  const hasSuggestions = unifiedSuggestions.markets.length > 0 || 
+                        unifiedSuggestions.products.length > 0 || 
+                        unifiedSuggestions.vendors.length > 0 || 
+                        unifiedSuggestions.actions.length > 0
 
   // Calculate distances
   const marketsWithDistance = markets.map(m => {
@@ -247,10 +254,6 @@ export default function AccueilClient() {
   const visibleItems = marketsFiltered.slice(0, visibleCount)
   const hasMore = visibleCount < marketsFiltered.length
 
-  const suggestions = recherche
-    ? markets.filter(m => matchMarket(m, keywords))
-    : []
-
   const handleSelectMarket = (m) => {
     setActiveMarket(m)
     setMapCenter([m.latitude, m.longitude])
@@ -259,13 +262,53 @@ export default function AccueilClient() {
     setRecherche(m.nom)
   }
 
+  const handleSelectProduct = (p) => {
+    setShowSuggestions(false)
+    setRecherche('')
+    navigate('/client/market/' + p.vendeur?.marche?.id_marche)
+  }
+
+  const handleSelectVendor = (v) => {
+    setShowSuggestions(false)
+    setRecherche('')
+    navigate('/client/catalogue/' + v.id_user)
+  }
+
+  const handleSelectAction = (action) => {
+    setShowSuggestions(false)
+    setRecherche('')
+    navigate(action.path)
+  }
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
-      if (marketsFiltered.length > 0) {
+      if (hasSuggestions) {
+        // Prioritize: market > product > vendor > action
+        if (unifiedSuggestions.markets.length > 0) {
+          handleSelectMarket(unifiedSuggestions.markets[0])
+        } else if (unifiedSuggestions.products.length > 0) {
+          handleSelectProduct(unifiedSuggestions.products[0])
+        } else if (unifiedSuggestions.vendors.length > 0) {
+          handleSelectVendor(unifiedSuggestions.vendors[0])
+        } else if (unifiedSuggestions.actions.length > 0) {
+          handleSelectAction(unifiedSuggestions.actions[0])
+        }
+      } else if (marketsFiltered.length > 0) {
         handleSelectMarket(marketsFiltered[0])
       }
       setShowSuggestions(false)
     }
+  }
+
+  // Group label helper
+  const getGroupLabel = (type) => {
+    const labels = { markets: 'Marchés', products: 'Produits', vendors: 'Vendeurs', actions: 'Actions rapides' }
+    return labels[type] || type
+  }
+
+  const getGroupIcon = (type) => {
+    const icons = { markets: Store, products: Package, vendors: User, actions: ArrowRight }
+    return icons[type] || Search
   }
 
   if (loading) {
@@ -289,7 +332,7 @@ export default function AccueilClient() {
             <span className="text-gray-300"><Search size={16} /></span>
             <input
               type="text"
-              placeholder="Rechercher un marché (Dantokpa, Ganhi...)..."
+              placeholder="Rechercher marchés, produits, vendeurs..."
               value={recherche}
               onFocus={() => setShowSuggestions(true)}
               onKeyDown={handleKeyDown}
@@ -313,28 +356,132 @@ export default function AccueilClient() {
             )}
           </div>
 
-          {/* Autocomplete Dropdown */}
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-xl border overflow-hidden z-50"
+          {/* Unified Autocomplete Dropdown */}
+          {showSuggestions && hasSuggestions && (
+            <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-xl border overflow-hidden z-50 max-h-[70vh] overflow-y-auto"
               style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-              {suggestions.map((m) => (
-                <div
-                  key={m.id_marche}
-                  onClick={() => handleSelectMarket(m)}
-                  className="px-4 py-3 cursor-pointer flex items-center justify-between border-b last:border-b-0"
-                  style={{
-                    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                    borderColor: 'var(--border-light)',
-                    color: 'var(--text-primary)',
-                  }}
-                >
-                  <div>
-                    <p className="font-bold text-xs">{m.nom}</p>
-                    <p className="text-[10px] truncate max-w-xs" style={{ color: 'var(--text-muted)' }}>{m.description}</p>
+              
+              {/* Markets Section */}
+              {unifiedSuggestions.markets.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5"
+                    style={{ color: 'var(--text-muted)', background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}>
+                    <Store size={10} /> {getGroupLabel('markets')}
                   </div>
-                  <span className="text-xs"><Store size={14} /></span>
+                  {unifiedSuggestions.markets.map((m) => (
+                    <div
+                      key={`market-${m.id_marche}`}
+                      onClick={() => handleSelectMarket(m)}
+                      className="px-4 py-2.5 cursor-pointer flex items-center gap-3 border-b last:border-b-0 hover:bg-emerald-500/10 transition-colors"
+                      style={{ borderColor: 'var(--border-light)' }}
+                    >
+                      <img src={m.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=60&q=80'} 
+                        alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-xs truncate" style={{ color: 'var(--text-primary)' }}>{m.nom}</p>
+                        <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{m.description}</p>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full" 
+                        style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#D1FAE5', color: '#1D9E75' }}>
+                        {m._count?.vendeurs || 0} vendeurs
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
+              {/* Products Section */}
+              {unifiedSuggestions.products.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5"
+                    style={{ color: 'var(--text-muted)', background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}>
+                    <Package size={10} /> {getGroupLabel('products')}
+                  </div>
+                  {unifiedSuggestions.products.map((p) => (
+                    <div
+                      key={`product-${p.id_produit}`}
+                      onClick={() => handleSelectProduct(p)}
+                      className="px-4 py-2.5 cursor-pointer flex items-center gap-3 border-b last:border-b-0 hover:bg-emerald-500/10 transition-colors"
+                      style={{ borderColor: 'var(--border-light)' }}
+                    >
+                      <img src={p.photo_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=60&q=80'} 
+                        alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-xs truncate" style={{ color: 'var(--text-primary)' }}>{p.nom}</p>
+                        <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
+                          {p.vendeur?.nom_etablissement || 'Vendeur'} • {p.prix_reference?.toLocaleString()} F
+                        </p>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                        style={{ background: isDark ? 'rgba(245,158,11,0.15)' : '#FEF3C7', color: '#D97706' }}>
+                        Produit
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Vendors Section */}
+              {unifiedSuggestions.vendors.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5"
+                    style={{ color: 'var(--text-muted)', background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}>
+                    <User size={10} /> {getGroupLabel('vendors')}
+                  </div>
+                  {unifiedSuggestions.vendors.map((v) => (
+                    <div
+                      key={`vendor-${v.id_user}`}
+                      onClick={() => handleSelectVendor(v)}
+                      className="px-4 py-2.5 cursor-pointer flex items-center gap-3 border-b last:border-b-0 hover:bg-emerald-500/10 transition-colors"
+                      style={{ borderColor: 'var(--border-light)' }}
+                    >
+                      <img src={v.utilisateur?.photo_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=60&q=80'} 
+                        alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-xs truncate" style={{ color: 'var(--text-primary)' }}>{v.nom_etablissement}</p>
+                        <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
+                          {v.utilisateur?.prenom} {v.utilisateur?.nom} • {v.marche?.nom}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-0.5 text-[10px]">
+                        <Star size={10} className="text-amber-400 fill-amber-400" />
+                        <span style={{ color: 'var(--text-muted)' }}>{v.score_reputation}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Quick Actions Section */}
+              {unifiedSuggestions.actions.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5"
+                    style={{ color: 'var(--text-muted)', background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}>
+                    <ArrowRight size={10} /> {getGroupLabel('actions')}
+                  </div>
+                  {unifiedSuggestions.actions.map((a) => {
+                    const Icon = a.icon
+                    return (
+                      <div
+                        key={`action-${a.id}`}
+                        onClick={() => handleSelectAction(a)}
+                        className="px-4 py-2.5 cursor-pointer flex items-center gap-3 border-b last:border-b-0 hover:bg-emerald-500/10 transition-colors"
+                        style={{ borderColor: 'var(--border-light)' }}
+                      >
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#D1FAE5' }}>
+                          <Icon size={16} style={{ color: '#1D9E75' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-xs" style={{ color: 'var(--text-primary)' }}>{a.label}</p>
+                          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Accès rapide</p>
+                        </div>
+                        <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
