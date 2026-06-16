@@ -87,10 +87,6 @@ export default defineConfig({
       }
     })
   ],
-  esbuild: {
-    drop: ['debugger'],
-    pure: ['console.log', 'console.debug', 'console.info'],
-  },
   server: {
     proxy: {
       '/api': {
