@@ -74,6 +74,7 @@ export default function CommandesLivreur() {
   const photoUrls = proofPhotos.map(f => URL.createObjectURL(f))
 
   function removeProofPhoto(idx) {
+    URL.revokeObjectURL(photoUrls[idx])
     setProofPhotos(prev => prev.filter((_, i) => i !== idx))
   }
 
@@ -365,7 +366,7 @@ export default function CommandesLivreur() {
               {/* Manual code entry */}
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Lock size={12} className="inline align-middle" /> Ou saisir le code du client manuellement</div>
-                <input type="text" value={codeVerification} onChange={e => { setCodeVerification(e.target.value); setScanResult(null) }}
+                <input type="text" value={codeVerification} onChange={e => { setCodeVerification(e.target.value.toUpperCase()); setScanResult(null) }}
                   placeholder="Code de vérification du client"
                   className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"
                   style={{ background: 'var(--surface)', border: '2px solid var(--border)', color: 'var(--text-primary)' }} />
@@ -443,7 +444,7 @@ export default function CommandesLivreur() {
               {/* Manual code entry */}
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Lock size={12} className="inline align-middle" /> Ou saisir le code du client manuellement</div>
-                <input type="text" value={codeVerification} onChange={e => { setCodeVerification(e.target.value); setScanResult(null) }}
+                <input type="text" value={codeVerification} onChange={e => { setCodeVerification(e.target.value.toUpperCase()); setScanResult(null) }}
                   placeholder="Code de vérification du client"
                   className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"
                   style={{ background: 'var(--surface)', border: '2px solid var(--border)', color: 'var(--text-primary)' }} />

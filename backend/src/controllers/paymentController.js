@@ -268,6 +268,7 @@ export const getPaymentStatus = async (req, res) => {
       montant: transaction.montant,
       mode_paiement: transaction.mode_paiement,
       paid_at: transaction.paid_at,
+      id_commande: transaction.id_commande,
     });
   } catch (error) {
     return res.status(500).json({ error: internalError(error) });

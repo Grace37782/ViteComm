@@ -114,7 +114,7 @@ function formatProduct(p) {
     stock: p.stock_disponible,
     unite: p.unite || 'kg',
     emoji: safeEmoji(p.photo_url),
-    photo_url: (p.photo_url && p.photo_url.startsWith('http')) ? p.photo_url : null,
+    photo_url: p.photo_url || null,
     categorie: p.categorie?.nom_categorie || null,
     id_categorie: p.id_categorie,
     created_at: p.created_at,
@@ -156,7 +156,10 @@ export const createProduct = async (req, res) => {
     if (!resolvedCategoryId) {
       // Fallback to first available category
       const defaultCat = await prisma.categorie.findFirst();
-      resolvedCategoryId = defaultCat?.id_categorie || 1;
+      if (!defaultCat) {
+        return res.status(400).json({ error: 'Aucune catégorie disponible. Créez une catégorie d\'abord (RG30).' });
+      }
+      resolvedCategoryId = defaultCat.id_categorie;
     }
 
     const product = await prisma.$transaction(async (tx) => {
@@ -566,12 +569,14 @@ export const verifyHandover = async (req, res) => {
         include: { produit: true }
       });
       const uniqueVendorIds = [...new Set(orderLines.map((l) => l.produit.id_user_vendeur))];
-      const totalProofs = await tx.preuveCollecte.count({
+      // Count only vendor verification proofs (exclude driver collection proofs by counting unique vendors who verified)
+      const vendorProofs = await tx.preuveCollecte.findMany({
         where: { id_commande: commandId, statut_validation: 'Validee' }
       });
-
-      // Advance command status
-      const newStatut = totalProofs >= uniqueVendorIds.length ? 'En transit' : 'En collecte';
+      // Each verifyHandover call creates one proof; driver collection also creates one
+      // We need vendor proofs only: count = total proofs - 1 (driver's collection proof)
+      const vendorVerifiedCount = Math.max(0, vendorProofs.length - 1);
+      const newStatut = vendorVerifiedCount >= uniqueVendorIds.length ? 'En transit' : 'En collecte';
       await tx.commande.update({
         where: { id_commande: commandId },
         data: { statut: newStatut }

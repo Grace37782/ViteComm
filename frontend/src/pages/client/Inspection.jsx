@@ -62,11 +62,21 @@ export default function Inspection() {
     if (val === 'accepte') setMotifs((p) => { const n = { ...p }; delete n[id]; return n })
   }
 
+  useEffect(() => {
+    return () => { photos.forEach(u => URL.revokeObjectURL(u)) }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   function ajouterPhoto(e) {
     const files = Array.from(e.target.files || [])
     const urls = files.map((f) => URL.createObjectURL(f))
     setPhotos((p) => [...p, ...urls])
     setPhotoFiles((p) => [...p, ...files])
+  }
+
+  function removePhoto(idx) {
+    URL.revokeObjectURL(photos[idx])
+    setPhotos(p => p.filter((_, i) => i !== idx))
+    setPhotoFiles(p => p.filter((_, i) => i !== idx))
   }
 
   const articles = commande?.detailsCommande || []
@@ -249,8 +259,13 @@ export default function Inspection() {
           ) : (
             <div className="grid grid-cols-3 gap-2">
               {photos.map((url, i) => (
-                <div key={i} className="rounded-xl overflow-hidden aspect-square">
+                <div key={i} className="relative rounded-xl overflow-hidden aspect-square">
                   <img src={url} alt={`preuve ${i+1}`} className="w-full h-full object-cover" />
+                  <button onClick={() => removePhoto(i)}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer"
+                    style={{ background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: 10 }}>
+                    ✕
+                  </button>
                 </div>
               ))}
             </div>
