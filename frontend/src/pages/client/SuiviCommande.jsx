@@ -7,9 +7,8 @@ import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCh
 const STATUT_STEPS = [
   { key: 'En attente', icon: Loader2, titre: 'En attente', desc: 'En attente de validation' },
   { key: 'Validee', icon: Package, titre: 'Validée', desc: 'Commande validée par le vendeur' },
-  { key: 'En cours de collecte', icon: Package, titre: 'Collecte', desc: 'Articles en cours de collecte' },
-  { key: 'Collectee', icon: Package, titre: 'Collectée', desc: 'Articles récupérés par le livreur' },
-  { key: 'En cours de livraison', icon: Motorbike, titre: 'En transit', desc: 'En route vers vous' },
+  { key: 'En collecte', icon: Package, titre: 'Collecte', desc: 'Articles en cours de collecte' },
+  { key: 'En transit', icon: Motorbike, titre: 'En transit', desc: 'En route vers vous' },
   { key: 'Inspectee', icon: Search, titre: 'Inspection', desc: 'Inspectez vos articles' },
   { key: 'Livree', icon: PartyPopper, titre: 'Livrée', desc: 'Livraison terminée !' },
 ]
@@ -128,7 +127,7 @@ export default function SuiviCommande() {
             <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
               Communiquez ce code au livreur lors de la collecte (RG06).
             </div>
-            {['En attente', 'Validee', 'En cours de collecte'].includes(statut) && (
+            {['En attente', 'Validee', 'En collecte'].includes(statut) && (
               <button onClick={() => setShowQR(true)}
                 className="mt-3 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5 mx-auto"
                 style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', border: 'none' }}>
