@@ -52,6 +52,40 @@ app.get('/', (req, res) => {
 // Webhook FedaPay (before auth — verified by HMAC signature)
 app.post('/api/webhooks/fedapay', handleWebhook);
 
+// FedaPay may redirect the browser to callback_url via GET instead of return_url
+app.get('/api/webhooks/fedapay', async (req, res) => {
+  try {
+    const { status, id, transaction_id, reference } = req.query;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const ref = transaction_id || reference || '';
+
+    // If we already have our transaction_id, redirect directly
+    if (ref) {
+      const statusParam = status === 'approved' ? 'success' : (status === 'declined' || status === 'canceled') ? 'failed' : 'pending';
+      return res.redirect(`${frontendUrl}/client/paiement?status=${statusParam}&ref=${ref}`);
+    }
+
+    // Otherwise look up by FedaPay transaction ID to find our reference
+    if (id) {
+      const prisma = (await import('./config/db.js')).default;
+      const txn = await prisma.paiementTransaction.findFirst({
+        where: { fedapay_transaction_id: String(id) },
+      });
+      if (txn) {
+        const statusParam = status === 'approved' ? 'success' : (status === 'declined' || status === 'canceled') ? 'failed' : 'pending';
+        return res.redirect(`${frontendUrl}/client/paiement?status=${statusParam}&ref=${txn.transaction_id}&id_commande=${txn.id_commande}`);
+      }
+    }
+
+    // Fallback: redirect to orders page
+    res.redirect(`${frontendUrl}/client/mes-commandes`);
+  } catch (err) {
+    console.error('[Webhook GET redirect error]', err);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/client/mes-commandes`);
+  }
+});
+
 // Register routes
 app.use('/api/auth', authRoutes);
 app.use('/api/client', clientRoutes);

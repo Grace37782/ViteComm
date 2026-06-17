@@ -80,7 +80,7 @@ router.post('/categories', createCategory);
 // Commandes
 router.get('/orders', getVendorOrders);
 router.post('/orders/:id_commande/validate', validateOrder);
-router.post('/orders/:id_commande/verify-handover', upload.single('photo'), verifyHandover);
+router.post('/orders/:id_commande/verify-handover', verifyHandover);
 router.get('/orders/:id_commande/qrcode', getOrderQRCode);
 
 // Retours

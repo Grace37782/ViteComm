@@ -177,7 +177,7 @@ export default function MarcheDetail() {
   }
 
   return (
-    <div className="w-full min-h-screen flex flex-col pb-20 mx-auto max-w-7xl" style={{ background: 'var(--bg)' }}>
+    <div className="w-full min-h-screen flex flex-col pb-20" style={{ background: 'var(--bg)' }}>
       <style>{`#marche-search::placeholder { color: var(--text-muted); opacity: 0.7; }`}</style>
 
       {/* Top Banner */}

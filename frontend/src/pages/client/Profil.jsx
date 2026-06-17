@@ -116,7 +116,7 @@ export default function Profil() {
   }
 
   return (
-    <div className="font-sans mx-auto max-w-3xl" style={{ background: 'var(--bg)' }}>
+    <div className="w-full font-sans" style={{ background: 'var(--bg)' }}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"
@@ -127,7 +127,7 @@ export default function Profil() {
 
       {/* Sub-tabs */}
       <div className="px-4 pt-4 pb-2">
-        <div className="flex gap-1 overflow-x-auto scrollbar-none" style={{ maxWidth: '48rem', margin: '0 auto' }}>
+        <div className="flex gap-1 overflow-x-auto scrollbar-none px-4">
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
@@ -144,7 +144,7 @@ export default function Profil() {
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-4 pb-24">
+      <div className="w-full px-4 pb-24">
         {tab === 'infos' && (
           <>
             {!editing ? (

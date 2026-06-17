@@ -121,7 +121,8 @@ export default function Historique() {
                 </div>
                 <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                   <div className="font-semibold">Montant</div>
-                  <div>{(cmd?.frais_livraison || 1500).toLocaleString()} F</div>
+                  <div className="font-black" style={{ color: 'var(--text-primary)' }}>{((cmd?.total_marchandises || 0) + (cmd?.frais_livraison || 0)).toLocaleString()} F</div>
+                  <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{cmd?.detailsCommande?.reduce((sum, d) => sum + (d.quantite_commandee || 0), 0) || 0} article(s)</div>
                 </div>
               </div>
               {d.frais_retour_calcules > 0 && (

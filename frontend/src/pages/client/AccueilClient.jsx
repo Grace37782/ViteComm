@@ -149,16 +149,16 @@ export default function AccueilClient() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [marketsRes, productsRes, vendorsRes, driversRes] = await Promise.all([
+        const [marketsResult, productsResult, vendorsResult, driversResult] = await Promise.allSettled([
           api.get('/client/markets'),
           api.get('/client/products'),
           api.get('/client/vendors'),
           api.get('/client/drivers'),
         ])
-        setMarkets(marketsRes)
-        setProducts(productsRes)
-        setVendors(vendorsRes)
-        setDrivers(driversRes)
+        if (marketsResult.status === 'fulfilled') setMarkets(marketsResult.value)
+        if (productsResult.status === 'fulfilled') setProducts(productsResult.value)
+        if (vendorsResult.status === 'fulfilled') setVendors(vendorsResult.value)
+        if (driversResult.status === 'fulfilled') setDrivers(driversResult.value)
       } catch (err) {
         console.error(err)
       } finally {
@@ -343,7 +343,7 @@ export default function AccueilClient() {
   }
 
   return (
-      <div className="w-full font-sans flex flex-col pb-6 mx-auto max-w-7xl" style={{ background: 'var(--bg)' }}>
+      <div className="w-full font-sans flex flex-col pb-6" style={{ background: 'var(--bg)' }}>
       {/* Header Panel - Search */}
       <div className="bg-emerald-800 text-white px-4 pt-3 pb-3 shadow-md flex-shrink-0">
         {/* Search wrapper */}

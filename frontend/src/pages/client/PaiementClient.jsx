@@ -30,6 +30,10 @@ export default function PaiementClient() {
   const [toast, setToast] = useState('')
   const intervalRef = useRef(null)
 
+  const isCompleted = paymentStatus === 'completed'
+  const isFailed = paymentStatus === 'failed' || paymentStatus === 'cancelled'
+  const isPending = paymentStatus === 'pending' || loading
+
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(''), 3000) }
 
   useEffect(() => {
@@ -193,12 +197,8 @@ export default function PaiementClient() {
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
-  const isCompleted = paymentStatus === 'completed'
-  const isFailed = paymentStatus === 'failed' || paymentStatus === 'cancelled'
-  const isPending = paymentStatus === 'pending' || loading
-
   return (
-    <div className="w-full min-h-screen font-sans mx-auto max-w-3xl" style={{ background: 'var(--bg)' }}>
+    <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)' }}>
 
       {toast && (
         <div className="fixed top-4 left-4 right-4 z-50 rounded-2xl px-5 py-3.5 text-sm font-bold text-center max-w-md mx-auto"

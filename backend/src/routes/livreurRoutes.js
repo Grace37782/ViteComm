@@ -28,7 +28,7 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireRole(['livreur']));
 
-// Configure multer for proof photos
+// Configure multer for profile photo
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
   filename: (req, file, cb) => {
@@ -36,16 +36,6 @@ const storage = multer.diskStorage({
     cb(null, unique + path.extname(file.originalname));
   }
 });
-const uploadProof = multer({
-  storage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) cb(null, true);
-    else cb(new Error('Seules les images et vidéos sont acceptées.'));
-  },
-  limits: { fileSize: 10 * 1024 * 1024 }
-});
-
-// Configure multer for profile photo
 const uploadPhoto = multer({
   storage,
   fileFilter: (req, file, cb) => {
@@ -73,7 +63,7 @@ router.post('/deliveries/:id_commande/accept', acceptDelivery);
 // ── Flux de livraison ──
 router.get('/deliveries', getMyDeliveries);
 router.get('/historique', getLivreurHistorique);
-router.post('/deliveries/:id_commande/collect', uploadProof.array('photos', 5), collectDelivery);
+router.post('/deliveries/:id_commande/collect', collectDelivery);
 router.post('/deliveries/:id_commande/depart', departDelivery);
 router.post('/deliveries/:id_commande/finalize', finalizeDelivery);
 
