@@ -139,15 +139,20 @@ export const handleWebhook = async (req, res) => {
 
         const facture = paiementTransaction.commande.factures[0];
         if (facture) {
-          await tx.paiement.create({
-            data: {
-              montant_percu: paiementTransaction.montant,
-              mode_reglement: 'MOBILE_MONEY',
-              reference_transaction: paiementTransaction.transaction_id,
-              statut: 'Effectue',
-              id_facture: facture.id_facture,
-            },
+          const existingPaiement = await tx.paiement.findFirst({
+            where: { id_facture: facture.id_facture, reference_transaction: paiementTransaction.transaction_id },
           });
+          if (!existingPaiement) {
+            await tx.paiement.create({
+              data: {
+                montant_percu: paiementTransaction.montant,
+                mode_reglement: 'MOBILE_MONEY',
+                reference_transaction: paiementTransaction.transaction_id,
+                statut: 'Effectue',
+                id_facture: facture.id_facture,
+              },
+            });
+          }
           await tx.facture.update({
             where: { id_facture: facture.id_facture },
             data: { statut_paiement: 'Paye' },
@@ -246,15 +251,20 @@ export const getPaymentStatus = async (req, res) => {
           });
           const facture = cmd?.factures[0];
           if (facture) {
-            await tx.paiement.create({
-              data: {
-                montant_percu: transaction.montant,
-                mode_reglement: 'MOBILE_MONEY',
-                reference_transaction: transaction.transaction_id,
-                statut: 'Effectue',
-                id_facture: facture.id_facture,
-              },
+            const existingPaiement = await tx.paiement.findFirst({
+              where: { id_facture: facture.id_facture, reference_transaction: transaction.transaction_id },
             });
+            if (!existingPaiement) {
+              await tx.paiement.create({
+                data: {
+                  montant_percu: transaction.montant,
+                  mode_reglement: 'MOBILE_MONEY',
+                  reference_transaction: transaction.transaction_id,
+                  statut: 'Effectue',
+                  id_facture: facture.id_facture,
+                },
+              });
+            }
             await tx.facture.update({ where: { id_facture: facture.id_facture }, data: { statut_paiement: 'Paye' } });
           } else if (cmd) {
             const newFacture = await tx.facture.create({
@@ -314,10 +324,10 @@ export const handleCallback = async (req, res) => {
     });
 
     if (transaction?.statut === 'completed') {
-      return res.redirect(`/client/paiement?ref=${reference}&status=success`);
+      return res.redirect(`/client/paiement?ref=${reference}&status=success&id_commande=${transaction.id_commande}`);
     }
 
-    return res.redirect(`/client/paiement?ref=${reference}&status=pending`);
+    return res.redirect(`/client/paiement?ref=${reference}&status=pending&id_commande=${transaction.id_commande}`);
   } catch {
     return res.redirect('/client/panier');
   }

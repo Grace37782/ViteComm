@@ -611,9 +611,13 @@ export const createSignalement = async (req, res) => {
 
 export const inspectionOrder = async (req, res) => {
   const { id_commande } = req.params;
-  // statuts/motifs come as JSON strings from FormData
-  const statuts = typeof req.body.statuts === 'string' ? JSON.parse(req.body.statuts) : req.body.statuts;
-  const motifs = typeof req.body.motifs === 'string' ? JSON.parse(req.body.motifs) : req.body.motifs;
+  let statuts, motifs;
+  try {
+    statuts = typeof req.body.statuts === 'string' ? JSON.parse(req.body.statuts) : req.body.statuts;
+    motifs = typeof req.body.motifs === 'string' ? JSON.parse(req.body.motifs) : req.body.motifs;
+  } catch {
+    return res.status(400).json({ error: 'Format JSON invalide pour statuts/motifs.' });
+  }
   // statuts: { [id_produit]: 'accepte' | 'rejete' }
   // motifs:  { [id_produit]: string } (required for rejected items)
 
@@ -731,17 +735,23 @@ export const inspectionOrder = async (req, res) => {
       const commission = parseFloat((totalMarchandises * 0.006).toFixed(2));
       const montantTotalDu = totalMarchandises + fraisLivraison + fraisRetour;
 
-      await tx.facture.create({
-        data: {
-          montant_marchandises: totalMarchandises,
-          montant_frais_livraison: fraisLivraison,
-          montant_frais_retour: fraisRetour,
-          montant_commission: commission,
-          montant_total_du: montantTotalDu,
-          statut_paiement: 'En attente',
-          id_commande: commande.id_commande,
-        }
+      const existingFacture = await tx.facture.findFirst({
+        where: { id_commande: commande.id_commande }
       });
+
+      if (!existingFacture) {
+        await tx.facture.create({
+          data: {
+            montant_marchandises: totalMarchandises,
+            montant_frais_livraison: fraisLivraison,
+            montant_frais_retour: fraisRetour,
+            montant_commission: commission,
+            montant_total_du: montantTotalDu,
+            statut_paiement: 'En attente',
+            id_commande: commande.id_commande,
+          }
+        });
+      }
 
       return { fraisRetour, totalFinal: montantTotalDu };
     });
@@ -890,12 +900,14 @@ export const getOrderFacture = async (req, res) => {
       commande: {
         id_commande: order.id_commande,
         date_creation: order.date_creation,
-        articles: order.detailsCommande.map(d => ({
-          nom: d.produit?.nom,
-          quantite: d.quantite_commandee,
-          prix_unitaire: d.prix_vente_applique,
-          sous_total: (d.quantite_commandee || 0) * (d.prix_vente_applique || 0),
-        })),
+        articles: order.detailsCommande
+          .filter(d => d.statut_acceptation !== 'Rejete')
+          .map(d => ({
+            nom: d.produit?.nom,
+            quantite: d.quantite_commandee,
+            prix_unitaire: d.prix_vente_applique,
+            sous_total: (d.quantite_commandee || 0) * (d.prix_vente_applique || 0),
+          })),
       }
     });
   } catch (error) {

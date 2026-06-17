@@ -17,8 +17,9 @@ export default function PaiementClient() {
   const stateTotal = location.state?.total
   const ref = searchParams.get('ref')
   const statusParam = searchParams.get('status')
+  const paramIdCommande = searchParams.get('id_commande')
 
-  const [idCommande] = useState(stateOrderId || null)
+  const [idCommande] = useState(stateOrderId || (paramIdCommande ? parseInt(paramIdCommande, 10) : null))
   // eslint-disable-next-line no-unused-vars
   const [total, setTotal] = useState(stateTotal || 0)
   const [telephone, setTelephone] = useState('')

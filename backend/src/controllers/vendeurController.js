@@ -731,7 +731,7 @@ export const getVendorRecentOrders = async (req, res) => {
       const nbArticles = o.detailsCommande.reduce((s, d) => s + d.quantite_commandee, 0);
 
       let statut = 'en_attente';
-      if (o.statut === 'Livrée') statut = 'livre';
+      if (o.statut === 'Livree') statut = 'livre';
       else if (o.statut === 'En transit' || o.statut === 'En collecte') statut = 'collecte';
 
       return {

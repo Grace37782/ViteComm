@@ -80,7 +80,8 @@ export async function initiatePayment(transaction) {
     throw new Error('Aucune URL de paiement reçue de FedaPay');
   }
 
-  return { checkout_url: checkoutUrl, fedapay_id: String(txData?.id || data?.data?.id || data?.transaction?.id) };
+  const fedapayId = txData?.id || data?.data?.id || data?.transaction?.id;
+  return { checkout_url: checkoutUrl, fedapay_id: fedapayId ? String(fedapayId) : null };
 }
 
 export function verifyWebhookSignature(payload, signatureHeader) {
