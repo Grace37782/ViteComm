@@ -449,7 +449,6 @@ export const getVendorOrders = async (req, res) => {
         validee_par_vendeur: o.validee_par_vendeur,
         livreur,
         photo_collecte,
-        code_correct: o.code_verification,
         articles
       };
     });
@@ -585,7 +584,6 @@ export const verifyHandover = async (req, res) => {
 
     return res.json({
       message: 'Remise des articles validée et enregistrée avec succès.',
-      code_correct: command.code_verification,
       statut_collecte: 'collecte'
     });
   } catch (error) {

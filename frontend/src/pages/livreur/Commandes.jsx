@@ -71,10 +71,14 @@ export default function CommandesLivreur() {
     setProofPhotos(prev => [...prev, ...files])
   }
 
-  const photoUrls = proofPhotos.map(f => URL.createObjectURL(f))
+  const [photoUrls, setPhotoUrls] = useState([])
+  useEffect(() => {
+    const urls = proofPhotos.map(f => URL.createObjectURL(f))
+    setPhotoUrls(urls)
+    return () => urls.forEach(u => URL.revokeObjectURL(u))
+  }, [proofPhotos])
 
   function removeProofPhoto(idx) {
-    URL.revokeObjectURL(photoUrls[idx])
     setProofPhotos(prev => prev.filter((_, i) => i !== idx))
   }
 
@@ -134,6 +138,7 @@ export default function CommandesLivreur() {
       'En cours de collecte': { bg: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5' },
       'Collectee': { bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
       'En cours de livraison': { bg: isDark ? 'rgba(216,90,48,0.15)' : '#FAECE7', color: isDark ? '#E87D55' : '#993C1D' },
+      'Inspectee': { bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
       'Livree': { bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
       'Echec': { bg: isDark ? 'rgba(239,68,68,0.15)' : '#FEE2E2', color: isDark ? '#F87171' : '#B91C1C' },
     }

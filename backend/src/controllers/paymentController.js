@@ -39,9 +39,11 @@ export const createPayment = async (req, res) => {
     }
 
     const facture = commande.factures[0];
-    const montant = facture
-      ? facture.montant_total_du
-      : commande.total_marchandises + commande.frais_livraison;
+    if (!facture) {
+      return res.status(400).json({ error: 'Aucune facture disponible. Veuillez d\'abord inspecter votre commande.' });
+    }
+
+    const montant = facture.montant_total_du;
     const transaction_id = generateTransactionId();
 
     const transaction = await prisma.paiementTransaction.create({

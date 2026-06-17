@@ -22,6 +22,7 @@ export default function PaiementClient() {
   const [idCommande] = useState(stateOrderId || (paramIdCommande ? parseInt(paramIdCommande, 10) : null))
   const [total, setTotal] = useState(stateTotal || 0)
   const [telephone, setTelephone] = useState('')
+  const [modePaiement, setModePaiement] = useState('momo')
   const [initiating, setInitiating] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState(statusParam || null)
   const [loading, setLoading] = useState(!!ref)
@@ -79,6 +80,17 @@ export default function PaiementClient() {
     }
   }, [idCommande, ref, statusParam, navigate])
 
+  // Fetch total from facture when total is 0 (lost on redirect after FedaPay)
+  useEffect(() => {
+    if (!total && idCommande && !isCompleted && !isFailed) {
+      api.get(`/client/orders/${idCommande}/facture`)
+        .then(data => {
+          if (data?.facture?.montant_total_du) setTotal(data.facture.montant_total_du)
+        })
+        .catch(() => {})
+    }
+  }, [idCommande, total, isCompleted, isFailed])
+
   // Fetch facture when payment is completed
   useEffect(() => {
     if (paymentStatus === 'completed' && idCommande) {
@@ -107,7 +119,7 @@ export default function PaiementClient() {
     try {
       const res = await api.post('/client/payment/initiate', {
         id_commande: idCommande,
-        mode_paiement: 'momo',
+        mode_paiement: modePaiement,
         telephone: telephone.trim(),
       }, { timeout: 60000 })
       window.location.href = res.checkout_url
@@ -239,6 +251,27 @@ export default function PaiementClient() {
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                   style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)' }}
                 />
+              </div>
+
+              <div className="mb-4">
+                <label className="text-xs font-bold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>Mode de paiement</label>
+                <div className="flex gap-2">
+                  {[
+                    { id: 'momo', label: 'MTN MoMo' },
+                    { id: 'moov', label: 'Moov Pay' },
+                    { id: 'celtis', label: 'Celtis Cash' },
+                  ].map(m => (
+                    <button key={m.id} onClick={() => setModePaiement(m.id)}
+                      className="flex-1 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all active:scale-95"
+                      style={{
+                        background: modePaiement === m.id ? '#1D9E75' : 'var(--surface-alt)',
+                        color: modePaiement === m.id ? '#fff' : 'var(--text-secondary)',
+                        border: `1.5px solid ${modePaiement === m.id ? '#1D9E75' : 'var(--border)'}`,
+                      }}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="flex flex-col gap-2" style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
