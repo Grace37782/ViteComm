@@ -359,7 +359,7 @@ export default function PaiementClient() {
               </div>
             )}
 
-            {!facture && isCompleted && (
+            {!facture && isCompleted && idCommande && (
               <div className="rounded-2xl p-4 mb-4 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                 <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Facture en cours de chargement…</p>
                 <button onClick={() => {

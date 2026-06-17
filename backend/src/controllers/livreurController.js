@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { errorMessage, internalError } from '../utils/errors.js';
+import { verifyVendorQRToken } from '../utils/vendorQR.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -218,7 +219,7 @@ export const acceptDelivery = async (req, res) => {
 // 4.3. COLLECTE AVEC PREUVE PHOTO (RG06, RG07)
 // ═══════════════════════════════════════════════════════════
 
-// Livreur validates vendor code + uploads collection proof photos
+// Livreur validates vendor code + uploads collection proof photos (RG06)
 export const collectDelivery = async (req, res) => {
   const { id_commande } = req.params;
   const { code_verification } = req.body;
@@ -249,8 +250,12 @@ export const collectDelivery = async (req, res) => {
       return res.status(400).json({ error: 'Le vendeur n\'a pas encore validé la disponibilité des articles.' });
     }
 
-    // Verify the code matches the order's code_verification (RG06)
-    if (command.code_verification !== code_verification) {
+    // Verify the code: supports signed QR token from vendor OR plain text manual entry (RG06)
+    const verified = verifyVendorQRToken(code_verification);
+    if (!verified) {
+      return res.status(400).json({ error: 'Code de vérification invalide.' });
+    }
+    if (verified.clientCode !== command.code_verification) {
       return res.status(400).json({ error: 'Code de vérification invalide.' });
     }
 

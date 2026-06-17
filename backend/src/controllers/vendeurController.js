@@ -1,6 +1,7 @@
 import prisma from '../config/db.js';
 import { errorMessage, internalError } from '../utils/errors.js';
 import QRCode from 'qrcode';
+import { generateVendorQRToken } from '../utils/vendorQR.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -587,7 +588,8 @@ export const verifyHandover = async (req, res) => {
   }
 };
 
-// Vendor generates QR code for driver to scan at collection (RG06)
+// Vendor generates a signed QR code for driver to scan at collection (RG06)
+// Like JWT: vendor signs the client's code with order context
 export const getOrderQRCode = async (req, res) => {
   const { id_commande } = req.params;
   const vendorId = req.user.id_user;
@@ -605,11 +607,14 @@ export const getOrderQRCode = async (req, res) => {
       return res.status(403).json({ error: 'Cette commande ne contient aucun de vos produits.' });
     }
 
-    const qrDataUrl = await QRCode.toDataURL(order.code_verification, {
+    // Generate signed QR token (like JWT) based on client's verification code
+    const signedToken = generateVendorQRToken(commandId, order.code_verification);
+
+    const qrDataUrl = await QRCode.toDataURL(signedToken, {
       width: 300, margin: 2,
       color: { dark: '#000000', light: '#ffffff' }
     });
-    return res.json({ qrcode: qrDataUrl, code: order.code_verification });
+    return res.json({ qrcode: qrDataUrl, code: order.code_verification, signed: true });
   } catch (error) {
     return res.status(500).json({ error: internalError(error) });
   }
