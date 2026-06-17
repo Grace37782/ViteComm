@@ -225,7 +225,7 @@ export const collectDelivery = async (req, res) => {
   const driverId = req.user.id_user;
 
   if (!code_verification) {
-    return res.status(400).json({ error: 'Le code de vérification du vendeur est obligatoire (RG06).' });
+    return res.status(400).json({ error: 'Le code de vérification du client est obligatoire (RG06).' });
   }
 
   try {

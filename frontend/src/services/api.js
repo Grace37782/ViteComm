@@ -10,12 +10,20 @@ async function request(endpoint, options = {}) {
   const headers = isFormData ? { ...options.headers } : { 'Content-Type': 'application/json', ...options.headers }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), options.timeout || 30000)
+
   let res
   try {
-    res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers })
-  } catch {
-    throw new Error('NETWORK_ERROR')
+    res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers, signal: controller.signal })
+  } catch (err) {
+    clearTimeout(timeout)
+    if (err.name === 'AbortError') {
+      throw new Error('Le serveur met trop de temps à répondre — réessayez', { cause: err })
+    }
+    throw new Error('Impossible de contacter le serveur — vérifiez votre connexion', { cause: err })
   }
+  clearTimeout(timeout)
 
   if (!res.ok) {
     if (res.status === 401 && token) {
