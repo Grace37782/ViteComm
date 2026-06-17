@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { XCircle, CheckCircle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, X, ChevronDown, QrCode, Camera } from 'lucide-react'
+import { XCircle, CheckCircle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, ChevronDown, QrCode } from 'lucide-react'
 import { Html5QrcodeScanner } from 'html5-qrcode'
 
 /* eslint-disable react-hooks/set-state-in-effect */
@@ -21,10 +21,12 @@ export default function CommandesLivreur() {
   const [submitting, setSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState('actives')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
-  const [proofPhotos, setProofPhotos] = useState([])
   const [scanResult, setScanResult] = useState(null)
+  const [acceptModal, setAcceptModal] = useState(null)
+  const [acceptCode, setAcceptCode] = useState('')
+  const [acceptScanResult, setAcceptScanResult] = useState(null)
+  const [finalizeScanResult, setFinalizeScanResult] = useState(null)
   const scannerRef = useRef(null)
-  const fileRef = useRef(null)
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
@@ -41,18 +43,25 @@ export default function CommandesLivreur() {
   useEffect(() => { loadDataFn() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function accepterCourse(id_commande) {
+    if (!acceptScanResult && !acceptCode.trim()) return showToast('Scannez le QR du client ou entrez le code')
     try {
-      await api.post(`/livreur/deliveries/${id_commande}/accept`)
+      setSubmitting(true)
+      const payload = acceptScanResult
+        ? { scanned_qr_data: acceptScanResult }
+        : { code_verification: acceptCode.trim().toUpperCase() }
+      await api.post(`/livreur/deliveries/${id_commande}/accept`, payload)
       showToast('Course acceptée !')
+      setAcceptModal(null); setAcceptCode(''); setAcceptScanResult(null)
       loadDataFn()
     } catch (e) { showToast(e.message) }
+    finally { setSubmitting(false) }
   }
 
   function openCollect(delivery) {
     setCollectOpen(delivery)
     setCodeVerification('')
-    setProofPhotos([])
     setScanResult(null)
+    setFinalizeScanResult(null)
   }
 
   const cleanupScanner = useCallback(() => {
@@ -66,35 +75,16 @@ export default function CommandesLivreur() {
     return () => cleanupScanner()
   }, [cleanupScanner])
 
-  function handleProofPhotos(e) {
-    const files = Array.from(e.target.files || [])
-    setProofPhotos(prev => [...prev, ...files])
-  }
-
-  const [photoUrls, setPhotoUrls] = useState([])
-  useEffect(() => {
-    const urls = proofPhotos.map(f => URL.createObjectURL(f))
-    setPhotoUrls(urls)
-    return () => urls.forEach(u => URL.revokeObjectURL(u))
-  }, [proofPhotos])
-
-  function removeProofPhoto(idx) {
-    setProofPhotos(prev => prev.filter((_, i) => i !== idx))
-  }
-
   async function submitCollection() {
-    if (!codeVerification.trim()) return showToast('Entrez le code de vérification du client')
+    if (!scanResult) return showToast('Scannez le QR code du vendeur')
     if (!collectOpen) return
     setSubmitting(true)
     try {
-      const fd = new FormData()
-      fd.append('code_verification', codeVerification)
-      for (const file of proofPhotos) {
-        fd.append('photos', file)
-      }
-      await api.post(`/livreur/deliveries/${collectOpen.commande.id_commande}/collect`, fd)
-      showToast('Collecte confirmée avec preuve !')
-      setCollectOpen(null); setCodeVerification(''); setProofPhotos([]); setScanResult(null)
+      await api.post(`/livreur/deliveries/${collectOpen.commande.id_commande}/collect`, {
+        scanned_qr_data: scanResult
+      })
+      showToast('Collecte confirmée !')
+      setCollectOpen(null); setScanResult(null)
       cleanupScanner()
       loadDataFn()
     } catch (e) { showToast(e.message) }
@@ -109,16 +99,17 @@ export default function CommandesLivreur() {
     } catch (e) { showToast(e.message) }
   }
 
-  function openFinalize(delivery) { setFinalizeOpen(delivery); setCodeVerification(''); setScanResult(null) }
+  function openFinalize(delivery) { setFinalizeOpen(delivery); setCodeVerification(''); setFinalizeScanResult(null) }
 
   async function handleFinalize() {
-    if (!codeVerification.trim()) return showToast('Entrez le code de vérification')
+    if (!finalizeScanResult && !codeVerification.trim()) return showToast('Scannez le QR du client ou entrez le code')
     if (!finalizeOpen) return
     setSubmitting(true)
     try {
-      await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/finalize`, {
-        code_verification: codeVerification,
-      })
+      const payload = finalizeScanResult
+        ? { scanned_qr_data: finalizeScanResult }
+        : { code_verification: codeVerification }
+      await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/finalize`, payload)
       showToast('Livraison finalisée !')
       setFinalizeOpen(null); loadDataFn()
     } catch (e) { showToast(e.message) }
@@ -147,7 +138,7 @@ export default function CommandesLivreur() {
 
   function nextAction(d) {
     const s = d.statut_livraison
-    if (s === 'En cours de collecte') return { label: <><Package size={14} className="inline align-middle" /> Confirmer la collecte</>, fn: () => openCollect(d) }
+    if (s === 'En cours de collecte') return { label: <><Package size={14} className="inline align-middle" /> Scanner le QR du vendeur</>, fn: () => openCollect(d) }
     if (s === 'Collectee') return { label: <><Truck size={14} className="inline align-middle" /> Partir en livraison</>, fn: () => marquerEnRoute(d.commande.id_commande) }
     if (s === 'En cours de livraison') return { label: <><CheckCircle size={14} className="inline align-middle" /> Finaliser la livraison</>, fn: () => openFinalize(d) }
     return null
@@ -223,7 +214,7 @@ export default function CommandesLivreur() {
         {activeTab === 'disponibles' && visibleItems.map(c => (
           <div key={c.id_commande} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-            <div className="flex items-start justify-between gap-3 mb-3">
+               <div className="flex items-start justify-between gap-3 mb-3">
               <div>
                 <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{c.id_commande}</div>
                 <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
@@ -233,12 +224,15 @@ export default function CommandesLivreur() {
                   <User size={12} className="inline align-middle" /> {c.client?.utilisateur?.prenom} {c.client?.utilisateur?.nom}
                 </div>
               </div>
-              <div className="text-sm font-black" style={{ color: isDark ? '#E87D55' : '#993C1D' }}>{(c.frais_livraison || 1500).toLocaleString()} F</div>
+              <div className="text-right">
+                <div className="text-sm font-black" style={{ color: isDark ? '#E87D55' : '#993C1D' }}>{((c.total_marchandises || 0) + (c.frais_livraison || 0)).toLocaleString()} F</div>
+                <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>dont {c.frais_livraison?.toLocaleString() || '0'} F livraison</div>
+              </div>
             </div>
             <div className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
-              {c.detailsCommande?.length || 0} produit(s) · {c.detailsCommande?.map(d => d.produit?.nom).filter(Boolean).join(', ')}
+              {c.detailsCommande?.reduce((sum, d) => sum + (d.quantite_commandee || 0), 0) || 0} article(s) · {c.detailsCommande?.map(d => d.produit?.nom).filter(Boolean).join(', ')}
             </div>
-            <button onClick={() => accepterCourse(c.id_commande)}
+            <button onClick={() => { setAcceptModal(c); setAcceptCode('') }}
               className="w-full rounded-2xl py-3 font-black text-white cursor-pointer transition-all active:scale-98"
               style={{ background: '#D85A30', border: 'none' }}>
               <Rocket size={14} className="inline align-middle" /> Accepter cette course
@@ -266,12 +260,14 @@ export default function CommandesLivreur() {
               <div className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}><MapPin size={12} className="inline align-middle" /> {cmd?.client?.adresse_livraison || '—'}</div>
               <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
                 <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                  <div className="font-semibold">Montant</div>
-                  <div>{(cmd?.frais_livraison || 1500).toLocaleString()} F</div>
+                  <div className="font-semibold">Montant total</div>
+                  <div className="font-black" style={{ color: 'var(--text-primary)' }}>{((cmd?.total_marchandises || 0) + (cmd?.frais_livraison || 0)).toLocaleString()} F</div>
+                  <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Marchandises {cmd?.total_marchandises?.toLocaleString() || 0} F + Livraison {cmd?.frais_livraison?.toLocaleString() || 0} F</div>
                 </div>
                 <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                  <div className="font-semibold">Produits</div>
-                  <div>{cmd?.detailsCommande?.length || 0} article(s)</div>
+                  <div className="font-semibold">Articles</div>
+                  <div className="font-black" style={{ color: 'var(--text-primary)' }}>{cmd?.detailsCommande?.reduce((sum, d) => sum + (d.quantite_commandee || 0), 0) || 0} article(s)</div>
+                  <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{cmd?.detailsCommande?.length || 0} produit(s) différent(s)</div>
                 </div>
               </div>
               {action && (
@@ -300,7 +296,7 @@ export default function CommandesLivreur() {
                 </span>
               </div>
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {cmd?.client?.utilisateur?.prenom} {cmd?.client?.utilisateur?.nom} · {(cmd?.frais_livraison || 1500).toLocaleString()} F
+                {cmd?.client?.utilisateur?.prenom} {cmd?.client?.utilisateur?.nom} · {((cmd?.total_marchandises || 0) + (cmd?.frais_livraison || 0)).toLocaleString()} F ({cmd?.detailsCommande?.reduce((sum, d) => sum + (d.quantite_commandee || 0), 0) || 0} articles)
               </div>
               <div className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
                 {d.date_fin_reelle ? new Date(d.date_fin_reelle).toLocaleDateString('fr-FR') : '—'}
@@ -318,7 +314,86 @@ export default function CommandesLivreur() {
         )}
       </div>
 
-      {/* FINALIZE MODAL */}
+      {/* ACCEPT MODAL — Scan client's QR or type code */}
+      {acceptModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => { setAcceptModal(null); setAcceptCode(''); setAcceptScanResult(null); cleanupScanner() }}>
+          <div className="w-full max-w-lg rounded-t-[28px] overflow-y-auto" style={{ background: 'var(--surface)', maxHeight: '85vh' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
+            </div>
+            <div className="px-5 pb-8 pt-3">
+              <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Accepter la course</h2>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+                Commande #{acceptModal.id_commande} — Scannez le QR code du client
+              </p>
+
+              {/* QR Scanner */}
+              <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+                <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  <QrCode size={12} /> Scanner le QR code du client
+                </div>
+                <div className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
+                  Demandez au client d'afficher son QR code d'acceptation. Scannez-le pour confirmer.
+                </div>
+                {acceptScanResult ? (
+                  <div className="rounded-xl p-3 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
+                    <CheckCircle size={20} className="mx-auto mb-1" style={{ color: '#1D9E75' }} />
+                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>QR scanné avec succès !</div>
+                  </div>
+                ) : (
+                  <div id="qr-accept-reader" className="rounded-xl overflow-hidden" />
+                )}
+                {!acceptScanResult && (
+                  <button onClick={() => {
+                    cleanupScanner()
+                    const scanner = new Html5QrcodeScanner('qr-accept-reader', { fps: 10, qrbox: 250 }, false)
+                    scanner.render(
+                      (decodedText) => {
+                        setAcceptScanResult(decodedText)
+                        cleanupScanner()
+                      },
+                      () => {}
+                    )
+                    scannerRef.current = scanner
+                  }}
+                    className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
+                    style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
+                    <QrCode size={14} className="inline align-middle" /> Activer l'appareil photo
+                  </button>
+                )}
+              </div>
+
+              {/* Fallback: manual code */}
+              {!acceptScanResult && (
+                <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+                  <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>
+                    <Lock size={12} className="inline align-middle" /> Ou entrez le code manuellement
+                  </div>
+                  <input type="text" value={acceptCode} onChange={e => setAcceptCode(e.target.value.toUpperCase())}
+                    placeholder="Code de vérification"
+                    maxLength={6}
+                    className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"
+                    style={{ background: 'var(--surface)', border: '2px solid var(--border)', color: 'var(--text-primary)' }} />
+                </div>
+              )}
+
+              <button onClick={() => accepterCourse(acceptModal.id_commande)}
+                disabled={submitting || (!acceptScanResult && !acceptCode.trim())}
+                className="w-full py-4 rounded-2xl text-white font-black text-sm cursor-pointer transition-all active:scale-98"
+                style={{
+                  background: ((!acceptScanResult && !acceptCode.trim()) || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
+                  border: 'none', opacity: submitting ? 0.7 : 1,
+                }}>
+                {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Vérification…</> : <><Rocket size={14} className="inline align-middle" /> Accepter la course</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FINALIZE MODAL — Scan client's QR or type code */}
       {finalizeOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}
           onClick={() => { setFinalizeOpen(null); cleanupScanner() }}>
@@ -329,32 +404,31 @@ export default function CommandesLivreur() {
             </div>
             <div className="px-5 pb-8 pt-3">
               <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Finaliser la livraison</h2>
-              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{finalizeOpen.commande?.id_commande} — Scannez le QR du client ou saisissez le code pour confirmer la remise</p>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{finalizeOpen.commande?.id_commande} — Scannez le QR du client</p>
 
-              {/* QR Scanner for client code */}
+              {/* QR Scanner */}
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
-                  <QrCode size={12} /> Scanner le QR code du client (RG06)
+                  <QrCode size={12} /> Scanner le QR code de finalisation
                 </div>
                 <div className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
-                  Demandez au client d'afficher son code de vérification. Scannez-le pour confirmer la remise.
+                  Demandez au client d'afficher son QR code de finalisation. Scannez-le pour confirmer la livraison.
                 </div>
-                {scanResult ? (
+                {finalizeScanResult ? (
                   <div className="rounded-xl p-3 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
                     <CheckCircle size={20} className="mx-auto mb-1" style={{ color: '#1D9E75' }} />
-                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>Code scanné : {scanResult}</div>
+                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>QR scanné avec succès !</div>
                   </div>
                 ) : (
-                  <div id="qr-reader-finalize" className="rounded-xl overflow-hidden" />
+                  <div id="qr-finalize-reader" className="rounded-xl overflow-hidden" />
                 )}
-                {!scanResult && (
+                {!finalizeScanResult && (
                   <button onClick={() => {
                     cleanupScanner()
-                    const scanner = new Html5QrcodeScanner('qr-reader-finalize', { fps: 10, qrbox: 250 }, false)
+                    const scanner = new Html5QrcodeScanner('qr-finalize-reader', { fps: 10, qrbox: 250 }, false)
                     scanner.render(
                       (decodedText) => {
-                        setScanResult(decodedText)
-                        setCodeVerification(decodedText)
+                        setFinalizeScanResult(decodedText)
                         cleanupScanner()
                       },
                       () => {}
@@ -363,19 +437,23 @@ export default function CommandesLivreur() {
                   }}
                     className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
                     style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
-                    <QrCode size={14} className="inline align-middle" /> Lancer le scanner
+                    <QrCode size={14} className="inline align-middle" /> Activer l'appareil photo
                   </button>
                 )}
               </div>
 
-              {/* Manual code entry */}
-              <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Lock size={12} className="inline align-middle" /> Ou saisir le code du client manuellement</div>
-                <input type="text" value={codeVerification} onChange={e => { setCodeVerification(e.target.value.toUpperCase()); setScanResult(null) }}
-                  placeholder="Code de vérification du client"
-                  className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"
-                  style={{ background: 'var(--surface)', border: '2px solid var(--border)', color: 'var(--text-primary)' }} />
-              </div>
+              {/* Fallback: manual code */}
+              {!finalizeScanResult && (
+                <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+                  <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>
+                    <Lock size={12} className="inline align-middle" /> Ou entrez le code manuellement
+                  </div>
+                  <input type="text" value={codeVerification} onChange={e => setCodeVerification(e.target.value.toUpperCase())}
+                    placeholder="Code de vérification du client"
+                    className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"
+                    style={{ background: 'var(--surface)', border: '2px solid var(--border)', color: 'var(--text-primary)' }} />
+                </div>
+              )}
 
               <div className="rounded-2xl p-3 mb-4" style={{ background: isDark ? 'rgba(59,130,246,0.08)' : '#EFF6FF', border: '1.5px solid var(--border)' }}>
                 <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -383,10 +461,10 @@ export default function CommandesLivreur() {
                 </div>
               </div>
 
-              <button onClick={handleFinalize} disabled={submitting || !codeVerification.trim()}
+              <button onClick={handleFinalize} disabled={submitting || (!finalizeScanResult && !codeVerification.trim())}
                 className="w-full py-4 rounded-2xl text-white font-black text-sm cursor-pointer transition-all active:scale-98"
                 style={{
-                  background: (!codeVerification.trim() || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
+                  background: ((!finalizeScanResult && !codeVerification.trim()) || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
                   border: 'none', opacity: submitting ? 0.7 : 1,
                 }}>
                 {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Envoi…</> : <><CheckCircle size={14} className="inline align-middle" /> Confirmer la livraison</>}
@@ -396,43 +474,42 @@ export default function CommandesLivreur() {
         </div>
       )}
 
-      {/* COLLECT MODAL — QR Scanner + Proof Photos */}
+      {/* COLLECT MODAL — Camera-only QR scan */}
       {collectOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}
-          onClick={() => { setCollectOpen(null); cleanupScanner() }}>
+          onClick={() => { setCollectOpen(null); setScanResult(null); cleanupScanner() }}>
           <div className="w-full max-w-lg rounded-t-[28px] overflow-y-auto" style={{ background: 'var(--surface)', maxHeight: '85vh' }}
             onClick={e => e.stopPropagation()}>
             <div className="flex justify-center pt-3 pb-1">
               <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
             </div>
             <div className="px-5 pb-8 pt-3">
-              <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Confirmer la collecte</h2>
+              <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Scanner le QR du vendeur</h2>
               <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{collectOpen.commande?.id_commande}</p>
 
-              {/* QR Scanner */}
+              {/* QR Scanner — camera permission required */}
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
-                  <QrCode size={12} /> Scanner le QR code du vendeur (RG06)
+                  <QrCode size={12} /> Scanner le QR code du vendeur
                 </div>
                 <div className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
-                  Le vendeur affiche le code de vérification du client sous forme de QR code. Scannez-le pour confirmer la collecte.
+                  Demandez au vendeur d'afficher son QR code. Scannez-le avec l'appareil photo pour confirmer la collecte.
                 </div>
                 {scanResult ? (
                   <div className="rounded-xl p-3 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
                     <CheckCircle size={20} className="mx-auto mb-1" style={{ color: '#1D9E75' }} />
-                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>Code scanné : {scanResult}</div>
+                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>QR du vendeur scanné avec succès !</div>
                   </div>
                 ) : (
-                  <div id="qr-reader" className="rounded-xl overflow-hidden" />
+                  <div id="qr-collect-reader" className="rounded-xl overflow-hidden" />
                 )}
                 {!scanResult && (
                   <button onClick={() => {
                     cleanupScanner()
-                    const scanner = new Html5QrcodeScanner('qr-reader', { fps: 10, qrbox: 250 }, false)
+                    const scanner = new Html5QrcodeScanner('qr-collect-reader', { fps: 10, qrbox: 250 }, false)
                     scanner.render(
                       (decodedText) => {
                         setScanResult(decodedText)
-                        setCodeVerification(decodedText)
                         cleanupScanner()
                       },
                       () => {}
@@ -440,61 +517,19 @@ export default function CommandesLivreur() {
                     scannerRef.current = scanner
                   }}
                     className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
-                    style={{ background: '#BA7517', color: '#fff', border: 'none' }}>
-                    <QrCode size={14} className="inline align-middle" /> Lancer le scanner
+                    style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
+                    <QrCode size={14} className="inline align-middle" /> Activer l'appareil photo
                   </button>
                 )}
               </div>
 
-              {/* Manual code entry */}
-              <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Lock size={12} className="inline align-middle" /> Ou saisir le code du client manuellement</div>
-                <input type="text" value={codeVerification} onChange={e => { setCodeVerification(e.target.value.toUpperCase()); setScanResult(null) }}
-                  placeholder="Code de vérification du client"
-                  className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"
-                  style={{ background: 'var(--surface)', border: '2px solid var(--border)', color: 'var(--text-primary)' }} />
-              </div>
-
-              {/* Proof Photos */}
-              <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-xs font-bold flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
-                    <Camera size={12} /> Photos de preuve
-                  </div>
-                  <button onClick={() => fileRef.current?.click()}
-                    className="text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer"
-                    style={{ background: '#BA7517', color: '#fff', border: 'none' }}>
-                    + Ajouter
-                  </button>
-                  <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleProofPhotos} />
-                </div>
-                {proofPhotos.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-2">
-                    {proofPhotos.map((file, i) => (
-                      <div key={i} className="relative rounded-xl overflow-hidden aspect-square">
-                        <img src={photoUrls[i]} alt="" className="w-full h-full object-cover" />
-                        <button onClick={() => removeProofPhoto(i)}
-                          className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer"
-                          style={{ background: 'rgba(0,0,0,0.6)', border: 'none' }}>
-                          <X size={10} color="white" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-3">
-                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Photos optionnelles mais recommandées</p>
-                  </div>
-                )}
-              </div>
-
-              <button onClick={submitCollection} disabled={submitting || !codeVerification.trim()}
+              <button onClick={submitCollection} disabled={submitting || !scanResult}
                 className="w-full py-4 rounded-2xl text-white font-black text-sm cursor-pointer transition-all active:scale-98"
                 style={{
-                  background: (!codeVerification.trim() || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
+                  background: (!scanResult || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
                   border: 'none', opacity: submitting ? 0.7 : 1,
                 }}>
-                {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Envoi…</> : <><CheckCircle size={14} className="inline align-middle" /> Confirmer la collecte</>}
+                {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Confirmation…</> : <><CheckCircle size={14} className="inline align-middle" /> Confirmer la collecte</>}
               </button>
             </div>
           </div>

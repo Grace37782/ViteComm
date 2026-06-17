@@ -19,11 +19,12 @@ export default function SuiviCommande() {
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
 
-  const { id_commande, code_verification } = location.state || {}
+  const { id_commande } = location.state || {}
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [qrCode, setQrCode] = useState(null)
   const [showQR, setShowQR] = useState(false)
+  const [qrAction, setQrAction] = useState(null) // 'accept' | 'finalize'
 
   const fetchOrder = useCallback(async () => {
     if (!id_commande) return
@@ -43,10 +44,14 @@ export default function SuiviCommande() {
   }, [fetchOrder])
 
   useEffect(() => {
-    if (showQR && id_commande && !qrCode) {
-      api.get(`/client/orders/${id_commande}/qrcode`).then(setQrCode).catch(() => {})
+    if (showQR && id_commande && qrAction) {
+      let cancelled = false
+      api.get(`/client/orders/${id_commande}/qrcode?action=${qrAction}`)
+        .then(data => { if (!cancelled) setQrCode(data) })
+        .catch(() => {})
+      return () => { cancelled = true }
     }
-  }, [showQR, id_commande, qrCode])
+  }, [showQR, id_commande, qrAction])
 
   const statut = order?.statut || 'En attente'
   const livreur = order?.livraison?.livreur
@@ -55,9 +60,13 @@ export default function SuiviCommande() {
     : 'Votre livreur'
 
   const currentStepIndex = STATUT_STEPS.findIndex(s => s.key === statut)
-  const verificationCode = code_verification || order?.code_verification
   const canCancel = statut === 'En attente'
   const [cancelling, setCancelling] = useState(false)
+
+  function openClientQR(action) {
+    setQrAction(action)
+    setShowQR(true)
+  }
 
   async function handleCancel() {
     if (!confirm('Annuler cette commande ?')) return
@@ -78,7 +87,7 @@ export default function SuiviCommande() {
   }
 
   return (
-    <div className="w-full min-h-screen font-sans mx-auto max-w-3xl" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
+    <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {/* HEADER */}
       <div className="relative overflow-hidden px-5 pt-5 pb-5"
@@ -114,49 +123,65 @@ export default function SuiviCommande() {
           </div>
         </div>
 
-        {/* CODE DE VÉRIFICATION */}
-        {verificationCode && (
+        {/* QR CODE FOR DRIVER — Accept or Finalize */}
+        {statut === 'En attente' && (
           <div className="rounded-2xl p-5 text-center"
             style={{ background: 'var(--surface)', border: '2px solid var(--accent)', boxShadow: isDark ? '0 4px 20px rgba(45,196,145,0.1)' : '0 4px 20px rgba(29,158,117,0.15)' }}>
             <div className="text-[11px] font-extrabold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
-              <ShieldCheck size={14} className="inline" /> Code de vérification
+              <ShieldCheck size={14} className="inline" /> Acceptation de la course
             </div>
-            <div className="text-3xl font-black tracking-[8px] font-mono" style={{ color: 'var(--accent)' }}>
-              {verificationCode}
+            <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+              Le livreur doit scanner ce QR code pour accepter votre commande.
             </div>
-            <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-              Communiquez ce code au livreur lors de la collecte (RG06).
+            <button onClick={() => openClientQR('accept')}
+              className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5 mx-auto"
+              style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', border: 'none' }}>
+              <QrCode size={14} /> Afficher le QR code d'acceptation
+            </button>
+          </div>
+        )}
+
+        {statut === 'En cours de livraison' && (
+          <div className="rounded-2xl p-5 text-center"
+            style={{ background: 'var(--surface)', border: '2px solid var(--accent)', boxShadow: isDark ? '0 4px 20px rgba(45,196,145,0.1)' : '0 4px 20px rgba(29,158,117,0.15)' }}>
+            <div className="text-[11px] font-extrabold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
+              <ShieldCheck size={14} className="inline" /> Finalisation de la livraison
             </div>
-            {['En attente', 'Validee', 'En collecte'].includes(statut) && (
-              <button onClick={() => setShowQR(true)}
-                className="mt-3 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5 mx-auto"
-                style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', border: 'none' }}>
-                <QrCode size={14} /> Afficher le QR code
-              </button>
-            )}
+            <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+              Le livreur doit scanner ce QR code pour finaliser la livraison.
+            </div>
+            <button onClick={() => openClientQR('finalize')}
+              className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5 mx-auto"
+              style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', border: 'none' }}>
+              <QrCode size={14} /> Afficher le QR code de finalisation
+            </button>
           </div>
         )}
 
         {/* QR CODE MODAL */}
         {showQR && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}
-            onClick={() => setShowQR(false)}>
+            onClick={() => { setShowQR(false); setQrAction(null) }}>
             <div className="rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: 'var(--surface)' }}
               onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-center mb-4">
-                <div className="font-black text-base" style={{ color: 'var(--text-primary)' }}>QR Code</div>
-                <button onClick={() => setShowQR(false)} className="cursor-pointer" style={{ background: 'none', border: 'none' }}>
+                <div className="font-black text-base" style={{ color: 'var(--text-primary)' }}>
+                  QR Code — {qrAction === 'accept' ? 'Acceptation' : 'Finalisation'}
+                </div>
+                <button onClick={() => { setShowQR(false); setQrAction(null) }} className="cursor-pointer" style={{ background: 'none', border: 'none' }}>
                   <XCircle size={20} style={{ color: 'var(--text-muted)' }} />
                 </button>
               </div>
               {qrCode?.qrcode ? (
                 <>
                   <img src={qrCode.qrcode} alt="QR Code" className="mx-auto rounded-2xl mb-3" style={{ maxWidth: 250 }} />
-                  <div className="text-xs font-bold tracking-[6px] font-mono mb-2" style={{ color: 'var(--accent)' }}>
-                    {qrCode.code}
+                  <div className="text-xs font-bold mb-1" style={{ color: 'var(--accent)' }}>
+                    {qrAction === 'accept'
+                      ? 'Le livreur scanne pour accepter la course'
+                      : 'Le livreur scanne pour finaliser la livraison'}
                   </div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    Montrez ce QR code au livreur lors de la collecte (RG06)
+                  <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                    Ce QR code est sécurisé et expire dans 1 heure.
                   </div>
                 </>
               ) : (

@@ -393,6 +393,9 @@ export const getVendorOrders = async (req, res) => {
           },
           include: { produit: true }
         },
+        client: {
+          include: { utilisateur: { select: { nom: true, prenom: true, telephone: true } } }
+        },
         livraison: {
           include: {
             livreur: {
@@ -429,6 +432,13 @@ export const getVendorOrders = async (req, res) => {
         ? { nom: `${o.livraison.livreur.utilisateur.prenom} ${o.livraison.livreur.utilisateur.nom}`, telephone: o.livraison.livreur.utilisateur.telephone }
         : { nom: 'Non assigné', telephone: '' };
 
+      // Client info
+      const clientNom = o.client?.utilisateur
+        ? `${o.client.utilisateur.prenom} ${o.client.utilisateur.nom}`
+        : 'Client inconnu';
+      const clientTelephone = o.client?.utilisateur?.telephone || '';
+      const clientAdresse = o.client?.adresse_livraison || '';
+
       // Photo indicator: any proof with media
       const photo_collecte = o.preuvesCollecte.some((p) => p.medias.length > 0);
 
@@ -448,6 +458,7 @@ export const getVendorOrders = async (req, res) => {
         statut_collecte,
         validee_par_vendeur: o.validee_par_vendeur,
         livreur,
+        client: { nom: clientNom, telephone: clientTelephone, adresse: clientAdresse },
         photo_collecte,
         articles
       };
@@ -522,68 +533,17 @@ export const validateOrder = async (req, res) => {
   }
 };
 
-// Vendor validates handover by entering driver's verification code (RG06)
+// Vendor confirms order is ready — no code input needed (driver scans vendor QR instead)
 export const verifyHandover = async (req, res) => {
   const { id_commande } = req.params;
-  const { code_verification } = req.body;
-
-  if (!code_verification) {
-    return res.status(400).json({ error: 'Le code de vérification est requis.' });
-  }
 
   try {
     const commandId = parseInt(id_commande, 10);
-
     const command = await prisma.commande.findUnique({ where: { id_commande: commandId } });
     if (!command) return res.status(404).json({ error: 'Commande introuvable.' });
 
-    // Verify code (RG06)
-    if (command.code_verification !== code_verification) {
-      return res.status(400).json({ error: 'Code de vérification invalide.' });
-    }
-
-    await prisma.$transaction(async (tx) => {
-      // Create PREUVE_COLLECTE (vendor validation proof)
-      const preuve = await tx.preuveCollecte.create({
-        data: {
-          id_commande: commandId,
-          statut_validation: 'Validee'
-        }
-      });
-
-      // Attach photo if provided (RG07)
-      if (req.file) {
-        await tx.mediaPreuve.create({
-          data: {
-            id_preuve: preuve.id_preuve,
-            url_media: `/uploads/${req.file.filename}`,
-            type_media: 'photo'
-          }
-        });
-      }
-
-      // Check if all vendors have submitted proofs
-      const orderLines = await tx.detailCommande.findMany({
-        where: { id_commande: commandId },
-        include: { produit: true }
-      });
-      const uniqueVendorIds = [...new Set(orderLines.map((l) => l.produit.id_user_vendeur))];
-      // Count only vendor verification proofs (exclude driver collection proofs by counting unique vendors who verified)
-      const vendorProofs = await tx.preuveCollecte.findMany({
-        where: { id_commande: commandId, statut_validation: 'Validee' }
-      });
-      // Each verifyHandover call creates one proof; driver collection also creates one
-      // We need vendor proofs only: count = total proofs - 1 (driver's collection proof)
-      const vendorVerifiedCount = Math.max(0, vendorProofs.length - 1);
-      const newStatut = vendorVerifiedCount >= uniqueVendorIds.length ? 'En transit' : 'En collecte';
-      await tx.commande.update({
-        where: { id_commande: commandId },
-        data: { statut: newStatut }
-      });
-    });
-
     return res.json({
-      message: 'Remise des articles validée et enregistrée avec succès.',
+      message: 'Préparation confirmée. Le livreur scannerá le QR code pour finaliser la collecte.',
       statut_collecte: 'collecte'
     });
   } catch (error) {
@@ -617,7 +577,7 @@ export const getOrderQRCode = async (req, res) => {
       width: 300, margin: 2,
       color: { dark: '#000000', light: '#ffffff' }
     });
-    return res.json({ qrcode: qrDataUrl, code: order.code_verification, signed: true });
+    return res.json({ qrcode: qrDataUrl, signed: true });
   } catch (error) {
     return res.status(500).json({ error: internalError(error) });
   }

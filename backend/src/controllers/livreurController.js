@@ -4,11 +4,10 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { errorMessage, internalError } from '../utils/errors.js';
-import { verifyVendorQRToken } from '../utils/vendorQR.js';
+import { verifyQRToken } from '../utils/vendorQR.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const UPLOAD_DIR = path.join(__dirname, '../../uploads/proofs');
 
 // ═══════════════════════════════════════════════════════════
 // 4.1. TABLEAU DE BORD (RG10, RG15, RG19)
@@ -165,14 +164,15 @@ export const getAvailableDeliveries = async (req, res) => {
   }
 };
 
-// RG05 - Livreur accepts a delivery → creates Livraison
+// RG05 - Livreur accepts a delivery → scan client's QR code (or fallback to code)
 export const acceptDelivery = async (req, res) => {
   const { id_commande } = req.params;
+  const { code_verification, scanned_qr_data } = req.body;
   const driverId = req.user.id_user;
 
-  try {
-    const commandId = parseInt(id_commande, 10);
+  const commandId = parseInt(id_commande, 10);
 
+  try {
     const command = await prisma.commande.findUnique({
       where: { id_commande: commandId },
       include: { livraison: true }
@@ -180,6 +180,27 @@ export const acceptDelivery = async (req, res) => {
 
     if (!command) return res.status(404).json({ error: 'Commande introuvable.' });
     if (command.livraison) return res.status(400).json({ error: 'Cette commande a déjà un livreur assigné.' });
+
+    // Verify via QR scan (preferred) or manual code (fallback)
+    if (scanned_qr_data) {
+      const verified = verifyQRToken(scanned_qr_data);
+      if (!verified || verified.tokenType !== 'client' || verified.action !== 'accept') {
+        return res.status(400).json({ error: 'QR code invalide. Demandez au client d\'afficher son QR code.' });
+      }
+      if (verified.orderId !== commandId) {
+        return res.status(400).json({ error: 'Ce QR code ne correspond pas à cette commande.' });
+      }
+      if (verified.clientCode !== command.code_verification) {
+        return res.status(400).json({ error: 'QR code non reconnu pour cette commande.' });
+      }
+    } else if (code_verification && code_verification.trim()) {
+      // Fallback: manual code entry
+      if (command.code_verification !== code_verification.trim().toUpperCase()) {
+        return res.status(400).json({ error: 'Code de vérification invalide. Demandez le code au client.' });
+      }
+    } else {
+      return res.status(400).json({ error: 'Scannez le QR code du client ou entrez le code de vérification.' });
+    }
 
     // Check driver is available
     const latestDispo = await prisma.disponibiliteLivreur.findFirst({
@@ -191,7 +212,6 @@ export const acceptDelivery = async (req, res) => {
     }
 
     const livraison = await prisma.$transaction(async (tx) => {
-      // Create Livraison (RG05)
       const liv = await tx.livraison.create({
         data: {
           id_commande: commandId,
@@ -200,7 +220,6 @@ export const acceptDelivery = async (req, res) => {
         }
       });
 
-      // Update commande statut
       await tx.commande.update({
         where: { id_commande: commandId },
         data: { statut: 'Validee' }
@@ -219,14 +238,16 @@ export const acceptDelivery = async (req, res) => {
 // 4.3. COLLECTE AVEC PREUVE PHOTO (RG06, RG07)
 // ═══════════════════════════════════════════════════════════
 
-// Livreur validates vendor code + uploads collection proof photos (RG06)
+// Livreur scans vendor's QR code to confirm collection (RG06)
+// The vendor QR is HMAC-signed with the client's verification code.
+// Driver scans it with camera → backend verifies signature + embedded code matches order.
 export const collectDelivery = async (req, res) => {
   const { id_commande } = req.params;
-  const { code_verification } = req.body;
+  const { scanned_qr_data } = req.body;
   const driverId = req.user.id_user;
 
-  if (!code_verification) {
-    return res.status(400).json({ error: 'Le code de vérification du client est obligatoire (RG06).' });
+  if (!scanned_qr_data) {
+    return res.status(400).json({ error: 'Le QR code du vendeur est obligatoire.' });
   }
 
   try {
@@ -250,43 +271,29 @@ export const collectDelivery = async (req, res) => {
       return res.status(400).json({ error: 'Le vendeur n\'a pas encore validé la disponibilité des articles.' });
     }
 
-    // Verify the code: supports signed QR token from vendor OR plain text manual entry (RG06)
-    const verified = verifyVendorQRToken(code_verification);
-    if (!verified) {
-      return res.status(400).json({ error: 'Code de vérification invalide.' });
-    }
-    if (verified.clientCode !== command.code_verification) {
-      return res.status(400).json({ error: 'Code de vérification invalide.' });
+    // Verify the scanned vendor QR token (HMAC-signed with client code)
+    const verified = verifyQRToken(scanned_qr_data);
+    if (!verified || verified.tokenType !== 'vendor') {
+      return res.status(400).json({ error: 'QR code invalide ou expiré. Demandez un nouveau QR au vendeur.' });
     }
 
-    // Create PreuveCollecte with uploaded photos (RG07)
-    const preuve = await prisma.preuveCollecte.create({
+    // Verify QR was generated for THIS specific order
+    if (verified.orderId !== commandId) {
+      return res.status(400).json({ error: 'Ce QR code ne correspond pas à cette commande.' });
+    }
+
+    // Verify embedded code matches this order's client verification code
+    if (verified.clientCode !== command.code_verification) {
+      return res.status(400).json({ error: 'Le code dans le QR ne correspond pas à la commande.' });
+    }
+
+    // Create PreuveCollecte (scan-based proof)
+    await prisma.preuveCollecte.create({
       data: {
         id_commande: commandId,
         statut_validation: 'Validee'
       }
     });
-
-    // Save uploaded photos
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname) || '.jpg';
-        const filename = unique + ext;
-
-        fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-        const destPath = path.join(UPLOAD_DIR, filename);
-        fs.renameSync(file.path, destPath);
-
-        await prisma.mediaPreuve.create({
-          data: {
-            id_preuve: preuve.id_preuve,
-            url_media: `/uploads/proofs/${filename}`,
-            type_media: 'photo'
-          }
-        });
-      }
-    }
 
     // Update livraison statut + advance commande statut (RG06)
     await prisma.$transaction([
@@ -300,7 +307,7 @@ export const collectDelivery = async (req, res) => {
       }),
     ]);
 
-    return res.json({ message: 'Collecte enregistrée avec preuve photo.', preuve_id: preuve.id_preuve });
+    return res.json({ message: 'Collecte confirmée. QR code validé avec succès.' });
   } catch (error) {
     return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
@@ -352,11 +359,7 @@ export const departDelivery = async (req, res) => {
 
 export const finalizeDelivery = async (req, res) => {
   const { id_commande } = req.params;
-  const { code_verification } = req.body;
-
-  if (!code_verification) {
-    return res.status(400).json({ error: 'Le code de vérification du client est obligatoire.' });
-  }
+  const { code_verification, scanned_qr_data } = req.body;
 
   try {
     const commandId = parseInt(id_commande, 10);
@@ -373,9 +376,25 @@ export const finalizeDelivery = async (req, res) => {
       return res.status(404).json({ error: 'Livraison introuvable ou non assignée à ce livreur.' });
     }
 
-    // Verify client code (RG06)
-    if (command.code_verification !== code_verification) {
-      return res.status(400).json({ error: 'Code de vérification invalide.' });
+    // Verify via QR scan (preferred) or manual code (fallback)
+    if (scanned_qr_data) {
+      const verified = verifyQRToken(scanned_qr_data);
+      if (!verified || verified.tokenType !== 'client' || verified.action !== 'finalize') {
+        return res.status(400).json({ error: 'QR code invalide. Demandez au client d\'afficher son QR code.' });
+      }
+      if (verified.orderId !== commandId) {
+        return res.status(400).json({ error: 'Ce QR code ne correspond pas à cette commande.' });
+      }
+      if (verified.clientCode !== command.code_verification) {
+        return res.status(400).json({ error: 'QR code non reconnu pour cette commande.' });
+      }
+    } else if (code_verification) {
+      // Fallback: manual code entry
+      if (command.code_verification !== code_verification) {
+        return res.status(400).json({ error: 'Code de vérification invalide.' });
+      }
+    } else {
+      return res.status(400).json({ error: 'Scannez le QR code du client ou entrez le code de vérification.' });
     }
 
     if (command.livraison.statut_livraison !== 'En cours de livraison') {
@@ -385,7 +404,6 @@ export const finalizeDelivery = async (req, res) => {
     const livraisonId = command.livraison.id_livraison;
 
     await prisma.$transaction(async (tx) => {
-      // Advance status to Inspectee — client will inspect and create the invoice
       await tx.commande.update({
         where: { id_commande: commandId },
         data: { statut: 'Inspectee' }
@@ -399,7 +417,6 @@ export const finalizeDelivery = async (req, res) => {
         }
       });
 
-      // Create BonDeLivraison (RG27) — status PENDING until client confirms
       await tx.bonDeLivraison.create({
         data: {
           id_livraison: livraisonId,
@@ -408,7 +425,6 @@ export const finalizeDelivery = async (req, res) => {
         }
       });
 
-      // Mark driver available again (RG29)
       await tx.disponibiliteLivreur.create({
         data: { id_user_livreur: driverId, est_disponible: true }
       });

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { AlertTriangle, ShoppingCart, Camera, Loader2, KeyRound, CheckCircle, Package, ChevronDown, ShieldCheck, QrCode, XCircle } from 'lucide-react'
+import { AlertTriangle, ShoppingCart, Loader2, CheckCircle, Package, ChevronDown, ShieldCheck, QrCode, XCircle, Search } from 'lucide-react'
 
 const PAGE_SIZE = 10
 
@@ -11,12 +11,9 @@ export default function CommandesVendeur() {
   const [commandes, setCommandes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [codes, setCodes] = useState({})
-  const [confirmes, setConfirmes] = useState({})
-  const [errCodes, setErrCodes] = useState({})
-  const [submitting, setSubmitting] = useState({})
   const [validating, setValidating] = useState({})
   const [filtre, setFiltre] = useState('tous')
+  const [search, setSearch] = useState('')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [qrModal, setQrModal] = useState(null)
   const [qrData, setQrData] = useState(null)
@@ -39,50 +36,35 @@ export default function CommandesVendeur() {
 
   const STATUT_STYLE = {
     en_attente: { label: 'En attente livreur', bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
-    code_saisi: { label: 'Code en cours', bg: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5' },
     collecte: { label: 'Collecté', bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
   }
 
   const filtres = {
     tous: commandes,
-    a_valider: commandes.filter((c) => !c.validee_par_vendeur && c.statut_collecte === 'en_attente'),
+    a_valider: commandes.filter((c) => !c.validee_par_vendeur),
     en_attente: commandes.filter((c) => c.validee_par_vendeur && c.statut_collecte === 'en_attente'),
-    collecte: commandes.filter((c) => c.statut_collecte === 'collecte' || confirmes[c.id]),
+    collecte: commandes.filter((c) => c.statut_collecte === 'collecte'),
   }
 
-  const liste = filtres[filtre] || commandes
+  const baseList = filtres[filtre] || commandes
+
+  const liste = search.trim()
+    ? baseList.filter((c) => {
+        const q = search.toLowerCase().trim()
+        const clientId = String(c.id)
+        const clientName = (c.client?.nom || '').toLowerCase()
+        const livreurName = (c.livreur?.nom || '').toLowerCase()
+        const clientAdresse = (c.client?.adresse || '').toLowerCase()
+        const productNames = (c.articles || []).map(a => (a.nom || '').toLowerCase()).join(' ')
+        return clientId.includes(q) ||
+          clientName.includes(q) ||
+          livreurName.includes(q) ||
+          clientAdresse.includes(q) ||
+          productNames.includes(q)
+      })
+    : baseList
   const visibleItems = liste.slice(0, visibleCount)
   const hasMore = visibleCount < liste.length
-
-  async function confirmerRemise(cmd) {
-    const code = codes[cmd.id]?.trim().toUpperCase()
-    if (!code) {
-      setErrCodes((p) => ({ ...p, [cmd.id]: 'Saisissez le code du livreur' }))
-      return
-    }
-    if (code !== cmd.code_correct) {
-      setErrCodes((p) => ({ ...p, [cmd.id]: 'Code incorrect. Demandez au livreur de vérifier.' }))
-      return
-    }
-    if (!cmd.photo_collecte) {
-      setErrCodes((p) => ({ ...p, [cmd.id]: 'Attendez que le livreur prenne la photo.' }))
-      return
-    }
-
-    try {
-      setSubmitting((p) => ({ ...p, [cmd.id]: true }))
-      const formData = new FormData()
-      formData.append('code_verification', code)
-
-      await api.post(`/vendor/orders/${cmd.id}/verify-handover`, formData)
-      setErrCodes((p) => ({ ...p, [cmd.id]: '' }))
-      setConfirmes((p) => ({ ...p, [cmd.id]: true }))
-    } catch (err) {
-      setErrCodes((p) => ({ ...p, [cmd.id]: err.message }))
-    } finally {
-      setSubmitting((p) => ({ ...p, [cmd.id]: false }))
-    }
-  }
 
   async function validerCommande(cmd) {
     try {
@@ -92,7 +74,7 @@ export default function CommandesVendeur() {
         prev.map((c) => (c.id === cmd.id ? { ...c, validee_par_vendeur: true } : c))
       )
     } catch (err) {
-      setErrCodes((p) => ({ ...p, [cmd.id]: err.message }))
+      console.error('Validation error:', err)
     } finally {
       setValidating((p) => ({ ...p, [cmd.id]: false }))
     }
@@ -104,8 +86,7 @@ export default function CommandesVendeur() {
     try {
       const data = await api.get(`/vendor/orders/${cmd.id}/qrcode`)
       setQrData(data)
-    } catch (err) {
-      setErrCodes((p) => ({ ...p, [cmd.id]: err.message }))
+    } catch {
       setQrModal(null)
     }
   }
@@ -166,21 +147,48 @@ export default function CommandesVendeur() {
         ))}
       </div>
 
+      {/* Barre de recherche */}
+      <div className="relative">
+        <div className="flex items-center gap-2 px-4 py-3 rounded-2xl"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          <input
+            type="text"
+            placeholder="Rechercher par client, livreur, n° commande, produit..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
+            className="flex-1 bg-transparent outline-none text-sm font-medium"
+            style={{ color: 'var(--text-primary)' }}
+          />
+          {search && (
+            <button onClick={() => setSearch('')}
+              className="cursor-pointer p-1 rounded-full transition-all"
+              style={{ background: 'var(--surface-alt)', border: 'none' }}>
+              <XCircle size={14} style={{ color: 'var(--text-muted)' }} />
+            </button>
+          )}
+        </div>
+      </div>
+
       {liste.length === 0 && (
         <div className="text-center py-12">
           <div className="text-5xl mb-3"><ShoppingCart size={40} /></div>
           <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
-            Aucune commande dans cette catégorie
+            {search.trim() ? `Aucun résultat pour "${search}"` : 'Aucune commande dans cette catégorie'}
           </p>
+          {search.trim() && (
+            <button onClick={() => setSearch('')}
+              className="mt-3 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
+              style={{ background: '#BA7517', color: '#fff', border: 'none' }}>
+              Effacer la recherche
+            </button>
+          )}
         </div>
       )}
 
       {visibleItems.map((cmd) => {
-        const confirme = confirmes[cmd.id]
-        const collecte = cmd.statut_collecte === 'collecte' || confirme
+        const collecte = cmd.statut_collecte === 'collecte'
         const st = collecte ? STATUT_STYLE.collecte : STATUT_STYLE.en_attente
-        const codeSaisi = codes[cmd.id]?.trim()
-        const peutValider = codeSaisi && cmd.photo_collecte
         const total = cmd.articles.reduce((s, a) => s + a.prix * a.qte, 0)
 
         return (
@@ -202,7 +210,7 @@ export default function CommandesVendeur() {
                   Commande #{cmd.id}
                 </div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  {cmd.heure} · Livreur: {cmd.livreur.nom}
+                  {cmd.client?.nom || 'Client'} · {cmd.heure} · Livreur: {cmd.livreur.nom}
                 </div>
               </div>
               <span className="text-xs font-bold px-2.5 py-1 rounded-full"
@@ -259,89 +267,14 @@ export default function CommandesVendeur() {
               </div>
             )}
 
-            {/* Zone validation (uniquement si pas encore collecté ET déjà validé par vendeur) */}
+            {/* QR Code button (after validation, before collection) */}
             {cmd.validee_par_vendeur && !collecte && (
-              <div className="px-4 pb-4 flex flex-col gap-3"
+              <div className="px-4 pb-4 pt-3"
                 style={{ borderTop: '1px solid var(--border)' }}>
-                <div className="pt-3" />
-
-                {/* QR Code button */}
                 <button onClick={() => showQRCode(cmd)}
                   className="w-full py-3 rounded-xl text-sm font-black cursor-pointer flex items-center justify-center gap-2"
                   style={{ background: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5', border: 'none' }}>
                   <QrCode size={16} /> Afficher le QR code pour le livreur
-                </button>
-
-                {/* Indicateur photo livreur */}
-                <div className="flex items-center gap-3 px-3 py-3 rounded-xl"
-                  style={{ background: cmd.photo_collecte ? (isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE') : 'var(--surface-alt)' }}>
-                  <span className="text-xl flex-shrink-0">
-                    {cmd.photo_collecte ? <Camera size={20} /> : <Loader2 size={20} className="animate-spin" />}
-                  </span>
-                  <div>
-                    <div className="text-xs font-bold"
-                      style={{ color: cmd.photo_collecte ? (isDark ? '#34D399' : '#0F6E56') : 'var(--text-muted)' }}>
-                      {cmd.photo_collecte
-                        ? 'Photo de collecte prise par le livreur'
-                        : 'En attente de la photo du livreur…'}
-                    </div>
-                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      {cmd.photo_collecte
-                        ? 'Vous pouvez maintenant valider la remise'
-                        : 'Le livreur doit photographier les articles'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Saisie code */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
-                    <KeyRound size={12} /> Code de vérification du livreur
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: K7-4X"
-                    value={codes[cmd.id] || ''}
-                    onChange={(e) => {
-                      setCodes((p) => ({ ...p, [cmd.id]: e.target.value.toUpperCase() }))
-                      setErrCodes((p) => ({ ...p, [cmd.id]: '' }))
-                    }}
-                    maxLength={6}
-                    className="w-full px-4 py-3 rounded-xl text-sm font-black outline-none tracking-widest"
-                    style={{
-                      background: 'var(--surface-alt)',
-                      border: `1.5px solid ${errCodes[cmd.id] ? '#E24B4A' : codeSaisi ? '#BA7517' : 'var(--border)'}`,
-                      color: 'var(--text-primary)',
-                      fontFamily: 'monospace',
-                      letterSpacing: '4px',
-                    }}
-                  />
-                  {errCodes[cmd.id] && (
-                    <span className="text-xs font-semibold" style={{ color: '#E24B4A' }}>
-                       <AlertTriangle size={12} /> {errCodes[cmd.id]}
-                    </span>
-                  )}
-                </div>
-
-                {/* Bouton confirmer */}
-                <button
-                  onClick={() => confirmerRemise(cmd)}
-                  disabled={submitting[cmd.id]}
-                  className="w-full py-3.5 rounded-xl text-sm font-black transition-all"
-                  style={{
-                    background: peutValider && !submitting[cmd.id] ? '#BA7517' : (isDark ? 'var(--border)' : '#D3D1C7'),
-                    border: 'none',
-                    color: peutValider && !submitting[cmd.id] ? '#fff' : (isDark ? 'var(--text-muted)' : '#7A7972'),
-                    cursor: peutValider && !submitting[cmd.id] ? 'pointer' : 'not-allowed',
-                    boxShadow: peutValider && !submitting[cmd.id] ? '0 4px 16px rgba(186,117,23,0.3)' : 'none',
-                  }}>
-                  {submitting[cmd.id]
-                    ? 'Verification en cours…'
-                    : !codeSaisi
-                    ? 'Saisissez le code pour valider'
-                    : !cmd.photo_collecte
-                    ? 'En attente de la photo du livreur'
-                    : 'Confirmer la remise des articles →'}
                 </button>
               </div>
             )}
@@ -385,11 +318,8 @@ export default function CommandesVendeur() {
             {qrData ? (
               <>
                 <img src={qrData.qrcode} alt="QR Code" className="mx-auto rounded-2xl mb-3" style={{ maxWidth: 250 }} />
-                <div className="text-xs font-bold tracking-[6px] font-mono mb-2" style={{ color: '#BA7517' }}>
-                  {qrData.code}
-                </div>
                 <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Le livreur doit scanner ce QR code pour confirmer la collecte (RG06)
+                  Le livreur doit scanner ce QR code pour confirmer la collecte
                 </div>
               </>
             ) : (

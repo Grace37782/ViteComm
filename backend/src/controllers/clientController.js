@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import path from 'path';
 import fs from 'fs';
 import { errorMessage, internalError } from '../utils/errors.js';
+import { generateClientQRToken } from '../utils/vendorQR.js';
 
 // --- 2.1. Tableau de bord Client - Recherche de produits et marchés ---
 
@@ -136,10 +137,10 @@ export const getDrivers = async (req, res) => {
     // First get the latest record per driver
     const latestRecords = await prisma.$queryRaw`
       SELECT d.id_user_livreur, d.est_disponible
-      FROM disponibilite_livreur d
+      FROM DisponibiliteLivreur d
       INNER JOIN (
         SELECT id_user_livreur, MAX(date_mise_a_jour) as max_date
-        FROM disponibilite_livreur
+        FROM DisponibiliteLivreur
         GROUP BY id_user_livreur
       ) latest ON d.id_user_livreur = latest.id_user_livreur AND d.date_mise_a_jour = latest.max_date
       WHERE d.est_disponible = true
@@ -834,6 +835,7 @@ export const getMarketById = async (req, res) => {
 
 export const getOrderQRCode = async (req, res) => {
   const { id_commande } = req.params;
+  const { action } = req.query; // 'accept' or 'finalize'
 
   try {
     const order = await prisma.commande.findUnique({
@@ -845,13 +847,20 @@ export const getOrderQRCode = async (req, res) => {
       return res.status(403).json({ error: 'Accès interdit.' });
     }
 
-    const qrDataUrl = await QRCode.toDataURL(order.code_verification, {
+    const qrAction = action === 'finalize' ? 'finalize' : 'accept';
+    const signedToken = generateClientQRToken(
+      order.id_commande,
+      order.code_verification,
+      qrAction
+    );
+
+    const qrDataUrl = await QRCode.toDataURL(signedToken, {
       width: 300,
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' }
     });
 
-    return res.json({ qrcode: qrDataUrl, code: order.code_verification });
+    return res.json({ qrcode: qrDataUrl, signed: true, action: qrAction });
   } catch (error) {
     return res.status(500).json({ error: internalError(error) });
   }
