@@ -96,9 +96,9 @@ export default function Inspection() {
       }
       await api.post(`/client/orders/${commande.id_commande}/inspection`, fd)
       showToast('Inspection confirmée !')
-      setTimeout(() => navigate('/client/paiement', {
+      navigate('/client/paiement', {
         state: { id_commande: commande.id_commande, total: totalFinal }
-      }), 1000)
+      })
     } catch (err) {
       showToast(err.message || 'Erreur lors de la confirmation')
     } finally {

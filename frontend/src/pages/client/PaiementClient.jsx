@@ -46,15 +46,27 @@ export default function PaiementClient() {
 
     if (ref) {
       setLoading(true)
+      let pollCount = 0
+      const MAX_POLLS = 30
       intervalRef.current = setInterval(async () => {
+        pollCount++
         try {
           const res = await api.get(`/client/payment/status/${ref}`)
           setPaymentStatus(res.statut)
           if (res.statut === 'completed' || res.statut === 'failed' || res.statut === 'cancelled') {
             clearInterval(intervalRef.current)
             setLoading(false)
+          } else if (pollCount >= MAX_POLLS) {
+            clearInterval(intervalRef.current)
+            setLoading(false)
+            showToast('Délai dépassé — vérifiez votre commande depuis l\'historique')
           }
-        } catch { /* ignore */ }
+        } catch {
+          if (pollCount >= MAX_POLLS) {
+            clearInterval(intervalRef.current)
+            setLoading(false)
+          }
+        }
       }, 4000)
 
       return () => clearInterval(intervalRef.current)
@@ -71,7 +83,7 @@ export default function PaiementClient() {
             setTotal(data.facture.montant_total_du)
           }
         })
-        .catch(() => {})
+        .catch(() => { showToast('Erreur chargement facture — réessayez') })
     }
   }, [paymentStatus, idCommande])
 
@@ -157,7 +169,7 @@ export default function PaiementClient() {
     a.href = url
     a.download = `facture-${facture.facture.id_facture}.txt`
     a.click()
-    URL.revokeObjectURL(url)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   const isCompleted = paymentStatus === 'completed'
@@ -296,7 +308,7 @@ export default function PaiementClient() {
             </div>
 
             {/* Facture */}
-            {facture && (
+            {facture && facture.facture && (
               <div className="rounded-2xl p-5 mb-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                 <div className="flex items-center gap-2 mb-3">
                   <FileText size={16} style={{ color: 'var(--text-muted)' }} />
@@ -340,6 +352,21 @@ export default function PaiementClient() {
                   className="mt-4 w-full py-3 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center gap-2"
                   style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', border: 'none' }}>
                   <Download size={14} /> Télécharger la facture
+                </button>
+              </div>
+            )}
+
+            {!facture && isCompleted && (
+              <div className="rounded-2xl p-4 mb-4 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+                <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Facture en cours de chargement…</p>
+                <button onClick={() => {
+                  api.get(`/client/orders/${idCommande}/facture`)
+                    .then(data => { setFacture(data); if (data?.facture?.montant_total_du) setTotal(data.facture.montant_total_du) })
+                    .catch(() => showToast('Erreur — réessayez'))
+                }}
+                  className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                  style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', border: 'none' }}>
+                  <RefreshCw size={14} className="inline" /> Réessayer
                 </button>
               </div>
             )}

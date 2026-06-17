@@ -191,7 +191,8 @@ export const handleWebhook = async (req, res) => {
     }
 
     return res.status(200).json({ received: true });
-  } catch {
+  } catch (error) {
+    console.error('[Webhook] Erreur traitement:', error);
     return res.status(200).json({ received: true });
   }
 };
