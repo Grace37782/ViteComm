@@ -1,5 +1,6 @@
 import prisma from '../config/db.js';
 import { errorMessage, internalError } from '../utils/errors.js';
+import QRCode from 'qrcode';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -583,6 +584,34 @@ export const verifyHandover = async (req, res) => {
     });
   } catch (error) {
     return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
+  }
+};
+
+// Vendor generates QR code for driver to scan at collection (RG06)
+export const getOrderQRCode = async (req, res) => {
+  const { id_commande } = req.params;
+  const vendorId = req.user.id_user;
+
+  try {
+    const commandId = parseInt(id_commande, 10);
+    const order = await prisma.commande.findUnique({ where: { id_commande: commandId } });
+    if (!order) return res.status(404).json({ error: 'Commande introuvable.' });
+
+    // Verify vendor owns at least one product in this order
+    const vendorProducts = await prisma.detailCommande.findMany({
+      where: { id_commande: commandId, produit: { id_user_vendeur: vendorId } }
+    });
+    if (vendorProducts.length === 0) {
+      return res.status(403).json({ error: 'Cette commande ne contient aucun de vos produits.' });
+    }
+
+    const qrDataUrl = await QRCode.toDataURL(order.code_verification, {
+      width: 300, margin: 2,
+      color: { dark: '#000000', light: '#ffffff' }
+    });
+    return res.json({ qrcode: qrDataUrl, code: order.code_verification });
+  } catch (error) {
+    return res.status(500).json({ error: internalError(error) });
   }
 };
 

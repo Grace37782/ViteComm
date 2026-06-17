@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { AlertTriangle, ShoppingCart, Camera, Loader2, KeyRound, CheckCircle, Package, ChevronDown, ShieldCheck } from 'lucide-react'
+import { AlertTriangle, ShoppingCart, Camera, Loader2, KeyRound, CheckCircle, Package, ChevronDown, ShieldCheck, QrCode, XCircle } from 'lucide-react'
 
 const PAGE_SIZE = 10
 
@@ -18,6 +18,8 @@ export default function CommandesVendeur() {
   const [validating, setValidating] = useState({})
   const [filtre, setFiltre] = useState('tous')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [qrModal, setQrModal] = useState(null)
+  const [qrData, setQrData] = useState(null)
 
   useEffect(() => {
     fetchOrders()
@@ -93,6 +95,18 @@ export default function CommandesVendeur() {
       setErrCodes((p) => ({ ...p, [cmd.id]: err.message }))
     } finally {
       setValidating((p) => ({ ...p, [cmd.id]: false }))
+    }
+  }
+
+  async function showQRCode(cmd) {
+    setQrModal(cmd)
+    setQrData(null)
+    try {
+      const data = await api.get(`/vendor/orders/${cmd.id}/qrcode`)
+      setQrData(data)
+    } catch (err) {
+      setErrCodes((p) => ({ ...p, [cmd.id]: err.message }))
+      setQrModal(null)
     }
   }
 
@@ -251,6 +265,13 @@ export default function CommandesVendeur() {
                 style={{ borderTop: '1px solid var(--border)' }}>
                 <div className="pt-3" />
 
+                {/* QR Code button */}
+                <button onClick={() => showQRCode(cmd)}
+                  className="w-full py-3 rounded-xl text-sm font-black cursor-pointer flex items-center justify-center gap-2"
+                  style={{ background: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5', border: 'none' }}>
+                  <QrCode size={16} /> Afficher le QR code pour le livreur
+                </button>
+
                 {/* Indicateur photo livreur */}
                 <div className="flex items-center gap-3 px-3 py-3 rounded-xl"
                   style={{ background: cmd.photo_collecte ? (isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE') : 'var(--surface-alt)' }}>
@@ -347,6 +368,35 @@ export default function CommandesVendeur() {
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
           <ChevronDown size={14} /> Charger plus ({liste.length - visibleCount} restant{liste.length - visibleCount > 1 ? 's' : ''})
         </button>
+      )}
+
+      {/* QR CODE MODAL */}
+      {qrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}
+          onClick={() => { setQrModal(null); setQrData(null) }}>
+          <div className="rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: 'var(--surface)' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <div className="font-black text-base" style={{ color: 'var(--text-primary)' }}>QR Code — Commande #{qrModal.id}</div>
+              <button onClick={() => { setQrModal(null); setQrData(null) }} className="cursor-pointer" style={{ background: 'none', border: 'none' }}>
+                <XCircle size={20} style={{ color: 'var(--text-muted)' }} />
+              </button>
+            </div>
+            {qrData ? (
+              <>
+                <img src={qrData.qrcode} alt="QR Code" className="mx-auto rounded-2xl mb-3" style={{ maxWidth: 250 }} />
+                <div className="text-xs font-bold tracking-[6px] font-mono mb-2" style={{ color: '#BA7517' }}>
+                  {qrData.code}
+                </div>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Le livreur doit scanner ce QR code pour confirmer la collecte
+                </div>
+              </>
+            ) : (
+              <div className="py-8"><Loader2 size={24} className="animate-spin mx-auto" /></div>
+            )}
+          </div>
+        </div>
       )}
 
     </div>

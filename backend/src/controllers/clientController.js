@@ -835,6 +835,74 @@ export const getOrderQRCode = async (req, res) => {
   }
 };
 
+// --- Get facture/receipt for paid order (RG25) ---
+
+export const getOrderFacture = async (req, res) => {
+  const { id_commande } = req.params;
+
+  try {
+    const order = await prisma.commande.findUnique({
+      where: { id_commande: parseInt(id_commande, 10) },
+      include: {
+        factures: {
+          include: {
+            paiements: true,
+            commande: {
+              include: {
+                detailsCommande: {
+                  include: { produit: { select: { nom: true } } }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!order) return res.status(404).json({ error: 'Commande introuvable.' });
+    if (order.id_user_client !== req.user.id_user) {
+      return res.status(403).json({ error: 'Accès interdit.' });
+    }
+
+    const facture = order.factures[0];
+    if (!facture) {
+      return res.status(404).json({ error: 'Aucune facture disponible pour cette commande.' });
+    }
+
+    return res.json({
+      facture: {
+        id_facture: facture.id_facture,
+        date_emission: facture.date_emission,
+        montant_marchandises: facture.montant_marchandises,
+        montant_frais_livraison: facture.montant_frais_livraison,
+        montant_frais_retour: facture.montant_frais_retour,
+        montant_commission: facture.montant_commission,
+        montant_total_du: facture.montant_total_du,
+        statut_paiement: facture.statut_paiement,
+      },
+      paiement: facture.paiements[0] ? {
+        date_paiement: facture.paiements[0].date_paiement,
+        montant_percu: facture.paiements[0].montant_percu,
+        mode_reglement: facture.paiements[0].mode_reglement,
+        reference_transaction: facture.paiements[0].reference_transaction,
+        statut: facture.paiements[0].statut,
+      } : null,
+      commande: {
+        id_commande: order.id_commande,
+        date_creation: order.date_creation,
+        articles: order.detailsCommande.map(d => ({
+          nom: d.produit?.nom,
+          quantite: d.quantite_commandee,
+          prix_unitaire: d.prix_vente_applique,
+          sous_total: (d.quantite_commandee || 0) * (d.prix_vente_applique || 0),
+        })),
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ error: internalError(error) });
+  }
+};
+
 // --- Cancel order (RG17) ---
 
 export const cancelOrder = async (req, res) => {

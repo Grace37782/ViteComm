@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { Loader2, CheckCircle, XCircle, RefreshCw, Smartphone, ShieldCheck, ArrowLeft } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, RefreshCw, Smartphone, ShieldCheck, ArrowLeft, Download, FileText } from 'lucide-react'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -25,6 +25,7 @@ export default function PaiementClient() {
   const [initiating, setInitiating] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState(statusParam || null)
   const [loading, setLoading] = useState(!!ref)
+  const [facture, setFacture] = useState(null)
   // eslint-disable-next-line no-unused-vars
   const [attempts, setAttempts] = useState(0)
   const [toast, setToast] = useState('')
@@ -65,6 +66,15 @@ export default function PaiementClient() {
     }
   }, [idCommande, ref, statusParam, navigate])
 
+  // Fetch facture when payment is completed
+  useEffect(() => {
+    if (paymentStatus === 'completed' && idCommande) {
+      api.get(`/client/orders/${idCommande}/facture`)
+        .then(setFacture)
+        .catch(() => {})
+    }
+  }, [paymentStatus, idCommande])
+
   async function initierPaiement() {
     if (!telephone.trim()) {
       showToast('Veuillez saisir votre numéro de téléphone')
@@ -96,6 +106,53 @@ export default function PaiementClient() {
       })
       .catch(() => {})
       .finally(() => setLoading(false))
+  }
+
+  function downloadFacture() {
+    if (!facture) return
+    const lines = [
+      '═══════════════════════════════════════',
+      '           VITECOMM — FACTURE',
+      '═══════════════════════════════════════',
+      '',
+      `Facture #${facture.facture.id_facture}`,
+      `Commande #${facture.commande.id_commande}`,
+      `Date : ${new Date(facture.facture.date_emission).toLocaleDateString('fr-FR')}`,
+      '',
+      '───────── Articles ─────────',
+      ...facture.commande.articles.map(a =>
+        `  ${a.nom}  ×${a.quantite}  ${formatPrice(a.sous_total)}`
+      ),
+      '',
+      '───────── Détails ─────────',
+      `  Marchandises    : ${formatPrice(facture.facture.montant_marchandises)}`,
+      `  Livraison       : ${formatPrice(facture.facture.montant_frais_livraison)}`,
+      `  Frais retour    : ${formatPrice(facture.facture.montant_frais_retour)}`,
+      `  Commission      : ${formatPrice(facture.facture.montant_commission)}`,
+      '─────────────────────────────',
+      `  TOTAL DU        : ${formatPrice(facture.facture.montant_total_du)}`,
+      '',
+    ]
+    if (facture.paiement) {
+      lines.push(
+        '───────── Paiement ─────────',
+        `  Montant reçu    : ${formatPrice(facture.paiement.montant_percu)}`,
+        `  Mode            : ${facture.paiement.mode_reglement}`,
+        `  Référence       : ${facture.paiement.reference_transaction}`,
+        `  Statut          : ${facture.paiement.statut}`,
+        `  Date            : ${new Date(facture.paiement.date_paiement).toLocaleString('fr-FR')}`,
+        '',
+      )
+    }
+    lines.push('═══════════════════════════════════════', '  Merci pour votre achat sur ViteComm', '═══════════════════════════════════════')
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `facture-${facture.facture.id_facture}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const isCompleted = paymentStatus === 'completed'
@@ -216,20 +273,72 @@ export default function PaiementClient() {
           </div>
         )}
 
-        {/* COMPLETED */}
+        {/* COMPLETED — with facture */}
         {isCompleted && (
-          <div className="text-center">
-            <div className="mb-4 flex justify-center">
-              <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: isDark ? 'rgba(45,196,145,0.15)' : '#D1FAE5' }}>
-                <CheckCircle size={40} style={{ color: '#1D9E75' }} />
+          <div className="w-full max-w-md">
+            <div className="text-center mb-4">
+              <div className="mb-4 flex justify-center">
+                <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: isDark ? 'rgba(45,196,145,0.15)' : '#D1FAE5' }}>
+                  <CheckCircle size={40} style={{ color: '#1D9E75' }} />
+                </div>
               </div>
+              <h2 className="font-black text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
+                Paiement confirmé !
+              </h2>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                Votre commande #{idCommande} a été payée avec succès.
+              </p>
             </div>
-            <h2 className="font-black text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
-              Paiement confirmé !
-            </h2>
-            <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-              Votre commande #{idCommande} a été payée avec succès.
-            </p>
+
+            {/* Facture */}
+            {facture && (
+              <div className="rounded-2xl p-5 mb-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <FileText size={16} style={{ color: 'var(--text-muted)' }} />
+                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Facture #{facture.facture.id_facture}</div>
+                </div>
+
+                <div className="space-y-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  {facture.commande.articles.map((a, i) => (
+                    <div key={i} className="flex justify-between">
+                      <span>{a.nom} ×{a.quantite}</span>
+                      <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{formatPrice(a.sous_total)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-3 pt-3 space-y-1 text-xs" style={{ borderTop: '1px solid var(--border)' }}>
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--text-muted)' }}>Livraison</span>
+                    <span style={{ color: 'var(--text-primary)' }}>{formatPrice(facture.facture.montant_frais_livraison)}</span>
+                  </div>
+                  {facture.facture.montant_frais_retour > 0 && (
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--text-muted)' }}>Frais retour</span>
+                      <span style={{ color: 'var(--text-primary)' }}>{formatPrice(facture.facture.montant_frais_retour)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-black text-sm pt-1">
+                    <span style={{ color: 'var(--text-primary)' }}>Total payé</span>
+                    <span style={{ color: '#1D9E75' }}>{formatPrice(facture.facture.montant_total_du)}</span>
+                  </div>
+                </div>
+
+                {facture.paiement && (
+                  <div className="mt-3 pt-3 text-[10px] space-y-1" style={{ borderTop: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                    <div>Réf: {facture.paiement.reference_transaction}</div>
+                    <div>Payé le {new Date(facture.paiement.date_paiement).toLocaleString('fr-FR')}</div>
+                  </div>
+                )}
+
+                <button onClick={downloadFacture}
+                  className="mt-4 w-full py-3 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center gap-2"
+                  style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', border: 'none' }}>
+                  <Download size={14} /> Télécharger la facture
+                </button>
+              </div>
+            )}
+
             <button
               onClick={() => navigate('/client/evaluation')}
               className="w-full py-3 rounded-2xl text-white font-black text-sm cursor-pointer"
