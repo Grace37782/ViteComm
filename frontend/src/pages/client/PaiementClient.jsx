@@ -109,7 +109,7 @@ export default function PaiementClient() {
         id_commande: idCommande,
         mode_paiement: 'momo',
         telephone: telephone.trim(),
-      })
+      }, { timeout: 60000 })
       window.location.href = res.checkout_url
     } catch (err) {
       const msg = err.message || 'Erreur lors de l\'initiation du paiement'

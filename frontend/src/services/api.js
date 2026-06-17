@@ -39,18 +39,20 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
-  get: (url) => request(url),
-  post: (url, data) => request(url, {
+  get: (url, opts) => request(url, opts),
+  post: (url, data, opts) => request(url, {
+    ...(opts || {}),
     method: 'POST',
     body: data instanceof FormData ? data : JSON.stringify(data),
-    headers: data instanceof FormData ? {} : {},
+    headers: data instanceof FormData ? { ...(opts?.headers || {}) } : { ...(opts?.headers || {}) },
   }),
-  put: (url, data) => request(url, {
+  put: (url, data, opts) => request(url, {
+    ...(opts || {}),
     method: 'PUT',
     body: data instanceof FormData ? data : JSON.stringify(data),
-    headers: data instanceof FormData ? {} : {},
+    headers: data instanceof FormData ? { ...(opts?.headers || {}) } : { ...(opts?.headers || {}) },
   }),
-  delete: (url) => request(url, { method: 'DELETE' }),
+  delete: (url, opts) => request(url, { ...(opts || {}), method: 'DELETE' }),
 }
 
 export async function login(credentials) {
