@@ -51,7 +51,7 @@ export async function initiatePayment(transaction) {
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
+  const timeout = setTimeout(() => controller.abort(), 60000);
 
   let response;
   try {
