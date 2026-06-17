@@ -157,28 +157,6 @@ export const handleWebhook = async (req, res) => {
             where: { id_facture: facture.id_facture },
             data: { statut_paiement: 'Paye' },
           });
-        } else {
-          const cmd = paiementTransaction.commande;
-          const newFacture = await tx.facture.create({
-            data: {
-              id_commande: cmd.id_commande,
-              montant_marchandises: cmd.total_marchandises,
-              montant_frais_livraison: cmd.frais_livraison,
-              montant_frais_retour: 0,
-              montant_commission: cmd.commission,
-              montant_total_du: cmd.total_marchandises + cmd.frais_livraison,
-              statut_paiement: 'Paye',
-            },
-          });
-          await tx.paiement.create({
-            data: {
-              montant_percu: paiementTransaction.montant,
-              mode_reglement: 'MOBILE_MONEY',
-              reference_transaction: paiementTransaction.transaction_id,
-              statut: 'Effectue',
-              id_facture: newFacture.id_facture,
-            },
-          });
         }
 
         await tx.commande.update({
@@ -266,22 +244,6 @@ export const getPaymentStatus = async (req, res) => {
               });
             }
             await tx.facture.update({ where: { id_facture: facture.id_facture }, data: { statut_paiement: 'Paye' } });
-          } else if (cmd) {
-            const newFacture = await tx.facture.create({
-              data: {
-                id_commande: cmd.id_commande, montant_marchandises: cmd.total_marchandises,
-                montant_frais_livraison: cmd.frais_livraison, montant_frais_retour: 0,
-                montant_commission: cmd.commission, montant_total_du: cmd.total_marchandises + cmd.frais_livraison,
-                statut_paiement: 'Paye',
-              },
-            });
-            await tx.paiement.create({
-              data: {
-                montant_percu: transaction.montant, mode_reglement: 'MOBILE_MONEY',
-                reference_transaction: transaction.transaction_id, statut: 'Effectue',
-                id_facture: newFacture.id_facture,
-              },
-            });
           }
           await tx.commande.update({ where: { id_commande: transaction.id_commande }, data: { mode_paiement_status: 'paye' } });
         });

@@ -641,6 +641,9 @@ export const inspectionOrder = async (req, res) => {
     if (!commande.livraison) {
       return res.status(400).json({ error: 'Aucune livraison associée à cette commande.' });
     }
+    if (commande.statut !== 'Inspectee') {
+      return res.status(400).json({ error: 'La commande n\'est pas encore prête pour l\'inspection.' });
+    }
 
     // Validate all items have a status
     for (const detail of commande.detailsCommande) {

@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
 import { XCircle, CheckCircle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, X, ChevronDown, QrCode, Camera } from 'lucide-react'
 import { Html5QrcodeScanner } from 'html5-qrcode'
+
+/* eslint-disable react-hooks/set-state-in-effect */
 
 const PAGE_SIZE = 10
 
@@ -16,7 +18,6 @@ export default function CommandesLivreur() {
   const [finalizeOpen, setFinalizeOpen] = useState(null)
   const [collectOpen, setCollectOpen] = useState(null)
   const [codeVerification, setCodeVerification] = useState('')
-  const [rejections, setRejections] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState('actives')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
@@ -37,23 +38,12 @@ export default function CommandesLivreur() {
       .finally(() => setLoading(false))
   }
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadDataFn() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function accepterCourse(id_commande) {
     try {
       await api.post(`/livreur/deliveries/${id_commande}/accept`)
       showToast('Course acceptée !')
-      loadDataFn()
-    } catch (e) { showToast(e.message) }
-  }
-
-  // eslint-disable-next-line no-unused-vars
-  async function marquerCollectee(id_commande) {
-    try {
-      await api.post(`/livreur/deliveries/${id_commande}/collect`, { code_verification: codeVerification })
-      showToast('Collecte confirmée !')
-      setCollectOpen(null); setCodeVerification(''); setProofPhotos([]); setScanResult(null)
       loadDataFn()
     } catch (e) { showToast(e.message) }
   }
@@ -65,10 +55,23 @@ export default function CommandesLivreur() {
     setScanResult(null)
   }
 
+  const cleanupScanner = useCallback(() => {
+    if (scannerRef.current) {
+      try { scannerRef.current.clear() } catch { /* ignore */ }
+      scannerRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => cleanupScanner()
+  }, [cleanupScanner])
+
   function handleProofPhotos(e) {
     const files = Array.from(e.target.files || [])
     setProofPhotos(prev => [...prev, ...files])
   }
+
+  const photoUrls = proofPhotos.map(f => URL.createObjectURL(f))
 
   function removeProofPhoto(idx) {
     setProofPhotos(prev => prev.filter((_, i) => i !== idx))
@@ -87,6 +90,7 @@ export default function CommandesLivreur() {
       await api.post(`/livreur/deliveries/${collectOpen.commande.id_commande}/collect`, fd)
       showToast('Collecte confirmée avec preuve !')
       setCollectOpen(null); setCodeVerification(''); setProofPhotos([]); setScanResult(null)
+      cleanupScanner()
       loadDataFn()
     } catch (e) { showToast(e.message) }
     finally { setSubmitting(false) }
@@ -100,26 +104,15 @@ export default function CommandesLivreur() {
     } catch (e) { showToast(e.message) }
   }
 
-  function openFinalize(delivery) { setFinalizeOpen(delivery); setCodeVerification(''); setRejections({}) }
-
-  function toggleReject(id_produit) {
-    setRejections(prev => ({ ...prev, [id_produit]: prev[id_produit] ? undefined : { rejected: true, motif: '' } }))
-  }
-
-  function setRejectMotif(id_produit, motif) {
-    setRejections(prev => ({ ...prev, [id_produit]: { ...prev[id_produit], motif } }))
-  }
+  function openFinalize(delivery) { setFinalizeOpen(delivery); setCodeVerification('') }
 
   async function handleFinalize() {
     if (!codeVerification.trim()) return showToast('Entrez le code de vérification')
     if (!finalizeOpen) return
     setSubmitting(true)
     try {
-      const rejArray = Object.entries(rejections).filter(([, v]) => v).map(([id_produit, v]) => ({
-        id_produit: parseInt(id_produit), rejected: v.rejected, motif: v.motif || 'Non spécifié',
-      }))
       await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/finalize`, {
-        code_verification: codeVerification, rejections: rejArray.length > 0 ? rejArray : undefined,
+        code_verification: codeVerification,
       })
       showToast('Livraison finalisée !')
       setFinalizeOpen(null); loadDataFn()
@@ -340,34 +333,10 @@ export default function CommandesLivreur() {
                   style={{ background: 'var(--surface)', border: '2px solid var(--border)', color: 'var(--text-primary)' }} />
               </div>
 
-              <div className="mb-4">
-                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Package size={12} className="inline align-middle" /> Produits — refusez si non conformes</div>
-                {finalizeOpen.commande?.detailsCommande?.map(line => (
-                  <div key={line.id_produit} className="rounded-xl p-3 mb-2" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{line.produit?.nom}</div>
-                        <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{line.quantite_commandee} × {line.prix_vente_applique?.toLocaleString()} F</div>
-                      </div>
-                      <button onClick={() => toggleReject(line.id_produit)}
-                        className="rounded-xl px-3 py-1.5 text-xs font-bold cursor-pointer transition-all active:scale-95"
-                        style={{
-                          background: rejections[line.id_produit] ? '#D85A30' : 'var(--surface)',
-                          color: rejections[line.id_produit] ? '#fff' : 'var(--text-muted)',
-                          border: `1.5px solid ${rejections[line.id_produit] ? '#D85A30' : 'var(--border)'}`,
-                        }}>
-                        {rejections[line.id_produit] ? <>Refusé <X size={12} className="inline" /></> : 'Refuser'}
-                      </button>
-                    </div>
-                    {rejections[line.id_produit] && (
-                      <input type="text" value={rejections[line.id_produit].motif}
-                        onChange={e => setRejectMotif(line.id_produit, e.target.value)}
-                        placeholder="Motif du rejet…"
-                        className="mt-2 w-full px-3 py-2 rounded-lg text-xs outline-none"
-                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
-                    )}
-                  </div>
-                ))}
+              <div className="rounded-2xl p-3 mb-4" style={{ background: isDark ? 'rgba(59,130,246,0.08)' : '#EFF6FF', border: '1.5px solid var(--border)' }}>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Le client inspectera les articles et décidera de les accepter ou rejeter lors de l'inspection.
+                </div>
               </div>
 
               <button onClick={handleFinalize} disabled={submitting || !codeVerification.trim()}
@@ -386,7 +355,7 @@ export default function CommandesLivreur() {
       {/* COLLECT MODAL — QR Scanner + Proof Photos */}
       {collectOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}
-          onClick={() => setCollectOpen(null)}>
+          onClick={() => { setCollectOpen(null); cleanupScanner() }}>
           <div className="w-full max-w-lg rounded-t-[28px] overflow-y-auto" style={{ background: 'var(--surface)', maxHeight: '85vh' }}
             onClick={e => e.stopPropagation()}>
             <div className="flex justify-center pt-3 pb-1">
@@ -411,12 +380,13 @@ export default function CommandesLivreur() {
                 )}
                 {!scanResult && (
                   <button onClick={() => {
+                    cleanupScanner()
                     const scanner = new Html5QrcodeScanner('qr-reader', { fps: 10, qrbox: 250 }, false)
                     scanner.render(
                       (decodedText) => {
                         setScanResult(decodedText)
                         setCodeVerification(decodedText)
-                        scanner.clear()
+                        cleanupScanner()
                       },
                       () => {}
                     )
@@ -455,7 +425,7 @@ export default function CommandesLivreur() {
                   <div className="grid grid-cols-3 gap-2">
                     {proofPhotos.map((file, i) => (
                       <div key={i} className="relative rounded-xl overflow-hidden aspect-square">
-                        <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
+                        <img src={photoUrls[i]} alt="" className="w-full h-full object-cover" />
                         <button onClick={() => removeProofPhoto(i)}
                           className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer"
                           style={{ background: 'rgba(0,0,0,0.6)', border: 'none' }}>

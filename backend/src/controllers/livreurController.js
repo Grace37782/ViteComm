@@ -258,7 +258,7 @@ export const collectDelivery = async (req, res) => {
     const preuve = await prisma.preuveCollecte.create({
       data: {
         id_commande: commandId,
-        statut_validation: 'Validée'
+        statut_validation: 'Validee'
       }
     });
 
@@ -335,7 +335,7 @@ export const departDelivery = async (req, res) => {
 
 export const finalizeDelivery = async (req, res) => {
   const { id_commande } = req.params;
-  const { code_verification, rejections } = req.body;
+  const { code_verification } = req.body;
 
   if (!code_verification) {
     return res.status(400).json({ error: 'Le code de vérification du client est obligatoire.' });
@@ -349,7 +349,6 @@ export const finalizeDelivery = async (req, res) => {
       where: { id_commande: commandId },
       include: {
         livraison: true,
-        detailsCommande: { include: { produit: true } }
       }
     });
 
@@ -369,59 +368,10 @@ export const finalizeDelivery = async (req, res) => {
     const livraisonId = command.livraison.id_livraison;
 
     await prisma.$transaction(async (tx) => {
-      let rejectedCount = 0;
-      let acceptedGoodsValue = 0;
-
-      for (const line of command.detailsCommande) {
-        const rejectSpec = rejections?.find((r) => r.id_produit === line.id_produit);
-
-        if (rejectSpec && rejectSpec.rejected) {
-          rejectedCount++;
-
-          await tx.detailCommande.update({
-            where: { id_commande_id_produit: { id_commande: commandId, id_produit: line.id_produit } },
-            data: { statut_acceptation: 'Rejete' }
-          });
-
-          // Create Litige linked to Livraison (RG21)
-          const litige = await tx.litige.create({
-            data: {
-              id_livraison: livraisonId,
-              description: `Produit "${line.produit.nom}" rejeté. Motif : ${rejectSpec.motif || 'Non spécifié'}.`,
-              statut: 'Ouvert',
-              statut_retour: 'a_recuperer',
-              montant_rembourse: 0.0
-            }
-          });
-
-          await tx.detailCommande.update({
-            where: { id_commande_id_produit: { id_commande: commandId, id_produit: line.id_produit } },
-            data: { id_litige: litige.id_litige }
-          });
-
-          // Restore stock
-          await tx.produit.update({
-            where: { id_produit: line.id_produit },
-            data: { stock_disponible: { increment: line.quantite_commandee } }
-          });
-        } else {
-          acceptedGoodsValue += line.prix_vente_applique * line.quantite_commandee;
-
-          await tx.detailCommande.update({
-            where: { id_commande_id_produit: { id_commande: commandId, id_produit: line.id_produit } },
-            data: { statut_acceptation: 'Accepte' }
-          });
-        }
-      }
-
-      // Recalculate financials (RG16)
-      const returnFees = rejectedCount * 500;
-      const finalCommission = parseFloat((acceptedGoodsValue * 0.006).toFixed(2));
-
-      // Set status to Inspectee — the client will create the invoice after inspection
+      // Advance status to Inspectee — client will inspect and create the invoice
       await tx.commande.update({
         where: { id_commande: commandId },
-        data: { statut: 'Inspectee', commission: finalCommission }
+        data: { statut: 'Inspectee' }
       });
 
       await tx.livraison.update({
@@ -429,17 +379,15 @@ export const finalizeDelivery = async (req, res) => {
         data: {
           statut_livraison: 'Inspectee',
           date_fin_reelle: new Date(),
-          frais_retour_calcules: returnFees
         }
       });
 
-      // Create BonDeLivraison (RG27)
+      // Create BonDeLivraison (RG27) — status PENDING until client confirms
       await tx.bonDeLivraison.create({
         data: {
           id_livraison: livraisonId,
-          statut_bon: 'SIGNE',
-          date_signature_client: new Date(),
-          observations_livreur: rejections?.length > 0 ? `${rejectedCount} produit(s) rejeté(s)` : 'Commande acceptée intégralement'
+          statut_bon: 'EN_ATTENTE',
+          observations_livreur: 'En attente de l\'inspection client'
         }
       });
 
@@ -447,19 +395,6 @@ export const finalizeDelivery = async (req, res) => {
       await tx.disponibiliteLivreur.create({
         data: { id_user_livreur: driverId, est_disponible: true }
       });
-
-      // Update driver reputation (RG10) - average of all feedbacks
-      const feedbacks = await tx.feedback.findMany({
-        where: { type_feedback: 'LIVREUR', livraison: { id_user_livreur: driverId } },
-        select: { note: true }
-      });
-      if (feedbacks.length > 0) {
-        const avg = feedbacks.reduce((a, f) => a + f.note, 0) / feedbacks.length;
-        await tx.livreur.update({
-          where: { id_user: driverId },
-          data: { score_reputation: parseFloat(avg.toFixed(2)) }
-        });
-      }
     });
 
     return res.json({ message: 'Livraison finalisée avec succès.' });
