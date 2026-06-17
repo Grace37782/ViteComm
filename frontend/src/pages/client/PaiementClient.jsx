@@ -26,8 +26,6 @@ export default function PaiementClient() {
   const [paymentStatus, setPaymentStatus] = useState(statusParam || null)
   const [loading, setLoading] = useState(!!ref)
   const [facture, setFacture] = useState(null)
-  // eslint-disable-next-line no-unused-vars
-  const [attempts, setAttempts] = useState(0)
   const [toast, setToast] = useState('')
   const intervalRef = useRef(null)
 
@@ -52,14 +50,11 @@ export default function PaiementClient() {
         try {
           const res = await api.get(`/client/payment/status/${ref}`)
           setPaymentStatus(res.statut)
-          setAttempts(a => a + 1)
           if (res.statut === 'completed' || res.statut === 'failed' || res.statut === 'cancelled') {
             clearInterval(intervalRef.current)
             setLoading(false)
           }
-        } catch {
-          setAttempts(a => a + 1)
-        }
+        } catch { /* ignore */ }
       }, 4000)
 
       return () => clearInterval(intervalRef.current)
@@ -83,6 +78,11 @@ export default function PaiementClient() {
   async function initierPaiement() {
     if (!telephone.trim()) {
       showToast('Veuillez saisir votre numéro de téléphone')
+      return
+    }
+    if (!idCommande) {
+      showToast('Commande introuvable — retour à la liste')
+      setTimeout(() => navigate('/client/mes-commandes'), 1500)
       return
     }
     setInitiating(true)

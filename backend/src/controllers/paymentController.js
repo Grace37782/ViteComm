@@ -285,7 +285,11 @@ export const handleCallback = async (req, res) => {
       where: { transaction_id: reference },
     });
 
-    if (transaction?.statut === 'completed') {
+    if (!transaction) {
+      return res.redirect('/client/panier');
+    }
+
+    if (transaction.statut === 'completed') {
       return res.redirect(`/client/paiement?ref=${reference}&status=success&id_commande=${transaction.id_commande}`);
     }
 

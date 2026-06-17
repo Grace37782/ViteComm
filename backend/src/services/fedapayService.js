@@ -34,7 +34,7 @@ export async function initiatePayment(transaction) {
     currency: { iso: transaction.devise || 'XOF' },
     reference: transaction.transaction_id,
     callback_url: `${process.env.APP_URL}/api/webhooks/fedapay`,
-    return_url: `${process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173'}/client/paiement?ref=${transaction.transaction_id}`,
+    return_url: `${process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173'}/client/paiement?ref=${transaction.transaction_id}&id_commande=${transaction.id_commande}`,
   };
 
   if (phone) {
@@ -50,14 +50,28 @@ export async function initiatePayment(transaction) {
     payload.method = method;
   }
 
-  const response = await fetch(`${FEDAPAY_BASE_URL}/v1/transactions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${FEDAPAY_SECRET_KEY}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+
+  let response;
+  try {
+    response = await fetch(`${FEDAPAY_BASE_URL}/v1/transactions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${FEDAPAY_SECRET_KEY}`,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') {
+      throw new Error('FedaPay ne répond pas — veuillez réessayer', { cause: err });
+    }
+    throw new Error('Impossible de contacter FedaPay — vérifiez votre connexion', { cause: err });
+  }
+  clearTimeout(timeout);
 
   const data = await response.json();
 
@@ -128,9 +142,13 @@ export function generateTransactionId() {
 export async function verifyTransactionStatus(fedapayId) {
   if (!fedapayId || !FEDAPAY_SECRET_KEY) return null;
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
     const response = await fetch(`${FEDAPAY_BASE_URL}/v1/transactions/${fedapayId}`, {
       headers: { Authorization: `Bearer ${FEDAPAY_SECRET_KEY}` },
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     if (!response.ok) return null;
     const data = await response.json();
     const tx = data?.['v1/transaction'] || data?.data?.transaction || data?.transaction || data;

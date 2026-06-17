@@ -283,11 +283,17 @@ export const collectDelivery = async (req, res) => {
       }
     }
 
-    // Update livraison statut
-    await prisma.livraison.update({
-      where: { id_livraison: command.livraison.id_livraison },
-      data: { statut_livraison: 'Collectee' }
-    });
+    // Update livraison statut + advance commande statut (RG06)
+    await prisma.$transaction([
+      prisma.livraison.update({
+        where: { id_livraison: command.livraison.id_livraison },
+        data: { statut_livraison: 'Collectee' }
+      }),
+      prisma.commande.update({
+        where: { id_commande: commandId },
+        data: { statut: 'En collecte' }
+      }),
+    ]);
 
     return res.json({ message: 'Collecte enregistrée avec preuve photo.', preuve_id: preuve.id_preuve });
   } catch (error) {
@@ -318,10 +324,16 @@ export const departDelivery = async (req, res) => {
       return res.status(400).json({ error: 'La collecte doit être confirmée d\'abord.' });
     }
 
-    await prisma.livraison.update({
-      where: { id_livraison: command.livraison.id_livraison },
-      data: { statut_livraison: 'En cours de livraison' }
-    });
+    await prisma.$transaction([
+      prisma.livraison.update({
+        where: { id_livraison: command.livraison.id_livraison },
+        data: { statut_livraison: 'En cours de livraison' }
+      }),
+      prisma.commande.update({
+        where: { id_commande: commandId },
+        data: { statut: 'En transit' }
+      }),
+    ]);
 
     return res.json({ message: 'Départ enregistré. En route vers le client.' });
   } catch (error) {
