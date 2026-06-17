@@ -327,6 +327,6 @@ Ce projet est un logiciel **propriétaire**. Voir [LICENSE.txt](LICENSE.txt) pou
 
 **Projet de Mémoire ESGIS 2026**
 
-Développé avec ❤️ par Lionel Nkoulou
+Développé avec ❤️ par Lionel T. Sisso
 
 </div>
