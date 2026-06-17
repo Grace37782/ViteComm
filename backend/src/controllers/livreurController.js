@@ -516,7 +516,7 @@ export const getLivreurHistorique = async (req, res) => {
         echecs: failed.length,
         total_gains: totalGains,
         total_frais_retour: totalReturnFees,
-        gains_nets: totalGains + totalReturnFees
+        gains_nets: totalGains - totalReturnFees
       }
     });
   } catch (error) {
@@ -749,7 +749,7 @@ export const getGainsDetailed = async (req, res) => {
         : '—',
       frais_livraison: d.commande.frais_livraison,
       frais_retour: d.frais_retour_calcules || 0,
-      total: d.commande.frais_livraison + (d.frais_retour_calcules || 0),
+      total: d.commande.frais_livraison - (d.frais_retour_calcules || 0),
       date: d.date_fin_reelle
     }));
 
@@ -757,7 +757,7 @@ export const getGainsDetailed = async (req, res) => {
     const totalRetours = gains.reduce((a, g) => a + g.frais_retour, 0);
 
     return res.json({
-      total_gains: totalLivraisons + totalRetours,
+      total_gains: totalLivraisons - totalRetours,
       total_livraisons: totalLivraisons,
       total_frais_retour: totalRetours,
       nb_livraisons: gains.length,

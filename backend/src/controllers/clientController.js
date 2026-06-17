@@ -132,13 +132,19 @@ export const getCategories = async (req, res) => {
 // Get list of available delivery drivers for checkout selection (RG05, RG19)
 export const getDrivers = async (req, res) => {
   try {
-    // Get IDs of livreurs whose latest availability record has est_disponible = true (RG29)
-    const availableEntries = await prisma.disponibiliteLivreur.groupBy({
-      by: ['id_user_livreur'],
-      _max: { date_mise_a_jour: true },
-      where: { est_disponible: true }
-    });
-    const availableDriverIds = availableEntries.map(e => e.id_user_livreur);
+    // Get IDs of livreurs whose LATEST availability record has est_disponible = true (RG29)
+    // First get the latest record per driver
+    const latestRecords = await prisma.$queryRaw`
+      SELECT d.id_user_livreur, d.est_disponible
+      FROM disponibilite_livreur d
+      INNER JOIN (
+        SELECT id_user_livreur, MAX(date_mise_a_jour) as max_date
+        FROM disponibilite_livreur
+        GROUP BY id_user_livreur
+      ) latest ON d.id_user_livreur = latest.id_user_livreur AND d.date_mise_a_jour = latest.max_date
+      WHERE d.est_disponible = true
+    `;
+    const availableDriverIds = latestRecords.map(e => e.id_user_livreur);
 
     const drivers = await prisma.livreur.findMany({
       where: {
@@ -860,16 +866,12 @@ export const getOrderFacture = async (req, res) => {
     const order = await prisma.commande.findUnique({
       where: { id_commande: parseInt(id_commande, 10) },
       include: {
+        detailsCommande: {
+          include: { produit: { select: { nom: true } } }
+        },
         factures: {
           include: {
             paiements: true,
-            commande: {
-              include: {
-                detailsCommande: {
-                  include: { produit: { select: { nom: true } } }
-                }
-              }
-            }
           }
         }
       }

@@ -6,6 +6,7 @@ import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCh
 
 const STATUT_STEPS = [
   { key: 'En attente', icon: Loader2, titre: 'En attente', desc: 'En attente de validation' },
+  { key: 'Validee', icon: Package, titre: 'Validée', desc: 'Commande validée par le vendeur' },
   { key: 'En collecte', icon: Package, titre: 'Collecte', desc: 'Articles en cours de collecte' },
   { key: 'En transit', icon: Motorbike, titre: 'En transit', desc: 'Articles collectés, en route vers vous' },
   { key: 'Inspectee', icon: Search, titre: 'Inspection', desc: 'Inspectez vos articles' },

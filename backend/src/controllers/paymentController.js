@@ -34,6 +34,10 @@ export const createPayment = async (req, res) => {
       return res.status(400).json({ error: 'Cette commande est déjà payée' });
     }
 
+    if (commande.statut === 'Annulee') {
+      return res.status(400).json({ error: 'Cette commande a été annulée.' });
+    }
+
     const facture = commande.factures[0];
     const montant = facture
       ? facture.montant_total_du
