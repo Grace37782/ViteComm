@@ -402,28 +402,17 @@ export const getVendorOrders = async (req, res) => {
               include: { utilisateur: true }
             }
           }
-        },
-        preuvesCollecte: {
-          include: { medias: true }
         }
       },
       orderBy: { date_creation: 'desc' }
     });
 
     const formatted = orders.map((o) => {
-      // Determine statut_collecte from livraison + proofs
+      // Determine statut_collecte from livraison status (QR-based, no photo/code logic)
       let statut_collecte = 'en_attente';
       if (o.livraison) {
-        const hasPhotoProof = o.preuvesCollecte.some(
-          (p) => p.medias.length > 0 && p.statut_validation === 'Validee'
-        );
-        const allProofsValidated = o.preuvesCollecte.length > 0 &&
-          o.preuvesCollecte.every((p) => p.statut_validation === 'Validee');
-
-        if (allProofsValidated && o.statut !== 'En attente') {
+        if (o.livraison.statut_livraison === 'Collectee' || o.livraison.statut_livraison === 'En cours de livraison' || o.livraison.statut_livraison === 'Inspectee' || o.livraison.statut_livraison === 'Livree') {
           statut_collecte = 'collecte';
-        } else if (hasPhotoProof) {
-          statut_collecte = 'code_saisi';
         }
       }
 
@@ -438,9 +427,6 @@ export const getVendorOrders = async (req, res) => {
         : 'Client inconnu';
       const clientTelephone = o.client?.utilisateur?.telephone || '';
       const clientAdresse = o.client?.adresse_livraison || '';
-
-      // Photo indicator: any proof with media
-      const photo_collecte = o.preuvesCollecte.some((p) => p.medias.length > 0);
 
       // Articles (vendor's products only)
       const articles = o.detailsCommande.map((d) => ({
@@ -459,7 +445,6 @@ export const getVendorOrders = async (req, res) => {
         validee_par_vendeur: o.validee_par_vendeur,
         livreur,
         client: { nom: clientNom, telephone: clientTelephone, adresse: clientAdresse },
-        photo_collecte,
         articles
       };
     });
