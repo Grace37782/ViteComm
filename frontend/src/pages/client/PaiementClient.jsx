@@ -106,7 +106,10 @@ export default function PaiementClient() {
       })
       window.location.href = res.checkout_url
     } catch (err) {
-      showToast(err.message || 'Erreur lors de l\'initiation du paiement')
+      const msg = err.message || 'Erreur lors de l\'initiation du paiement'
+      showToast(msg.includes('trop de temps') || msg.includes('contacter')
+        ? `${msg}. Le serveur peut se réveiller au prochain essai.`
+        : msg)
       setInitiating(false)
     }
   }
@@ -396,11 +399,14 @@ export default function PaiementClient() {
               Le paiement n'a pas pu être traité. Vous pouvez réessayer.
             </p>
             <button
-              onClick={() => { setPaymentStatus(null); setTelephone('') }}
+              onClick={() => {
+                clearInterval(intervalRef.current)
+                navigate('/client/paiement', { state: { id_commande: idCommande, total }, replace: true })
+              }}
               className="w-full py-3 rounded-2xl text-white font-black text-sm cursor-pointer flex items-center justify-center gap-2"
               style={{ background: '#1D9E75', border: 'none' }}
             >
-              <RefreshCw size={14} /> Réessayer
+              <RefreshCw size={14} /> Réessayer le paiement
             </button>
           </div>
         )}

@@ -389,7 +389,7 @@ export default function CommandesVendeur() {
                   {qrData.code}
                 </div>
                 <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Le livreur doit scanner ce QR code pour confirmer la collecte
+                  Le livreur doit scanner ce QR code pour confirmer la collecte (RG06)
                 </div>
               </>
             ) : (

@@ -78,7 +78,7 @@ export default function CommandesLivreur() {
   }
 
   async function submitCollection() {
-    if (!codeVerification.trim()) return showToast('Entrez le code de vérification')
+    if (!codeVerification.trim()) return showToast('Entrez le code de vérification du client')
     if (!collectOpen) return
     setSubmitting(true)
     try {
@@ -323,7 +323,7 @@ export default function CommandesLivreur() {
             </div>
             <div className="px-5 pb-8 pt-3">
               <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Finaliser la livraison</h2>
-              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{finalizeOpen.commande?.id_commande}</p>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{finalizeOpen.commande?.id_commande} — Saisissez le code du client pour confirmer la remise</p>
 
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Lock size={12} className="inline align-middle" /> Code de vérification du client (RG06)</div>
@@ -368,7 +368,10 @@ export default function CommandesLivreur() {
               {/* QR Scanner */}
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
-                  <QrCode size={12} /> Scanner le QR code du vendeur
+                  <QrCode size={12} /> Scanner le QR code du vendeur (RG06)
+                </div>
+                <div className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
+                  Le vendeur affiche le code de vérification du client sous forme de QR code. Scannez-le pour confirmer la collecte.
                 </div>
                 {scanResult ? (
                   <div className="rounded-xl p-3 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
@@ -401,9 +404,9 @@ export default function CommandesLivreur() {
 
               {/* Manual code entry */}
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Lock size={12} className="inline align-middle" /> Ou saisir le code manuellement</div>
+                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Lock size={12} className="inline align-middle" /> Ou saisir le code du client manuellement</div>
                 <input type="text" value={codeVerification} onChange={e => { setCodeVerification(e.target.value); setScanResult(null) }}
-                  placeholder="Code de vérification"
+                  placeholder="Code de vérification du client"
                   className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"
                   style={{ background: 'var(--surface)', border: '2px solid var(--border)', color: 'var(--text-primary)' }} />
               </div>

@@ -124,7 +124,7 @@ export default function SuiviCommande() {
               {verificationCode}
             </div>
             <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-              Communiquez ce code au vendeur/livreur lors de la collecte.
+              Communiquez ce code au livreur lors de la collecte (RG06).
             </div>
             {['En attente', 'En collecte'].includes(statut) && (
               <button onClick={() => setShowQR(true)}
@@ -155,7 +155,7 @@ export default function SuiviCommande() {
                     {qrCode.code}
                   </div>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    Montrez ce QR code au vendeur/livreur pour la collecte
+                    Montrez ce QR code au livreur lors de la collecte (RG06)
                   </div>
                 </>
               ) : (

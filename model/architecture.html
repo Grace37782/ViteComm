@@ -197,8 +197,13 @@
       </tr>
       <tr>
         <td>RG06</td>
-        <td>La remise des articles par le vendeur au livreur est conditionnée par la validation d'un code de
-          vérification unique.</td>
+        <td><strong>Vérification en deux étapes (Chaîne de confiance Client → Vendeur → Client) :</strong>
+          <ol style="margin:4px 0;padding-left:18px">
+            <li><strong>Étape 1 — Collecte chez le vendeur :</strong> Le client génère un code de vérification unique (6 caractères) lors de la création de la commande et le communique au livreur. Le vendeur affiche ce code sous forme de QR code. Le livreur <em>scanne le QR code du vendeur</em> (ou saisit le code manuellement) pour prouver sa présence physique chez le vendeur. Le système vérifie que le code scanné/saisi correspond au <code>code_verification</code> de la commande.</li>
+            <li><strong>Étape 2 — Finalisation chez le client :</strong> Le livreur, une fois arrivé chez le client, saisit à nouveau le code de vérification (celui du client) pour finaliser la livraison. Le système re-vérifie la correspondance avant de passer la commande en inspection.</li>
+          </ol>
+          Cette double vérification garantit la chaîne de confiance : le livreur a bien récupéré les articles chez le vendeur (preuve photo obligatoire RG07) ET les a remis au bon client.
+        </td>
       </tr>
       <tr>
         <td>RG07</td>
@@ -209,7 +214,13 @@
       </tr>
       <tr>
         <td>RG08</td>
-        <td>Le paiement par l'usager s'effectue en ligne via Mobile Money (FedaPay) après inspection et confirmation de satisfaction des articles à la livraison. La plateforme prélève automatiquement une commission de 0,6 %.
+        <td><strong>Paiement en ligne via Mobile Money (FedaPay) :</strong> Le paiement par l'usager s'effectue en ligne via Mobile Money (FedaPay — MTN MoMo, Moov Pay, Celtis Cash) après inspection et confirmation de satisfaction des articles à la livraison.
+          <ul style="margin:4px 0;padding-left:18px">
+            <li><strong>Facture :</strong> Une facture (<code>FACTURE</code>) est générée automatiquement lors de l'inspection client (RG25). Elle constitue la source de vérité unique pour les montants.</li>
+            <li><strong>Paiement :</strong> Le client saisit son numéro de téléphone, est redirigé vers le portail FedaPay, confirme sur son téléphone. La plateforme prélève automatiquement une commission de 0,6 %.</li>
+            <li><strong>Succès :</strong> Après paiement confirmé, la facture est affichée au client avec les détails (articles, totaux, référence) et est téléchargeable en format texte. La facture est stockée dans l'espace client.</li>
+            <li><strong>Échec :</strong> En cas d'échec ou d'annulation du paiement, le client est redirigé vers l'application avec un statut d'échec et peut réessayer le paiement depuis la même page.</li>
+          </ul>
         </td>
       </tr>
       <tr>
@@ -824,16 +835,19 @@ BON_DE_LIVRAISON ( <u>id_bon</u>, date_emission, date_signature_client, statut_b
   <img src="diags/diag-detat-et-transition-de-paiement.png"
     alt="Diagramme d'état et de transition — Paiement ViteComm">
   <p><em>Figure 7 : Diagramme d'état-transition du Paiement.</em></p>
-  <ul>
-    <li><strong>En Attente</strong> : état initial — facture émise après inspection, paiement en ligne non encore effectué. Transition <code>annulation_client</code> → <strong>Annuler</strong> (état terminal d'abandon).</li>
-    <li><strong>En Cours de Paiement</strong> : transition <code>initier_paiement_mobile_money / [facture_prête]</code> — le client initie le paiement via FedaPay (MTN MoMo, Moov Pay, Celtis Cash).</li>
-    <li><strong>Vérifier</strong> : transition <code>paiement_initié / entry : enregistrer montant</code> — le montant reçu est enregistré dans <code>PAIEMENT.montant_perçu</code>.</li>
-    <li>Branchement vérification :
-      <ul>
-        <li><code>paiement_approuvé / [montant = total]</code> → <strong>Valider</strong> → <code>paiement_terminé</code> → état terminal (succès).</li>
-        <li><code>paiement_refusé / [echec_verification]</code> → <strong>Rejeter</strong> → <code>nouvelle_tentative</code> → <strong>Nouvelle Tentative</strong> → retour vers <strong>Annuler</strong>.</li>
-        <li><code>annulation</code> depuis <em>En Cours de Paiement</em> → <strong>Annuler</strong> directement.</li>
-      </ul>
+    <ul>
+      <li><strong>En Attente</strong> : état initial — facture émise après inspection, paiement en ligne non encore effectué. Transition <code>annulation_client</code> → <strong>Annuler</strong> (état terminal d'abandon).</li>
+      <li><strong>En Cours de Paiement</strong> : transition <code>initier_paiement_mobile_money / [facture_prête]</code> — le client saisit son numéro de téléphone et initie le paiement via FedaPay (MTN MoMo, Moov Pay, Celtis Cash). Le client est redirigé vers le portail FedaPay.</li>
+      <li><strong>Vérifier</strong> : transition <code>paiement_initié / entry : enregistrer montant</code> — le montant reçu est enregistré dans <code>PAIEMENT.montant_perçu</code>. Le système pollise le statut via webhook FedaPay et/ou polling côté client.</li>
+      <li>Branchement vérification :
+        <ul>
+          <li><code>paiement_approuvé / [montant = total]</code> → <strong>Valider</strong> → <code>paiement_terminé</code> → <strong>Afficher facture</strong> — la facture détaillée (articles, totaux, référence FedaPay) est affichée au client et stockée dans son espace. La facture est téléchargeable en format texte. → état terminal (succès).</li>
+          <li><code>paiement_refusé / [echec_verification]</code> → <strong>Rejeter</strong> → <code>nouvelle_tentative</code> → le client est redirigé vers l'application avec statut d'échec. Le client peut <strong>réessayer</strong> le paiement depuis la même page (retour au formulaire de saisie du numéro de téléphone).</li>
+          <li><code>annulation</code> depuis <em>En Cours de Paiement</em> → <strong>Annuler</strong> directement.</li>
+        </ul>
+      </li>
+      <li>État terminal succès : paiement validé, commission de 0,6 % prélevée automatiquement (RG08), gains crédités au livreur (RG28).</li>
+    </ul>
     </li>
     <li>État terminal succès : paiement validé, commission de 0,6&nbsp;% prélevée automatiquement (RG08), gains crédités au livreur (RG28).</li>
   </ul>
