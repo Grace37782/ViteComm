@@ -279,7 +279,7 @@ export const handleCallback = async (req, res) => {
     const { reference } = req.query;
 
     if (!reference) {
-      return res.redirect('/client/panier');
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/client/mes-commandes`);
     }
 
     const transaction = await prisma.paiementTransaction.findFirst({
@@ -287,15 +287,22 @@ export const handleCallback = async (req, res) => {
     });
 
     if (!transaction) {
-      return res.redirect('/client/panier');
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/client/mes-commandes`);
     }
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
     if (transaction.statut === 'completed') {
-      return res.redirect(`/client/paiement?ref=${reference}&status=success&id_commande=${transaction.id_commande}`);
+      return res.redirect(`${frontendUrl}/client/paiement?ref=${reference}&status=success&id_commande=${transaction.id_commande}`);
     }
 
-    return res.redirect(`/client/paiement?ref=${reference}&status=pending&id_commande=${transaction.id_commande}`);
+    if (transaction.statut === 'failed' || transaction.statut === 'cancelled') {
+      return res.redirect(`${frontendUrl}/client/paiement?ref=${reference}&status=failed&id_commande=${transaction.id_commande}`);
+    }
+
+    return res.redirect(`${frontendUrl}/client/paiement?ref=${reference}&status=pending&id_commande=${transaction.id_commande}`);
   } catch {
-    return res.redirect('/client/panier');
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    return res.redirect(`${frontendUrl}/client/mes-commandes`);
   }
 };

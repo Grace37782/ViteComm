@@ -104,7 +104,7 @@ export default function CommandesLivreur() {
     } catch (e) { showToast(e.message) }
   }
 
-  function openFinalize(delivery) { setFinalizeOpen(delivery); setCodeVerification('') }
+  function openFinalize(delivery) { setFinalizeOpen(delivery); setCodeVerification(''); setScanResult(null) }
 
   async function handleFinalize() {
     if (!codeVerification.trim()) return showToast('Entrez le code de vérification')
@@ -315,7 +315,7 @@ export default function CommandesLivreur() {
       {/* FINALIZE MODAL */}
       {finalizeOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}
-          onClick={() => setFinalizeOpen(null)}>
+          onClick={() => { setFinalizeOpen(null); cleanupScanner() }}>
           <div className="w-full max-w-lg rounded-t-[28px] overflow-y-auto" style={{ background: 'var(--surface)', maxHeight: '85vh' }}
             onClick={e => e.stopPropagation()}>
             <div className="flex justify-center pt-3 pb-1">
@@ -323,12 +323,50 @@ export default function CommandesLivreur() {
             </div>
             <div className="px-5 pb-8 pt-3">
               <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Finaliser la livraison</h2>
-              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{finalizeOpen.commande?.id_commande} — Saisissez le code du client pour confirmer la remise</p>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{finalizeOpen.commande?.id_commande} — Scannez le QR du client ou saisissez le code pour confirmer la remise</p>
 
+              {/* QR Scanner for client code */}
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Lock size={12} className="inline align-middle" /> Code de vérification du client (RG06)</div>
-                <input type="text" value={codeVerification} onChange={e => setCodeVerification(e.target.value)}
-                  placeholder="Code à 6 chiffres"
+                <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  <QrCode size={12} /> Scanner le QR code du client (RG06)
+                </div>
+                <div className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
+                  Demandez au client d'afficher son code de vérification. Scannez-le pour confirmer la remise.
+                </div>
+                {scanResult ? (
+                  <div className="rounded-xl p-3 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
+                    <CheckCircle size={20} className="mx-auto mb-1" style={{ color: '#1D9E75' }} />
+                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>Code scanné : {scanResult}</div>
+                  </div>
+                ) : (
+                  <div id="qr-reader-finalize" className="rounded-xl overflow-hidden" />
+                )}
+                {!scanResult && (
+                  <button onClick={() => {
+                    cleanupScanner()
+                    const scanner = new Html5QrcodeScanner('qr-reader-finalize', { fps: 10, qrbox: 250 }, false)
+                    scanner.render(
+                      (decodedText) => {
+                        setScanResult(decodedText)
+                        setCodeVerification(decodedText)
+                        cleanupScanner()
+                      },
+                      () => {}
+                    )
+                    scannerRef.current = scanner
+                  }}
+                    className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
+                    style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
+                    <QrCode size={14} className="inline align-middle" /> Lancer le scanner
+                  </button>
+                )}
+              </div>
+
+              {/* Manual code entry */}
+              <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+                <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}><Lock size={12} className="inline align-middle" /> Ou saisir le code du client manuellement</div>
+                <input type="text" value={codeVerification} onChange={e => { setCodeVerification(e.target.value); setScanResult(null) }}
+                  placeholder="Code de vérification du client"
                   className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"
                   style={{ background: 'var(--surface)', border: '2px solid var(--border)', color: 'var(--text-primary)' }} />
               </div>

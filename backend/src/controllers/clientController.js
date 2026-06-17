@@ -478,6 +478,9 @@ export const getMyOrders = async (req, res) => {
             }
           }
         },
+        factures: {
+          include: { paiements: true }
+        },
         preuvesCollecte: {
           include: { medias: true }
         }
@@ -967,5 +970,57 @@ export const cancelOrder = async (req, res) => {
     return res.json({ message: 'Commande annulée.' });
   } catch (error) {
     return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
+  }
+};
+
+// --- Get all client factures (RG25) ---
+
+export const getClientFactures = async (req, res) => {
+  try {
+    const factures = await prisma.facture.findMany({
+      where: {
+        commande: { id_user_client: req.user.id_user }
+      },
+      include: {
+        paiements: true,
+        commande: {
+          include: {
+            detailsCommande: {
+              include: { produit: { select: { nom: true } } }
+            }
+          }
+        }
+      },
+      orderBy: { date_emission: 'desc' }
+    });
+
+    return res.json(factures.map((f) => ({
+      id_facture: f.id_facture,
+      date_emission: f.date_emission,
+      montant_marchandises: f.montant_marchandises,
+      montant_frais_livraison: f.montant_frais_livraison,
+      montant_frais_retour: f.montant_frais_retour,
+      montant_commission: f.montant_commission,
+      montant_total_du: f.montant_total_du,
+      statut_paiement: f.statut_paiement,
+      id_commande: f.id_commande,
+      paiement: f.paiements[0] ? {
+        date_paiement: f.paiements[0].date_paiement,
+        montant_percu: f.paiements[0].montant_percu,
+        mode_reglement: f.paiements[0].mode_reglement,
+        reference_transaction: f.paiements[0].reference_transaction,
+        statut: f.paiements[0].statut,
+      } : null,
+      articles: f.commande.detailsCommande
+        .filter(d => d.statut_acceptation !== 'Rejete')
+        .map(d => ({
+          nom: d.produit?.nom,
+          quantite: d.quantite_commandee,
+          prix_unitaire: d.prix_vente_applique,
+          sous_total: (d.quantite_commandee || 0) * (d.prix_vente_applique || 0),
+        })),
+    })));
+  } catch (error) {
+    return res.status(500).json({ error: internalError(error) });
   }
 };

@@ -96,7 +96,7 @@ export const getDriverDashboard = async (req, res) => {
 };
 
 // ═══════════════════════════════════════════════════════════
-// 4.1b. DISPHOBILITÉ (RG19, RG29)
+// 4.1b. DISPONIBILITÉ (RG19, RG29)
 // ═══════════════════════════════════════════════════════════
 
 export const updateAvailability = async (req, res) => {

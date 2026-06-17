@@ -44,6 +44,12 @@ export default function PaiementClient() {
       return
     }
 
+    if (statusParam === 'failed') {
+      setPaymentStatus('failed')
+      setLoading(false)
+      return
+    }
+
     if (ref) {
       setLoading(true)
       let pollCount = 0

@@ -32,6 +32,7 @@ import Profil from './pages/client/Profil'
 import SuiviCommande from './pages/client/SuiviCommande'
 import MarcheDetail from './pages/client/MarcheDetail'
 import MesCommandes from './pages/client/MesCommandes'
+import MesFactures from './pages/client/MesFactures'
 import ClientLayout from './components/client/ClientLayout'
 import VendeurLayout from './components/vendeur/VendeurLayout'
 import LivreurLayout from './components/livreur/LivreurLayout'
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="suivi-commande" element={<SuiviCommande />} />
           <Route path="profil" element={<Profil />} />
           <Route path="mes-commandes" element={<MesCommandes />} />
+          <Route path="mes-factures" element={<MesFactures />} />
           <Route path="evaluation" element={<Evaluation />} />
           <Route path="inspection" element={<Inspection />} />
           <Route path="paiement" element={<PaiementClient />} />

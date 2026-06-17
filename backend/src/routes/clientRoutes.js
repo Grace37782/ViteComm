@@ -22,6 +22,7 @@ import {
   getMarketById,
   getOrderQRCode,
   getOrderFacture,
+  getClientFactures,
   cancelOrder
 } from '../controllers/clientController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
@@ -82,6 +83,7 @@ router.post('/orders/:id_commande/inspection', requireAuth, requireRole(['client
 router.get('/orders/:id_commande/qrcode', requireAuth, requireRole(['client']), getOrderQRCode);
 router.post('/orders/:id_commande/cancel', requireAuth, requireRole(['client']), cancelOrder);
 router.get('/orders/:id_commande/facture', requireAuth, requireRole(['client']), getOrderFacture);
+router.get('/factures', requireAuth, requireRole(['client']), getClientFactures);
 
 // Feedback (RG23)
 router.post('/feedbacks', requireAuth, requireRole(['client']), createFeedback);

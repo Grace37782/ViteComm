@@ -22,7 +22,7 @@ export const getVendorDashboard = async (req, res) => {
 
     const vendor = await prisma.vendeur.findUnique({
       where: { id_user: vendorId },
-      include: { utilisateur: true }
+      include: { utilisateur: true, feedbacks: true }
     });
     if (!vendor) return res.status(403).json({ error: 'Espace réservé aux vendeurs.' });
 
@@ -59,11 +59,11 @@ export const getVendorDashboard = async (req, res) => {
     return res.json({
       vendeur: {
         prenom: vendor.utilisateur?.prenom || 'Vendeur',
-        etal: vendor.nom_etal || 'Mon étal',
-        marche: vendor.adresse_etal || 'Marché'
+        etal: vendor.nom_etablissement || 'Mon étal',
+        marche: vendor.localisation_marche || 'Marché'
       },
       score_reputation: vendor.score_reputation,
-      nb_avis: vendor.nb_avis || 0,
+      nb_avis: vendor.feedbacks?.length || 0,
       nb_commandes: nbCommandes,
       financier: {
         revenu_brut: totalBrut,

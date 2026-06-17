@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { ClipboardList, Inbox, ShoppingCart, ShieldCheck, Motorbike, CheckCircle, ChevronDown, Smartphone } from 'lucide-react'
+import { ClipboardList, Inbox, ShoppingCart, ShieldCheck, Motorbike, CheckCircle, ChevronDown, Smartphone, FileText } from 'lucide-react'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -257,6 +257,18 @@ export default function MesCommandes() {
                       }}
                     >
                       <Smartphone size={12} className="inline" /> Payer
+                    </button>
+                  )}
+                  {order.factures && order.factures.length > 0 && order.factures[0].statut_paiement === 'Paye' && (
+                    <button
+                      onClick={() => navigate('/client/mes-factures')}
+                      style={{
+                        background: 'none', border: 'none',
+                        color: '#1D9E75', fontSize: 12, fontWeight: 800,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                      }}
+                    >
+                      <FileText size={12} className="inline" /> Facture
                     </button>
                   )}
                   <button
