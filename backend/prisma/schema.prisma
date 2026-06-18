@@ -159,6 +159,7 @@ model Livraison {
   date_prise_en_charge  DateTime  @default(now())
   date_fin_reelle       DateTime?
   statut_livraison      String    @default("En cours de collecte")
+  preuve_collecte       String?   @db.Text
   frais_retour_calcules Float     @default(0.0)
   id_commande           Int       @unique
   id_user_livreur       Int

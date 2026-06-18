@@ -17,7 +17,6 @@ export default function CommandesLivreur() {
   const [toast, setToast] = useState(null)
   const [finalizeOpen, setFinalizeOpen] = useState(null)
   const [collectOpen, setCollectOpen] = useState(null)
-  const [codeVerification, setCodeVerification] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState('actives')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
@@ -57,7 +56,6 @@ export default function CommandesLivreur() {
 
   function openCollect(delivery) {
     setCollectOpen(delivery)
-    setCodeVerification('')
     setScanResult(null)
   }
 
@@ -98,17 +96,14 @@ export default function CommandesLivreur() {
     } catch (e) { showToast(e.message) }
   }
 
-  function openFinalize(delivery) { setFinalizeOpen(delivery); setCodeVerification(''); setFinalizeScanResult(null) }
+  function openFinalize(delivery) { setFinalizeOpen(delivery); setFinalizeScanResult(null) }
 
   async function handleFinalize() {
-    if (!finalizeScanResult && !codeVerification.trim()) return showToast('Scannez le QR du client ou entrez le code')
+    if (!finalizeScanResult) return showToast('Scannez le QR du client')
     if (!finalizeOpen) return
     setSubmitting(true)
     try {
-      const payload = finalizeScanResult
-        ? { scanned_qr_data: finalizeScanResult }
-        : { code_verification: codeVerification }
-      await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/finalize`, payload)
+      await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/finalize`, { scanned_qr_data: finalizeScanResult })
       showToast('Livraison finalisée !')
       setFinalizeOpen(null); loadDataFn()
     } catch (e) { showToast(e.message) }
@@ -410,23 +405,10 @@ export default function CommandesLivreur() {
                 )}
               </div>
 
-              {/* Fallback: manual code */}
-              {!finalizeScanResult && (
-                <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                  <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>
-                    <Lock size={12} className="inline align-middle" /> Ou entrez le code manuellement
-                  </div>
-                  <input type="text" value={codeVerification} onChange={e => setCodeVerification(e.target.value.toUpperCase())}
-                    placeholder="Code de vérification du client"
-                    className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"
-                    style={{ background: 'var(--surface)', border: '2px solid var(--border)', color: 'var(--text-primary)' }} />
-                </div>
-              )}
-
-              <button onClick={handleFinalize} disabled={submitting || (!finalizeScanResult && !codeVerification.trim())}
+              <button onClick={handleFinalize} disabled={submitting || !finalizeScanResult}
                 className="w-full py-4 rounded-2xl text-white font-black text-sm cursor-pointer transition-all active:scale-98"
                 style={{
-                  background: ((!finalizeScanResult && !codeVerification.trim()) || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
+                  background: (!finalizeScanResult || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
                   border: 'none', opacity: submitting ? 0.7 : 1,
                 }}>
                 {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Envoi…</> : <><CheckCircle size={14} className="inline align-middle" /> Confirmer la livraison</>}
