@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
 import { XCircle, CheckCircle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, ChevronDown, QrCode } from 'lucide-react'
-import { Html5QrcodeScanner } from 'html5-qrcode'
+import { Html5Qrcode } from 'html5-qrcode'
 
 /* eslint-disable react-hooks/set-state-in-effect */
 
@@ -63,7 +63,9 @@ export default function CommandesLivreur() {
 
   const cleanupScanner = useCallback(() => {
     if (scannerRef.current) {
-      try { scannerRef.current.clear() } catch { /* ignore */ }
+      try {
+        scannerRef.current.stop().then(() => scannerRef.current.clear()).catch(() => {})
+      } catch { /* ignore */ }
       scannerRef.current = null
     }
   }, [])
@@ -386,11 +388,13 @@ export default function CommandesLivreur() {
                 {!finalizeScanResult && (
                   <button onClick={() => {
                     cleanupScanner()
-                    const scanner = new Html5QrcodeScanner('qr-finalize-reader', { fps: 10, qrbox: 250 }, false)
-                    scanner.render(
+                    const scanner = new Html5Qrcode('qr-finalize-reader')
+                    scanner.start(
+                      { facingMode: 'environment' },
+                      { fps: 10, qrbox: 250 },
                       (decodedText) => {
                         setFinalizeScanResult(decodedText)
-                        cleanupScanner()
+                        scanner.stop().then(() => scanner.clear()).catch(() => {})
                       },
                       () => {}
                     )
@@ -461,11 +465,13 @@ export default function CommandesLivreur() {
                 {!scanResult && (
                   <button onClick={() => {
                     cleanupScanner()
-                    const scanner = new Html5QrcodeScanner('qr-collect-reader', { fps: 10, qrbox: 250 }, false)
-                    scanner.render(
+                    const scanner = new Html5Qrcode('qr-collect-reader')
+                    scanner.start(
+                      { facingMode: 'environment' },
+                      { fps: 10, qrbox: 250 },
                       (decodedText) => {
                         setScanResult(decodedText)
-                        cleanupScanner()
+                        scanner.stop().then(() => scanner.clear()).catch(() => {})
                       },
                       () => {}
                     )
