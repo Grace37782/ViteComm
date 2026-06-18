@@ -383,7 +383,7 @@ export default function CommandesLivreur() {
                     <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>QR scanné avec succès !</div>
                   </div>
                 ) : (
-                  <div id="qr-finalize-reader" className="rounded-xl overflow-hidden" />
+                  <div id="qr-finalize-reader" className="rounded-xl overflow-hidden" style={{ minHeight: 200 }} />
                 )}
                 {!finalizeScanResult && (
                   <button onClick={() => {
@@ -391,13 +391,16 @@ export default function CommandesLivreur() {
                     const scanner = new Html5Qrcode('qr-finalize-reader')
                     scanner.start(
                       { facingMode: 'environment' },
-                      { fps: 10, qrbox: 250 },
+                      { fps: 10, qrbox: { width: 250, height: 250 } },
                       (decodedText) => {
                         setFinalizeScanResult(decodedText)
                         scanner.stop().then(() => scanner.clear()).catch(() => {})
                       },
                       () => {}
-                    )
+                    ).catch(err => {
+                      showToast('Caméra impossible: ' + (err.message || err))
+                      cleanupScanner()
+                    })
                     scannerRef.current = scanner
                   }}
                     className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
@@ -463,18 +466,24 @@ export default function CommandesLivreur() {
                   <div id="qr-collect-reader" className="rounded-xl overflow-hidden" />
                 )}
                 {!scanResult && (
+                  <div id="qr-collect-reader" className="rounded-xl overflow-hidden" style={{ minHeight: 200 }} />
+                )}
+                {!scanResult && (
                   <button onClick={() => {
                     cleanupScanner()
                     const scanner = new Html5Qrcode('qr-collect-reader')
                     scanner.start(
                       { facingMode: 'environment' },
-                      { fps: 10, qrbox: 250 },
+                      { fps: 10, qrbox: { width: 250, height: 250 } },
                       (decodedText) => {
                         setScanResult(decodedText)
                         scanner.stop().then(() => scanner.clear()).catch(() => {})
                       },
                       () => {}
-                    )
+                    ).catch(err => {
+                      showToast('Caméra impossible: ' + (err.message || err))
+                      cleanupScanner()
+                    })
                     scannerRef.current = scanner
                   }}
                     className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
