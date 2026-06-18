@@ -5,7 +5,7 @@ const QR_SECRET = process.env.VENDOR_QR_SECRET || 'vitecomm-vendor-qr-mvp-secret
 /**
  * Vendor generates a signed QR code based on the client's verification code (RG06).
  * Like JWT: the vendor takes the client's code, adds their order context, and signs it.
- * The system can later verify this signed token to prove the driver met the vendor.
+ * The driver scans this with real-time camera to prove physical presence at vendor.
  */
 export function generateVendorQRToken(orderId, clientCode) {
   const ts = Date.now();
@@ -19,34 +19,16 @@ export function generateVendorQRToken(orderId, clientCode) {
 }
 
 /**
- * Client generates a signed QR code for driver acceptance or finalization.
- * The QR encodes orderId + clientCode + action + timestamp, signed with HMAC.
- * Driver scans this to prove physical proximity to the client.
- * action: 'accept' | 'finalize'
- */
-export function generateClientQRToken(orderId, clientCode, action) {
-  if (action !== 'accept' && action !== 'finalize') return null;
-  const ts = Date.now();
-  const payload = `${orderId}:${clientCode}:${action}:${ts}`;
-  const sig = crypto
-    .createHmac('sha256', QR_SECRET)
-    .update(payload)
-    .digest('hex')
-    .substring(0, 16);
-  return JSON.stringify({ v: 1, t: 'client', p: payload, s: sig });
-}
-
-/**
- * Verify a scanned QR token (vendor or client).
- * Returns { orderId, clientCode, action } if valid, null otherwise.
+ * Verify a scanned vendor QR token.
+ * Returns { orderId, clientCode } if valid, null otherwise.
  * Only signed tokens are accepted — plain text codes are rejected.
  */
-export function verifyQRToken(scannedText) {
+export function verifyVendorQRToken(scannedText) {
   if (!scannedText) return null;
 
   try {
     const data = JSON.parse(scannedText);
-    if (data.v === 1 && data.p && data.s) {
+    if (data.v === 1 && data.t === 'vendor' && data.p && data.s) {
       const expectedSig = crypto
         .createHmac('sha256', QR_SECRET)
         .update(data.p)
@@ -55,23 +37,13 @@ export function verifyQRToken(scannedText) {
       if (data.s !== expectedSig) return null;
 
       const parts = data.p.split(':');
+      if (parts.length !== 3) return null;
 
-      // Vendor token: orderId:clientCode:timestamp
-      if (data.t === 'vendor' && parts.length === 3) {
-        const [orderId, clientCode, ts] = parts;
-        const age = Date.now() - parseInt(ts, 10);
-        if (age > 86400000 || age < 0) return null;
-        return { orderId: parseInt(orderId, 10), clientCode, action: 'collect', tokenType: 'vendor' };
-      }
+      const [orderId, clientCode, ts] = parts;
+      const age = Date.now() - parseInt(ts, 10);
+      if (age > 86400000 || age < 0) return null; // 24h expiry
 
-      // Client token: orderId:clientCode:action:timestamp
-      if (data.t === 'client' && parts.length === 4) {
-        const [orderId, clientCode, action, ts] = parts;
-        if (action !== 'accept' && action !== 'finalize') return null;
-        const age = Date.now() - parseInt(ts, 10);
-        if (age > 3600000 || age < 0) return null; // 1h expiry for client QR
-        return { orderId: parseInt(orderId, 10), clientCode, action, tokenType: 'client' };
-      }
+      return { orderId: parseInt(orderId, 10), clientCode };
     }
   } catch {
     // Not JSON — reject
@@ -80,5 +52,62 @@ export function verifyQRToken(scannedText) {
   return null;
 }
 
-// Keep backward-compatible alias
-export const verifyVendorQRToken = verifyQRToken;
+/**
+ * Generate a finalize QR token for the client to show at delivery.
+ * This QR is signed with the vendor's scanned QR token + client's code,
+ * creating a three-level chain: client code → vendor QR → finalize QR.
+ * The driver must have scanned the vendor QR to complete this chain.
+ */
+export function generateFinalizeQRToken(orderId, clientCode, vendorQRToken) {
+  if (!vendorQRToken) return null;
+  // Hash the vendor QR token to keep the QR size manageable
+  const vendorHash = crypto.createHash('sha256').update(vendorQRToken).digest('hex').substring(0, 16);
+  const ts = Date.now();
+  const payload = `${orderId}:${clientCode}:${vendorHash}:${ts}`;
+  const sig = crypto
+    .createHmac('sha256', QR_SECRET)
+    .update(payload)
+    .digest('hex')
+    .substring(0, 16);
+  return JSON.stringify({ v: 1, t: 'finalize', p: payload, s: sig });
+}
+
+/**
+ * Verify a scanned finalize QR token against the stored vendor QR token.
+ * Returns { orderId, clientCode } if valid, null otherwise.
+ */
+export function verifyFinalizeQRToken(scannedText, storedVendorQRToken) {
+  if (!scannedText || !storedVendorQRToken) return null;
+
+  try {
+    const data = JSON.parse(scannedText);
+    if (data.v === 1 && data.t === 'finalize' && data.p && data.s) {
+      // Recompute expected signature using the stored vendor QR token
+      const vendorHash = crypto.createHash('sha256').update(storedVendorQRToken).digest('hex').substring(0, 16);
+      const expectedPayload = data.p; // orderId:clientCode:vendorHash:timestamp
+      const expectedSig = crypto
+        .createHmac('sha256', QR_SECRET)
+        .update(expectedPayload)
+        .digest('hex')
+        .substring(0, 16);
+      if (data.s !== expectedSig) return null;
+
+      const parts = data.p.split(':');
+      if (parts.length !== 4) return null;
+
+      const [orderId, clientCode, scannedVendorHash, ts] = parts;
+
+      // Verify the vendor hash matches the stored vendor QR token
+      if (scannedVendorHash !== vendorHash) return null;
+
+      const age = Date.now() - parseInt(ts, 10);
+      if (age > 3600000 || age < 0) return null; // 1h expiry
+
+      return { orderId: parseInt(orderId, 10), clientCode };
+    }
+  } catch {
+    // Not JSON — reject
+  }
+
+  return null;
+}

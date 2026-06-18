@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import path from 'path';
 import fs from 'fs';
 import { errorMessage, internalError } from '../utils/errors.js';
-import { generateClientQRToken } from '../utils/vendorQR.js';
+import { generateFinalizeQRToken } from '../utils/vendorQR.js';
 
 // --- 2.1. Tableau de bord Client - Recherche de produits et marchés ---
 
@@ -835,7 +835,6 @@ export const getMarketById = async (req, res) => {
 
 export const getOrderQRCode = async (req, res) => {
   const { id_commande } = req.params;
-  const { action } = req.query; // 'accept' or 'finalize'
 
   try {
     const order = await prisma.commande.findUnique({
@@ -847,12 +846,54 @@ export const getOrderQRCode = async (req, res) => {
       return res.status(403).json({ error: 'Accès interdit.' });
     }
 
-    const qrAction = action === 'finalize' ? 'finalize' : 'accept';
-    const signedToken = generateClientQRToken(
+    const qrDataUrl = await QRCode.toDataURL(order.code_verification, {
+      width: 300,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' }
+    });
+
+    return res.json({ qrcode: qrDataUrl, code: order.code_verification });
+  } catch (error) {
+    return res.status(500).json({ error: internalError(error) });
+  }
+};
+
+// --- Get finalize QR code (signed with vendor QR + client code chain) ---
+export const getFinalizeQRCode = async (req, res) => {
+  const { id_commande } = req.params;
+
+  try {
+    const order = await prisma.commande.findUnique({
+      where: { id_commande: parseInt(id_commande, 10) },
+      include: { livraison: true }
+    });
+
+    if (!order) return res.status(404).json({ error: 'Commande introuvable.' });
+    if (order.id_user_client !== req.user.id_user) {
+      return res.status(403).json({ error: 'Accès interdit.' });
+    }
+
+    // Only available when driver is in transit (after vendor QR was scanned and stored)
+    if (!order.livraison || order.livraison.statut_livraison !== 'En cours de livraison') {
+      return res.status(400).json({ error: 'Le livreur doit être en route pour générer le QR de finalisation.' });
+    }
+
+    // The vendor QR token must have been stored during collection
+    const vendorQRToken = order.livraison.preuve_collecte;
+    if (!vendorQRToken) {
+      return res.status(400).json({ error: 'Aucune collecte enregistrée. Le QR du vendeur est requis.' });
+    }
+
+    // Generate finalize QR: HMAC-signed with vendor QR hash + client code
+    const signedToken = generateFinalizeQRToken(
       order.id_commande,
       order.code_verification,
-      qrAction
+      vendorQRToken
     );
+
+    if (!signedToken) {
+      return res.status(500).json({ error: 'Erreur lors de la génération du QR code.' });
+    }
 
     const qrDataUrl = await QRCode.toDataURL(signedToken, {
       width: 300,
@@ -860,7 +901,7 @@ export const getOrderQRCode = async (req, res) => {
       color: { dark: '#000000', light: '#ffffff' }
     });
 
-    return res.json({ qrcode: qrDataUrl, signed: true, action: qrAction });
+    return res.json({ qrcode: qrDataUrl, signed: true });
   } catch (error) {
     return res.status(500).json({ error: internalError(error) });
   }
