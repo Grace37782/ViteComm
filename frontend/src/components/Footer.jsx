@@ -85,7 +85,7 @@ export default function Footer() {
   return (
     <footer
       className="relative overflow-hidden"
-      style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)' }}
+      style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', isolation: 'isolate' }}
     >
       {/* Decorative top gradient */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#1D9E75] via-[#BA7517] to-[#D85A30]" />

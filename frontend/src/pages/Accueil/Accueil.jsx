@@ -321,8 +321,8 @@ export default function Accueil() {
       </nav>
 
       {/* ─── Hero ────────────────────────────────────────────────────── */}
-      <section className="relative px-4 sm:px-6 pt-14 pb-16 sm:pt-24 sm:pb-28"
-        style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+      <section className="relative overflow-hidden px-4 sm:px-6 pt-14 pb-16 sm:pt-24 sm:pb-28"
+        style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)', isolation: 'isolate' }}>
 
         {/* SVG grid lines */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: isDark ? 0.15 : 0.1 }}>
@@ -650,8 +650,8 @@ export default function Accueil() {
       </section>
 
       {/* ─── Final CTA ──────────────────────────────────────────────── */}
-      <section className="relative px-4 sm:px-6 py-12 sm:py-16 md:py-20"
-        style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+      <section className="relative overflow-hidden px-4 sm:px-6 py-12 sm:py-16 md:py-20"
+        style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)', isolation: 'isolate' }}>
 
         {/* SVG grid lines */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: isDark ? 0.12 : 0.08 }}>
