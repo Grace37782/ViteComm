@@ -240,7 +240,7 @@
 
   <h2 id="architecture">1. Architecture Globale</h2>
 
-  <p>ViteComm adopte une <strong>architecture client-serveur séparée</strong> (前后端分离) avec une API RESTful.
+  <p>ViteComm adopte une <strong>architecture client-serveur séparée</strong> (frontend déconnecté du backend) avec une API RESTful.
     Le frontend est une application SPA (Single Page Application) React déployée sur Vercel. Le backend est un serveur
     Node.js/Express hébergé sur AlwaysData, exposant une API REST consumed par le frontend via <code>fetch</code>.</p>
 
@@ -294,36 +294,38 @@
 backend/
 ├── src/
 │   ├── config/
-│   │   └── db.js                   ← Client Prisma (adapter MariaDB)
+│   │   └── db.js
 │   ├── controllers/
-│   │   ├── authController.js       ← Inscription, connexion, Google OAuth, profil, reset MDP
-│   │   ├── clientController.js     ← Catalogue, panier, commandes, inspection, feedback
-│   │   ├── vendeurController.js    ← Dashboard, produits, commandes, retours, factures
-│   │   ├── livreurController.js    ← Dashboard, disponibilité, livraisons, gains
-│   │   ├── adminController.js      ← Dashboard admin, users, litiges, signalements
-│   │   └── paymentController.js    ← FedaPay: initiation, webhook, statut, callback
+│   │   ├── adminController.js
+│   │   ├── authController.js
+│   │   ├── clientController.js
+│   │   ├── livreurController.js
+│   │   ├── paymentController.js
+│   │   └── vendeurController.js
 │   ├── middleware/
-│   │   ├── auth.js                 ← requireAuth (JWT) + requireRole (RBAC)
-│   │   └── upload.js               ← Multer: upload avatars, images marchés
+│   │   ├── auth.js
+│   │   └── upload.js
 │   ├── routes/
-│   │   ├── authRoutes.js           ← /api/auth/*
-│   │   ├── clientRoutes.js         ← /api/client/*
-│   │   ├── vendeurRoutes.js        ← /api/vendor/*
-│   │   ├── livreurRoutes.js        ← /api/livreur/*
-│   │   ├── adminRoutes.js          ← /api/admin/*
-│   │   └── paymentRoutes.js        ← /api/client/payment/*
+│   │   ├── adminRoutes.js
+│   │   ├── authRoutes.js
+│   │   ├── clientRoutes.js
+│   │   ├── livreurRoutes.js
+│   │   ├── paymentRoutes.js
+│   │   └── vendeurRoutes.js
 │   ├── services/
-│   │   ├── mail.js                 ← Nodemailer (SMTP Gmail)
-│   │   └── fedapayService.js       ← Client API FedaPay
+│   │   ├── fedapayService.js
+│   │   └── mail.js
 │   ├── utils/
-│   │   ├── errors.js               ← Gestion erreurs (debug/production)
-│   │   └── vendorQR.js             ← QR code signé (HMAC-SHA256)
-│   └── index.js                    ← Point d'entrée Express
+│   │   ├── errors.js
+│   │   └── vendorQR.js
+│   └── index.js
 ├── prisma/
-│   ├── schema.prisma               ← Schéma de base de données
-│   └── seed.js                     ← Données de test
-├── uploads/                        ← Fichiers uploadés (avatars, preuves, produits)
+│   ├── schema.prisma
+│   ├── prisma.config.ts
+│   └── seed.js
+├── uploads/
 ├── package.json
+├── package-lock.json
 └── .env
   </div>
 
@@ -331,45 +333,83 @@ backend/
   <div class="dir-tree">
 frontend/
 ├── src/
-│   ├── App.jsx                     ← Routeur principal + providers
-│   ├── main.jsx                    ← Point d'entrée (ErrorBoundary)
-│   ├── index.css                   ← Variables CSS, thème, couleurs par rôle
+│   ├── App.jsx
+│   ├── main.jsx
+│   ├── index.css
 │   ├── context/
-│   │   ├── AuthContext.jsx          ← État auth (user + token dans localStorage)
-│   │   └── ThemeContext.jsx         ← Thème clair/sombre/système
+│   │   ├── AuthContext.jsx
+│   │   └── ThemeContext.jsx
 │   ├── services/
-│   │   └── api.js                  ← Couche API (fetch, timeout 30s, gestion 401)
+│   │   └── api.js
 │   ├── components/
-│   │   ├── ErrorBoundary.jsx       ← Boundary React (catch erreurs render)
-│   │   ├── Footer.jsx              ← Footer global + toggle thème
-│   │   ├── InstallPrompt.jsx       ← Bannière installation PWA
-│   │   ├── MobileDrawer.jsx        ← Menu latéral mobile (slide-out)
-│   │   ├── GoogleSignInButton.jsx   ← Bouton Google OAuth
-│   │   ├── GoogleRoleSelection.jsx  ← Sélection de rôle après Google
+│   │   ├── ErrorBoundary.jsx
+│   │   ├── Footer.jsx
+│   │   ├── InstallPrompt.jsx
+│   │   ├── MobileDrawer.jsx
+│   │   ├── GoogleSignInButton.jsx
+│   │   ├── GoogleRoleSelection.jsx
 │   │   ├── client/
-│   │   │   ├── ClientLayout.jsx    ← Shell client (header vert)
+│   │   │   ├── ClientLayout.jsx
 │   │   │   └── BottomNav.jsx
 │   │   ├── vendeur/
-│   │   │   ├── VendeurLayout.jsx   ← Shell vendeur (header orange)
+│   │   │   ├── VendeurLayout.jsx
 │   │   │   └── BottomNav.jsx
 │   │   └── livreur/
-│   │       ├── LivreurLayout.jsx   ← Shell livreur (header rouge)
+│   │       ├── LivreurLayout.jsx
 │   │       └── BottomNav.jsx
 │   └── pages/
-│       ├── Accueil/Accueil.jsx     ← Page d'accueil publique
-│       ├── auth/                    ← Connexion, Inscription, ForgotPassword, CGU
-│       ├── client/                  ← 13 pages (carte, catalogue, panier, etc.)
-│       ├── vendeur/                 ← 8 pages (dashboard, catalogue, commandes, etc.)
-│       ├── livreur/                 ← 6 pages (dashboard, commandes, gains, etc.)
-│       └── admin/Admin.jsx          ← Console admin (7 onglets)
+│       ├── Accueil/
+│       │   └── Accueil.jsx
+│       ├── auth/
+│       │   ├── Connexion.jsx
+│       │   ├── Inscription.jsx
+│       │   ├── ForgotPassword.jsx
+│       │   ├── CGU.jsx
+│       │   └── PolitiqueConfidentialite.jsx
+│       ├── client/
+│       │   ├── AccueilClient.jsx
+│       │   ├── Catalogue.jsx
+│       │   ├── Panier.jsx
+│       │   ├── SelectionLivreur.jsx
+│       │   ├── SuiviCommande.jsx
+│       │   ├── Profil.jsx
+│       │   ├── MesCommandes.jsx
+│       │   ├── MesFactures.jsx
+│       │   ├── Evaluation.jsx
+│       │   ├── Inspection.jsx
+│       │   ├── PaiementClient.jsx
+│       │   ├── MarcheDetail.jsx
+│       │   └── UserDetail.jsx
+│       ├── vendeur/
+│       │   ├── Dashboard.jsx
+│       │   ├── Catalogues.jsx
+│       │   ├── Commandes.jsx
+│       │   ├── Retour.jsx
+│       │   ├── Statistiques.jsx
+│       │   ├── Factures.jsx
+│       │   ├── Signalement.jsx
+│       │   └── VendeurProfil.jsx
+│       ├── livreur/
+│       │   ├── Livreur.jsx
+│       │   ├── Commandes.jsx
+│       │   ├── Gains.jsx
+│       │   ├── Historique.jsx
+│       │   ├── Retours.jsx
+│       │   └── LivreurProfil.jsx
+│       └── admin/
+│           └── Admin.jsx
 ├── public/
-│   ├── vitecomm.png                ← Logo V (favicon + PWA)
-│   ├── icon-192x192.png            ← Icône PWA
-│   ├── icon-512x512.png            ← Icône PWA
-│   └── icon-maskable-512x512.png   ← Icône maskable PWA
-├── vercel.json                     ← Config déploiement Vercel
-├── vite.config.js                  ← Vite + PWA + proxy dev
+│   ├── vitecomm.png
+│   ├── icon-192x192.png
+│   ├── icon-512x512.png
+│   ├── icon-maskable-512x512.png
+│   ├── favicon.svg
+│   └── icons.svg
+├── dist/
+├── vercel.json
+├── vite.config.js
 ├── package.json
+├── package-lock.json
 └── .env
   </div>
 
@@ -480,7 +520,7 @@ npm run dev    # → Vite, port 5173</pre>
 
   <h2 id="prisma">5. Schema Prisma — Base de Données</h2>
 
-  <p>Le schéma Prisma définit <strong>22 modèles</strong>映射到 MySQL/MariaDB. La base suit une
+  <p>Le schéma Prisma définit <strong>22 modèles</strong> mappés sur MySQL/MariaDB. La base suit une
     architecture de <strong>spécialisation</strong> : une table parente <code>Utilisateur</code> avec
     des tables enfants <code>Client</code>, <code>Vendeur</code>, <code>Livreur</code>.</p>
 
