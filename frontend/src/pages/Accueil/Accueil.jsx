@@ -322,8 +322,8 @@ export default function Accueil() {
       <section className="relative overflow-hidden px-4 sm:px-6 pt-14 pb-16 sm:pt-24 sm:pb-28"
         style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
 
-        {/* SVG grid lines — glassmorphic graph pattern */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: isDark ? 0.12 : 0.08 }}>
+        {/* SVG grid lines — animated glassmorphic graph pattern */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: isDark ? 0.15 : 0.1 }}>
           <defs>
             <pattern id="hero-grid" width="60" height="60" patternUnits="userSpaceOnUse">
               <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5" />
@@ -331,20 +331,57 @@ export default function Accueil() {
             <pattern id="hero-grid-lg" width="240" height="240" patternUnits="userSpaceOnUse">
               <path d="M 240 0 L 0 0 0 240" fill="none" stroke="white" strokeWidth="1" />
             </pattern>
+            {/* Glow filter */}
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            {/* Shimmer gradient for animated sweep */}
+            <linearGradient id="shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="white" stopOpacity="0">
+                <animate attributeName="offset" values="-0.3;1.3" dur="4s" repeatCount="indefinite" />
+              </stop>
+              <stop offset="15%" stopColor="white" stopOpacity="0.6">
+                <animate attributeName="offset" values="-0.15;1.45" dur="4s" repeatCount="indefinite" />
+              </stop>
+              <stop offset="30%" stopColor="white" stopOpacity="0">
+                <animate attributeName="offset" values="0;1.6" dur="4s" repeatCount="indefinite" />
+              </stop>
+            </linearGradient>
+            <linearGradient id="shimmer-slow" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#2DC491" stopOpacity="0">
+                <animate attributeName="offset" values="-0.4;1.2" dur="6s" repeatCount="indefinite" />
+              </stop>
+              <stop offset="20%" stopColor="#2DC491" stopOpacity="0.4">
+                <animate attributeName="offset" values="-0.2;1.4" dur="6s" repeatCount="indefinite" />
+              </stop>
+              <stop offset="40%" stopColor="#2DC491" stopOpacity="0">
+                <animate attributeName="offset" values="0;1.6" dur="6s" repeatCount="indefinite" />
+              </stop>
+            </linearGradient>
           </defs>
+          {/* Base grid */}
           <rect width="100%" height="100%" fill="url(#hero-grid)" />
           <rect width="100%" height="100%" fill="url(#hero-grid-lg)" />
-          {/* Decorative curve lines */}
-          <path d="M0,80 Q200,40 400,100 T800,60 T1200,90 T1600,50" fill="none" stroke="white" strokeWidth="1.5" opacity="0.4" />
-          <path d="M0,160 Q300,120 600,180 T1200,140 T1800,170" fill="none" stroke="white" strokeWidth="1" opacity="0.25" />
-          <path d="M0,280 Q250,240 500,290 T1000,260 T1500,280" fill="none" stroke="white" strokeWidth="0.8" opacity="0.15" />
-          {/* Data-point dots */}
-          <circle cx="200" cy="100" r="3" fill="white" opacity="0.35" />
-          <circle cx="400" cy="100" r="4" fill="white" opacity="0.5" />
-          <circle cx="600" cy="180" r="3" fill="white" opacity="0.35" />
-          <circle cx="800" cy="60" r="5" fill="white" opacity="0.4" />
-          <circle cx="1000" cy="260" r="3" fill="white" opacity="0.3" />
-          <circle cx="1200" cy="90" r="4" fill="white" opacity="0.35" />
+          {/* Animated shimmer sweep across grid */}
+          <rect width="100%" height="100%" fill="url(#shimmer)" />
+          {/* Glowing curve lines */}
+          <path d="M0,80 Q200,40 400,100 T800,60 T1200,90 T1600,50" fill="none" stroke="url(#shimmer-slow)" strokeWidth="2" filter="url(#glow)" />
+          <path d="M0,160 Q300,120 600,180 T1200,140 T1800,170" fill="none" stroke="url(#shimmer-slow)" strokeWidth="1.5" filter="url(#glow)" />
+          <path d="M0,280 Q250,240 500,290 T1000,260 T1500,280" fill="none" stroke="url(#shimmer-slow)" strokeWidth="1" filter="url(#glow)" />
+          {/* Pulsing data-point dots */}
+          <circle cx="400" cy="100" r="4" fill="white" opacity="0.5" filter="url(#glow)">
+            <animate attributeName="opacity" values="0.2;0.7;0.2" dur="3s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="800" cy="60" r="5" fill="white" opacity="0.4" filter="url(#glow)">
+            <animate attributeName="opacity" values="0.3;0.8;0.3" dur="4s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="1200" cy="90" r="4" fill="white" opacity="0.35" filter="url(#glow)">
+            <animate attributeName="opacity" values="0.15;0.6;0.15" dur="3.5s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="600" cy="180" r="3" fill="white" opacity="0.35" filter="url(#glow)">
+            <animate attributeName="opacity" values="0.2;0.55;0.2" dur="5s" repeatCount="indefinite" />
+          </circle>
         </svg>
 
         {/* Decorative blobs */}
@@ -359,10 +396,21 @@ export default function Accueil() {
             <Sparkles size={14} className="inline-block mr-1.5" /> La première marketplace locale au Bénin
           </div>
 
-          {/* Shiny ViteComm brand title */}
+          {/* Shiny ViteComm brand title with left-to-right glow sweep */}
           <h1 className="text-5xl sm:text-7xl md:text-8xl font-black text-white leading-none mb-4 tracking-tight"
             style={{ textShadow: isDark ? '0 0 60px rgba(45,196,145,0.3), 0 0 120px rgba(45,196,145,0.1)' : '0 0 60px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.1)' }}>
-            ViteComm
+            <span className="relative inline-block">
+              ViteComm
+              {/* Left-to-right glow sweep — "blood running through veins" */}
+              <span className="absolute inset-0 pointer-events-none" style={{
+                background: 'linear-gradient(90deg, transparent 0%, rgba(45,196,145,0.6) 50%, transparent 100%)',
+                backgroundSize: '200% 100%',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                animation: 'glowSweep 3s ease-in-out infinite',
+              }}>ViteComm</span>
+            </span>
           </h1>
 
           <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tight">
@@ -405,6 +453,14 @@ export default function Accueil() {
             ))}
           </div>
         </div>
+
+        {/* Keyframe animation for glow sweep */}
+        <style>{`
+          @keyframes glowSweep {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+        `}</style>
       </section>
 
       {/* ─── Ecosystem Overview ──────────────────────────────────────── */}
@@ -569,10 +625,51 @@ export default function Accueil() {
 
       {/* ─── Final CTA ──────────────────────────────────────────────── */}
       <section className="relative overflow-hidden px-4 sm:px-6 py-12 sm:py-16 md:py-20"
-        style={{ background: isDark ? 'linear-gradient(135deg, #121311 0%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+        style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+
+        {/* SVG grid lines — matching hero */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: isDark ? 0.12 : 0.08 }}>
+          <defs>
+            <pattern id="cta-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5" />
+            </pattern>
+            <pattern id="cta-grid-lg" width="240" height="240" patternUnits="userSpaceOnUse">
+              <path d="M 240 0 L 0 0 0 240" fill="none" stroke="white" strokeWidth="1" />
+            </pattern>
+            <linearGradient id="cta-shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="white" stopOpacity="0">
+                <animate attributeName="offset" values="-0.3;1.3" dur="5s" repeatCount="indefinite" />
+              </stop>
+              <stop offset="15%" stopColor="white" stopOpacity="0.4">
+                <animate attributeName="offset" values="-0.15;1.45" dur="5s" repeatCount="indefinite" />
+              </stop>
+              <stop offset="30%" stopColor="white" stopOpacity="0">
+                <animate attributeName="offset" values="0;1.6" dur="5s" repeatCount="indefinite" />
+              </stop>
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#cta-grid)" />
+          <rect width="100%" height="100%" fill="url(#cta-grid-lg)" />
+          <rect width="100%" height="100%" fill="url(#cta-shimmer)" />
+        </svg>
+
         <div className="absolute -top-20 -right-20 w-[300px] h-[300px] rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(45,196,145,0.06)' : 'rgba(255,255,255,0.08)', filter: 'blur(60px)' }} />
         <div className="relative z-10 max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-4xl font-black text-white mb-3 tracking-tight">Prêt à rejoindre ViteComm ?</h2>
+          <h2 className="text-2xl sm:text-4xl font-black text-white mb-3 tracking-tight">
+            Prêt à rejoindre{' '}
+            <span className="relative inline-block">
+              ViteComm
+              <span className="absolute inset-0 pointer-events-none" style={{
+                background: 'linear-gradient(90deg, transparent 0%, rgba(45,196,145,0.6) 50%, transparent 100%)',
+                backgroundSize: '200% 100%',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                animation: 'glowSweep 3s ease-in-out infinite',
+              }}>ViteComm</span>
+            </span>
+            ?
+          </h2>
           <p className="text-xs sm:text-sm mb-6 sm:mb-8" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.8)' }}>
             Créez votre compte gratuit en 30 secondes. Aucune carte bancaire requise.
           </p>
