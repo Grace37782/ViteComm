@@ -42,6 +42,11 @@ html, body, #root {
   transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 
+/* Exclude SVG elements from global transition to avoid GPU/animation glitches */
+svg, svg *, circle, path, rect, animate, animateMotion, mpath {
+  transition: none !important;
+}
+
 /* ── Leaflet fix ── */
 .leaflet-container {
   z-index: 0;
