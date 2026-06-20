@@ -54,7 +54,7 @@ export default function GoogleRoleSelection({ user, onComplete }) {
       setStep('loading')
       try {
         const data = await completeGoogleRegistration({ role: 'client' })
-        updateAuthContext(data.user)
+        updateAuthContext(data.user, localStorage.getItem('vc_token'))
         onComplete?.()
         navigate('/client/accueil')
       } catch (err) {
@@ -80,7 +80,7 @@ export default function GoogleRoleSelection({ user, onComplete }) {
         nom_etablissement: nomEtablissement.trim(),
         localisation_marche: localisationMarche.trim(),
       })
-      updateAuthContext(data.user)
+      updateAuthContext(data.user, localStorage.getItem('vc_token'))
       onComplete?.()
       navigate('/vendeur/dashboard')
     } catch (err) {
@@ -101,7 +101,7 @@ export default function GoogleRoleSelection({ user, onComplete }) {
         type_vehicule: typeVehicule,
         immatriculation: immatriculation.trim(),
       })
-      updateAuthContext(data.user)
+      updateAuthContext(data.user, localStorage.getItem('vc_token'))
       onComplete?.()
       navigate('/livreur/dashboard')
     } catch (err) {
