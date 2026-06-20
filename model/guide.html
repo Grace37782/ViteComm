@@ -1100,9 +1100,27 @@ html.role-livreur { --accent: #D85A30; }  /* Rouge */</pre>
     <tr><td>Assets statiques</td><td>Pré-cache (17 entrées, ~1.4 MB)</td><td>—</td></tr>
   </table>
 
-  <h3>13.3 Installation</h3>
-  <p>Le composant <code>InstallPrompt</code> détecte l'événement <code>beforeinstallprompt</code> et affiche
-    une bannière après 2 secondes. L'utilisateur peut installer l'app comme application native sur son appareil.</p>
+  <h3>13.3 Composant InstallPrompt</h3>
+  <p>Le composant <code>InstallPrompt.jsx</code> gère l'installation de la PWA :</p>
+  <ul>
+    <li><strong>Détection :</strong> Écoute l'événement <code>beforeinstallprompt</code> du navigateur</li>
+    <li><strong>Mode standalone :</strong> Vérifie <code>(display-mode: standalone)</code> ou <code>navigator.standalone</code>
+      pour savoir si l'app est déjà installée</li>
+    <li><strong>Bannière flottante :</strong> Bouton violet en bas à droite avec animation bounce, affiché après 2 secondes</li>
+    <li><strong>Modal :</strong> Slide-up avec backdrop blur — "Installer" ou "Pas maintenant"</li>
+    <li><strong>Dismiss :</strong> Stocke <code>pwa-install-dismissed</code> dans localStorage pour ne plus afficher</li>
+    <li><strong>Événement <code>appinstalled</code> :</strong> Nettoie l'état après installation réussie</li>
+  </ul>
+
+  <h3>13.4 Avantages PWA pour ViteComm</h3>
+  <ul>
+    <li><strong>Installation native :</strong> L'utilisateur peut ajouter ViteComm à son écran d'accueil comme une app</li>
+    <li><strong>Mode plein écran :</strong> <code>display: standalone</code> — pas de barre d'adresse du navigateur</li>
+    <li><strong>Orientation :</strong> <code>portrait</code> — force l'orientation verticale</li>
+    <li><strong>Fonctionnement hors-ligne :</strong> Les assets statiques sont mis en cache (Workbox), les pages visitées restent accessibles</li>
+    <li><strong>Performance :</strong> Cache Google Fonts (1 an), cache API (1h), pré-cache des assets (~1.4 MB)</li>
+    <li><strong>Mise à jour auto :</strong> <code>registerType: 'autoUpdate'</code> — le service worker se met à jour silencieusement</li>
+  </ul>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <!-- 14. PAIEMENT -->
