@@ -410,10 +410,19 @@ export default function Accueil() {
             <Sparkles size={14} className="inline-block mr-1.5" /> La première marketplace locale au Bénin
           </div>
 
-          {/* Shiny ViteComm brand title with left-to-right glow sweep */}
-          <h1 className="text-5xl sm:text-7xl md:text-8xl font-black text-white leading-none mb-4 tracking-tight"
-            style={{ textShadow: isDark ? '0 0 60px rgba(45,196,145,0.3), 0 0 120px rgba(45,196,145,0.1)' : '0 0 60px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.1)' }}>
-            ViteComm
+          {/* Shiny ViteComm brand title — slow subtle right-to-left sweep */}
+          <h1 className="text-5xl sm:text-7xl md:text-8xl font-black text-white leading-none mb-4 tracking-tight">
+            <span className="relative inline-block">
+              ViteComm
+              <span className="absolute inset-0 pointer-events-none" style={{
+                background: 'linear-gradient(270deg, transparent 0%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.15) 55%, transparent 100%)',
+                backgroundSize: '300% 100%',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                animation: 'vitecommSweep 8s ease-in-out 3s infinite',
+              }}>ViteComm</span>
+            </span>
           </h1>
 
           <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tight">
@@ -669,6 +678,14 @@ export default function Accueil() {
           </div>
         </div>
       </section>
+
+      {/* Global keyframe for ViteComm title sweep */}
+      <style>{`
+        @keyframes vitecommSweep {
+          0%, 100% { background-position: 300% 0; }
+          40%, 60% { background-position: -100% 0; }
+        }
+      `}</style>
 
     </div>
   )
