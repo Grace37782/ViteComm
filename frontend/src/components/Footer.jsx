@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ShoppingCart, Store, Bike } from 'lucide-react'
+import { ShoppingCart, Store, Bike, Mail, Sun, Monitor, Moon, Home } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 
@@ -65,9 +65,9 @@ const ROLE_CARDS = [
 ]
 
 const THEME_OPTIONS = [
-  { value: 'light', icon: '☀️', label: 'Clair' },
-  { value: 'system', icon: '🖥️', label: 'Système' },
-  { value: 'dark', icon: '🌙', label: 'Sombre' },
+  { value: 'light', Icon: Sun, label: 'Clair' },
+  { value: 'system', Icon: Monitor, label: 'Système' },
+  { value: 'dark', Icon: Moon, label: 'Sombre' },
 ]
 
 export default function Footer() {
@@ -117,7 +117,7 @@ export default function Footer() {
               <a href="mailto:support@vitecomm.bj"
                 className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
                 style={{ background: 'var(--surface-alt)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
-                ✉️ support@vitecomm.bj
+                <Mail size={14} /> support@vitecomm.bj
               </a>
             </div>
           </div>
@@ -176,12 +176,12 @@ export default function Footer() {
                 <div className="flex flex-col gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                   <p>Marketplace alimentaire connectant marchands, clients et livreurs à Cotonou.</p>
                   <div className="flex flex-col gap-1.5">
-                    <a href="mailto:support@vitecomm.bj" className="text-xs font-medium"
-                      style={{ color: 'var(--accent)' }}>✉️ Contacter le support</a>
+                    <a href="mailto:support@vitecomm.bj" className="flex items-center gap-1.5 text-xs font-medium"
+                      style={{ color: 'var(--accent)' }}><Mail size={13} /> Contacter le support</a>
                     <button onClick={() => navigate('/accueil')}
-                      className="text-xs font-medium text-left cursor-pointer"
+                      className="flex items-center gap-1.5 text-xs font-medium text-left cursor-pointer"
                       style={{ color: 'var(--accent)', background: 'none', border: 'none' }}>
-                      🏠 Page d'accueil
+                      <Home size={13} /> Page d'accueil
                     </button>
                   </div>
                 </div>
@@ -208,7 +208,7 @@ export default function Footer() {
                     color: theme === opt.value ? '#fff' : 'var(--text-muted)',
                     border: 'none',
                   }}>
-                  <span>{opt.icon}</span>
+                  <span><opt.Icon size={14} /></span>
                   <span className="hidden sm:inline">{opt.label}</span>
                 </button>
               ))}
