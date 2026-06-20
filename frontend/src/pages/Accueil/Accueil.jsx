@@ -283,14 +283,14 @@ export default function Accueil() {
           backdropFilter: scrolled ? 'blur(20px)' : 'none',
           borderBottom: scrolled ? `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` : 'none',
         }}>
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-black"
               style={{ background: isDark ? 'rgba(45,196,145,0.15)' : '#1D9E75', color: '#fff' }}>V</div>
             <span className="text-base font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>ViteComm</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-5">
             {navLinks.map(l => (
               <button key={l.id} onClick={() => scrollTo(l.id)}
                 className="text-xs font-semibold cursor-pointer transition-colors"
@@ -300,17 +300,16 @@ export default function Accueil() {
                 {l.label}
               </button>
             ))}
-          </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-px h-4 mx-1" style={{ background: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }} />
+
             <button onClick={() => navigate('/connect')}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold cursor-pointer transition-all"
+              className="px-4 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all"
               style={{ background: 'none', border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`, color: 'var(--text-primary)' }}>
-              <span className="hidden sm:inline">Se connecter</span>
-              <span className="sm:hidden">Connexion</span>
+              Se connecter
             </button>
             <button onClick={() => navigate('/register')}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold cursor-pointer transition-all"
+              className="px-4 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all"
               style={{ background: '#1D9E75', color: '#fff', border: 'none' }}>
               Rejoindre
             </button>
@@ -344,96 +343,77 @@ export default function Accueil() {
           <rect width="100%" height="100%" fill="url(#hero-grid)" />
           <rect width="100%" height="100%" fill="url(#hero-grid-lg)" />
 
-          {/* ── Vertical grid line glow pulses ── */}
-          <line id="vline1" x1="120" y1="0" x2="120" y2="100%" stroke="none" />
-          <circle r="3" fill="white" opacity="0.7" filter="url(#glow-strong)">
-            <animateMotion dur="3.5s" repeatCount="indefinite" path="M120,0 L120,800" />
-            <animate attributeName="opacity" values="0;0.8;0.8;0" dur="3.5s" repeatCount="indefinite" />
+          {/* ── Vertical grid line glow pulses (subtle) ── */}
+          <circle r="2" fill="white" opacity="0.4" filter="url(#glow)">
+            <animateMotion dur="12s" repeatCount="indefinite" path="M120,0 L120,800" />
+            <animate attributeName="opacity" values="0;0.35;0.35;0" dur="12s" repeatCount="indefinite" />
           </circle>
-          <line id="vline2" x1="360" y1="0" x2="360" y2="100%" stroke="none" />
-          <circle r="2.5" fill="#2DC491" opacity="0.6" filter="url(#glow)">
-            <animateMotion dur="4.5s" repeatCount="indefinite" path="M360,0 L360,800" begin="1.2s" />
-            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="4.5s" repeatCount="indefinite" begin="1.2s" />
+          <circle r="1.8" fill="#2DC491" opacity="0.3" filter="url(#glow)">
+            <animateMotion dur="15s" repeatCount="indefinite" path="M360,0 L360,800" begin="4s" />
+            <animate attributeName="opacity" values="0;0.3;0.3;0" dur="15s" repeatCount="indefinite" begin="4s" />
           </circle>
-          <line id="vline3" x1="600" y1="0" x2="600" y2="100%" stroke="none" />
-          <circle r="3.5" fill="white" opacity="0.6" filter="url(#glow-strong)">
-            <animateMotion dur="5s" repeatCount="indefinite" path="M600,0 L600,800" begin="2.5s" />
-            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="5s" repeatCount="indefinite" begin="2.5s" />
+          <circle r="2.2" fill="white" opacity="0.3" filter="url(#glow)">
+            <animateMotion dur="18s" repeatCount="indefinite" path="M600,0 L600,800" begin="7s" />
+            <animate attributeName="opacity" values="0;0.3;0.3;0" dur="18s" repeatCount="indefinite" begin="7s" />
           </circle>
-          <line id="vline4" x1="840" y1="0" x2="840" y2="100%" stroke="none" />
-          <circle r="2" fill="#2DC491" opacity="0.5" filter="url(#glow)">
-            <animateMotion dur="6s" repeatCount="indefinite" path="M840,0 L840,800" begin="0.8s" />
-            <animate attributeName="opacity" values="0;0.6;0.6;0" dur="6s" repeatCount="indefinite" begin="0.8s" />
+          <circle r="1.5" fill="#2DC491" opacity="0.25" filter="url(#glow)">
+            <animateMotion dur="14s" repeatCount="indefinite" path="M840,0 L840,800" begin="2s" />
+            <animate attributeName="opacity" values="0;0.25;0.25;0" dur="14s" repeatCount="indefinite" begin="2s" />
           </circle>
 
-          {/* ── Horizontal grid line glow pulses ── */}
-          <line id="hline1" x1="0" y1="60" x2="100%" y2="60" stroke="none" />
-          <circle r="3" fill="white" opacity="0.7" filter="url(#glow-strong)">
-            <animateMotion dur="4s" repeatCount="indefinite" path="M0,60 L1600,60" />
-            <animate attributeName="opacity" values="0;0.8;0.8;0" dur="4s" repeatCount="indefinite" />
+          {/* ── Horizontal grid line glow pulses (subtle) ── */}
+          <circle r="2" fill="white" opacity="0.35" filter="url(#glow)">
+            <animateMotion dur="14s" repeatCount="indefinite" path="M0,60 L1600,60" />
+            <animate attributeName="opacity" values="0;0.3;0.3;0" dur="14s" repeatCount="indefinite" />
           </circle>
-          <line id="hline2" x1="0" y1="180" x2="100%" y2="180" stroke="none" />
-          <circle r="2.5" fill="#2DC491" opacity="0.6" filter="url(#glow)">
-            <animateMotion dur="5.5s" repeatCount="indefinite" path="M0,180 L1600,180" begin="1.8s" />
-            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="5.5s" repeatCount="indefinite" begin="1.8s" />
+          <circle r="1.8" fill="#2DC491" opacity="0.3" filter="url(#glow)">
+            <animateMotion dur="16s" repeatCount="indefinite" path="M0,180 L1600,180" begin="5s" />
+            <animate attributeName="opacity" values="0;0.25;0.25;0" dur="16s" repeatCount="indefinite" begin="5s" />
           </circle>
-          <line id="hline3" x1="0" y1="300" x2="100%" y2="300" stroke="none" />
-          <circle r="3" fill="white" opacity="0.55" filter="url(#glow-strong)">
-            <animateMotion dur="6.5s" repeatCount="indefinite" path="M0,300 L1600,300" begin="3s" />
-            <animate attributeName="opacity" values="0;0.65;0.65;0" dur="6.5s" repeatCount="indefinite" begin="3s" />
+          <circle r="2" fill="white" opacity="0.25" filter="url(#glow)">
+            <animateMotion dur="20s" repeatCount="indefinite" path="M0,300 L1600,300" begin="9s" />
+            <animate attributeName="opacity" values="0;0.25;0.25;0" dur="20s" repeatCount="indefinite" begin="9s" />
           </circle>
 
-          {/* ── Curve 1: thin base + glow pulse traveling along path ── */}
+          {/* ── Curve 1 ── */}
           <path id="curve1" d="M0,80 Q200,40 400,100 T800,60 T1200,90 T1600,50" fill="none" stroke="white" strokeWidth="1" opacity="0.2" />
-          <circle r="4" fill="white" opacity="0.8" filter="url(#glow-strong)">
-            <animateMotion dur="4s" repeatCount="indefinite" rotate="auto">
+          <circle r="2.5" fill="white" opacity="0.4" filter="url(#glow)">
+            <animateMotion dur="9s" repeatCount="indefinite" rotate="auto">
               <mpath href="#curve1" />
             </animateMotion>
-            <animate attributeName="opacity" values="0;0.9;0.9;0" dur="4s" repeatCount="indefinite" />
-          </circle>
-          <circle r="2.5" fill="#2DC491" opacity="0.6" filter="url(#glow)">
-            <animateMotion dur="4s" repeatCount="indefinite" rotate="auto" begin="1.5s">
-              <mpath href="#curve1" />
-            </animateMotion>
-            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="4s" repeatCount="indefinite" begin="1.5s" />
+            <animate attributeName="opacity" values="0;0.4;0.4;0" dur="9s" repeatCount="indefinite" />
           </circle>
 
-          {/* ── Curve 2: glow pulse with different timing ── */}
+          {/* ── Curve 2 ── */}
           <path id="curve2" d="M0,160 Q300,120 600,180 T1200,140 T1800,170" fill="none" stroke="white" strokeWidth="0.8" opacity="0.15" />
-          <circle r="3.5" fill="white" opacity="0.7" filter="url(#glow-strong)">
-            <animateMotion dur="5.5s" repeatCount="indefinite" rotate="auto" begin="2s">
+          <circle r="2" fill="white" opacity="0.35" filter="url(#glow)">
+            <animateMotion dur="11s" repeatCount="indefinite" rotate="auto" begin="3s">
               <mpath href="#curve2" />
             </animateMotion>
-            <animate attributeName="opacity" values="0;0.8;0.8;0" dur="5.5s" repeatCount="indefinite" begin="2s" />
-          </circle>
-          <circle r="2" fill="#2DC491" opacity="0.5" filter="url(#glow)">
-            <animateMotion dur="5.5s" repeatCount="indefinite" rotate="auto" begin="4s">
-              <mpath href="#curve2" />
-            </animateMotion>
-            <animate attributeName="opacity" values="0;0.6;0.6;0" dur="5.5s" repeatCount="indefinite" begin="4s" />
+            <animate attributeName="opacity" values="0;0.35;0.35;0" dur="11s" repeatCount="indefinite" begin="3s" />
           </circle>
 
-          {/* ── Curve 3: slow pulse ── */}
+          {/* ── Curve 3 ── */}
           <path id="curve3" d="M0,280 Q250,240 500,290 T1000,260 T1500,280" fill="none" stroke="white" strokeWidth="0.6" opacity="0.12" />
-          <circle r="3" fill="white" opacity="0.6" filter="url(#glow-strong)">
-            <animateMotion dur="7s" repeatCount="indefinite" rotate="auto" begin="1s">
+          <circle r="2" fill="white" opacity="0.3" filter="url(#glow)">
+            <animateMotion dur="13s" repeatCount="indefinite" rotate="auto" begin="5s">
               <mpath href="#curve3" />
             </animateMotion>
-            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="7s" repeatCount="indefinite" begin="1s" />
+            <animate attributeName="opacity" values="0;0.3;0.3;0" dur="13s" repeatCount="indefinite" begin="5s" />
           </circle>
 
           {/* ── Pulsing data-point dots ── */}
-          <circle cx="400" cy="100" r="4" fill="white" opacity="0.5" filter="url(#glow)">
-            <animate attributeName="opacity" values="0.2;0.7;0.2" dur="3s" repeatCount="indefinite" />
+          <circle cx="400" cy="100" r="3" fill="white" opacity="0.3" filter="url(#glow)">
+            <animate attributeName="opacity" values="0.1;0.35;0.1" dur="8s" repeatCount="indefinite" />
           </circle>
-          <circle cx="800" cy="60" r="5" fill="white" opacity="0.4" filter="url(#glow)">
-            <animate attributeName="opacity" values="0.3;0.8;0.3" dur="4s" repeatCount="indefinite" />
+          <circle cx="800" cy="60" r="3.5" fill="white" opacity="0.25" filter="url(#glow)">
+            <animate attributeName="opacity" values="0.1;0.3;0.1" dur="10s" repeatCount="indefinite" begin="2s" />
           </circle>
-          <circle cx="1200" cy="90" r="4" fill="white" opacity="0.35" filter="url(#glow)">
-            <animate attributeName="opacity" values="0.15;0.6;0.15" dur="3.5s" repeatCount="indefinite" />
+          <circle cx="1200" cy="90" r="2.5" fill="white" opacity="0.25" filter="url(#glow)">
+            <animate attributeName="opacity" values="0.08;0.28;0.08" dur="9s" repeatCount="indefinite" begin="4s" />
           </circle>
-          <circle cx="600" cy="180" r="3" fill="white" opacity="0.35" filter="url(#glow)">
-            <animate attributeName="opacity" values="0.2;0.55;0.2" dur="5s" repeatCount="indefinite" />
+          <circle cx="600" cy="180" r="2" fill="white" opacity="0.2" filter="url(#glow)">
+            <animate attributeName="opacity" values="0.08;0.25;0.08" dur="11s" repeatCount="indefinite" begin="1s" />
           </circle>
         </svg>
 
@@ -687,21 +667,21 @@ export default function Accueil() {
           <rect width="100%" height="100%" fill="url(#cta-grid)" />
           <rect width="100%" height="100%" fill="url(#cta-grid-lg)" />
           {/* Vertical glow pulse */}
-          <circle r="2.5" fill="white" opacity="0.6" filter="url(#cta-glow)">
-            <animateMotion dur="4.5s" repeatCount="indefinite" path="M200,0 L200,500" />
-            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="4.5s" repeatCount="indefinite" />
+          <circle r="1.8" fill="white" opacity="0.3" filter="url(#cta-glow)">
+            <animateMotion dur="14s" repeatCount="indefinite" path="M200,0 L200,500" />
+            <animate attributeName="opacity" values="0;0.25;0.25;0" dur="14s" repeatCount="indefinite" />
           </circle>
           {/* Horizontal glow pulse */}
-          <circle r="2.5" fill="white" opacity="0.6" filter="url(#cta-glow)">
-            <animateMotion dur="5s" repeatCount="indefinite" path="M0,120 L1600,120" begin="1.5s" />
-            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="5s" repeatCount="indefinite" begin="1.5s" />
+          <circle r="1.8" fill="white" opacity="0.3" filter="url(#cta-glow)">
+            <animateMotion dur="16s" repeatCount="indefinite" path="M0,120 L1600,120" begin="5s" />
+            <animate attributeName="opacity" values="0;0.25;0.25;0" dur="16s" repeatCount="indefinite" begin="5s" />
           </circle>
           <path id="cta-curve1" d="M0,60 Q200,30 400,70 T800,40 T1200,65 T1600,35" fill="none" stroke="white" strokeWidth="0.8" opacity="0.15" />
-          <circle r="3" fill="white" opacity="0.7" filter="url(#cta-glow)">
-            <animateMotion dur="5s" repeatCount="indefinite" rotate="auto">
+          <circle r="2" fill="white" opacity="0.3" filter="url(#cta-glow)">
+            <animateMotion dur="12s" repeatCount="indefinite" rotate="auto">
               <mpath href="#cta-curve1" />
             </animateMotion>
-            <animate attributeName="opacity" values="0;0.8;0.8;0" dur="5s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;0.3;0.3;0" dur="12s" repeatCount="indefinite" />
           </circle>
         </svg>
 
