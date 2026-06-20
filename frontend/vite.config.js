@@ -15,7 +15,7 @@ export default defineConfig({
         name: 'ViteComm',
         short_name: 'ViteComm',
         description: 'Plateforme de commerce local - Clients, Vendeurs, Livreurs',
-        theme_color: '#863bff',
+        theme_color: '#1D9E75',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
