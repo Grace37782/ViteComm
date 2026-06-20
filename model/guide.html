@@ -1142,13 +1142,38 @@ html.role-livreur { --accent: #D85A30; }  /* Rouge */</pre>
 
   <h3>13.3 Composant InstallPrompt</h3>
   <p>Le composant <code>InstallPrompt.jsx</code> gère l'installation de la PWA :</p>
+  <pre>
+// InstallPrompt.jsx — logique d'installation
+const [deferredPrompt, setDeferredPrompt] = useState(null)
+const [isStandalone] = useState(() =>
+  window.matchMedia('(display-mode: standalone)').matches ||
+  window.navigator.standalone === true
+)
+
+useEffect(() => {
+  if (isStandalone) return                           // Déjà installée
+  if (localStorage.getItem('pwa-install-dismissed')) return  // Dismissed
+
+  const handler = (e) => {
+    e.preventDefault()
+    setDeferredPrompt(e)                            // Stocke l'événement
+    setTimeout(() => setShowModal(true), 2000)      // Affiche après 2s
+  }
+  window.addEventListener('beforeinstallprompt', handler)
+  return () => window.removeEventListener('beforeinstallprompt', handler)
+}, [])
+
+const handleInstall = async () => {
+  deferredPrompt.prompt()                           // Déclenche le popup natif
+  const { outcome } = await deferredPrompt.userChoice
+  if (outcome === 'accepted') { /* installé */ }
+}</pre>
   <ul>
-    <li><strong>Détection :</strong> Écoute l'événement <code>beforeinstallprompt</code> du navigateur</li>
-    <li><strong>Mode standalone :</strong> Vérifie <code>(display-mode: standalone)</code> ou <code>navigator.standalone</code>
-      pour savoir si l'app est déjà installée</li>
-    <li><strong>Bannière flottante :</strong> Bouton violet en bas à droite avec animation bounce, affiché après 2 secondes</li>
+    <li><strong>Détection standalone :</strong> <code>(display-mode: standalone)</code> ou <code>navigator.standalone</code>
+      — si vrai, l'app est déjà installée, le composant ne rend rien</li>
+    <li><strong>Bannière flottante :</strong> Bouton violet en bas à droite avec animation bounce</li>
     <li><strong>Modal :</strong> Slide-up avec backdrop blur — "Installer" ou "Pas maintenant"</li>
-    <li><strong>Dismiss :</strong> Stocke <code>pwa-install-dismissed</code> dans localStorage pour ne plus afficher</li>
+    <li><strong>Dismiss :</strong> <code>localStorage.setItem('pwa-install-dismissed', 'true')</code> — ne plus afficher</li>
     <li><strong>Événement <code>appinstalled</code> :</strong> Nettoie l'état après installation réussie</li>
   </ul>
 
@@ -1184,6 +1209,56 @@ html.role-livreur { --accent: #D85A30; }  /* Rouge */</pre>
       <code>POST /api/client/payment/initiate</code> crée une <code>PaiementTransaction</code> et appelle l'API
       FedaPay → retourne une <code>checkout_url</code>.</div>
   </div>
+
+  <h4>Code — Création de la transaction (<code>paymentController.js</code>)</h4>
+  <pre>
+const montant = facture.montant_total_du;
+const transaction_id = generateTransactionId();  // "TXN-XXXXXXXXXXXX"
+
+// 1. Créer l'enregistrement en BDD
+const transaction = await prisma.paiementTransaction.create({
+  data: {
+    id_user_client, id_commande, montant, mode_paiement,
+    telephone, transaction_id, statut: 'pending',
+  },
+});
+
+// 2. Appeler l'API FedaPay
+const fedapayResult = await initiatePayment({
+  id_commande, montant, devise: 'XOF', mode_paiement,
+  telephone, transaction_id, client_prenom, client_nom,
+});
+
+// 3. Stocker l'ID FedaPay et retourner l'URL de checkout
+await prisma.paiementTransaction.update({
+  where: { id_paiement_transaction: transaction.id_paiement_transaction },
+  data: { fedapay_transaction_id: fedapayResult.fedapay_id },
+});
+
+return res.status(201).json({
+  checkout_url: fedapayResult.checkout_url,  // → redirige le navigateur
+  transaction_id,
+});</pre>
+
+  <h4>Code — Appel API FedaPay (<code>fedapayService.js</code>)</h4>
+  <pre>
+const payload = {
+  description: `Commande ViteComm #${id_commande}`,
+  amount: Math.round(montant),
+  currency: { iso: 'XOF' },
+  reference: transaction_id,
+  callback_url: `${APP_URL}/api/webhooks/fedapay`,       // Webhook (POST serveur)
+  return_url: `${FRONTEND_URL}/client/paiement?ref=...`, // Redirect (GET navigateur)
+  customer: { firstname, lastname, phone_number: { number: phone, country: 'BJ' } },
+  method: 'mtn_bj',  // ou 'moov_bj', 'celtis_bj'
+};
+
+const response = await fetch(`${FEDAPAY_BASE_URL}/v1/transactions`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SECRET_KEY}` },
+  body: JSON.stringify(payload),
+});</pre>
+
   <div class="flow-step">
     <div class="num">2</div>
     <div class="content"><strong>Redirection :</strong> Le client est redirigé vers le portail FedaPay, confirme
@@ -1195,13 +1270,84 @@ html.role-livreur { --accent: #D85A30; }  /* Rouge */</pre>
       <code>/api/webhooks/fedapay</code>. Le backend vérifie la signature (timing-safe, fenêtre 5 min) et met à jour
       le statut.</div>
   </div>
+
+  <h4>Code — Traitement webhook (<code>paymentController.js</code>)</h4>
+  <pre>
+export const handleWebhook = async (req, res) => {
+  // 1. Vérifier la signature HMAC
+  const signatureHeader = req.headers['x-fedapay-signature'];
+  const signature = verifyWebhookSignature(req.rawBody, signatureHeader);
+  if (!signature) return res.status(400).json({ error: 'Signature invalide' });
+
+  // 2. Extraire les données
+  const event = req.body;
+  const eventType = event.event;  // "transaction.approved" | "transaction.declined"
+  const transactionData = event.data?.transaction;
+
+  // 3. Trouver la transaction en BDD
+  const paiementTransaction = await prisma.paiementTransaction.findFirst({
+    where: { OR: [
+      { transaction_id: reference },
+      { fedapay_transaction_id: String(transactionData.id) },
+    ]},
+  });
+
+  // 4. Traiter selon le type d'événement
+  if (eventType === 'transaction.approved') {
+    await prisma.$transaction(async (tx) => {
+      await tx.paiementTransaction.update({ data: { statut: 'completed' } });
+      await tx.paiement.create({ data: { montant_percu, mode_reglement: 'MOBILE_MONEY' } });
+      await tx.facture.update({ data: { statut_paiement: 'Paye' } });
+      await tx.commande.update({ data: { mode_paiement_status: 'paye' } });
+    });
+  }
+};</pre>
+
   <div class="flow-step">
     <div class="num">4</div>
     <div class="content"><strong>Succès :</strong> La facture est marquée "Payé", le gain du livreur est crédité.
       Le client voit la facture détaillée.</div>
   </div>
 
-  <h3>14.3 Sécurité webhook</h3>
+  <h3>14.3 Fallback polling (quand le webhook échoue)</h3>
+  <p>En dev local, le webhook ne peut pas atteindre votre IP privée. Le frontend utilise le
+    <strong>polling</strong> comme fallback — il interroge directement l'API FedaPay depuis le backend :</p>
+  <pre>
+// paymentController.js — getPaymentStatus
+export const getPaymentStatus = async (req, res) => {
+  const transaction = await prisma.paiementTransaction.findFirst({
+    where: { transaction_id, id_user_client },
+  });
+
+  // Si encore en attente, vérifier directement auprès de FedaPay
+  if (transaction.statut === 'pending' && transaction.fedapay_transaction_id) {
+    const fedapayStatus = await verifyTransactionStatus(transaction.fedapay_transaction_id);
+    // ↑ Appel GET /v1/transactions/:id vers FedaPay API
+
+    if (fedapayStatus === 'approved') {
+      // Simule le traitement du webhook
+      await prisma.$transaction(async (tx) => {
+        await tx.paiementTransaction.update({ data: { statut: 'completed' } });
+        await tx.paiement.create({ data: { montant_percu, mode_reglement: 'MOBILE_MONEY' } });
+        await tx.facture.update({ data: { statut_paiement: 'Paye' } });
+        await tx.commande.update({ data: { mode_paiement_status: 'paye' } });
+      });
+    }
+  }
+
+  return res.json({ statut: transaction.statut, montant, mode_paiement });
+};
+
+// Appel API FedaPay pour vérifier le statut
+export async function verifyTransactionStatus(fedapayId) {
+  const response = await fetch(`${FEDAPAY_BASE_URL}/v1/transactions/${fedapayId}`, {
+    headers: { Authorization: `Bearer ${FEDAPAY_SECRET_KEY}` },
+  });
+  const data = await response.json();
+  return tx?.status;  // "approved" | "declined" | "canceled" | "pending"
+}</pre>
+
+  <h3>14.4 Sécurité webhook</h3>
   <pre>
 // paymentController.js
 const signature = req.headers['x-fedapay-signature'];
