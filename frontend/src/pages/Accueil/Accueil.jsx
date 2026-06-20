@@ -302,14 +302,17 @@ export default function Accueil() {
             ))}
 
             <div className="w-px h-4 mx-1" style={{ background: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }} />
+          </div>
 
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button onClick={() => navigate('/connect')}
-              className="px-4 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold cursor-pointer transition-all"
               style={{ background: 'none', border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`, color: 'var(--text-primary)' }}>
-              Se connecter
+              <span className="hidden sm:inline">Se connecter</span>
+              <span className="sm:hidden">Connexion</span>
             </button>
             <button onClick={() => navigate('/register')}
-              className="px-4 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold cursor-pointer transition-all"
               style={{ background: '#1D9E75', color: '#fff', border: 'none' }}>
               Rejoindre
             </button>
@@ -321,8 +324,8 @@ export default function Accueil() {
       <section className="relative overflow-hidden px-4 sm:px-6 pt-14 pb-16 sm:pt-24 sm:pb-28"
         style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
 
-        {/* SVG grid lines — animated glow pulses traveling along curves */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: isDark ? 0.15 : 0.1 }}>
+        {/* SVG grid lines — hidden on mobile to prevent rendering artifacts */}
+        <svg className="hidden sm:block absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: isDark ? 0.15 : 0.1 }}>
           <defs>
             <pattern id="hero-grid" width="60" height="60" patternUnits="userSpaceOnUse">
               <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5" />
@@ -650,8 +653,8 @@ export default function Accueil() {
       <section className="relative overflow-hidden px-4 sm:px-6 py-12 sm:py-16 md:py-20"
         style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
 
-        {/* SVG grid lines — matching hero */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: isDark ? 0.12 : 0.08 }}>
+        {/* SVG grid lines — hidden on mobile */}
+        <svg className="hidden sm:block absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: isDark ? 0.12 : 0.08 }}>
           <defs>
             <pattern id="cta-grid" width="60" height="60" patternUnits="userSpaceOnUse">
               <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5" />
