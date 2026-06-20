@@ -283,7 +283,7 @@ export default function Accueil() {
           backdropFilter: scrolled ? 'blur(20px)' : 'none',
           borderBottom: scrolled ? `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` : 'none',
         }}>
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-black"
               style={{ background: isDark ? 'rgba(45,196,145,0.15)' : '#1D9E75', color: '#fff' }}>V</div>
@@ -343,6 +343,45 @@ export default function Accueil() {
           {/* Base grid */}
           <rect width="100%" height="100%" fill="url(#hero-grid)" />
           <rect width="100%" height="100%" fill="url(#hero-grid-lg)" />
+
+          {/* ── Vertical grid line glow pulses ── */}
+          <line id="vline1" x1="120" y1="0" x2="120" y2="100%" stroke="none" />
+          <circle r="3" fill="white" opacity="0.7" filter="url(#glow-strong)">
+            <animateMotion dur="3.5s" repeatCount="indefinite" path="M120,0 L120,800" />
+            <animate attributeName="opacity" values="0;0.8;0.8;0" dur="3.5s" repeatCount="indefinite" />
+          </circle>
+          <line id="vline2" x1="360" y1="0" x2="360" y2="100%" stroke="none" />
+          <circle r="2.5" fill="#2DC491" opacity="0.6" filter="url(#glow)">
+            <animateMotion dur="4.5s" repeatCount="indefinite" path="M360,0 L360,800" begin="1.2s" />
+            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="4.5s" repeatCount="indefinite" begin="1.2s" />
+          </circle>
+          <line id="vline3" x1="600" y1="0" x2="600" y2="100%" stroke="none" />
+          <circle r="3.5" fill="white" opacity="0.6" filter="url(#glow-strong)">
+            <animateMotion dur="5s" repeatCount="indefinite" path="M600,0 L600,800" begin="2.5s" />
+            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="5s" repeatCount="indefinite" begin="2.5s" />
+          </circle>
+          <line id="vline4" x1="840" y1="0" x2="840" y2="100%" stroke="none" />
+          <circle r="2" fill="#2DC491" opacity="0.5" filter="url(#glow)">
+            <animateMotion dur="6s" repeatCount="indefinite" path="M840,0 L840,800" begin="0.8s" />
+            <animate attributeName="opacity" values="0;0.6;0.6;0" dur="6s" repeatCount="indefinite" begin="0.8s" />
+          </circle>
+
+          {/* ── Horizontal grid line glow pulses ── */}
+          <line id="hline1" x1="0" y1="60" x2="100%" y2="60" stroke="none" />
+          <circle r="3" fill="white" opacity="0.7" filter="url(#glow-strong)">
+            <animateMotion dur="4s" repeatCount="indefinite" path="M0,60 L1600,60" />
+            <animate attributeName="opacity" values="0;0.8;0.8;0" dur="4s" repeatCount="indefinite" />
+          </circle>
+          <line id="hline2" x1="0" y1="180" x2="100%" y2="180" stroke="none" />
+          <circle r="2.5" fill="#2DC491" opacity="0.6" filter="url(#glow)">
+            <animateMotion dur="5.5s" repeatCount="indefinite" path="M0,180 L1600,180" begin="1.8s" />
+            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="5.5s" repeatCount="indefinite" begin="1.8s" />
+          </circle>
+          <line id="hline3" x1="0" y1="300" x2="100%" y2="300" stroke="none" />
+          <circle r="3" fill="white" opacity="0.55" filter="url(#glow-strong)">
+            <animateMotion dur="6.5s" repeatCount="indefinite" path="M0,300 L1600,300" begin="3s" />
+            <animate attributeName="opacity" values="0;0.65;0.65;0" dur="6.5s" repeatCount="indefinite" begin="3s" />
+          </circle>
 
           {/* ── Curve 1: thin base + glow pulse traveling along path ── */}
           <path id="curve1" d="M0,80 Q200,40 400,100 T800,60 T1200,90 T1600,50" fill="none" stroke="white" strokeWidth="1" opacity="0.2" />
@@ -647,6 +686,16 @@ export default function Accueil() {
           </defs>
           <rect width="100%" height="100%" fill="url(#cta-grid)" />
           <rect width="100%" height="100%" fill="url(#cta-grid-lg)" />
+          {/* Vertical glow pulse */}
+          <circle r="2.5" fill="white" opacity="0.6" filter="url(#cta-glow)">
+            <animateMotion dur="4.5s" repeatCount="indefinite" path="M200,0 L200,500" />
+            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="4.5s" repeatCount="indefinite" />
+          </circle>
+          {/* Horizontal glow pulse */}
+          <circle r="2.5" fill="white" opacity="0.6" filter="url(#cta-glow)">
+            <animateMotion dur="5s" repeatCount="indefinite" path="M0,120 L1600,120" begin="1.5s" />
+            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="5s" repeatCount="indefinite" begin="1.5s" />
+          </circle>
           <path id="cta-curve1" d="M0,60 Q200,30 400,70 T800,40 T1200,65 T1600,35" fill="none" stroke="white" strokeWidth="0.8" opacity="0.15" />
           <circle r="3" fill="white" opacity="0.7" filter="url(#cta-glow)">
             <animateMotion dur="5s" repeatCount="indefinite" rotate="auto">
