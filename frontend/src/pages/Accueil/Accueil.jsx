@@ -283,14 +283,14 @@ export default function Accueil() {
           backdropFilter: scrolled ? 'blur(20px)' : 'none',
           borderBottom: scrolled ? `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` : 'none',
         }}>
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center gap-4">
           <div className="flex items-center gap-3 flex-shrink-0">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-black"
               style={{ background: isDark ? 'rgba(45,196,145,0.15)' : '#1D9E75', color: '#fff' }}>V</div>
             <span className="text-base font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>ViteComm</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-5">
+          <div className="hidden md:flex items-center gap-5 ml-auto">
             {navLinks.map(l => (
               <button key={l.id} onClick={() => scrollTo(l.id)}
                 className="text-xs font-semibold cursor-pointer transition-colors"
