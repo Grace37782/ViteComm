@@ -322,7 +322,7 @@ export default function Accueil() {
       <section className="relative overflow-hidden px-4 sm:px-6 pt-14 pb-16 sm:pt-24 sm:pb-28"
         style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
 
-        {/* SVG grid lines — animated glassmorphic graph pattern */}
+        {/* SVG grid lines — animated glow pulses traveling along curves */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: isDark ? 0.15 : 0.1 }}>
           <defs>
             <pattern id="hero-grid" width="60" height="60" patternUnits="userSpaceOnUse">
@@ -331,45 +331,59 @@ export default function Accueil() {
             <pattern id="hero-grid-lg" width="240" height="240" patternUnits="userSpaceOnUse">
               <path d="M 240 0 L 0 0 0 240" fill="none" stroke="white" strokeWidth="1" />
             </pattern>
-            {/* Glow filter */}
             <filter id="glow">
-              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feGaussianBlur stdDeviation="4" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
-            {/* Shimmer gradient for animated sweep */}
-            <linearGradient id="shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="white" stopOpacity="0">
-                <animate attributeName="offset" values="-0.3;1.3" dur="4s" repeatCount="indefinite" />
-              </stop>
-              <stop offset="15%" stopColor="white" stopOpacity="0.6">
-                <animate attributeName="offset" values="-0.15;1.45" dur="4s" repeatCount="indefinite" />
-              </stop>
-              <stop offset="30%" stopColor="white" stopOpacity="0">
-                <animate attributeName="offset" values="0;1.6" dur="4s" repeatCount="indefinite" />
-              </stop>
-            </linearGradient>
-            <linearGradient id="shimmer-slow" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#2DC491" stopOpacity="0">
-                <animate attributeName="offset" values="-0.4;1.2" dur="6s" repeatCount="indefinite" />
-              </stop>
-              <stop offset="20%" stopColor="#2DC491" stopOpacity="0.4">
-                <animate attributeName="offset" values="-0.2;1.4" dur="6s" repeatCount="indefinite" />
-              </stop>
-              <stop offset="40%" stopColor="#2DC491" stopOpacity="0">
-                <animate attributeName="offset" values="0;1.6" dur="6s" repeatCount="indefinite" />
-              </stop>
-            </linearGradient>
+            <filter id="glow-strong">
+              <feGaussianBlur stdDeviation="6" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
           </defs>
           {/* Base grid */}
           <rect width="100%" height="100%" fill="url(#hero-grid)" />
           <rect width="100%" height="100%" fill="url(#hero-grid-lg)" />
-          {/* Animated shimmer sweep across grid */}
-          <rect width="100%" height="100%" fill="url(#shimmer)" />
-          {/* Glowing curve lines */}
-          <path d="M0,80 Q200,40 400,100 T800,60 T1200,90 T1600,50" fill="none" stroke="url(#shimmer-slow)" strokeWidth="2" filter="url(#glow)" />
-          <path d="M0,160 Q300,120 600,180 T1200,140 T1800,170" fill="none" stroke="url(#shimmer-slow)" strokeWidth="1.5" filter="url(#glow)" />
-          <path d="M0,280 Q250,240 500,290 T1000,260 T1500,280" fill="none" stroke="url(#shimmer-slow)" strokeWidth="1" filter="url(#glow)" />
-          {/* Pulsing data-point dots */}
+
+          {/* ── Curve 1: thin base + glow pulse traveling along path ── */}
+          <path id="curve1" d="M0,80 Q200,40 400,100 T800,60 T1200,90 T1600,50" fill="none" stroke="white" strokeWidth="1" opacity="0.2" />
+          <circle r="4" fill="white" opacity="0.8" filter="url(#glow-strong)">
+            <animateMotion dur="4s" repeatCount="indefinite" rotate="auto">
+              <mpath href="#curve1" />
+            </animateMotion>
+            <animate attributeName="opacity" values="0;0.9;0.9;0" dur="4s" repeatCount="indefinite" />
+          </circle>
+          <circle r="2.5" fill="#2DC491" opacity="0.6" filter="url(#glow)">
+            <animateMotion dur="4s" repeatCount="indefinite" rotate="auto" begin="1.5s">
+              <mpath href="#curve1" />
+            </animateMotion>
+            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="4s" repeatCount="indefinite" begin="1.5s" />
+          </circle>
+
+          {/* ── Curve 2: glow pulse with different timing ── */}
+          <path id="curve2" d="M0,160 Q300,120 600,180 T1200,140 T1800,170" fill="none" stroke="white" strokeWidth="0.8" opacity="0.15" />
+          <circle r="3.5" fill="white" opacity="0.7" filter="url(#glow-strong)">
+            <animateMotion dur="5.5s" repeatCount="indefinite" rotate="auto" begin="2s">
+              <mpath href="#curve2" />
+            </animateMotion>
+            <animate attributeName="opacity" values="0;0.8;0.8;0" dur="5.5s" repeatCount="indefinite" begin="2s" />
+          </circle>
+          <circle r="2" fill="#2DC491" opacity="0.5" filter="url(#glow)">
+            <animateMotion dur="5.5s" repeatCount="indefinite" rotate="auto" begin="4s">
+              <mpath href="#curve2" />
+            </animateMotion>
+            <animate attributeName="opacity" values="0;0.6;0.6;0" dur="5.5s" repeatCount="indefinite" begin="4s" />
+          </circle>
+
+          {/* ── Curve 3: slow pulse ── */}
+          <path id="curve3" d="M0,280 Q250,240 500,290 T1000,260 T1500,280" fill="none" stroke="white" strokeWidth="0.6" opacity="0.12" />
+          <circle r="3" fill="white" opacity="0.6" filter="url(#glow-strong)">
+            <animateMotion dur="7s" repeatCount="indefinite" rotate="auto" begin="1s">
+              <mpath href="#curve3" />
+            </animateMotion>
+            <animate attributeName="opacity" values="0;0.7;0.7;0" dur="7s" repeatCount="indefinite" begin="1s" />
+          </circle>
+
+          {/* ── Pulsing data-point dots ── */}
           <circle cx="400" cy="100" r="4" fill="white" opacity="0.5" filter="url(#glow)">
             <animate attributeName="opacity" values="0.2;0.7;0.2" dur="3s" repeatCount="indefinite" />
           </circle>
@@ -399,18 +413,7 @@ export default function Accueil() {
           {/* Shiny ViteComm brand title with left-to-right glow sweep */}
           <h1 className="text-5xl sm:text-7xl md:text-8xl font-black text-white leading-none mb-4 tracking-tight"
             style={{ textShadow: isDark ? '0 0 60px rgba(45,196,145,0.3), 0 0 120px rgba(45,196,145,0.1)' : '0 0 60px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.1)' }}>
-            <span className="relative inline-block">
-              ViteComm
-              {/* Left-to-right glow sweep — "blood running through veins" */}
-              <span className="absolute inset-0 pointer-events-none" style={{
-                background: 'linear-gradient(90deg, transparent 0%, rgba(45,196,145,0.6) 50%, transparent 100%)',
-                backgroundSize: '200% 100%',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                animation: 'glowSweep 3s ease-in-out infinite',
-              }}>ViteComm</span>
-            </span>
+            ViteComm
           </h1>
 
           <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tight">
@@ -453,14 +456,6 @@ export default function Accueil() {
             ))}
           </div>
         </div>
-
-        {/* Keyframe animation for glow sweep */}
-        <style>{`
-          @keyframes glowSweep {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-          }
-        `}</style>
       </section>
 
       {/* ─── Ecosystem Overview ──────────────────────────────────────── */}
@@ -636,39 +631,26 @@ export default function Accueil() {
             <pattern id="cta-grid-lg" width="240" height="240" patternUnits="userSpaceOnUse">
               <path d="M 240 0 L 0 0 0 240" fill="none" stroke="white" strokeWidth="1" />
             </pattern>
-            <linearGradient id="cta-shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="white" stopOpacity="0">
-                <animate attributeName="offset" values="-0.3;1.3" dur="5s" repeatCount="indefinite" />
-              </stop>
-              <stop offset="15%" stopColor="white" stopOpacity="0.4">
-                <animate attributeName="offset" values="-0.15;1.45" dur="5s" repeatCount="indefinite" />
-              </stop>
-              <stop offset="30%" stopColor="white" stopOpacity="0">
-                <animate attributeName="offset" values="0;1.6" dur="5s" repeatCount="indefinite" />
-              </stop>
-            </linearGradient>
+            <filter id="cta-glow">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
           </defs>
           <rect width="100%" height="100%" fill="url(#cta-grid)" />
           <rect width="100%" height="100%" fill="url(#cta-grid-lg)" />
-          <rect width="100%" height="100%" fill="url(#cta-shimmer)" />
+          <path id="cta-curve1" d="M0,60 Q200,30 400,70 T800,40 T1200,65 T1600,35" fill="none" stroke="white" strokeWidth="0.8" opacity="0.15" />
+          <circle r="3" fill="white" opacity="0.7" filter="url(#cta-glow)">
+            <animateMotion dur="5s" repeatCount="indefinite" rotate="auto">
+              <mpath href="#cta-curve1" />
+            </animateMotion>
+            <animate attributeName="opacity" values="0;0.8;0.8;0" dur="5s" repeatCount="indefinite" />
+          </circle>
         </svg>
 
         <div className="absolute -top-20 -right-20 w-[300px] h-[300px] rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(45,196,145,0.06)' : 'rgba(255,255,255,0.08)', filter: 'blur(60px)' }} />
         <div className="relative z-10 max-w-2xl mx-auto text-center">
           <h2 className="text-2xl sm:text-4xl font-black text-white mb-3 tracking-tight">
-            Prêt à rejoindre{' '}
-            <span className="relative inline-block">
-              ViteComm
-              <span className="absolute inset-0 pointer-events-none" style={{
-                background: 'linear-gradient(90deg, transparent 0%, rgba(45,196,145,0.6) 50%, transparent 100%)',
-                backgroundSize: '200% 100%',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                animation: 'glowSweep 3s ease-in-out infinite',
-              }}>ViteComm</span>
-            </span>
-            ?
+            Prêt à rejoindre <span style={{ textShadow: isDark ? '0 0 40px rgba(45,196,145,0.4)' : '0 0 40px rgba(255,255,255,0.3)' }}>ViteComm</span> ?
           </h2>
           <p className="text-xs sm:text-sm mb-6 sm:mb-8" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.8)' }}>
             Créez votre compte gratuit en 30 secondes. Aucune carte bancaire requise.
