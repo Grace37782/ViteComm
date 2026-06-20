@@ -322,7 +322,7 @@ export default function Accueil() {
 
       {/* ─── Hero ────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden px-4 sm:px-6 pt-14 pb-16 sm:pt-24 sm:pb-28"
-        style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+        style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)', isolation: 'isolate' }}>
 
         {/* SVG grid lines — hidden on mobile to prevent rendering artifacts */}
         <svg className="hidden sm:block absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: isDark ? 0.15 : 0.1 }}>
@@ -333,46 +333,54 @@ export default function Accueil() {
             <pattern id="hero-grid-lg" width="240" height="240" patternUnits="userSpaceOnUse">
               <path d="M 240 0 L 0 0 0 240" fill="none" stroke="white" strokeWidth="1" />
             </pattern>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <filter id="glow-strong">
+              <feGaussianBlur stdDeviation="5" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
           </defs>
           {/* Base grid */}
           <rect width="100%" height="100%" fill="url(#hero-grid)" />
           <rect width="100%" height="100%" fill="url(#hero-grid-lg)" />
 
           {/* ── Vertical grid line glow pulses (subtle) ── */}
-          <circle r="2" fill="white" opacity="0.4">
+          <circle r="2" fill="white" opacity="0.4" filter="url(#glow)">
             <animateMotion dur="12s" repeatCount="indefinite" path="M120,0 L120,800" />
             <animate attributeName="opacity" values="0;0.35;0.35;0" dur="12s" repeatCount="indefinite" />
           </circle>
-          <circle r="1.8" fill="#2DC491" opacity="0.3">
+          <circle r="1.8" fill="#2DC491" opacity="0.3" filter="url(#glow)">
             <animateMotion dur="15s" repeatCount="indefinite" path="M360,0 L360,800" begin="4s" />
             <animate attributeName="opacity" values="0;0.3;0.3;0" dur="15s" repeatCount="indefinite" begin="4s" />
           </circle>
-          <circle r="2.2" fill="white" opacity="0.3">
+          <circle r="2.2" fill="white" opacity="0.3" filter="url(#glow)">
             <animateMotion dur="18s" repeatCount="indefinite" path="M600,0 L600,800" begin="7s" />
             <animate attributeName="opacity" values="0;0.3;0.3;0" dur="18s" repeatCount="indefinite" begin="7s" />
           </circle>
-          <circle r="1.5" fill="#2DC491" opacity="0.25">
+          <circle r="1.5" fill="#2DC491" opacity="0.25" filter="url(#glow)">
             <animateMotion dur="14s" repeatCount="indefinite" path="M840,0 L840,800" begin="2s" />
             <animate attributeName="opacity" values="0;0.25;0.25;0" dur="14s" repeatCount="indefinite" begin="2s" />
           </circle>
 
           {/* ── Horizontal grid line glow pulses (subtle) ── */}
-          <circle r="2" fill="white" opacity="0.35">
+          <circle r="2" fill="white" opacity="0.35" filter="url(#glow)">
             <animateMotion dur="14s" repeatCount="indefinite" path="M0,60 L1600,60" />
             <animate attributeName="opacity" values="0;0.3;0.3;0" dur="14s" repeatCount="indefinite" />
           </circle>
-          <circle r="1.8" fill="#2DC491" opacity="0.3">
+          <circle r="1.8" fill="#2DC491" opacity="0.3" filter="url(#glow)">
             <animateMotion dur="16s" repeatCount="indefinite" path="M0,180 L1600,180" begin="5s" />
             <animate attributeName="opacity" values="0;0.25;0.25;0" dur="16s" repeatCount="indefinite" begin="5s" />
           </circle>
-          <circle r="2" fill="white" opacity="0.25">
+          <circle r="2" fill="white" opacity="0.25" filter="url(#glow)">
             <animateMotion dur="20s" repeatCount="indefinite" path="M0,300 L1600,300" begin="9s" />
             <animate attributeName="opacity" values="0;0.25;0.25;0" dur="20s" repeatCount="indefinite" begin="9s" />
           </circle>
 
           {/* ── Curve 1 ── */}
           <path id="curve1" d="M0,80 Q200,40 400,100 T800,60 T1200,90 T1600,50" fill="none" stroke="white" strokeWidth="1" opacity="0.2" />
-          <circle r="2.5" fill="white" opacity="0.4">
+          <circle r="2.5" fill="white" opacity="0.4" filter="url(#glow-strong)">
             <animateMotion dur="9s" repeatCount="indefinite" rotate="auto">
               <mpath href="#curve1" />
             </animateMotion>
@@ -381,7 +389,7 @@ export default function Accueil() {
 
           {/* ── Curve 2 ── */}
           <path id="curve2" d="M0,160 Q300,120 600,180 T1200,140 T1800,170" fill="none" stroke="white" strokeWidth="0.8" opacity="0.15" />
-          <circle r="2" fill="white" opacity="0.35">
+          <circle r="2" fill="white" opacity="0.35" filter="url(#glow-strong)">
             <animateMotion dur="11s" repeatCount="indefinite" rotate="auto" begin="3s">
               <mpath href="#curve2" />
             </animateMotion>
@@ -390,7 +398,7 @@ export default function Accueil() {
 
           {/* ── Curve 3 ── */}
           <path id="curve3" d="M0,280 Q250,240 500,290 T1000,260 T1500,280" fill="none" stroke="white" strokeWidth="0.6" opacity="0.12" />
-          <circle r="2" fill="white" opacity="0.3">
+          <circle r="2" fill="white" opacity="0.3" filter="url(#glow-strong)">
             <animateMotion dur="13s" repeatCount="indefinite" rotate="auto" begin="5s">
               <mpath href="#curve3" />
             </animateMotion>
@@ -412,10 +420,10 @@ export default function Accueil() {
           </circle>
         </svg>
 
-        {/* Decorative blobs — hidden on mobile to prevent GPU compositing artifacts */}
-        <div className="hidden sm:block absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full pointer-events-none"
+        {/* Decorative blobs */}
+        <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full pointer-events-none"
           style={{ background: isDark ? 'rgba(45,196,145,0.08)' : 'rgba(255,255,255,0.08)', filter: 'blur(80px)' }} />
-        <div className="hidden sm:block absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full pointer-events-none"
+        <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full pointer-events-none"
           style={{ background: isDark ? 'rgba(45,196,145,0.05)' : 'rgba(255,255,255,0.06)', filter: 'blur(60px)' }} />
 
         <div className="relative z-10 max-w-4xl mx-auto text-center">
@@ -643,7 +651,7 @@ export default function Accueil() {
 
       {/* ─── Final CTA ──────────────────────────────────────────────── */}
       <section className="relative overflow-hidden px-4 sm:px-6 py-12 sm:py-16 md:py-20"
-        style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+        style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)', isolation: 'isolate' }}>
 
         {/* SVG grid lines — hidden on mobile */}
         <svg className="hidden sm:block absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: isDark ? 0.12 : 0.08 }}>
@@ -654,21 +662,25 @@ export default function Accueil() {
             <pattern id="cta-grid-lg" width="240" height="240" patternUnits="userSpaceOnUse">
               <path d="M 240 0 L 0 0 0 240" fill="none" stroke="white" strokeWidth="1" />
             </pattern>
+            <filter id="cta-glow">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
           </defs>
           <rect width="100%" height="100%" fill="url(#cta-grid)" />
           <rect width="100%" height="100%" fill="url(#cta-grid-lg)" />
           {/* Vertical glow pulse */}
-          <circle r="1.8" fill="white" opacity="0.3">
+          <circle r="1.8" fill="white" opacity="0.3" filter="url(#cta-glow)">
             <animateMotion dur="14s" repeatCount="indefinite" path="M200,0 L200,500" />
             <animate attributeName="opacity" values="0;0.25;0.25;0" dur="14s" repeatCount="indefinite" />
           </circle>
           {/* Horizontal glow pulse */}
-          <circle r="1.8" fill="white" opacity="0.3">
+          <circle r="1.8" fill="white" opacity="0.3" filter="url(#cta-glow)">
             <animateMotion dur="16s" repeatCount="indefinite" path="M0,120 L1600,120" begin="5s" />
             <animate attributeName="opacity" values="0;0.25;0.25;0" dur="16s" repeatCount="indefinite" begin="5s" />
           </circle>
           <path id="cta-curve1" d="M0,60 Q200,30 400,70 T800,40 T1200,65 T1600,35" fill="none" stroke="white" strokeWidth="0.8" opacity="0.15" />
-          <circle r="2" fill="white" opacity="0.3">
+          <circle r="2" fill="white" opacity="0.3" filter="url(#cta-glow)">
             <animateMotion dur="12s" repeatCount="indefinite" rotate="auto">
               <mpath href="#cta-curve1" />
             </animateMotion>
@@ -676,7 +688,7 @@ export default function Accueil() {
           </circle>
         </svg>
 
-        <div className="hidden sm:block absolute -top-20 -right-20 w-[300px] h-[300px] rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(45,196,145,0.06)' : 'rgba(255,255,255,0.08)', filter: 'blur(60px)' }} />
+        <div className="absolute -top-20 -right-20 w-[300px] h-[300px] rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(45,196,145,0.06)' : 'rgba(255,255,255,0.08)', filter: 'blur(60px)' }} />
         <div className="relative z-10 max-w-2xl mx-auto text-center">
           <h2 className="text-2xl sm:text-4xl font-black text-white mb-3 tracking-tight">
             Prêt à rejoindre <span style={{ textShadow: isDark ? '0 0 40px rgba(45,196,145,0.4)' : '0 0 40px rgba(255,255,255,0.3)' }}>ViteComm</span> ?
