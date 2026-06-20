@@ -320,7 +320,32 @@ export default function Accueil() {
 
       {/* ─── Hero ────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden px-4 sm:px-6 pt-14 pb-16 sm:pt-24 sm:pb-28"
-        style={{ background: isDark ? 'linear-gradient(135deg, #121311 0%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+        style={{ background: isDark ? 'linear-gradient(135deg, #0F2B1C 0%, #143D2C 50%, #164032 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+
+        {/* SVG grid lines — glassmorphic graph pattern */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: isDark ? 0.12 : 0.08 }}>
+          <defs>
+            <pattern id="hero-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5" />
+            </pattern>
+            <pattern id="hero-grid-lg" width="240" height="240" patternUnits="userSpaceOnUse">
+              <path d="M 240 0 L 0 0 0 240" fill="none" stroke="white" strokeWidth="1" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#hero-grid)" />
+          <rect width="100%" height="100%" fill="url(#hero-grid-lg)" />
+          {/* Decorative curve lines */}
+          <path d="M0,80 Q200,40 400,100 T800,60 T1200,90 T1600,50" fill="none" stroke="white" strokeWidth="1.5" opacity="0.4" />
+          <path d="M0,160 Q300,120 600,180 T1200,140 T1800,170" fill="none" stroke="white" strokeWidth="1" opacity="0.25" />
+          <path d="M0,280 Q250,240 500,290 T1000,260 T1500,280" fill="none" stroke="white" strokeWidth="0.8" opacity="0.15" />
+          {/* Data-point dots */}
+          <circle cx="200" cy="100" r="3" fill="white" opacity="0.35" />
+          <circle cx="400" cy="100" r="4" fill="white" opacity="0.5" />
+          <circle cx="600" cy="180" r="3" fill="white" opacity="0.35" />
+          <circle cx="800" cy="60" r="5" fill="white" opacity="0.4" />
+          <circle cx="1000" cy="260" r="3" fill="white" opacity="0.3" />
+          <circle cx="1200" cy="90" r="4" fill="white" opacity="0.35" />
+        </svg>
 
         {/* Decorative blobs */}
         <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full pointer-events-none"
@@ -334,13 +359,19 @@ export default function Accueil() {
             <Sparkles size={14} className="inline-block mr-1.5" /> La première marketplace locale au Bénin
           </div>
 
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tight">
+          {/* Shiny ViteComm brand title */}
+          <h1 className="text-5xl sm:text-7xl md:text-8xl font-black text-white leading-none mb-4 tracking-tight"
+            style={{ textShadow: isDark ? '0 0 60px rgba(45,196,145,0.3), 0 0 120px rgba(45,196,145,0.1)' : '0 0 60px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.1)' }}>
+            ViteComm
+          </h1>
+
+          <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.1] mb-5 tracking-tight">
             Le marché de{' '}
             <span className="inline-block min-w-[120px] sm:min-w-[180px]" style={{ color: isDark ? '#2DC491' : '#A8EDCA' }}>
               {typedCity}<span className="animate-pulse">|</span>
             </span>
             <br />livré chez vous
-          </h1>
+          </h2>
 
           <p className="text-sm sm:text-lg leading-relaxed mb-6 sm:mb-8 max-w-2xl mx-auto" style={{ color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.8)' }}>
             ViteComm connecte les clients, les marchands locaux et les conducteurs de zemidjans
