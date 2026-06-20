@@ -272,7 +272,7 @@ export default function Accueil() {
   ]
 
   return (
-    <div className="w-full font-sans" style={{ background: 'var(--bg)' }}>
+    <div className="w-full font-sans overflow-x-hidden" style={{ background: 'var(--bg)' }}>
 
       {/* ─── Navbar ─────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 transition-all duration-300"
