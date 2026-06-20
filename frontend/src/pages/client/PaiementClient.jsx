@@ -28,6 +28,7 @@ export default function PaiementClient() {
   const [loading, setLoading] = useState(!!ref)
   const [facture, setFacture] = useState(null)
   const [toast, setToast] = useState('')
+  const [portalTimeout, setPortalTimeout] = useState(false)
   const intervalRef = useRef(null)
 
   const isCompleted = paymentStatus === 'completed'
@@ -46,12 +47,14 @@ export default function PaiementClient() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPaymentStatus('completed')
       setLoading(false)
+      setPortalTimeout(false)
       return
     }
 
     if (statusParam === 'failed') {
       setPaymentStatus('failed')
       setLoading(false)
+      setPortalTimeout(false)
       return
     }
 
@@ -67,6 +70,7 @@ export default function PaiementClient() {
           if (res.statut === 'completed' || res.statut === 'failed' || res.statut === 'cancelled') {
             clearInterval(intervalRef.current)
             setLoading(false)
+            setPortalTimeout(false)
           } else if (pollCount >= MAX_POLLS) {
             clearInterval(intervalRef.current)
             setLoading(false)
@@ -83,6 +87,13 @@ export default function PaiementClient() {
       return () => clearInterval(intervalRef.current)
     }
   }, [idCommande, ref, statusParam, navigate])
+
+  // Portal timeout fallback — if FedaPay redirect hangs
+  useEffect(() => {
+    if (!isPending || isCompleted || isFailed) return
+    const timer = setTimeout(() => setPortalTimeout(true), 20000)
+    return () => clearTimeout(timer)
+  }, [isPending, isCompleted, isFailed])
 
   // Fetch total from facture when total is 0 (lost on redirect after FedaPay)
   useEffect(() => {
@@ -317,6 +328,21 @@ export default function PaiementClient() {
             <p className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>
               Transaction : {ref}
             </p>
+
+            {portalTimeout && (
+              <div className="mt-6 rounded-2xl p-5 text-left" style={{ background: isDark ? 'rgba(251,191,36,0.08)' : '#FFFBEB', border: '1.5px solid #F59E0B' }}>
+                <p className="text-sm font-bold mb-2" style={{ color: '#92400E' }}>Le portail FedaPay ne répond pas ?</p>
+                <p className="text-xs mb-3" style={{ color: '#92400E' }}>
+                  Si la page de paiement est bloquée, vous pouvez revenir ici et vérifier le statut de votre paiement.
+                </p>
+                <button onClick={manualRefresh}
+                  className="w-full py-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center gap-2"
+                  style={{ background: '#F59E0B', color: '#fff', border: 'none' }}>
+                  <RefreshCw size={14} /> Vérifier mon paiement
+                </button>
+              </div>
+            )}
+
             <div className="flex gap-2 mt-6 justify-center">
               <button onClick={manualRefresh}
                 className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5"
