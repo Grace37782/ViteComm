@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guide Technique — ViteComm</title>
+  <style>
+    :root {
+      --primary: #1D9E75;
+      --primary-dark: #0F6E56;
+      --accent: #1D9E75;
+      --bg: #ffffff;
+      --text: #1f2937;
+      --text-secondary: #4b5563;
+      --border: #e5e7eb;
+      --code-bg: #f3f4f6;
+      --header-bg: #f9fafb;
+      --surface: #f7f8f3;
+      --vendeur: #BA7517;
+      --livreur: #D85A30;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.7;
+      color: var(--text);
+      background: var(--bg);
+      margin: 0;
+      padding: 2rem;
+      max-width: 1100px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    h1, h2, h3, h4 { margin-top: 2rem; margin-bottom: 0.75rem; color: #111827; }
+    h1 { font-size: 1.9rem; border-bottom: 3px solid var(--primary); padding-bottom: 0.5rem; }
+    h2 { font-size: 1.4rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; color: var(--primary-dark); }
+    h3 { font-size: 1.15rem; color: var(--text); }
+    h4 { font-size: 1rem; color: var(--text-secondary); }
+
+    p, ul, ol { margin-bottom: 1rem; }
+    ul { padding-left: 22px; }
+    li { margin-bottom: 4px; }
+
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.93rem;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) { background: var(--surface); }
+
+    code {
+      background: var(--code-bg);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.88em;
+      color: var(--primary-dark);
+    }
+
+    pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      border-left: 3px solid var(--primary);
+    }
+
+    .nav {
+      background: var(--surface);
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .nav a {
+      font-weight: 500;
+      font-size: 0.9rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .nav a:hover {
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .meta {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .highlight {
+      background: #d1fae5;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+
+    .callout {
+      background: #f0fdf4;
+      border-left: 4px solid var(--primary);
+      padding: 1rem 1.2rem;
+      border-radius: 0 6px 6px 0;
+      margin: 1.2rem 0;
+      font-size: 0.93rem;
+    }
+
+    .callout-warn {
+      background: #fffbeb;
+      border-left-color: #f59e0b;
+    }
+
+    .callout-info {
+      background: #eff6ff;
+      border-left-color: #3b82f6;
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.8rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .flow-step .num {
+      min-width: 28px;
+      height: 28px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .flow-step .content { flex: 1; }
+
+    .dir-tree {
+      background: var(--code-bg);
+      padding: 1rem 1.2rem;
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      border-left: 3px solid var(--primary);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      border-radius: 12px;
+      font-size: 0.78em;
+      font-weight: 600;
+    }
+
+    .badge-green { background: #d1fae5; color: #065f46; }
+    .badge-orange { background: #fef3c7; color: #92400e; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+
+    @media print {
+      body { padding: 0; }
+      h2, h3, table, pre { page-break-inside: avoid; }
+      .nav { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Guide Technique — ViteComm</h1>
+
+  <div class="meta">
+    <strong>ViteComm — Guide Fonctionnel et Technique</strong><br>
+    Plateforme de commerce local au Bénin | MVP Académique | Juin 2026<br>
+    Stack : React 19 + Vite 8 + Tailwind CSS 4 + Node.js + Express + Prisma + MySQL/MariaDB
+  </div>
+
+  <div class="nav">
+    <a href="#architecture">Architecture</a>
+    <a href="#dossiers">Dossiers</a>
+    <a href="#environnement">Env Variables</a>
+    <a href="#lancement">Lancement Local</a>
+    <a href="#prisma">Schema Prisma</a>
+    <a href="#jwt">JWT & Auth</a>
+    <a href="#rbac">RBAC</a>
+    <a href="#google-oauth">Google OAuth</a>
+    <a href="#smtp">SMTP & Mail</a>
+    <a href="#qr-code">QR Code & Verification</a>
+    <a href="#responsive">Responsive Design</a>
+    <a href="#theme">Theme & Dark Mode</a>
+    <a href="#pwa">PWA</a>
+    <a href="#paiement">Paiement FedaPay</a>
+    <a href="#upload">Upload & Preuves</a>
+    <a href="#cors">CORS & Erreurs</a>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 1. ARCHITECTURE -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="architecture">1. Architecture Globale</h2>
+
+  <p>ViteComm adopte une <strong>architecture client-serveur séparée</strong> (前后端分离) avec une API RESTful.
+    Le frontend est une application SPA (Single Page Application) React déployée sur Vercel. Le backend est un serveur
+    Node.js/Express hébergé sur AlwaysData, exposant une API REST consumed par le frontend via <code>fetch</code>.</p>
+
+  <div class="callout">
+    <strong>Approche architecturale :</strong> Architecture modulaire en couches (layers) côté backend
+    (<code>routes → controllers → services → prisma</code>) et composants React côté frontend.
+    Pas de state management global (Redux/Zustand) — uniquement React Context pour l'auth et le thème.
+  </div>
+
+  <table>
+    <tr>
+      <th>Couche</th>
+      <th>Backend (Node.js)</th>
+      <th>Frontend (React)</th>
+    </tr>
+    <tr>
+      <td><strong>Présentation</strong></td>
+      <td>Routes Express (<code>/api/*</code>)</td>
+      <td>Pages React + composants</td>
+    </tr>
+    <tr>
+      <td><strong>Logique métier</strong></td>
+      <td>Controllers + Services</td>
+      <td>Context (Auth, Theme) + hooks</td>
+    </tr>
+    <tr>
+      <td><strong>Accès données</strong></td>
+      <td>Prisma ORM → MySQL/MariaDB</td>
+      <td>Service API (<code>fetch</code>)</td>
+    </tr>
+    <tr>
+      <td><strong>Sécurité</strong></td>
+      <td>JWT + RBAC middleware + HMAC webhook</td>
+      <td>Token localStorage + role guard</td>
+    </tr>
+    <tr>
+      <td><strong>Déploiement</strong></td>
+      <td>AlwaysData (Node.js host)</td>
+      <td>Vercel (SPA hosting)</td>
+    </tr>
+  </table>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 2. DOSSIERS -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="dossiers">2. Structure des Dossiers</h2>
+
+  <h3>2.1 Backend (<code>backend/</code>)</h3>
+  <div class="dir-tree">
+backend/
+├── src/
+│   ├── config/
+│   │   └── db.js                   ← Client Prisma (adapter MariaDB)
+│   ├── controllers/
+│   │   ├── authController.js       ← Inscription, connexion, Google OAuth, profil, reset MDP
+│   │   ├── clientController.js     ← Catalogue, panier, commandes, inspection, feedback
+│   │   ├── vendeurController.js    ← Dashboard, produits, commandes, retours, factures
+│   │   ├── livreurController.js    ← Dashboard, disponibilité, livraisons, gains
+│   │   ├── adminController.js      ← Dashboard admin, users, litiges, signalements
+│   │   └── paymentController.js    ← FedaPay: initiation, webhook, statut, callback
+│   ├── middleware/
+│   │   ├── auth.js                 ← requireAuth (JWT) + requireRole (RBAC)
+│   │   └── upload.js               ← Multer: upload avatars, images marchés
+│   ├── routes/
+│   │   ├── authRoutes.js           ← /api/auth/*
+│   │   ├── clientRoutes.js         ← /api/client/*
+│   │   ├── vendeurRoutes.js        ← /api/vendor/*
+│   │   ├── livreurRoutes.js        ← /api/livreur/*
+│   │   ├── adminRoutes.js          ← /api/admin/*
+│   │   └── paymentRoutes.js        ← /api/client/payment/*
+│   ├── services/
+│   │   ├── mail.js                 ← Nodemailer (SMTP Gmail)
+│   │   └── fedapayService.js       ← Client API FedaPay
+│   ├── utils/
+│   │   ├── errors.js               ← Gestion erreurs (debug/production)
+│   │   └── vendorQR.js             ← QR code signé (HMAC-SHA256)
+│   └── index.js                    ← Point d'entrée Express
+├── prisma/
+│   ├── schema.prisma               ← Schéma de base de données
+│   └── seed.js                     ← Données de test
+├── uploads/                        ← Fichiers uploadés (avatars, preuves, produits)
+├── package.json
+└── .env
+  </div>
+
+  <h3>2.2 Frontend (<code>frontend/</code>)</h3>
+  <div class="dir-tree">
+frontend/
+├── src/
+│   ├── App.jsx                     ← Routeur principal + providers
+│   ├── main.jsx                    ← Point d'entrée (ErrorBoundary)
+│   ├── index.css                   ← Variables CSS, thème, couleurs par rôle
+│   ├── context/
+│   │   ├── AuthContext.jsx          ← État auth (user + token dans localStorage)
+│   │   └── ThemeContext.jsx         ← Thème clair/sombre/système
+│   ├── services/
+│   │   └── api.js                  ← Couche API (fetch, timeout 30s, gestion 401)
+│   ├── components/
+│   │   ├── ErrorBoundary.jsx       ← Boundary React (catch erreurs render)
+│   │   ├── Footer.jsx              ← Footer global + toggle thème
+│   │   ├── InstallPrompt.jsx       ← Bannière installation PWA
+│   │   ├── MobileDrawer.jsx        ← Menu latéral mobile (slide-out)
+│   │   ├── GoogleSignInButton.jsx   ← Bouton Google OAuth
+│   │   ├── GoogleRoleSelection.jsx  ← Sélection de rôle après Google
+│   │   ├── client/
+│   │   │   ├── ClientLayout.jsx    ← Shell client (header vert)
+│   │   │   └── BottomNav.jsx
+│   │   ├── vendeur/
+│   │   │   ├── VendeurLayout.jsx   ← Shell vendeur (header orange)
+│   │   │   └── BottomNav.jsx
+│   │   └── livreur/
+│   │       ├── LivreurLayout.jsx   ← Shell livreur (header rouge)
+│   │       └── BottomNav.jsx
+│   └── pages/
+│       ├── Accueil/Accueil.jsx     ← Page d'accueil publique
+│       ├── auth/                    ← Connexion, Inscription, ForgotPassword, CGU
+│       ├── client/                  ← 13 pages (carte, catalogue, panier, etc.)
+│       ├── vendeur/                 ← 8 pages (dashboard, catalogue, commandes, etc.)
+│       ├── livreur/                 ← 6 pages (dashboard, commandes, gains, etc.)
+│       └── admin/Admin.jsx          ← Console admin (7 onglets)
+├── public/
+│   ├── vitecomm.png                ← Logo V (favicon + PWA)
+│   ├── icon-192x192.png            ← Icône PWA
+│   ├── icon-512x512.png            ← Icône PWA
+│   └── icon-maskable-512x512.png   ← Icône maskable PWA
+├── vercel.json                     ← Config déploiement Vercel
+├── vite.config.js                  ← Vite + PWA + proxy dev
+├── package.json
+└── .env
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 3. ENVIRONMENT VARIABLES -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="environnement">3. Variables d'Environnement</h2>
+
+  <h3>3.1 Backend (<code>backend/.env</code>)</h3>
+  <table>
+    <tr><th>Variable</th><th>Description</th><th>Exemple</th></tr>
+    <tr><td><code>APP_ENV</code></td><td>Environnement d'exécution</td><td><code>local</code> | <code>development</code> | <code>production</code></td></tr>
+    <tr><td><code>APP_URL</code></td><td>URL publique du backend</td><td><code>https://vitecomm.alwaysdata.net</code></td></tr>
+    <tr><td><code>FRONTEND_URL</code></td><td>URL du frontend (redirects Google OAuth, CORS)</td><td><code>https://vitecomm.vercel.app</code></td></tr>
+    <tr><td><code>APP_DEBUG</code></td><td>Afficher les erreurs détaillées</td><td><code>true</code> (dev) | <code>false</code> (prod)</td></tr>
+    <tr><td><code>CORS_ORIGINS</code></td><td>Origines autorisées (virgule)</td><td><code>https://vitecomm.vercel.app</code></td></tr>
+    <tr><td><code>DATABASE_URL</code></td><td>Chaîne de connexion MySQL</td><td><code>mysql://user:pass@host:3306/db</code></td></tr>
+    <tr><td><code>PORT</code></td><td>Port d'écoute (alwaysdata injecte 8100)</td><td><code>5000</code> (local) | <code>8100</code> (prod)</td></tr>
+    <tr><td><code>JWT_SECRET</code></td><td>Clé secrète pour signer les JWT</td><td>Chaîne aléatoire longue</td></tr>
+    <tr><td><code>JWT_EXPIRES_IN</code></td><td>Durée de vie du token</td><td><code>7d</code></td></tr>
+    <tr><td><code>MAIL_HOST</code></td><td>Serveur SMTP</td><td><code>smtp.gmail.com</code></td></tr>
+    <tr><td><code>MAIL_PORT</code></td><td>Port SMTP</td><td><code>587</code></td></tr>
+    <tr><td><code>MAIL_USERNAME</code></td><td>Email expéditeur</td><td><code>viteecomm@gmail.com</code></td></tr>
+    <tr><td><code>MAIL_PASSWORD</code></td><td>Mot de passe application Gmail</td><td><code>yquwhfcebmnawomb</code></td></tr>
+    <tr><td><code>GOOGLE_CLIENT_ID</code></td><td>ID client Google OAuth</td><td><code>....apps.googleusercontent.com</code></td></tr>
+    <tr><td><code>GOOGLE_CLIENT_SECRET</code></td><td>Secret client Google</td><td><code>GOCSPX-...</code></td></tr>
+    <tr><td><code>GOOGLE_REDIRECT_URL</code></td><td>URL callback Google OAuth</td><td><code>https://vitecomm.alwaysdata.net/api/auth/google/callback</code></td></tr>
+    <tr><td><code>FEDAPAY_SECRET_KEY</code></td><td>Clé API FedaPay</td><td><code>sk_sandbox_...</code></td></tr>
+    <tr><td><code>FEDAPAY_WEBHOOK_SECRET</code></td><td>Secret webhook FedaPay (HMAC)</td><td><code>wh_sandbox_...</code></td></tr>
+    <tr><td><code>FEDAPAY_ENVIRONMENT</code></td><td>Environnement FedaPay</td><td><code>sandbox</code> | <code>production</code></td></tr>
+    <tr><td><code>VENDOR_QR_SECRET</code></td><td>Clé HMAC pour signer les QR codes vendeur</td><td>Chaîne secrète</td></tr>
+  </table>
+
+  <h3>3.2 Frontend (<code>frontend/.env</code>)</h3>
+  <table>
+    <tr><th>Variable</th><th>Description</th><th>Exemple</th></tr>
+    <tr><td><code>VITE_API_BASE_URL</code></td><td>Base URL de l'API backend</td><td><code>/api</code> (dev/proxy) | <code>https://vitecomm.alwaysdata.net/api</code> (prod)</td></tr>
+    <tr><td><code>VITE_BACKEND_HOST</code></td><td>Hôte backend (proxy dev uniquement)</td><td><code>127.0.0.1</code></td></tr>
+    <tr><td><code>VITE_BACKEND_PORT</code></td><td>Port backend (proxy dev uniquement)</td><td><code>5000</code></td></tr>
+    <tr><td><code>VITE_GOOGLE_CLIENT_ID</code></td><td>ID client Google (même que backend)</td><td><code>....apps.googleusercontent.com</code></td></tr>
+  </table>
+
+  <div class="callout callout-info">
+    <strong>Note :</strong> <code>VITE_BACKEND_HOST</code> et <code>VITE_BACKEND_PORT</code> ne sont utilisés que
+    par le proxy Vite en développement. En production (Vercel), le frontend appelle le backend directement via
+    <code>VITE_API_BASE_URL</code>.
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 4. LANCEMENT LOCAL -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="lancement">4. Lancement en Local</h2>
+
+  <h3>4.1 Prérequis</h3>
+  <ul>
+    <li>Node.js ≥ 18</li>
+    <li>MySQL/MariaDB local (port 3306)</li>
+    <li>Git</li>
+  </ul>
+
+  <h3>4.2 Backend</h3>
+  <pre>
+# 1. Cloner le dépôt
+git clone &lt;repo-url&gt; && cd ViteComm
+
+# 2. Installer les dépendances
+cd backend && npm install
+
+# 3. Créer la base de données
+mysql -u root -e "CREATE DATABASE vitecomm;"
+
+# 4. Configurer .env (copier .env.example et remplir)
+
+# 5. Générer le client Prisma + appliquer les migrations
+npx prisma generate
+npx prisma db push
+
+# 6. (Optionnel) Peupler la base
+node prisma/seed.js
+
+# 7. Lancer le serveur
+npm run dev    # → nodemon, port 5000</pre>
+
+  <h3>4.3 Frontend</h3>
+  <pre>
+# 1. Depuis la racine du projet
+cd frontend
+
+# 2. Installer les dépendances
+npm install
+
+# 3. Configurer .env (VITE_API_BASE_URL=/api, VITE_BACKEND_HOST=127.0.0.1)
+
+# 4. Lancer le serveur de dev
+npm run dev    # → Vite, port 5173</pre>
+
+  <div class="callout">
+    <strong>Proxy automatique :</strong> En dev, les requêtes <code>/api/*</code> et <code>/uploads/*</code> sont
+    automatiquement proxyées vers le backend (<code>127.0.0.1:5000</code>) grâce à la config dans
+    <code>vite.config.js</code>. Pas besoin de CORS en dev.
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 5. PRISMA SCHEMA -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="prisma">5. Schema Prisma — Base de Données</h2>
+
+  <p>Le schéma Prisma définit <strong>22 modèles</strong>映射到 MySQL/MariaDB. La base suit une
+    architecture de <strong>spécialisation</strong> : une table parente <code>Utilisateur</code> avec
+    des tables enfants <code>Client</code>, <code>Vendeur</code>, <code>Livreur</code>.</p>
+
+  <h3>5.1 Modèles Principaux</h3>
+  <table>
+    <tr><th>Modèle</th><th>Rôle</th><th>Champs Clés</th></tr>
+    <tr>
+      <td><code>Utilisateur</code></td>
+      <td>Table parente — tous les utilisateurs</td>
+      <td><code>id_user</code> (PK), <code>nom</code>, <code>prenom</code>, <code>email</code> (unique),
+        <code>mot_de_passe</code> (hash bcrypt), <code>statut_compte</code>, <code>est_admin</code>,
+        <code>auth_provider</code> ("local" | "google")</td>
+    </tr>
+    <tr>
+      <td><code>Client</code></td>
+      <td>Spécialisation client</td>
+      <td><code>id_user</code> (PK/FK cascade), <code>adresse_livraison</code></td>
+    </tr>
+    <tr>
+      <td><code>Vendeur</code></td>
+      <td>Spécialisation vendeur</td>
+      <td><code>id_user</code> (PK/FK), <code>nom_etablissement</code>, <code>id_marche</code> (FK),
+        <code>score_reputation</code> (défaut 0)</td>
+    </tr>
+    <tr>
+      <td><code>Livreur</code></td>
+      <td>Spécialisation livreur</td>
+      <td><code>id_user</code> (PK/FK), <code>type_vehicule</code>, <code>immatriculation</code>,
+        <code>score_reputation</code></td>
+    </tr>
+    <tr>
+      <td><code>Marche</code></td>
+      <td>Marché physique</td>
+      <td><code>id_marche</code>, <code>nom</code> (unique), <code>latitude</code>, <code>longitude</code></td>
+    </tr>
+    <tr>
+      <td><code>Produit</code></td>
+      <td>Article en vente</td>
+      <td><code>id_produit</code>, <code>nom</code>, <code>prix_reference</code>, <code>stock_disponible</code>,
+        <code>unite</code> (kg/tas/pièce), <code>id_user_vendeur</code> (FK), <code>id_categorie</code> (FK)</td>
+    </tr>
+    <tr>
+      <td><code>Panier</code></td>
+      <td>Panier client (1 par client)</td>
+      <td><code>id_panier</code>, <code>id_user_client</code> (unique FK)</td>
+    </tr>
+    <tr>
+      <td><code>DetailPanier</code></td>
+      <td>Ligne de panier</td>
+      <td>Composite PK <code>(id_panier, id_produit)</code>, <code>quantite</code></td>
+    </tr>
+    <tr>
+      <td><code>Commande</code></td>
+      <td>Commande client</td>
+      <td><code>id_commande</code>, <code>statut</code> (défaut "En attente"), <code>code_verification</code>
+        (6 car. aléatoire), <code>total_marchandises</code>, <code>frais_livraison</code>, <code>commission</code></td>
+    </tr>
+    <tr>
+      <td><code>DetailCommande</code></td>
+      <td>Ligne de commande (entité ternaire)</td>
+      <td>Composite PK <code>(id_commande, id_produit)</code>, <code>quantite_commandee</code>,
+        <code>prix_vente_applique</code> (prix figé), <code>statut_acceptation</code></td>
+    </tr>
+    <tr>
+      <td><code>Livraison</code></td>
+      <td>Affectation livreur</td>
+      <td><code>id_livraison</code>, <code>statut_livraison</code>, <code>id_commande</code> (unique FK),
+        <code>id_user_livreur</code> (FK)</td>
+    </tr>
+    <tr>
+      <td><code>PreuveCollecte</code></td>
+      <td>Preuve de collecte photo</td>
+      <td><code>id_preuve</code>, <code>date_heure</code>, <code>statut_validation</code>, <code>id_commande</code> (FK)</td>
+    </tr>
+    <tr>
+      <td><code>MediaPreuve</code></td>
+      <td>Photo/vidéo jointe à une preuve</td>
+      <td><code>id_media</code>, <code>url_media</code>, <code>type_media</code> ("photo"|"vidéo"), <code>id_preuve</code> (FK)</td>
+    </tr>
+    <tr>
+      <td><code>Litige</code></td>
+      <td>Contestation client</td>
+      <td><code>id_litige</code>, <code>statut</code> ("Ouvert"/"Accepté"/"Rejeté"), <code>decision_admin</code>,
+        <code>montant_rembourse</code>, <code>id_livraison</code> (FK)</td>
+    </tr>
+    <tr>
+      <td><code>Feedback</code></td>
+      <td>Évaluation</td>
+      <td><code>id_feedback</code>, <code>note</code> (1-5), <code>type_feedback</code> ("LIVREUR"|"VENDEUR")</td>
+    </tr>
+    <tr>
+      <td><code>Signalement</code></td>
+      <td>Signalement universel</td>
+      <td><code>id_signalement</code>, <code>motif</code>, <code>id_auteur</code> (FK), <code>id_cible</code> (FK)</td>
+    </tr>
+    <tr>
+      <td><code>Facture</code></td>
+      <td>Facture (source de vérité financière)</td>
+      <td><code>id_facture</code>, <code>montant_total_du</code>, <code>statut_paiement</code>, <code>id_commande</code> (FK)</td>
+    </tr>
+    <tr>
+      <td><code>PaiementTransaction</code></td>
+      <td>Transaction en ligne (FedaPay)</td>
+      <td><code>transaction_id</code> (unique), <code>montant</code>, <code>statut</code> ("pending"/"approved"/"declined")</td>
+    </tr>
+    <tr>
+      <td><code>VerificationToken</code></td>
+      <td>Code vérification inscription</td>
+      <td><code>email</code>, <code>code</code> (6 chiffres), <code>data</code> (JSON du formulaire), <code>expires_at</code></td>
+    </tr>
+    <tr>
+      <td><code>PasswordResetToken</code></td>
+      <td>Code réinitialisation MDP</td>
+      <td><code>email</code>, <code>code</code>, <code>expires_at</code></td>
+    </tr>
+    <tr>
+      <td><code>HistoriquePrix</code></td>
+      <td>Audit des changements de prix</td>
+      <td><code>prix</code>, <code>date_modification</code>, <code>id_produit</code> (FK)</td>
+    </tr>
+    <tr>
+      <td><code>DisponibiliteLivreur</code></td>
+      <td>Historique disponibilité livreur</td>
+      <td><code>est_disponible</code>, <code>distance_marche</code>, <code>heure_debut_dispo</code>,
+        <code>heure_fin_dispo</code>, <code>id_user_livreur</code> (FK)</td>
+    </tr>
+    <tr>
+      <td><code>BonDeLivraison</code></td>
+      <td>Bon de livraison (logistique)</td>
+      <td><code>statut_bon</code> ("EN_ATTENTE"/"SIGNE"), <code>id_livraison</code> (FK)</td>
+    </tr>
+  </table>
+
+  <h3>5.2 Relations Clés</h3>
+  <ul>
+    <li><strong>Spécialisation :</strong> <code>Utilisateur</code> 1:0..1 <code>Client</code> | <code>Vendeur</code> | <code>Livreur</code>
+      (cascade delete)</li>
+    <li><strong>Panier :</strong> <code>Client</code> 1:1 <code>Panier</code> 1:N <code>DetailPanier</code></li>
+    <li><strong>Commande :</strong> <code>Commande</code> N:1 <code>Client</code>, <code>DetailCommande</code>
+      est l'entité ternaire entre <code>Commande</code> et <code>Produit</code></li>
+    <li><strong>Livraison :</strong> <code>Livraison</code> 1:1 <code>Commande</code> (unique), N:1 <code>Livreur</code></li>
+    <li><strong>Preuves :</strong> <code>PreuveCollecte</code> 1:N <code>MediaPreuve</code></li>
+    <li><strong>Signalement :</strong> <code>Signalement</code> N:1 <code>Utilisateur</code> (auteur) + N:1 <code>Utilisateur</code> (cible)</li>
+  </ul>
+
+  <h3>5.3 Flux de Commande (State Machine)</h3>
+  <pre>
+En attente → Validée par vendeur → Assignée au livreur → En cours de collecte
+→ Collectée (QR scanné) → En cours de livraison → Inspection client
+→ Livrée (si acceptée) / Litige (si rejetée) → Facturée → Payée → Feedback</pre>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 6. JWT & AUTH -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="jwt">6. Authentification JWT</h2>
+
+  <h3>6.1 Comment ça marche</h3>
+  <p>ViteComm utilise <strong>JSON Web Tokens (JWT)</strong> pour l'authentification stateless. Pas de sessions côté serveur.</p>
+
+  <div class="flow-step">
+    <div class="num">1</div>
+    <div class="content">
+      <strong>Inscription :</strong> L'utilisateur remplit le formulaire → le backend envoie un email avec un
+      <strong>code à 6 chiffres</strong> → l'utilisateur vérifie son email → le compte est créé et un JWT est émis.
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="num">2</div>
+    <div class="content">
+      <strong>Connexion :</strong> Email/mdp → le backend vérifie le hash bcrypt → émet un JWT signé avec
+      <code>JWT_SECRET</code> → le frontend stocke le token dans <code>localStorage</code> (clé <code>vc_token</code>).
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="num">3</div>
+    <div class="content">
+      <strong>Requêtes authentifiées :</strong> Le frontend envoie <code>Authorization: Bearer &lt;token&gt;</code>
+      dans chaque requête → le middleware <code>requireAuth</code> vérifie la signature, charge l'utilisateur en BDD,
+      déduit le rôle, et attache <code>req.user</code>.
+    </div>
+  </div>
+
+  <h3>6.2 Payload du JWT</h3>
+  <pre>
+{
+  "id_user": 42,
+  "role": "client"  // déduit dynamiquement, pas stocké en BDD
+}</pre>
+
+  <h3>6.3 Expiration</h3>
+  <p>Par défaut : <code>7 jours</code> (configurable via <code>JWT_EXPIRES_IN</code>). Le frontend ne gère pas le
+    refresh automatique — un 401 redirige vers <code>/connect</code>.</p>
+
+  <h3>6.4 Dérivation du Rôle</h3>
+  <p>Le rôle <strong>n'est pas stocké</strong> dans la table <code>Utilisateur</code>. Il est déduit dynamiquement
+    par le middleware :</p>
+  <pre>
+if (user.client)  → rôle = "client"
+if (user.vendeur) → rôle = "vendeur"
+if (user.livreur) → rôle = "livreur"
+sinon             → rôle = "admin"</pre>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 7. RBAC -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="rbac">7. Contrôle d'Accès Basé sur les Rôles (RBAC)</h2>
+
+  <h3>7.1 Les 4 Rôles</h3>
+  <table>
+    <tr><th>Rôle</th><th>Description</th><th>Accès</th></tr>
+    <tr>
+      <td><span class="badge badge-green">client</span></td>
+      <td>Acheteur</td>
+      <td>Catalogue, panier, commandes, inspection, paiement, feedback</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-orange">vendeur</span></td>
+      <td>Commerçant</td>
+      <td>Dashboard, produits CRUD, commandes, retours, factures, statistiques</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-red">livreur</span></td>
+      <td>Transporteur</td>
+      <td>Dashboard, disponibilité, livraisons, gains, historique</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-blue">admin</span></td>
+      <td>Administrateur</td>
+      <td>Tout : users, produits, marchés, litiges, signalements, analytics</td>
+    </tr>
+  </table>
+
+  <h3>7.2 Implémentation</h3>
+  <p>Deux middlewares composent le RBAC :</p>
+  <pre>
+// middleware/auth.js
+
+// 1. requireAuth — vérifie le JWT et charge l'utilisateur
+function requireAuth(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  const decoded = jwt.verify(token, JWT_SECRET);
+  const user = await prisma.utilisateur.findUnique({
+    where: { id_user: decoded.id_user },
+    include: { client: true, vendeur: true, livreur: true }
+  });
+  // Déduit le rôle dynamiquement
+  req.user = { id_user, email, nom, prenom, role };
+  next();
+}
+
+// 2. requireRole — vérifie que le rôle est autorisé
+function requireRole(allowedRoles) {
+  return (req, res, next) => {
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: "Accès refusé" });
+    }
+    next();
+  };
+}</pre>
+
+  <h3>7.3 Application par Route</h3>
+  <table>
+    <tr><th>Préfixe</th><th>Méthode</th><th>Rôles Autorisés</th></tr>
+    <tr><td><code>/api/auth/*</code></td><td>Mélangé</td><td>Public (inscription, connexion) + <code>requireAuth</code> (profil)</td></tr>
+    <tr><td><code>/api/client/*</code></td><td>Toutes</td><td><code>requireAuth + requireRole(['client'])</code></td></tr>
+    <tr><td><code>/api/vendor/*</code></td><td>Toutes</td><td><code>requireAuth + requireRole(['vendeur'])</code></td></tr>
+    <tr><td><code>/api/livreur/*</code></td><td>Toutes</td><td><code>requireAuth + requireRole(['livreur'])</code></td></tr>
+    <tr><td><code>/api/admin/*</code></td><td>Toutes</td><td><code>requireAuth + requireRole(['admin'])</code></td></tr>
+    <tr><td><code>/api/webhooks/*</code></td><td>POST</td><td>Public (vérifié par HMAC signature)</td></tr>
+  </table>
+
+  <div class="callout callout-warn">
+    <strong>Sécurité :</strong> Un vendeur ne peut jamais accéder aux routes client, et inversement.
+    Le RBAC est vérifié <strong>côté serveur</strong> à chaque requête. Le frontend masque simplement l'UI,
+    mais la sécurité finale est toujours backend.
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 8. GOOGLE OAUTH -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="google-oauth">8. Authentification Google OAuth</h2>
+
+  <h3>8.1 Deux flux implémentés</h3>
+
+  <h4>Flux 1 : Access Token (frontend → backend)</h4>
+  <div class="flow-step">
+    <div class="num">1</div>
+    <div class="content">Le frontend utilise <code>useGoogleLogin</code> (flux implicite) pour obtenir un
+      <code>access_token</code> Google.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">2</div>
+    <div class="content">Le frontend envoie le token au backend : <code>POST /api/auth/google</code> avec
+      <code>{ credential: access_token }</code>.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">3</div>
+    <div class="content">Le backend appelle <code>https://www.googleapis.com/oauth2/v3/userinfo</code> avec le token
+      pour récupérer <code>email</code>, <code>given_name</code>, <code>family_name</code>.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">4</div>
+    <div class="content">
+      <strong>Si nouvel utilisateur :</strong> création automatique en tant que <code>client</code> avec
+      <code>auth_provider: 'google'</code>, mot de passe aléatoire hashé, panier créé. Le flag
+      <code>is_new_google_user: true</code> est renvoyé.
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="num">5</div>
+    <div class="content">
+      <strong>Si utilisateur existant avec <code>auth_provider: 'local'</code> :</strong> erreur 403 —
+      "Utilisez la connexion email/mot de passe".
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="num">6</div>
+    <div class="content">Le backend émet un JWT et renvoie les infos utilisateur + token.</div>
+  </div>
+
+  <h4>Flux 2 : Authorization Code (redirection serveur)</h4>
+  <div class="flow-step">
+    <div class="num">1</div>
+    <div class="content"><code>GET /api/auth/google</code> redirige vers l'écran de consentement Google.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">2</div>
+    <div class="content">Google redirige vers <code>/api/auth/google/callback?code=...</code>.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">3</div>
+    <div class="content">Le backend échange le code contre des tokens, vérifie l'ID token, crée/l'utilisateur.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">4</div>
+    <div class="content">Redirige vers <code>FRONTEND_URL/auth/google/callback?token=...&user=...&new=...</code>.</div>
+  </div>
+
+  <h3>8.2 Complétion du profil après Google</h3>
+  <p>Si <code>is_new_google_user</code> est vrai, le frontend affiche le composant
+    <code>GoogleRoleSelection</code> qui permet de choisir un rôle (client/vendeur/livreur) et de remplir les
+    informations spécifiques (nom d'établissement, type de véhicule, etc.). L'appel
+    <code>POST /api/auth/google/complete-registration</code> crée la spécialisation appropriée.</p>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 9. SMTP -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="smtp">9. Système de Mail (SMTP)</h2>
+
+  <h3>9.1 Configuration</h3>
+  <ul>
+    <li><strong>Librairie :</strong> <code>nodemailer</code></li>
+    <li><strong>Serveur :</strong> Gmail SMTP (<code>smtp.gmail.com:587</code>, TLS)</li>
+    <li><strong>Auth :</strong> <code>MAIL_USERNAME</code> + <code>MAIL_PASSWORD</code> (mot de passe application Gmail)</li>
+    <li><strong>Expéditeur :</strong> <code>"ViteComm" &lt;viteecomm@gmail.com&gt;</code></li>
+  </ul>
+
+  <h3>9.2 Emails envoyés</h3>
+  <table>
+    <tr><th>Type</th><th>Déclencheur</th><th>Contenu</th></tr>
+    <tr>
+      <td><strong>Code de vérification</strong></td>
+      <td>Inscription (<code>POST /api/auth/register</code>)</td>
+      <td>Code à 6 chiffres dans un email HTML stylé. Expire après 10 minutes.</td>
+    </tr>
+    <tr>
+      <td><strong>Réinitialisation MDP</strong></td>
+      <td>Mot de passe oublié (<code>POST /api/auth/forgot-password</code>)</td>
+      <td>Code à 6 chiffres. Expire après 10 minutes.</td>
+    </tr>
+  </table>
+
+  <h3>9.3 Flux d'inscription complet</h3>
+  <div class="flow-step">
+    <div class="num">1</div>
+    <div class="content"><code>POST /api/auth/register</code> — valide les champs, génère un code (6 chiffres) +
+      un token UUID, stocke un <code>VerificationToken</code> (data = JSON du formulaire complet), envoie l'email.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">2</div>
+    <div class="content">L'utilisateur saisit le code dans l'interface → <code>POST /api/auth/verify-email</code>.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">3</div>
+    <div class="content">Le backend vérifie le code + token, crée l'utilisateur + la spécialisation dans une
+      transaction Prisma, émet un JWT.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">4</div>
+    <div class="content"><code>POST /api/auth/resend-code</code> — régénère un code, étend l'expiration, renvoie l'email.</div>
+  </div>
+
+  <div class="callout">
+    <strong>Point important :</strong> L'utilisateur n'est <strong>pas créé en BDD</strong> avant la vérification
+    email. Les données du formulaire sont stockées en JSON dans <code>VerificationToken.data</code> le temps de la
+    vérification. Cela évite les comptes fantômes.
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 10. QR CODE -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="qr-code">10. Système de Verification par QR Code</h2>
+
+  <p>Le système de vérification ViteComm repose sur une <strong>chaîne de confiance à trois niveaux</strong>
+    (Client → Vendeur → Livreur) garantissant que le livreur a bien récupéré les produits chez le vendeur et les a
+    remis au bon client.</p>
+
+  <h3>10.1 Les trois QR codes</h3>
+  <table>
+    <tr><th>QR Code</th><th>Généré par</th><th>Scanné par</th><th>Sécurité</th></tr>
+    <tr>
+      <td><strong>Code client</strong></td>
+      <td>Système (6 caractères aléatoires)</td>
+      <td>Le livreur le saisit manuellement</td>
+      <td>Code simple, pas signé</td>
+    </tr>
+    <tr>
+      <td><strong>QR Vendeur</strong></td>
+      <td>Vendeur via <code>POST /api/vendor/orders/:id/qrcode</code></td>
+      <td>Le livreur scanne</td>
+      <td>HMAC-SHA256, payload = <code>orderId:clientCode:timestamp</code>, expire 24h</td>
+    </tr>
+    <tr>
+      <td><strong>QR Finalisation</strong></td>
+      <td>Client via <code>GET /api/client/orders/:id/finalize-qrcode</code></td>
+      <td>Le livreur scanne</td>
+      <td>HMAC-SHA256, chaîne = <code>orderId:clientCode:vendorQRHash:timestamp</code>, expire 1h</td>
+    </tr>
+  </table>
+
+  <h3>10.2 Flux complet de vérification</h3>
+  <div class="flow-step">
+    <div class="num">1</div>
+    <div class="content"><strong>Création commande :</strong> Le système génère un <code>code_verification</code>
+      (6 car. aléatoires). Le client le voit dans le suivi de commande.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">2</div>
+    <div class="content"><strong>Le livreur accepte :</strong> Il saisit le code client pour prouver qu'il a bien
+      reçu les informations.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">3</div>
+    <div class="content"><strong>Le vendeur génère son QR :</strong> Il signe un token HMAC contenant l'id de la
+      commande + le code client + un timestamp. Le livreur scanne ce QR chez le vendeur.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">4</div>
+    <div class="content"><strong>Vérification serveur :</strong> Le backend vérifie la signature HMAC, l'id de
+      la commande, et la correspondance du code client. La preuve photo est enregistrée obligatoirement.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">5</div>
+    <div class="content"><strong>Livraison au client :</strong> Le client génère un QR de finalisation qui inclut
+      le hash du QR vendeur (chaîne de confiance). Le livreur scanne ce QR pour finaliser.</div>
+  </div>
+
+  <h3>10.3 Code source — Sign HMAC</h3>
+  <pre>
+// utils/vendorQR.js
+import crypto from 'crypto';
+
+const SECRET = process.env.VENDOR_QR_SECRET;
+
+export function generateVendorQRToken(orderId, clientCode) {
+  const payload = `${orderId}:${clientCode}:${Date.now()}`;
+  const signature = crypto.createHmac('sha256', SECRET).update(payload).digest('hex');
+  return JSON.stringify({ v: 1, t: "vendor", p: payload, s: signature });
+}
+
+export function verifyVendorQRToken(scannedText) {
+  const { p, s } = JSON.parse(scannedText);
+  const expected = crypto.createHmac('sha256', SECRET).update(p).digest('hex');
+  if (!crypto.timingSafeEqual(Buffer.from(s), Buffer.from(expected))) throw new Error("Signature invalide");
+  // Vérifie l'expiration (24h)
+}</pre>
+
+  <div class="callout callout-warn">
+    <strong>Timeout serveur :</strong> L'outil <code>mcp__ide__execute_shell_command</code> n'est pas disponible
+    dans cet environnement. Le code ci-dessus est une représentation du fonctionnement.
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 11. RESPONSIVE -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="responsive">11. Design Responsive (Mobile & Desktop)</h2>
+
+  <p>ViteComm suit une approche <strong>mobile-first</strong> avec le breakpoint <code>md:</code> (768px) comme seuil
+    principal desktop.</p>
+
+  <h3>11.1 Stratégie responsive</h3>
+  <table>
+    <tr><th>Élément</th><th>Mobile (<768px)</th><th>Desktop (≥768px)</th></tr>
+    <tr>
+      <td><strong>Navigation</strong></td>
+      <td>Menu hamburger + tiroir latéral (<code>MobileDrawer</code>, slide-out gauche)</td>
+      <td>Barre d'onglets horizontaux (<code>hidden md:flex</code>)</td>
+    </tr>
+    <tr>
+      <td><strong>Header</strong></td>
+      <td>Bouton menu + logo minimal</td>
+      <td>Onglets nav + avatar + nom + déconnexion</td>
+    </tr>
+    <tr>
+      <td><strong>Grilles</strong></td>
+      <td><code>grid-cols-1</code> (empilé)</td>
+      <td><code>sm:grid-cols-2</code>, <code>lg:grid-cols-3</code>, <code>md:grid-cols-4</code></td>
+    </tr>
+    <tr>
+      <td><strong>Hero (landing)</strong></td>
+      <td><code>text-3xl</code>, padding réduit</td>
+      <td><code>text-5xl</code> / <code>text-6xl</code>, padding étendu</td>
+    </tr>
+    <tr>
+      <td><strong>Boutons</strong></td>
+      <td>Texte tronqué (<code>hidden sm:inline</code>), taille <code>sm</code></td>
+      <td>Texte complet, taille normale</td>
+    </tr>
+    <tr>
+      <td><strong>Footer</strong></td>
+      <td>1 colonne</td>
+      <td><code>grid-cols-1 md:grid-cols-3</code></td>
+    </tr>
+    <tr>
+      <td><strong>Admin stats</strong></td>
+      <td><code>grid-cols-2</code></td>
+      <td><code>md:grid-cols-4</code></td>
+    </tr>
+  </table>
+
+  <h3>11.2 Détection du rôle pour le thème</h3>
+  <p>Chaque layout (<code>ClientLayout</code>, <code>VendeurLayout</code>, <code>LivreurLayout</code>) ajoute une
+    classe CSS sur l'élément <code>&lt;html&gt;</code> au montage :</p>
+  <pre>
+// ClientLayout.jsx
+useEffect(() => {
+  document.documentElement.classList.add('role-client');
+  return () => document.documentElement.classList.remove('role-client');
+}, []);</pre>
+
+  <p>Cela active les couleurs d'accent spécifiques au rôle dans <code>index.css</code> :</p>
+  <pre>
+html.role-client  { --accent: #1D9E75; }  /* Vert */
+html.role-vendeur { --accent: #BA7517; }  /* Orange */
+html.role-livreur { --accent: #D85A30; }  /* Rouge */</pre>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 12. THEME -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="theme">12. Système de Thème (Clair / Sombre / Système)</h2>
+
+  <h3>12.1 Trois modes</h3>
+  <table>
+    <tr><th>Mode</th><th>Stockage</th><th>Comportement</th></tr>
+    <tr><td><code>light</code></td><td rowspan="3">Clé <code>vc_theme</code> dans localStorage</td><td>Force le thème clair</td></tr>
+    <tr><td><code>dark</code></td><td>Force le thème sombre (classe <code>.dark</code> sur <code>&lt;html&gt;</code>)</td></tr>
+    <tr><td><code>system</code></td><td>Suit le système via <code>prefers-color-scheme: dark</code> + listener en temps réel</td></tr>
+  </table>
+
+  <h3>12.2 Variables CSS</h3>
+  <pre>
+:root {
+  --bg: #F7F8F3;        /* Fond principal */
+  --surface: #FFFFFF;    /* Cartes, panels */
+  --accent: #1D9E75;     /* Couleur d'accent (change selon le rôle) */
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --border: #e5e7eb;
+}
+
+.dark {
+  --bg: #1A1B19;
+  --surface: #252623;
+  --accent: #2DC491;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-muted: #6b7280;
+  --border: #374151;
+}</pre>
+
+  <h3>12.3 Transitions</h3>
+  <pre>
+* {
+  transition: background-color 0.25s ease, color 0.25s ease,
+              border-color 0.25s ease, box-shadow 0.25s ease;
+}</pre>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 13. PWA -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="pwa">13. Progressive Web App (PWA)</h2>
+
+  <h3>13.1 Configuration</h3>
+  <ul>
+    <li><strong>Plugin :</strong> <code>vite-plugin-pwa</code> v1.3.0</li>
+    <li><strong>Mode :</strong> <code>generateSW</code> avec <code>registerType: 'autoUpdate'</code></li>
+    <li><strong>Manifest :</strong> <code>display: standalone</code>, <code>orientation: portrait</code>,
+      <code>theme_color: #1D9E75</code></li>
+    <li><strong>Icônes :</strong> 192x192, 512x512, maskable 512x512 (logo V vert)</li>
+  </ul>
+
+  <h3>13.2 Mise en cache (Workbox)</h3>
+  <table>
+    <tr><th>Pattern</th><th>Stratégie</th><th>Cache</th></tr>
+    <tr><td>Google Fonts</td><td><code>CacheFirst</code></td><td>1 an</td></tr>
+    <tr><td>gstatic fonts</td><td><code>CacheFirst</code></td><td>1 an</td></tr>
+    <tr><td><code>/api/*</code></td><td><code>NetworkFirst</code></td><td>1h, timeout 10s</td></tr>
+    <tr><td>Assets statiques</td><td>Pré-cache (17 entrées, ~1.4 MB)</td><td>—</td></tr>
+  </table>
+
+  <h3>13.3 Installation</h3>
+  <p>Le composant <code>InstallPrompt</code> détecte l'événement <code>beforeinstallprompt</code> et affiche
+    une bannière après 2 secondes. L'utilisateur peut installer l'app comme application native sur son appareil.</p>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 14. PAIEMENT -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="paiement">14. Paiement Mobile Money (FedaPay)</h2>
+
+  <h3>14.1 Intégration</h3>
+  <ul>
+    <li><strong>Provider :</strong> FedaPay (MTN MoMo, Moov Pay, Celtis Cash)</li>
+    <li><strong>Devise :</strong> XOF (FCFA)</li>
+    <li><strong>Commission :</strong> 0.6% par transaction validée</li>
+    <li><strong>Frais livraison :</strong> 1500 F fixes</li>
+    <li><strong>Frais retour :</strong> 500 F par article rejeté</li>
+  </ul>
+
+  <h3>14.2 Flux de paiement</h3>
+  <div class="flow-step">
+    <div class="num">1</div>
+    <div class="content"><strong>Initiation :</strong> Le client saisit son numéro de téléphone →
+      <code>POST /api/client/payment/initiate</code> crée une <code>PaiementTransaction</code> et appelle l'API
+      FedaPay → retourne une <code>checkout_url</code>.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">2</div>
+    <div class="content"><strong>Redirection :</strong> Le client est redirigé vers le portail FedaPay, confirme
+      sur son téléphone (code USSD).</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">3</div>
+    <div class="content"><strong>Webhook :</strong> FedaPay envoie un POST signé (HMAC-SHA-256) à
+      <code>/api/webhooks/fedapay</code>. Le backend vérifie la signature (timing-safe, fenêtre 5 min) et met à jour
+      le statut.</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">4</div>
+    <div class="content"><strong>Succès :</strong> La facture est marquée "Payé", le gain du livreur est crédité.
+      Le client voit la facture détaillée.</div>
+  </div>
+
+  <h3>14.3 Sécurité webhook</h3>
+  <pre>
+// paymentController.js
+const signature = req.headers['x-fedapay-signature'];
+const expected = crypto.createHmac('sha256', WEBHOOK_SECRET)
+  .update(JSON.stringify(req.body)).digest('hex');
+const timestamp = req.headers['x-fedapay-timestamp'];
+if (Math.abs(Date.now() - timestamp) > 300000) return res.status(400).send('Expired');
+if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected)))
+  return res.status(400).send('Invalid signature');</pre>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 15. UPLOAD -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="upload">15. Upload de Fichiers et Preuves</h2>
+
+  <h3>15.1 Middleware Multer</h3>
+  <table>
+    <tr><th>Type</th><th>Dossier</th><th>Limite</th><th>Filtres</th></tr>
+    <tr><td>Avatar</td><td><code>uploads/avatars/</code></td><td>5 MB</td><td>Images uniquement</td></tr>
+    <tr><td>Image marché</td><td><code>uploads/markets/</code></td><td>5 MB</td><td>Images uniquement</td></tr>
+    <tr><td>Photo produit</td><td><code>uploads/products/</code></td><td>5 MB</td><td>Images uniquement</td></tr>
+    <tr><td>Preuve collecte</td><td><code>uploads/proofs/</code></td><td>10 MB</td><td>Images + vidéos</td></tr>
+  </table>
+
+  <h3>15.2 Processus d'upload</h3>
+  <ol>
+    <li>Le fichier est d'abord sauvegardé dans un dossier <code>temp/</code></li>
+    <li>Après validation en base, <code>moveToPermanent()</code> déplace le fichier vers le dossier définitif</li>
+    <li>L'URL publique est retournée : <code>/uploads/&lt;dossier&gt;/&lt;filename&gt;</code></li>
+    <li>Les fichiers sont servis statiquement : <code>app.use('/uploads', express.static(...))</code></li>
+  </ol>
+
+  <h3>15.3 Preuves photo (RG07)</h3>
+  <ul>
+    <li><strong>Livreur :</strong> Photo obligatoire lors de la collecte chez le vendeur (max 5 photos)</li>
+    <li><strong>Client :</strong> Photo optionnelle lors de l'inspection (si litige, max 5 photos/vidéos)</li>
+    <li>Chaque photo crée un enregistrement <code>MediaPreuve</code> lié à un <code>PreuveCollecte</code></li>
+  </ul>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 16. CORS & ERREURS -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <h2 id="cors">16. CORS et Gestion des Erreurs</h2>
+
+  <h3>16.1 CORS</h3>
+  <table>
+    <tr><th>Environnement</th><th>Comportement</th></tr>
+    <tr><td>Développement (<code>APP_ENV=local</code>)</td><td><code>origin: true</code> — toutes les origines autorisées</td></tr>
+    <tr><td>Production</td><td>Whitelist depuis <code>CORS_ORIGINS</code> (virgule-séparé). Pas d'origine = autorisé (server-to-server).</td></tr>
+  </table>
+
+  <h3>16.2 Gestion des erreurs backend</h3>
+  <ul>
+    <li><strong>Mode debug</strong> (<code>APP_DEBUG=true</code>) : renvoie le message d'erreur brut</li>
+    <li><strong>Mode production</strong> (<code>APP_DEBUG=false</code>) : renvoie "Une erreur est survenue."</li>
+    <li><strong>Transactions :</strong> <code>prisma.$transaction</code> garantit l'atomicité des opérations multi-étapes</li>
+    <li><strong>Error handler global</strong> dans <code>index.js</code> : catch les erreurs non gérées, log le stack</li>
+  </ul>
+
+  <h3>16.3 Gestion des erreurs frontend</h3>
+  <ul>
+    <li><strong>ErrorBoundary :</strong> Composant class React qui catch les erreurs de render, affiche une carte d'erreur avec bouton "Réessayer"</li>
+    <li><strong>API errors :</strong> <code>api.js</code> lance des <code>Error</code> avec messages français ; le 401 redirige automatiquement vers <code>/connect</code></li>
+    <li><strong>Timeout :</strong> 30 secondes via <code>AbortController</code></li>
+    <li><strong>Messages d'erreur par type :</strong> erreur, suspendu, banni, réseau, Google — chacun avec icône/couleur différente</li>
+  </ul>
+
+  <div class="callout" style="margin-top:3rem; border-left-color: var(--primary-dark);">
+    <strong>ViteComm</strong> — Guide technique généré automatiquement à partir de l'analyse du code source.<br>
+    Stack : React 19 + Vite 8 + Tailwind CSS 4 + Node.js + Express 5 + Prisma 7 + MySQL/MariaDB<br>
+    Juin 2026
+  </div>
+
+</body>
+
+</html>
