@@ -28,6 +28,7 @@ import Admin from './pages/admin/Admin'
 import Inscription from './pages/auth/Inscription'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import CGU from './pages/auth/CGU'
+import PolitiqueConfidentialite from './pages/auth/PolitiqueConfidentialite'
 import Profil from './pages/client/Profil'
 import SuiviCommande from './pages/client/SuiviCommande'
 import MarcheDetail from './pages/client/MarcheDetail'
@@ -68,6 +69,7 @@ export default function App() {
         <Route path="/register" element={<Inscription />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/cgu" element={<CGU />} />
+        <Route path="/politique-confidentialite" element={<PolitiqueConfidentialite />} />
         {/* Connexion admin cachée */}
         <Route path="/admin-connect" element={<Connexion />} />
 
