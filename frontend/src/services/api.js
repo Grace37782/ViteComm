@@ -1,5 +1,30 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
+export function normalizeUrls(obj) {
+  if (!obj) return obj
+  if (typeof obj === 'string') {
+    if (obj.startsWith('/uploads/')) {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '/api'
+      if (apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
+        const host = apiBase.replace(/\/api\/?$/, '')
+        return `${host}${obj}`
+      }
+    }
+    return obj
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(normalizeUrls)
+  }
+  if (typeof obj === 'object') {
+    const res = {}
+    for (const key in obj) {
+      res[key] = normalizeUrls(obj[key])
+    }
+    return res
+  }
+  return obj
+}
+
 function getToken() {
   return localStorage.getItem('vc_token')
 }
@@ -35,7 +60,8 @@ async function request(endpoint, options = {}) {
     const err = await res.json().catch(() => ({ error: 'Erreur du serveur.' }))
     throw new Error(err.error || 'Une erreur est survenue.')
   }
-  return res.json()
+  const data = await res.json()
+  return normalizeUrls(data)
 }
 
 export const api = {
@@ -66,9 +92,10 @@ export async function login(credentials) {
     throw new Error(err.error || `Erreur ${res.status}`)
   }
   const data = await res.json()
-  localStorage.setItem('vc_user', JSON.stringify(data.user))
-  localStorage.setItem('vc_token', data.token)
-  return data
+  const normalized = normalizeUrls(data)
+  localStorage.setItem('vc_user', JSON.stringify(normalized.user))
+  localStorage.setItem('vc_token', normalized.token)
+  return normalized
 }
 
 export async function googleLogin(credential) {
@@ -83,9 +110,10 @@ export async function googleLogin(credential) {
     throw new Error(err.error || `Erreur ${res.status}`)
   }
   const data = await res.json()
-  localStorage.setItem('vc_user', JSON.stringify(data.user))
-  localStorage.setItem('vc_token', data.token)
-  return data
+  const normalized = normalizeUrls(data)
+  localStorage.setItem('vc_user', JSON.stringify(normalized.user))
+  localStorage.setItem('vc_token', normalized.token)
+  return normalized
 }
 
 export async function completeGoogleRegistration(roleData) {
@@ -101,8 +129,9 @@ export async function completeGoogleRegistration(roleData) {
     throw new Error(err.error || `Erreur ${res.status}`)
   }
   const data = await res.json()
-  localStorage.setItem('vc_user', JSON.stringify(data.user))
-  return data
+  const normalized = normalizeUrls(data)
+  localStorage.setItem('vc_user', JSON.stringify(normalized.user))
+  return normalized
 }
 
 export async function register(data) {
@@ -115,3 +144,4 @@ export async function register(data) {
   localStorage.setItem('vc_token', res.token)
   return res
 }
+

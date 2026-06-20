@@ -670,7 +670,7 @@ export const googleAuth = async (req, res) => {
       return res.status(401).json({ error: 'Token Google invalide ou expiré.' });
     }
     const profile = await googleRes.json();
-    const { email, given_name, family_name, sub } = profile;
+    const { email, given_name, family_name, sub, picture } = profile;
 
     if (!email) {
       return res.status(400).json({ error: 'Email requis pour la connexion Google.' });
@@ -698,6 +698,7 @@ export const googleAuth = async (req, res) => {
             statut_compte: 'Actif',
             est_admin: false,
             auth_provider: 'google',
+            photo_url: picture || null,
           }
         });
         await tx.client.create({
@@ -713,6 +714,14 @@ export const googleAuth = async (req, res) => {
       // Existing user — check auth_provider
       if (user.auth_provider === 'local') {
         return res.status(403).json({ error: 'Ce compte utilise une connexion par email/mot de passe. Veuillez vous connecter normalement.' });
+      }
+      // If user has no photo_url, set it to the Google picture retrospectively
+      if (!user.photo_url && picture) {
+        user = await prisma.utilisateur.update({
+          where: { id_user: user.id_user },
+          data: { photo_url: picture },
+          include: { client: true, vendeur: true, livreur: true },
+        });
       }
       // Mark as Google user if not yet set (backward compat)
       if (!user.auth_provider || user.auth_provider === 'local') {
@@ -785,7 +794,7 @@ export const googleCallback = async (req, res) => {
     });
     const payload = ticket.getPayload();
 
-    const { email, given_name, family_name, sub } = payload;
+    const { email, given_name, family_name, sub, picture } = payload;
 
     if (!email) {
       const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
@@ -812,6 +821,7 @@ export const googleCallback = async (req, res) => {
             statut_compte: 'Actif',
             est_admin: false,
             auth_provider: 'google',
+            photo_url: picture || null,
           }
         });
         await tx.client.create({
@@ -827,6 +837,14 @@ export const googleCallback = async (req, res) => {
       if (user.auth_provider === 'local') {
         const frontendUrl = FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
         return res.redirect(`${frontendUrl}/connect?error=google_wrong_account`);
+      }
+      // If user has no photo_url, set it to the Google picture retrospectively
+      if (!user.photo_url && picture) {
+        user = await prisma.utilisateur.update({
+          where: { id_user: user.id_user },
+          data: { photo_url: picture },
+          include: { client: true, vendeur: true, livreur: true },
+        });
       }
       if (!user.auth_provider || user.auth_provider === 'local') {
         await prisma.utilisateur.update({ where: { id_user: user.id_user }, data: { auth_provider: 'google' } });
