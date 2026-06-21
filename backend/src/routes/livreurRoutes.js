@@ -1,6 +1,4 @@
 import { Router } from 'express';
-import multer from 'multer';
-import path from 'path';
 import {
   getDriverDashboard,
   updateAvailability,
@@ -22,28 +20,12 @@ import {
   createSignalement
 } from '../controllers/livreurController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { uploadAvatar } from '../middleware/upload.js';
 
 const router = Router();
 
 router.use(requireAuth);
 router.use(requireRole(['livreur']));
-
-// Configure multer for profile photo
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, unique + path.extname(file.originalname));
-  }
-});
-const uploadPhoto = multer({
-  storage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Seules les images sont acceptées.'));
-  },
-  limits: { fileSize: 5 * 1024 * 1024 }
-});
 
 // ── Dashboard ──
 router.get('/dashboard', getDriverDashboard);
@@ -54,7 +36,7 @@ router.get('/availability/history', getAvailabilityHistory);
 
 // ── Profil ──
 router.get('/profil', getLivreurProfil);
-router.put('/profil', uploadPhoto.single('photo'), updateLivreurProfil);
+router.put('/profil', uploadAvatar, updateLivreurProfil);
 
 // ── Courses disponibles (RG05) ──
 router.get('/deliveries/available', getAvailableDeliveries);

@@ -13,7 +13,7 @@ const MOTIFS_REPUTATION = [
 
 export default function VendeurProfil() {
   const navigate = useNavigate()
-  const { user: ctxUser, logout: ctxLogout } = useAuth()
+  const { user: ctxUser, login: ctxLogin, logout: ctxLogout } = useAuth()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -65,7 +65,10 @@ export default function VendeurProfil() {
       body.set('localisation_marche', form.localisation_marche)
       if (photoFile) body.set('photo', photoFile)
       const res = await api.put('/vendor/profil', body)
-      setProfile(p => ({ ...p, vendeur: res.vendeur }))
+      setProfile(p => ({ ...p, ...res.user, vendeur: res.vendeur }))
+      if (res.user?.photo_url) {
+        ctxLogin(res.user, localStorage.getItem('vc_token'))
+      }
       showToast('Profil mis à jour !', 'ok')
       setEditing(false)
       setPhotoFile(null)

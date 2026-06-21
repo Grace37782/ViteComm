@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { completeGoogleRegistration } from '../services/api'
+import { completeGoogleRegistration, api } from '../services/api'
 import { ShoppingCart, Store, Truck, Loader2, ChevronRight, MapPin, Car } from 'lucide-react'
 
 export default function GoogleRoleSelection({ user, onComplete }) {
@@ -17,6 +17,8 @@ export default function GoogleRoleSelection({ user, onComplete }) {
   // Vendeur form
   const [nomEtablissement, setNomEtablissement] = useState('')
   const [localisationMarche, setLocalisationMarche] = useState('')
+  const [idMarche, setIdMarche] = useState('')
+  const [markets, setMarkets] = useState([])
 
   // Livreur form
   const [typeVehicule, setTypeVehicule] = useState('Moto')
@@ -68,9 +70,15 @@ export default function GoogleRoleSelection({ user, onComplete }) {
     }
   }
 
+  useEffect(() => {
+    if (step === 'vendeur-form' && markets.length === 0) {
+      api.get('/auth/markets').then(setMarkets).catch(() => {})
+    }
+  }, [step, markets.length])
+
   async function handleVendeurSubmit() {
     if (!nomEtablissement.trim() || !localisationMarche.trim()) {
-      setError('Nom d\'établissement et localisation requis.')
+      setError('Nom d\'établissement et marché requis.')
       return
     }
     setStep('loading')
@@ -79,6 +87,7 @@ export default function GoogleRoleSelection({ user, onComplete }) {
         role: 'vendeur',
         nom_etablissement: nomEtablissement.trim(),
         localisation_marche: localisationMarche.trim(),
+        id_marche: idMarche ? Number(idMarche) : undefined,
       })
       updateAuthContext(data.user, localStorage.getItem('vc_token'))
       onComplete?.()
@@ -157,16 +166,23 @@ export default function GoogleRoleSelection({ user, onComplete }) {
 
             <div>
               <label className="text-xs font-bold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>
-                <MapPin size={12} className="inline align-middle mr-1" /> Localisation / Marché *
+                <MapPin size={12} className="inline align-middle mr-1" /> Marché *
               </label>
-              <input
-                type="text"
-                value={localisationMarche}
-                onChange={(e) => { setLocalisationMarche(e.target.value); setError('') }}
-                placeholder="Ex: Marché Dantokpa"
-                className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)' }}
-              />
+              <select
+                value={idMarche}
+                onChange={(e) => {
+                  const id = e.target.value
+                  const m = markets.find(m => String(m.id_marche) === id)
+                  setIdMarche(id)
+                  setLocalisationMarche(m ? m.nom : '')
+                  setError('')
+                }}
+                className="w-full px-4 py-3 rounded-xl text-sm outline-none appearance-none cursor-pointer"
+                style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)', colorScheme: isDark ? 'dark' : 'light' }}
+              >
+                <option value="">Sélectionnez un marché</option>
+                {markets.map(m => <option key={m.id_marche} value={m.id_marche}>{m.nom}</option>)}
+              </select>
             </div>
 
             <button

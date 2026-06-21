@@ -1,5 +1,6 @@
 import prisma from '../config/db.js';
 import { errorMessage, internalError } from '../utils/errors.js';
+import { moveToPermanent } from '../middleware/upload.js';
 import QRCode from 'qrcode';
 import { generateVendorQRToken } from '../utils/vendorQR.js';
 import path from 'path';
@@ -1404,17 +1405,39 @@ export const updateVendorProfil = async (req, res) => {
       });
     }
 
-    // Handle photo upload if present
+    // Handle photo upload if present — move from temp to permanent
+    let photoUrl = null;
     if (req.file) {
-      await prisma.utilisateur.update({
-        where: { id_user: req.user.id_user },
-        data: { photo_url: `/uploads/${req.file.filename}` }
-      });
+      photoUrl = moveToPermanent(req.file.filename);
+      if (photoUrl) {
+        await prisma.utilisateur.update({
+          where: { id_user: req.user.id_user },
+          data: { photo_url: photoUrl }
+        });
+      }
     }
+
+    // Return full user payload so frontend can sync photo_url
+    const user = await prisma.utilisateur.findUnique({
+      where: { id_user: req.user.id_user },
+      include: { client: true, vendeur: true, livreur: true },
+    });
 
     return res.json({
       message: 'Profil vendeur mis à jour.',
-      vendeur: updated
+      vendeur: updated,
+      user: {
+        id_user: user.id_user,
+        nom: user.nom,
+        prenom: user.prenom,
+        telephone: user.telephone,
+        email: user.email,
+        statut_compte: user.statut_compte,
+        est_admin: user.est_admin,
+        photo_url: user.photo_url,
+        auth_provider: user.auth_provider || 'local',
+        role: user.vendeur ? 'vendeur' : user.client ? 'client' : user.livreur ? 'livreur' : 'admin',
+      }
     });
   } catch (error) {
     console.error('updateVendorProfil error:', error);

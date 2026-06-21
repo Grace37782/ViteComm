@@ -883,7 +883,7 @@ export const googleCallback = async (req, res) => {
 // Body: { role: 'client'|'vendeur'|'livreur', nom_etablissement?, localisation_marche?, type_vehicule?, immatriculation? }
 // ────────────────────────────────────────────────────────────
 export const completeGoogleRegistration = async (req, res) => {
-  const { role, nom_etablissement, localisation_marche, type_vehicule, immatriculation } = req.body;
+  const { role, nom_etablissement, localisation_marche, id_marche, type_vehicule, immatriculation } = req.body;
 
   if (!role || !['client', 'vendeur', 'livreur'].includes(role)) {
     return res.status(400).json({ error: 'Rôle invalide. Choisissez: client, vendeur ou livreur.' });
@@ -939,6 +939,7 @@ export const completeGoogleRegistration = async (req, res) => {
             id_user: user.id_user,
             nom_etablissement,
             localisation_marche,
+            id_marche: id_marche || null,
           }
         });
       } else if (role === 'livreur') {

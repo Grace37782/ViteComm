@@ -30,6 +30,7 @@ import {
   updateVendorProfil
 } from '../controllers/vendeurController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { uploadAvatar } from '../middleware/upload.js';
 
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
@@ -105,6 +106,6 @@ router.delete('/signalements/:id', deleteSignalement);
 
 // Profil
 router.get('/profil', getVendorProfil);
-router.put('/profil', upload.single('photo'), updateVendorProfil);
+router.put('/profil', uploadAvatar, updateVendorProfil);
 
 export default router;

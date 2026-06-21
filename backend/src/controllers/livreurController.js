@@ -1,13 +1,8 @@
 import prisma from '../config/db.js';
 import bcryptjs from 'bcryptjs';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
 import { errorMessage, internalError } from '../utils/errors.js';
 import { verifyVendorQRToken, verifyFinalizeQRToken } from '../utils/vendorQR.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { moveToPermanent } from '../middleware/upload.js';
 
 // ═══════════════════════════════════════════════════════════
 // 4.1. TABLEAU DE BORD (RG10, RG15, RG19)
@@ -892,21 +887,15 @@ export const updateLivreurProfil = async (req, res) => {
       });
     }
 
-    // Handle photo upload
+    // Handle photo upload — move from temp to permanent
     if (req.file) {
-      const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const ext = path.extname(req.file.originalname) || '.jpg';
-      const filename = unique + ext;
-
-      const avatarDir = path.join(__dirname, '../../uploads/avatars');
-      fs.mkdirSync(avatarDir, { recursive: true });
-      const destPath = path.join(avatarDir, filename);
-      fs.renameSync(req.file.path, destPath);
-
-      await prisma.utilisateur.update({
-        where: { id_user: req.user.id_user },
-        data: { photo_url: `/uploads/avatars/${filename}` }
-      });
+      const photoUrl = moveToPermanent(req.file.filename);
+      if (photoUrl) {
+        await prisma.utilisateur.update({
+          where: { id_user: req.user.id_user },
+          data: { photo_url: photoUrl }
+        });
+      }
     }
 
     // Return updated profile
