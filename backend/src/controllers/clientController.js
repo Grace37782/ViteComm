@@ -282,7 +282,7 @@ export const getCart = async (req, res) => {
           include: {
             produit: {
               include: {
-                vendeur: { select: { nom_etablissement: true } }
+                vendeur: { select: { nom_etablissement: true, marche: { select: { nom: true } } } }
               }
             }
           }

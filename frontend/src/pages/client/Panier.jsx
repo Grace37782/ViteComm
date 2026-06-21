@@ -60,9 +60,10 @@ export default function Panier() {
 
   // Group by vendor
   const parVendeur = details.reduce((acc, d) => {
-    const vid  = d.produit.id_user_vendeur
-    const vnom = d.produit.vendeur?.nom_etablissement || `Vendeur ${vid}`
-    if (!acc[vid]) acc[vid] = { nom: vnom, items: [] }
+    const vid     = d.produit.id_user_vendeur
+    const vnom    = d.produit.vendeur?.nom_etablissement || `Vendeur ${vid}`
+    const marche  = d.produit.vendeur?.marche?.nom || null
+    if (!acc[vid]) acc[vid] = { nom: vnom, marche, items: [] }
     acc[vid].items.push(d)
     return acc
   }, {})
@@ -108,7 +109,7 @@ export default function Panier() {
           <div className="flex-1">
             <div className="text-white font-black text-base leading-tight">Mon panier</div>
             <div className="text-white/70 text-xs">
-              {panierCount} article{panierCount > 1 ? 's' : ''} · {Object.keys(parVendeur).length} étal{Object.keys(parVendeur).length > 1 ? 's' : ''}
+              {panierCount} article{panierCount > 1 ? 's' : ''} · {Object.keys(parVendeur).length} vendeur{Object.keys(parVendeur).length > 1 ? 's' : ''}
             </div>
           </div>
           {panierCount > 0 && (
@@ -142,16 +143,21 @@ export default function Panier() {
       ) : (
         <div className="px-4 py-4 flex flex-col gap-4">
 
-          {/* ARTICLES PAR ÉTAL */}
+          {/* ARTICLES PAR VENDEUR */}
           {Object.entries(parVendeur).map(([vid, etal]) => (
             <div key={vid} className="rounded-2xl overflow-hidden"
               style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow)' }}>
               <div className="flex items-center gap-2 px-4 py-3"
                 style={{ background: 'var(--surface-alt)', borderBottom: '1px solid var(--border)' }}>
-                <Store size={18} />
-                <span className="font-black text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{etal.nom}</span>
+                <Store size={18} style={{ color: '#BA7517' }} />
+                <div className="flex-1 min-w-0">
+                  <span className="font-black text-sm block truncate" style={{ color: '#BA7517' }}>{etal.nom}</span>
+                  {etal.marche && (
+                    <span className="text-[10px] font-medium block truncate" style={{ color: 'var(--text-muted)' }}>{etal.marche}</span>
+                  )}
+                </div>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56' }}>
+                  style={{ background: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', color: '#BA7517' }}>
                   {etal.items.length} article{etal.items.length > 1 ? 's' : ''}
                 </span>
               </div>
