@@ -99,7 +99,7 @@ export default function LivreurProfil() {
     <div className="flex flex-col">
 
       {/* HEADER */}
-      <div className="relative overflow-hidden px-5 pt-5 pb-5 -mt-4"
+      <div className="relative overflow-hidden px-5 pt-5 pb-5"
         style={{ background: isDark ? 'linear-gradient(135deg, #3D1A10 0%, #121011 100%)' : 'linear-gradient(135deg, #D85A30 0%, #993C1D 100%)' }}>
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(216,90,48,0.1)' : 'rgba(255,255,255,0.1)' }} />
         <div className="relative z-10 flex items-center gap-3">
@@ -108,7 +108,7 @@ export default function LivreurProfil() {
             style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}>
             <span className="text-white text-lg">←</span>
           </button>
-          <div className="flex-1 flex items-center">
+          <div className="flex-1">
             <div className="text-white font-black text-base leading-tight">Mon profil</div>
           </div>
         </div>

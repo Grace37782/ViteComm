@@ -56,16 +56,42 @@ export default function Admin() {
   return (
     <div className="min-h-screen font-sans" style={{ background: 'var(--bg)' }}>
       <Header admin={admin} onLogout={() => { localStorage.clear(); navigate('/accueil') }} tab={tab} onTabChange={(t) => { setTabFilter(null); setTab(t) }} />
-      <main className="max-w-7xl mx-auto px-4 py-6 pb-24">
-        {tab === 'dashboard' && <DashboardTab onNavigate={navigateTo} onLeaderboardReady={setLeaderboardData} onProductRankingsReady={setProductRankings} />}
-        {tab === 'users' && <UsersTab initialFilter={tabFilter} leaderboardData={leaderboardData} />}
-        {tab === 'products' && <ProductsTab initialFilter={tabFilter} productRankings={productRankings} />}
-        {tab === 'marchés' && <MarketsTab />}
-        {tab === 'signalements' && <SignalementsTab initialFilter={tabFilter} />}
-        {tab === 'litiges' && <LitigesTab initialFilter={tabFilter} />}
-        {tab === 'notifications' && <Notifications basePath="/admin/notifications" />}
-        {tab === 'profil' && <ProfilTab admin={admin} onLogout={() => { localStorage.clear(); navigate('/accueil') }} />}
-      </main>
+      {tab === 'notifications' ? (
+        <Notifications basePath="/admin/notifications" />
+      ) : (
+        <>
+          {tab !== 'dashboard' && <AdminTabHeader title={
+            tab === 'users' ? 'Utilisateurs' :
+            tab === 'products' ? 'Produits' :
+            tab === 'marchés' ? 'Marchés' :
+            tab === 'signalements' ? 'Signalements' :
+            tab === 'litiges' ? 'Litiges' :
+            'Mon profil'
+          } />}
+          <main className="max-w-7xl mx-auto px-4 py-6 pb-24">
+            {tab === 'dashboard' && <DashboardTab onNavigate={navigateTo} onLeaderboardReady={setLeaderboardData} onProductRankingsReady={setProductRankings} />}
+            {tab === 'users' && <UsersTab initialFilter={tabFilter} leaderboardData={leaderboardData} />}
+            {tab === 'products' && <ProductsTab initialFilter={tabFilter} productRankings={productRankings} />}
+            {tab === 'marchés' && <MarketsTab />}
+            {tab === 'signalements' && <SignalementsTab initialFilter={tabFilter} />}
+            {tab === 'litiges' && <LitigesTab initialFilter={tabFilter} />}
+            {tab === 'profil' && <ProfilTab admin={admin} onLogout={() => { localStorage.clear(); navigate('/accueil') }} />}
+          </main>
+        </>
+      )}
+    </div>
+  )
+}
+
+function AdminTabHeader({ title }) {
+  const isDark = document.documentElement.classList.contains('dark')
+  return (
+    <div className="relative overflow-hidden px-5 pt-5 pb-5"
+      style={{ background: isDark ? 'linear-gradient(135deg, #164032 0%, #121311 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+      <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(45,196,145,0.1)' : 'rgba(255,255,255,0.1)' }} />
+      <div className="relative z-10">
+        <div className="text-white font-black text-base leading-tight">{title}</div>
+      </div>
     </div>
   )
 }
