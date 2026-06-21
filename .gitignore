@@ -38,3 +38,7 @@ Thumbs.db
 *.db-journal
 *.db-shm
 *.db-wal
+
+# Aider
+.aider.chat.history.md
+.aider.input.history
