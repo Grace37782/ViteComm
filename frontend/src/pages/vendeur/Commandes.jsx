@@ -83,8 +83,9 @@ export default function CommandesVendeur() {
           productNames.includes(q)
       })
     : baseList
-  const visibleItems = liste.slice(0, visibleCount)
-  const hasMore = visibleCount < liste.length
+  const sortedList = [...liste].sort((a, b) => new Date(b.date_creation || 0) - new Date(a.date_creation || 0))
+  const visibleItems = sortedList.slice(0, visibleCount)
+  const hasMore = visibleCount < sortedList.length
 
   async function validerCommande(cmd) {
     try {
@@ -196,7 +197,7 @@ export default function CommandesVendeur() {
         </div>
       </div>
 
-      {liste.length === 0 && (
+      {sortedList.length === 0 && (
         <div className="text-center py-12">
           <div className="text-5xl mb-3"><ShoppingCart size={40} /></div>
           <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -236,7 +237,7 @@ export default function CommandesVendeur() {
                   Commande #{cmd.id}
                 </div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  {cmd.client?.nom || 'Client'} · {cmd.heure} · Livreur: {cmd.livreur.nom}
+                  {cmd.client?.nom || 'Client'} · {cmd.date_creation ? new Date(cmd.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''} {cmd.date_creation ? new Date(cmd.date_creation).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''} · Livreur: {cmd.livreur.nom}
                 </div>
               </div>
               <span className="text-xs font-bold px-2.5 py-1 rounded-full"
@@ -325,7 +326,7 @@ export default function CommandesVendeur() {
         <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
           className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-          <ChevronDown size={14} /> Charger plus ({liste.length - visibleCount} restant{liste.length - visibleCount > 1 ? 's' : ''})
+          <ChevronDown size={14} /> Charger plus ({sortedList.length - visibleCount} restant{sortedList.length - visibleCount > 1 ? 's' : ''})
         </button>
       )}
 

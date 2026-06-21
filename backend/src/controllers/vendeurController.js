@@ -441,6 +441,7 @@ export const getVendorOrders = async (req, res) => {
 
       return {
         id: o.id_commande,
+        date_creation: o.date_creation,
         heure: formatHeure(o.date_creation),
         statut_collecte,
         validee_par_vendeur: o.validee_par_vendeur,
