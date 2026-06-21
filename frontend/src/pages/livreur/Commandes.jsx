@@ -452,10 +452,6 @@ export default function CommandesLivreur() {
                 {!finalizeScanResult && (
                   <button onClick={() => {
                     cleanupScanner()
-                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                      showToast('Caméra non supportée — ouvrez cette page dans un navigateur récent (Chrome/Safari) et en HTTPS')
-                      return
-                    }
                     const scanner = new Html5Qrcode('qr-finalize-reader')
                     scanner.start(
                       { facingMode: 'environment' },
@@ -547,10 +543,6 @@ export default function CommandesLivreur() {
                 {!scanResult && (
                   <button onClick={() => {
                     cleanupScanner()
-                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                      showToast('Caméra non supportée — ouvrez cette page dans un navigateur récent (Chrome/Safari) et en HTTPS')
-                      return
-                    }
                     const scanner = new Html5Qrcode('qr-collect-reader')
                     scanner.start(
                       { facingMode: 'environment' },
