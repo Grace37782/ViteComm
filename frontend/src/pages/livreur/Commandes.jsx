@@ -801,10 +801,16 @@ export default function CommandesLivreur() {
                       border: `1.5px solid ${collected ? '#1D9E75' : isSelected ? '#3B82F6' : canScan ? '#D85A30' : 'var(--border)'}`,
                     }}>
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-black flex-shrink-0" style={{
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-black flex-shrink-0 overflow-hidden" style={{
                           background: collected ? '#1D9E75' : isSelected ? '#3B82F6' : canScan ? '#D85A30' : (isDark ? '#4A4B47' : '#9CA3AF'),
                         }}>
-                          {collected ? <CheckCircle size={14} /> : i + 1}
+                          {v.photo_url ? (
+                            <img src={v.photo_url} alt="" className="w-full h-full object-cover" />
+                          ) : collected ? (
+                            <CheckCircle size={14} />
+                          ) : (
+                            i + 1
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-bold truncate" style={{ color: 'var(--text-primary)' }}>

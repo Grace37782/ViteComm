@@ -455,6 +455,7 @@ export const getVendorCollectStatus = async (req, res) => {
       id_collecte: cv.id_collecte,
       id_user_vendeur: cv.id_user_vendeur,
       nom: cv.vendeur?.utilisateur ? `${cv.vendeur.utilisateur.prenom} ${cv.vendeur.utilisateur.nom}` : 'Vendeur',
+      photo_url: cv.vendeur?.utilisateur?.photo_url || null,
       nom_etablissement: cv.vendeur?.nom_etablissement || '',
       localisation_marche: cv.vendeur?.localisation_marche || '',
       latitude: cv.vendeur?.latitude || null,
@@ -808,7 +809,7 @@ export const getMyDeliveries = async (req, res) => {
             preuvesCollecte: { include: { medias: true } },
             collecteVendeurs: {
               include: {
-                vendeur: { include: { utilisateur: { select: { nom: true, prenom: true } } } }
+            vendeur: { include: { utilisateur: { select: { nom: true, prenom: true, photo_url: true } } } }
               }
             }
           }
