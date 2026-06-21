@@ -390,12 +390,16 @@ export const verifyFinalizeQR = async (req, res) => {
       return res.status(404).json({ error: 'Livraison introuvable ou non assignée.' });
     }
 
-    if (command.livraison.statut_livraison !== 'Inspectee') {
-      return res.status(400).json({ error: 'Cette livraison n\'est pas prête pour la finalisation.' });
+    if (command.livraison.statut_livraison !== 'En cours de livraison') {
+      return res.status(400).json({ error: 'Le livreur doit être en route pour finaliser.' });
     }
 
     if (!command.code_verification) {
       return res.status(400).json({ error: 'Code de vérification client manquant.' });
+    }
+
+    if (!command.livraison.preuve_collecte) {
+      return res.status(400).json({ error: 'Aucune collecte enregistrée. Impossible de vérifier le QR.' });
     }
 
     const verified = verifyFinalizeQRToken(scanned_qr_data, command.livraison.preuve_collecte);
