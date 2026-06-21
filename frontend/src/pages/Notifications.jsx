@@ -62,6 +62,16 @@ export default function Notifications({ basePath = '/client/notifications' }) {
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const [unreadCount, setUnreadCount] = useState(0)
+
+  const isVendeur = basePath.includes('/vendeur')
+  const isLivreur = basePath.includes('/livreur')
+  const headerBg = isLivreur
+    ? (isDark ? 'linear-gradient(135deg, #3D1A10 0%, #121011 100%)' : 'linear-gradient(135deg, #D85A30 0%, #993C1D 100%)')
+    : isVendeur
+      ? (isDark ? 'linear-gradient(135deg, #3D2A10 0%, #121110 100%)' : 'linear-gradient(135deg, #BA7517 0%, #854F0B 100%)')
+      : (isDark ? 'linear-gradient(135deg, #164032 0%, #121311 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)')
+  const headerCircle = isLivreur ? 'rgba(216,90,48,0.1)' : isVendeur ? 'rgba(186,117,23,0.1)' : 'rgba(45,196,145,0.1)'
+  const accentColor = isLivreur ? '#D85A30' : isVendeur ? '#BA7517' : '#1D9E75'
   const [toast, setToast] = useState(null)
 
   function showToast(msg, type = 'ok') { setToast({ msg, type }); setTimeout(() => setToast(null), 3000) }
@@ -116,15 +126,15 @@ export default function Notifications({ basePath = '/client/notifications' }) {
 
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"
-          style={{ background: toast.type === 'ok' ? '#1D9E75' : '#D85A30' }}>
+          style={{ background: toast.type === 'ok' ? accentColor : '#D85A30' }}>
           {toast.msg}
         </div>
       )}
 
       {/* HEADER */}
       <div className="relative overflow-hidden px-5 pt-5 pb-5"
-        style={{ background: isDark ? 'linear-gradient(135deg, #164032 0%, #121311 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(45,196,145,0.1)' : 'rgba(255,255,255,0.1)' }} />
+        style={{ background: headerBg }}>
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: isDark ? headerCircle : 'rgba(255,255,255,0.1)' }} />
         <div className="relative z-10 flex items-center gap-3">
           <button onClick={() => navigate(-1)}
             className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
@@ -171,9 +181,9 @@ export default function Notifications({ basePath = '/client/notifications' }) {
             <button key={tf.id} onClick={() => setTypeFilter(tf.id)}
               className="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap cursor-pointer transition-all flex-shrink-0"
               style={{
-                background: typeFilter === tf.id ? '#1D9E75' : 'var(--surface)',
+                background: typeFilter === tf.id ? accentColor : 'var(--surface)',
                 color: typeFilter === tf.id ? '#fff' : 'var(--text-secondary)',
-                border: `1.5px solid ${typeFilter === tf.id ? '#1D9E75' : 'var(--border)'}`,
+                border: `1.5px solid ${typeFilter === tf.id ? accentColor : 'var(--border)'}`,
               }}>
               {tf.label}
             </button>
@@ -181,9 +191,9 @@ export default function Notifications({ basePath = '/client/notifications' }) {
           <button onClick={() => setUnreadFilter(!unreadFilter)}
             className="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap cursor-pointer transition-all flex-shrink-0"
             style={{
-              background: unreadFilter ? '#D85A30' : 'var(--surface)',
+              background: unreadFilter ? accentColor : 'var(--surface)',
               color: unreadFilter ? '#fff' : 'var(--text-secondary)',
-              border: `1.5px solid ${unreadFilter ? '#D85A30' : 'var(--border)'}`,
+              border: `1.5px solid ${unreadFilter ? accentColor : 'var(--border)'}`,
             }}>
             Non lues
           </button>
@@ -192,7 +202,7 @@ export default function Notifications({ basePath = '/client/notifications' }) {
         {/* LIST */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 size={24} className="animate-spin" style={{ color: '#1D9E75' }} />
+            <Loader2 size={24} className="animate-spin" style={{ color: accentColor }} />
           </div>
         ) : notifications.length === 0 ? (
           <div className="text-center py-12 rounded-2xl"
@@ -225,7 +235,7 @@ export default function Notifications({ basePath = '/client/notifications' }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="font-bold text-xs truncate" style={{ color: 'var(--text-primary)' }}>{n.titre}</span>
-                      {!n.lu && <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#1D9E75' }} />}
+                      {!n.lu && <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: accentColor }} />}
                     </div>
                     <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{n.message}</p>
                     <div className="flex items-center gap-2 mt-1.5">
