@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useTheme } from '../../context/ThemeContext'
-import { api } from '../../services/api'
+import { useTheme } from '../context/ThemeContext'
+import { api } from '../services/api'
 import { Search, CheckCircle, XCircle, Loader2, Package, Truck, Star, Shield, Inbox } from 'lucide-react'
 
 const TYPE_FILTERS = [
