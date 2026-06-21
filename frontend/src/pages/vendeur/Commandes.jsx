@@ -24,6 +24,8 @@ export default function CommandesVendeur() {
 
   useEffect(() => {
     fetchOrders()
+    const interval = setInterval(fetchOrders, 10000)
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {

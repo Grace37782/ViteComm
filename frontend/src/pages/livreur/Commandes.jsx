@@ -88,7 +88,7 @@ export default function CommandesLivreur() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { loadDataFn() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadDataFn(); const interval = setInterval(loadDataFn, 10000); return () => clearInterval(interval) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function accepterCourse(id_commande) {
     if (!acceptCode.trim()) return showToast('Entrez le code de vérification du client')

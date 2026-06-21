@@ -214,7 +214,7 @@ export const acceptDelivery = async (req, res) => {
 
       await tx.commande.update({
         where: { id_commande: commandId },
-        data: { statut: 'Validee' }
+        data: { statut: 'En collecte' }
       });
 
       return liv;

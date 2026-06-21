@@ -515,7 +515,7 @@ export const validateOrder = async (req, res) => {
     if (allValidated) {
       await prisma.commande.update({
         where: { id_commande: commandId },
-        data: { validee_par_vendeur: true }
+        data: { validee_par_vendeur: true, statut: 'Validee' }
       });
     }
 
