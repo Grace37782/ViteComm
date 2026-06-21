@@ -22,11 +22,7 @@ export default function CommandesVendeur() {
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 4000) }
 
-  useEffect(() => {
-    fetchOrders()
-    const interval = setInterval(fetchOrders, 10000)
-    return () => clearInterval(interval)
-  }, [])
+  useEffect(() => { fetchOrders(); const interval = setInterval(() => fetchOrders(true), 10000); return () => clearInterval(interval) }, [])
 
   useEffect(() => {
     if (!qrModal) return
@@ -44,9 +40,9 @@ export default function CommandesVendeur() {
     return () => clearInterval(interval)
   }, [qrModal])
 
-  async function fetchOrders() {
+  async function fetchOrders(silent = false) {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       const data = await api.get('/vendor/orders')
       setCommandes(data)
     } catch (err) {
