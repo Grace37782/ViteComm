@@ -57,8 +57,9 @@ model Vendeur {
   longitude           Float?
   score_reputation    Float       @default(0.0)
 
-  produits  Produit[]
-  feedbacks Feedback[]
+  produits        Produit[]
+  feedbacks       Feedback[]
+  collecteVendeurs CollecteVendeur[]
 }
 
 model Livreur {
@@ -147,6 +148,7 @@ model Commande {
 
   client               Client               @relation(fields: [id_user_client], references: [id_user], onDelete: Cascade)
   detailsCommande      DetailCommande[]
+  collecteVendeurs     CollecteVendeur[]
   livraison            Livraison?
   preuvesCollecte      PreuveCollecte[]
   factures             Facture[]
@@ -188,6 +190,22 @@ model DetailCommande {
   feedback Feedback? @relation(fields: [id_feedback], references: [id_feedback], onDelete: SetNull)
 
   @@id([id_commande, id_produit])
+}
+
+model CollecteVendeur {
+  id_collecte        Int      @id @default(autoincrement())
+  id_commande        Int
+  id_user_vendeur    Int
+  statut_collecte    String   @default("en_attente") // en_attente, validee, collectee
+  code_verification  String
+  preuve_collecte    String?  // vendor QR token after scan
+  qr_scanne_at      DateTime?
+  created_at         DateTime @default(now())
+
+  commande Commande @relation(fields: [id_commande], references: [id_commande], onDelete: Cascade)
+  vendeur  Vendeur  @relation(fields: [id_user_vendeur], references: [id_user])
+
+  @@unique([id_commande, id_user_vendeur])
 }
 
 model PreuveCollecte {

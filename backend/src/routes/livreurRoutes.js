@@ -19,7 +19,10 @@ import {
   updateLivreurProfil,
   createSignalement,
   verifyCollectQR,
-  verifyFinalizeQR
+  verifyFinalizeQR,
+  getVendorCollectStatus,
+  collectFromVendor,
+  verifyCollectVendorQR
 } from '../controllers/livreurController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { uploadAvatar } from '../middleware/upload.js';
@@ -47,9 +50,12 @@ router.post('/deliveries/:id_commande/accept', acceptDelivery);
 // ── Flux de livraison ──
 router.get('/deliveries', getMyDeliveries);
 router.get('/historique', getLivreurHistorique);
-router.post('/deliveries/:id_commande/verify-collect', verifyCollectQR);
+router.get('/deliveries/:id_commande/vendor-status', getVendorCollectStatus);
 router.post('/deliveries/:id_commande/collect', collectDelivery);
+router.post('/deliveries/:id_commande/collect-vendor/:id_collecte', collectFromVendor);
+router.post('/deliveries/:id_commande/verify-collect-vendor/:id_collecte', verifyCollectVendorQR);
 router.post('/deliveries/:id_commande/depart', departDelivery);
+router.post('/deliveries/:id_commande/verify-collect', verifyCollectQR);
 router.post('/deliveries/:id_commande/verify-finalize', verifyFinalizeQR);
 router.post('/deliveries/:id_commande/finalize', finalizeDelivery);
 

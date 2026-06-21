@@ -427,6 +427,26 @@ export const createOrder = async (req, res) => {
         });
       }
 
+      // Create CollecteVendeur records — one per unique vendor in the order
+      const products = await tx.produit.findMany({
+        where: { id_produit: { in: parsedItems.map(pi => pi.id_produit) } },
+        select: { id_produit: true, id_user_vendeur: true }
+      });
+      const productVendorMap = new Map(products.map(p => [p.id_produit, p.id_user_vendeur]));
+      const uniqueVendorIds = [...new Set(parsedItems.map(pi => productVendorMap.get(pi.id_produit)).filter(Boolean))];
+
+      for (const vId of uniqueVendorIds) {
+        const vendorCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        await tx.collecteVendeur.create({
+          data: {
+            id_commande: newCommand.id_commande,
+            id_user_vendeur: vId,
+            code_verification: vendorCode,
+            statut_collecte: 'en_attente'
+          }
+        });
+      }
+
       // Assign driver (RG05) -> create Livraison
       await tx.livraison.create({
         data: {

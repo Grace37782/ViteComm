@@ -359,6 +359,33 @@ async function main() {
       }
     });
 
+    // Create CollecteVendeur records — one per unique vendor
+    const vendorIds = [...new Set(products.map(p => p.id_user_vendeur))];
+    for (const vId of vendorIds) {
+      const cvStatus = ['Livree', 'En collecte', 'Validee', 'En transit'].includes(statut)
+        ? (statut === 'En attente' ? 'validee' : 'collectee')
+        : 'en_attente';
+      await prisma.collecteVendeur.create({
+        data: {
+          id_commande: order.id_commande,
+          id_user_vendeur: vId,
+          code_verification: uid(),
+          statut_collecte: cvStatus,
+          preuve_collecte: cvStatus === 'collectee' ? `{"v":1,"t":"vendor","p":"${order.id_commande}:${uid()}:${Date.now()}","s":"fake"}` : null,
+          qr_scanne_at: cvStatus === 'collectee' ? new Date(now - daysAgo * day + rand(5, 15) * 60000) : null,
+        }
+      });
+    }
+
+    // Mark order as validated if all vendors are validated/collected
+    const allVendorsReady = vendorIds.length > 0;
+    if (allVendorsReady && statut !== 'En attente') {
+      await prisma.commande.update({
+        where: { id_commande: order.id_commande },
+        data: { validee_par_vendeur: true }
+      });
+    }
+
     const deliveryStatus = statut === 'Echec' ? 'Echec' : statut === 'En attente' ? 'En cours de collecte' : statut === 'Validee' ? 'Collectee' : statut === 'En transit' ? 'En cours de livraison' : 'Livree';
 
     const delivery = await prisma.livraison.create({

@@ -485,32 +485,39 @@ export const validateOrder = async (req, res) => {
       where: { id_commande: commandId },
       include: {
         detailsCommande: true,
-        client: true
+        collecteVendeurs: true
       }
     });
 
     if (!order) return res.status(404).json({ error: 'Commande introuvable.' });
 
-    // Verify vendor owns at least one product in this order
-    const vendorProducts = await prisma.detailCommande.findMany({
-      where: {
-        id_commande: commandId,
-        produit: { id_user_vendeur: vendorId }
-      }
-    });
-
-    if (vendorProducts.length === 0) {
+    // Find this vendor's CollecteVendeur record
+    const myCollecte = order.collecteVendeurs.find(cv => cv.id_user_vendeur === vendorId);
+    if (!myCollecte) {
       return res.status(403).json({ error: 'Cette commande ne contient aucun de vos produits.' });
     }
 
-    if (order.validee_par_vendeur) {
-      return res.status(400).json({ error: 'Cette commande a déjà été validée.' });
+    if (myCollecte.statut_collecte !== 'en_attente') {
+      return res.status(400).json({ error: 'Vous avez déjà validé cette commande.' });
     }
 
-    await prisma.commande.update({
-      where: { id_commande: commandId },
-      data: { validee_par_vendeur: true }
+    // Update per-vendor status
+    await prisma.collecteVendeur.update({
+      where: { id_collecte: myCollecte.id_collecte },
+      data: { statut_collecte: 'validee' }
     });
+
+    // Check if ALL vendors have now validated
+    const updatedCollectes = await prisma.collecteVendeur.findMany({
+      where: { id_commande: commandId }
+    });
+    const allValidated = updatedCollectes.every(cv => cv.statut_collecte !== 'en_attente');
+    if (allValidated) {
+      await prisma.commande.update({
+        where: { id_commande: commandId },
+        data: { validee_par_vendeur: true }
+      });
+    }
 
     return res.json({ message: 'Commande validée. Les articles sont disponibles pour retrait.' });
   } catch (error) {

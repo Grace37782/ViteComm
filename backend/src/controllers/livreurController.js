@@ -421,6 +421,212 @@ export const verifyFinalizeQR = async (req, res) => {
 };
 
 // ═══════════════════════════════════════════════════════════
+// 4.3a-ter. COLLECTE PAR VENDEUR (multi-vendor)
+// ═══════════════════════════════════════════════════════════
+
+export const getVendorCollectStatus = async (req, res) => {
+  const { id_commande } = req.params;
+  const driverId = req.user.id_user;
+
+  try {
+    const commandId = parseInt(id_commande, 10);
+    const command = await prisma.commande.findUnique({
+      where: { id_commande: commandId },
+      include: {
+        livraison: true,
+        collecteVendeurs: {
+          include: {
+            vendeur: { include: { utilisateur: { select: { nom: true, prenom: true } } } }
+          }
+        }
+      }
+    });
+
+    if (!command || !command.livraison || command.livraison.id_user_livreur !== driverId) {
+      return res.status(404).json({ error: 'Livraison introuvable ou non assignée.' });
+    }
+
+    const vendors = command.collecteVendeurs.map(cv => ({
+      id_collecte: cv.id_collecte,
+      id_user_vendeur: cv.id_user_vendeur,
+      nom: cv.vendeur?.utilisateur ? `${cv.vendeur.utilisateur.prenom} ${cv.vendeur.utilisateur.nom}` : 'Vendeur',
+      nom_etablissement: cv.vendeur?.nom_etablissement || '',
+      localisation_marche: cv.vendeur?.localisation_marche || '',
+      latitude: cv.vendeur?.latitude || null,
+      longitude: cv.vendeur?.longitude || null,
+      statut_collecte: cv.statut_collecte,
+      qr_scanne_at: cv.qr_scanne_at,
+    }));
+
+    return res.json({
+      id_commande: commandId,
+      total_vendors: vendors.length,
+      collected_count: vendors.filter(v => v.statut_collecte === 'collectee').length,
+      vendors
+    });
+  } catch (error) {
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
+  }
+};
+
+export const collectFromVendor = async (req, res) => {
+  const { id_commande, id_collecte } = req.params;
+  const { scanned_qr_data } = req.body;
+  const driverId = req.user.id_user;
+
+  if (!scanned_qr_data) {
+    return res.status(400).json({ error: 'Le QR code du vendeur est obligatoire.' });
+  }
+
+  try {
+    const commandId = parseInt(id_commande, 10);
+    const collecteId = parseInt(id_collecte, 10);
+
+    const command = await prisma.commande.findUnique({
+      where: { id_commande: commandId },
+      include: { livraison: true, collecteVendeurs: true }
+    });
+
+    if (!command || !command.livraison || command.livraison.id_user_livreur !== driverId) {
+      return res.status(404).json({ error: 'Livraison introuvable ou non assignée.' });
+    }
+
+    if (command.livraison.statut_livraison !== 'En cours de collecte') {
+      return res.status(400).json({ error: 'Cette livraison n\'est pas en phase de collecte.' });
+    }
+
+    // Find the specific vendor collection record
+    const myCollecte = command.collecteVendeurs.find(cv => cv.id_collecte === collecteId);
+    if (!myCollecte) {
+      return res.status(404).json({ error: 'Enregistrement de collecte introuvable.' });
+    }
+
+    if (myCollecte.statut_collecte === 'collectee') {
+      return res.status(400).json({ error: 'Vous avez déjà collecté les articles de ce vendeur.' });
+    }
+
+    if (myCollecte.statut_collecte !== 'validee') {
+      return res.status(400).json({ error: 'Ce vendeur n\'a pas encore validé la disponibilité.' });
+    }
+
+    // Verify the scanned vendor QR token
+    const verified = verifyVendorQRToken(scanned_qr_data);
+    if (!verified) {
+      return res.status(400).json({ error: 'QR code invalide ou expiré. Demandez un nouveau QR au vendeur.' });
+    }
+
+    if (verified.orderId !== commandId) {
+      return res.status(400).json({ error: 'Ce QR code ne correspond pas à cette commande.' });
+    }
+
+    if (verified.clientCode !== myCollecte.code_verification) {
+      return res.status(400).json({ error: 'Ce QR code ne correspond pas à ce vendeur.' });
+    }
+
+    // Mark this vendor as collected
+    await prisma.collecteVendeur.update({
+      where: { id_collecte: collecteId },
+      data: {
+        statut_collecte: 'collectee',
+        preuve_collecte: scanned_qr_data,
+        qr_scanne_at: new Date()
+      }
+    });
+
+    // Check if ALL vendors collected → advance order status
+    const allCollectes = await prisma.collecteVendeur.findMany({
+      where: { id_commande: commandId }
+    });
+    const allCollected = allCollectes.every(cv => cv.statut_collecte === 'collectee');
+
+    if (allCollected) {
+      // Store combined vendor QR proof on livraison
+      const vendorProofs = allCollectes.filter(cv => cv.preuve_collecte).map(cv => cv.preuve_collecte).join('|');
+      await prisma.$transaction([
+        prisma.livraison.update({
+          where: { id_livraison: command.livraison.id_livraison },
+          data: {
+            statut_livraison: 'Collectee',
+            preuve_collecte: vendorProofs,
+            dernier_scan_statut: 'succes',
+            dernier_scan_message: `Tous les ${allCollectes.length} vendeurs ont été collectés.`,
+            dernier_scan_at: new Date()
+          }
+        }),
+        prisma.commande.update({
+          where: { id_commande: commandId },
+          data: { statut: 'En collecte' }
+        })
+      ]);
+      return res.json({ message: `Collecte confirmée. Tous les ${allCollectes.length} vendeurs collectés.`, all_collected: true });
+    }
+
+    const remaining = allCollectes.filter(cv => cv.statut_collecte !== 'collectee').length;
+    return res.json({ message: `Collecte du vendeur confirmée. ${remaining} vendeur(s) restant(s).`, all_collected: false, remaining });
+  } catch (error) {
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
+  }
+};
+
+export const verifyCollectVendorQR = async (req, res) => {
+  const { id_commande, id_collecte } = req.params;
+  const { scanned_qr_data } = req.body;
+  const driverId = req.user.id_user;
+
+  if (!scanned_qr_data) {
+    return res.status(400).json({ error: 'Le QR code du vendeur est obligatoire.' });
+  }
+
+  try {
+    const commandId = parseInt(id_commande, 10);
+    const collecteId = parseInt(id_collecte, 10);
+
+    const command = await prisma.commande.findUnique({
+      where: { id_commande: commandId },
+      include: { livraison: true, collecteVendeurs: true }
+    });
+
+    if (!command || !command.livraison || command.livraison.id_user_livreur !== driverId) {
+      return res.status(404).json({ error: 'Livraison introuvable ou non assignée.' });
+    }
+
+    if (command.livraison.statut_livraison !== 'En cours de collecte') {
+      return res.status(400).json({ error: 'Cette livraison n\'est pas en phase de collecte.' });
+    }
+
+    const myCollecte = command.collecteVendeurs.find(cv => cv.id_collecte === collecteId);
+    if (!myCollecte) {
+      return res.status(404).json({ error: 'Enregistrement de collecte introuvable.' });
+    }
+
+    if (myCollecte.statut_collecte === 'collectee') {
+      return res.status(400).json({ error: 'Déjà collecté.' });
+    }
+
+    if (myCollecte.statut_collecte !== 'validee') {
+      return res.status(400).json({ error: 'Ce vendeur n\'a pas encore validé la disponibilité.' });
+    }
+
+    const verified = verifyVendorQRToken(scanned_qr_data);
+    if (!verified) {
+      return res.status(400).json({ error: 'QR code invalide ou expiré.' });
+    }
+
+    if (verified.orderId !== commandId) {
+      return res.status(400).json({ error: 'Ce QR code ne correspond pas à cette commande.' });
+    }
+
+    if (verified.clientCode !== myCollecte.code_verification) {
+      return res.status(400).json({ error: 'Ce QR code ne correspond pas à ce vendeur.' });
+    }
+
+    return res.json({ message: 'QR code validé.' });
+  } catch (error) {
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
 // 4.3b. DÉPART LIVRAISON
 // ═══════════════════════════════════════════════════════════
 
