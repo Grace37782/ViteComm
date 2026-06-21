@@ -82,6 +82,16 @@ export default function PaiementClient() {
     setPortalTimeout(false)
   }, [idCommande, ref, statusParam, navigate])
 
+  // Freeze browser back button — prevent going back to FedaPay portal
+  useEffect(() => {
+    window.history.pushState(null, '', window.location.href)
+    const handlePopState = () => {
+      window.history.pushState(null, '', window.location.href)
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
   // Portal timeout fallback — if FedaPay redirect hangs
   useEffect(() => {
     if (!isPending || isCompleted || isFailed) return
@@ -217,7 +227,7 @@ export default function PaiementClient() {
         style={{ background: isDark ? 'linear-gradient(135deg, #164032 0%, #121311 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(45,196,145,0.1)' : 'rgba(255,255,255,0.1)' }} />
         <div className="relative z-10 flex items-center gap-3">
-          <button onClick={() => navigate(-1)}
+          <button onClick={() => navigate('/client/suivi-commande', { state: { id_commande } })}
             className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
             style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}>
             <ArrowLeft size={16} className="text-white" />
