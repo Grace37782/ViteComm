@@ -563,8 +563,14 @@ export const getOrderQRCode = async (req, res) => {
       return res.status(403).json({ error: 'Cette commande ne contient aucun de vos produits.' });
     }
 
-    // Generate signed QR token (like JWT) based on client's verification code
-    const signedToken = generateVendorQRToken(commandId, order.code_verification);
+    // Find this vendor's CollecteVendeur record for the per-vendor code
+    const myCollecte = await prisma.collecteVendeur.findFirst({
+      where: { id_commande: commandId, id_user_vendeur: vendorId }
+    });
+    if (!myCollecte) return res.status(404).json({ error: 'Aucun enregistrement de collecte pour ce vendeur.' });
+
+    // Generate signed QR token based on per-vendor verification code
+    const signedToken = generateVendorQRToken(commandId, myCollecte.code_verification);
 
     const qrDataUrl = await QRCode.toDataURL(signedToken, {
       width: 300, margin: 2,
