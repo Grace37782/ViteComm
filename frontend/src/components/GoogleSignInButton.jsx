@@ -97,7 +97,7 @@ function GoogleSignInButtonInner({ onError, onStart, disabled }) {
         <path fill="#FBBC05" d="M10.54 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.28-3.14.76-4.59l-7.98-6.19A23.99 23.99 0 0 0 0 24c0 3.77.87 7.35 2.56 10.56l7.98-5.97z"/>
         <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 5.97C6.51 42.62 14.62 48 24 48z"/>
       </svg>
-      {disabled ? 'Connexion...' : 'Continuer avec Google'}
+      Continuer avec Google
     </button>
   )
 }
