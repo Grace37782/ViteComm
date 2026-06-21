@@ -786,19 +786,23 @@ export default function CommandesLivreur() {
               <div className="flex flex-col gap-3 mb-5">
                 {vendorStatus.map((v, i) => {
                   const collected = v.statut_collecte === 'collectee'
-                  const isCurrent = i === activeVendorIndex && !allCollected
+                  const isSelected = i === activeVendorIndex && !allCollected
+                  const canScan = !collected && v.statut_collecte === 'validee'
                   return (
-                    <div key={v.id_collecte} className="rounded-2xl p-3 transition-all" style={{
+                    <div key={v.id_collecte}
+                      onClick={() => { if (canScan) { setActiveVendorIndex(i); setCollectError(null); setCollectVerified(false); setCollectScanData(null); setCollectPhase(null); cleanupScanner() } }}
+                      className={`rounded-2xl p-3 transition-all ${canScan ? 'cursor-pointer active:scale-98' : ''}`}
+                      style={{
                       background: collected
                         ? (isDark ? 'rgba(29,158,117,0.1)' : '#E1F5EE')
-                        : isCurrent
+                        : isSelected
                           ? (isDark ? 'rgba(59,130,246,0.1)' : '#E6F1FB')
                           : 'var(--surface-alt)',
-                      border: `1.5px solid ${collected ? '#1D9E75' : isCurrent ? '#3B82F6' : 'var(--border)'}`,
+                      border: `1.5px solid ${collected ? '#1D9E75' : isSelected ? '#3B82F6' : canScan ? '#D85A30' : 'var(--border)'}`,
                     }}>
                       <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-black flex-shrink-0" style={{
-                          background: collected ? '#1D9E75' : isCurrent ? '#3B82F6' : (isDark ? '#4A4B47' : '#9CA3AF'),
+                          background: collected ? '#1D9E75' : isSelected ? '#3B82F6' : canScan ? '#D85A30' : (isDark ? '#4A4B47' : '#9CA3AF'),
                         }}>
                           {collected ? <CheckCircle size={14} /> : i + 1}
                         </div>
@@ -810,10 +814,10 @@ export default function CommandesLivreur() {
                             {v.localisation_marche || '—'}
                           </div>
                         </div>
-                        <div className="text-[10px] font-bold flex-shrink-0" style={{ color: collected ? '#1D9E75' : isCurrent ? '#3B82F6' : 'var(--text-muted)' }}>
+                        <div className="text-[10px] font-bold flex-shrink-0" style={{ color: collected ? '#1D9E75' : isSelected ? '#3B82F6' : 'var(--text-muted)' }}>
                           {collected ? (
                             <>Collecté{v.qr_scanne_at ? ` à ${new Date(v.qr_scanne_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : ''}</>
-                          ) : isCurrent ? 'En cours' : 'En attente'}
+                          ) : isSelected ? 'Scanner ici' : canScan ? 'Appuyez pour scanner' : 'En attente'}
                         </div>
                       </div>
                     </div>
