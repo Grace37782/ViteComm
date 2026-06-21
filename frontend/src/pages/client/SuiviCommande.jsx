@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCheck, Home, Smartphone, QrCode, XCircle, Ban } from 'lucide-react'
+import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCheck, Home, Smartphone, QrCode, XCircle, Ban, AlertTriangle } from 'lucide-react'
 
 const STATUT_STEPS = [
   { key: 'En attente', icon: Loader2, titre: 'En attente', desc: 'En attente de validation' },
@@ -26,6 +26,7 @@ export default function SuiviCommande() {
   const [showQR, setShowQR] = useState(false)
   const [finalizeQR, setFinalizeQR] = useState(null)
   const [showFinalizeQR, setShowFinalizeQR] = useState(false)
+  const [finalizeScanStatus, setFinalizeScanStatus] = useState(null)
 
   const fetchOrder = useCallback(async () => {
     if (!id_commande) return
@@ -55,6 +56,22 @@ export default function SuiviCommande() {
       api.get(`/client/orders/${id_commande}/finalize-qrcode`).then(setFinalizeQR).catch(() => {})
     }
   }, [showFinalizeQR, id_commande, finalizeQR])
+
+  useEffect(() => {
+    if (!showFinalizeQR || !id_commande) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFinalizeScanStatus(null)
+    const poll = async () => {
+      try {
+        const data = await api.get(`/client/orders/${id_commande}/scan-status`)
+        setFinalizeScanStatus(data)
+        if (data.statut === 'echec') return
+      } catch { /* polling error, ignore */ }
+    }
+    poll()
+    const interval = setInterval(poll, 3000)
+    return () => clearInterval(interval)
+  }, [showFinalizeQR, id_commande])
 
   const statut = order?.statut || 'En attente'
   const livreur = order?.livraison?.livreur
@@ -177,15 +194,29 @@ export default function SuiviCommande() {
         {/* FINALIZE QR MODAL — Driver scans this at delivery */}
         {showFinalizeQR && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}
-            onClick={() => { setShowFinalizeQR(false); setFinalizeQR(null) }}>
+            onClick={() => { setShowFinalizeQR(false); setFinalizeQR(null); setFinalizeScanStatus(null) }}>
             <div className="rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: 'var(--surface)' }}
               onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-center mb-4">
                 <div className="font-black text-base" style={{ color: 'var(--text-primary)' }}>QR de finalisation</div>
-                <button onClick={() => { setShowFinalizeQR(false); setFinalizeQR(null) }} className="cursor-pointer" style={{ background: 'none', border: 'none' }}>
+                <button onClick={() => { setShowFinalizeQR(false); setFinalizeQR(null); setFinalizeScanStatus(null) }} className="cursor-pointer" style={{ background: 'none', border: 'none' }}>
                   <XCircle size={20} style={{ color: 'var(--text-muted)' }} />
                 </button>
               </div>
+              {finalizeScanStatus?.statut === 'echec' && (
+                <div className="rounded-2xl p-4 mb-4" style={{ background: isDark ? 'rgba(226,75,74,0.12)' : '#FEE2E2', border: '1.5px solid rgba(226,75,74,0.3)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <AlertTriangle size={16} style={{ color: '#E24B4A' }} />
+                    <span className="text-xs font-black" style={{ color: '#E24B4A' }}>Échec de la vérification</span>
+                  </div>
+                  <div className="text-xs" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
+                    {finalizeScanStatus.message || 'Le code QR n\'a pas été reconnu.'}
+                  </div>
+                  <div className="text-[10px] mt-2" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
+                    Le livreur peut réessayer en ouvrant à nouveau la caméra.
+                  </div>
+                </div>
+              )}
               {finalizeQR?.qrcode ? (
                 <>
                   <img src={finalizeQR.qrcode} alt="QR Finalisation" className="mx-auto rounded-2xl mb-3" style={{ maxWidth: 250 }} />
@@ -244,7 +275,7 @@ export default function SuiviCommande() {
         {/* ACTIONS */}
         <div className="flex flex-col gap-2">
           {statut === 'En transit' && (
-            <button onClick={() => { setShowFinalizeQR(true); setFinalizeQR(null) }}
+            <button onClick={() => { setShowFinalizeQR(true); setFinalizeQR(null); setFinalizeScanStatus(null) }}
               className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer"
               style={{ background: '#1D9E75', border: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.3)' }}>
                <QrCode size={16} className="inline" /> Afficher le QR de finalisation

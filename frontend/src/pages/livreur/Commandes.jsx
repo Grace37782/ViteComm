@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { XCircle, CheckCircle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, ChevronDown, QrCode } from 'lucide-react'
+import { XCircle, CheckCircle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, ChevronDown, QrCode, Search } from 'lucide-react'
 import { Html5Qrcode } from 'html5-qrcode'
 
 /* eslint-disable react-hooks/set-state-in-effect */
@@ -20,6 +20,7 @@ export default function CommandesLivreur() {
   const [submitting, setSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState('actives')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [search, setSearch] = useState('')
   const [scanResult, setScanResult] = useState(null)
   const [finalizeScanResult, setFinalizeScanResult] = useState(null)
   const [acceptModal, setAcceptModal] = useState(null)
@@ -84,7 +85,11 @@ export default function CommandesLivreur() {
       setCollectOpen(null); setScanResult(null)
       cleanupScanner()
       loadDataFn()
-    } catch (e) { showToast(e.message) }
+    } catch (e) {
+      showToast(e.message)
+      setCollectOpen(null); setScanResult(null)
+      cleanupScanner()
+    }
     finally { setSubmitting(false) }
   }
 
@@ -106,13 +111,28 @@ export default function CommandesLivreur() {
       await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/finalize`, { scanned_qr_data: finalizeScanResult })
       showToast('Livraison finalisée !')
       setFinalizeOpen(null); loadDataFn()
-    } catch (e) { showToast(e.message) }
+    } catch (e) {
+      showToast(e.message)
+      setFinalizeOpen(null)
+    }
     finally { setSubmitting(false) }
   }
 
   const activeDeliveries = deliveries.filter(d => d.statut_livraison !== 'Livree' && d.statut_livraison !== 'Echec')
   const historyDeliveries = deliveries.filter(d => d.statut_livraison === 'Livree' || d.statut_livraison === 'Echec')
-  const showList = activeTab === 'actives' ? activeDeliveries : activeTab === 'disponibles' ? available : historyDeliveries
+  const baseList = activeTab === 'actives' ? activeDeliveries : activeTab === 'disponibles' ? available : historyDeliveries
+
+  const showList = search.trim()
+    ? baseList.filter(item => {
+        const q = search.toLowerCase().trim()
+        const cmd = item.commande || item
+        const id = String(cmd.id_commande || item.id_commande || '')
+        const clientName = ((cmd.client?.utilisateur?.prenom || '') + ' ' + (cmd.client?.utilisateur?.nom || '')).toLowerCase()
+        const products = (cmd.detailsCommande || []).map(d => (d.produit?.nom || '').toLowerCase()).join(' ')
+        const address = (cmd.client?.adresse_livraison || '').toLowerCase()
+        return id.includes(q) || clientName.includes(q) || products.includes(q) || address.includes(q)
+      })
+    : baseList
   const visibleItems = showList.slice(0, visibleCount)
   const hasMore = visibleCount < showList.length
 
@@ -194,6 +214,29 @@ export default function CommandesLivreur() {
         ))}
       </div>
 
+      {/* Barre de recherche */}
+      <div className="relative">
+        <div className="flex items-center gap-2 px-4 py-3 rounded-2xl"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          <input
+            type="text"
+            placeholder="Rechercher par client, n° commande, produit..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
+            className="flex-1 bg-transparent outline-none text-sm font-medium"
+            style={{ color: 'var(--text-primary)' }}
+          />
+          {search && (
+            <button onClick={() => setSearch('')}
+              className="cursor-pointer p-1 rounded-full transition-all"
+              style={{ background: 'var(--surface-alt)', border: 'none' }}>
+              <XCircle size={14} style={{ color: 'var(--text-muted)' }} />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* LIST */}
       <div className="flex flex-col gap-3">
         {showList.length === 0 && (
@@ -211,7 +254,9 @@ export default function CommandesLivreur() {
                <div className="flex items-start justify-between gap-3 mb-3">
               <div>
                 <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{c.id_commande}</div>
-                <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  {c.date_creation ? new Date(c.date_creation).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                  {' · '}
                   {c.detailsCommande?.[0]?.produit?.vendeur?.localisation_marche || 'Marché'} → {c.client?.adresse_livraison || '—'}
                 </div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
@@ -245,7 +290,11 @@ export default function CommandesLivreur() {
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{cmd?.id_commande}</div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{cmd?.client?.utilisateur?.prenom} {cmd?.client?.utilisateur?.nom}</div>
+                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {cmd?.date_creation ? new Date(cmd.date_creation).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                    {' · '}
+                    {cmd?.client?.utilisateur?.prenom} {cmd?.client?.utilisateur?.nom}
+                  </div>
                 </div>
                 <span className="rounded-2xl px-3 py-1 text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>
                   {d.statut_livraison}
@@ -293,7 +342,7 @@ export default function CommandesLivreur() {
                 {cmd?.client?.utilisateur?.prenom} {cmd?.client?.utilisateur?.nom} · {((cmd?.total_marchandises || 0) + (cmd?.frais_livraison || 0)).toLocaleString()} F ({cmd?.detailsCommande?.reduce((sum, d) => sum + (d.quantite_commandee || 0), 0) || 0} articles)
               </div>
               <div className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                {d.date_fin_reelle ? new Date(d.date_fin_reelle).toLocaleDateString('fr-FR') : '—'}
+                {d.date_fin_reelle ? new Date(d.date_fin_reelle).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
               </div>
             </div>
           )

@@ -17,10 +17,27 @@ export default function CommandesVendeur() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [qrModal, setQrModal] = useState(null)
   const [qrData, setQrData] = useState(null)
+  const [scanStatus, setScanStatus] = useState(null)
 
   useEffect(() => {
     fetchOrders()
   }, [])
+
+  useEffect(() => {
+    if (!qrModal) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setScanStatus(null)
+    const poll = async () => {
+      try {
+        const data = await api.get(`/vendor/orders/${qrModal.id}/scan-status`)
+        setScanStatus(data)
+        if (data.statut === 'echec') return
+      } catch { /* polling error, ignore */ }
+    }
+    poll()
+    const interval = setInterval(poll, 3000)
+    return () => clearInterval(interval)
+  }, [qrModal])
 
   async function fetchOrders() {
     try {
@@ -83,6 +100,7 @@ export default function CommandesVendeur() {
   async function showQRCode(cmd) {
     setQrModal(cmd)
     setQrData(null)
+    setScanStatus(null)
     try {
       const data = await api.get(`/vendor/orders/${cmd.id}/qrcode`)
       setQrData(data)
@@ -306,15 +324,29 @@ export default function CommandesVendeur() {
       {/* QR CODE MODAL */}
       {qrModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}
-          onClick={() => { setQrModal(null); setQrData(null) }}>
+          onClick={() => { setQrModal(null); setQrData(null); setScanStatus(null) }}>
           <div className="rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: 'var(--surface)' }}
             onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
               <div className="font-black text-base" style={{ color: 'var(--text-primary)' }}>QR Code — Commande #{qrModal.id}</div>
-              <button onClick={() => { setQrModal(null); setQrData(null) }} className="cursor-pointer" style={{ background: 'none', border: 'none' }}>
+              <button onClick={() => { setQrModal(null); setQrData(null); setScanStatus(null) }} className="cursor-pointer" style={{ background: 'none', border: 'none' }}>
                 <XCircle size={20} style={{ color: 'var(--text-muted)' }} />
               </button>
             </div>
+            {scanStatus?.statut === 'echec' && (
+              <div className="rounded-2xl p-4 mb-4" style={{ background: isDark ? 'rgba(226,75,74,0.12)' : '#FEE2E2', border: '1.5px solid rgba(226,75,74,0.3)' }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle size={16} style={{ color: '#E24B4A' }} />
+                  <span className="text-xs font-black" style={{ color: '#E24B4A' }}>Échec de la vérification</span>
+                </div>
+                <div className="text-xs" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
+                  {scanStatus.message || 'Le code QR n\'a pas été reconnu.'}
+                </div>
+                <div className="text-[10px] mt-2" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
+                  Le livreur peut réessayer en ouvrant à nouveau la caméra.
+                </div>
+              </div>
+            )}
             {qrData ? (
               <>
                 <img src={qrData.qrcode} alt="QR Code" className="mx-auto rounded-2xl mb-3" style={{ maxWidth: 250 }} />

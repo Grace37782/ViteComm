@@ -31,6 +31,7 @@ import {
 } from '../controllers/vendeurController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { uploadAvatar } from '../middleware/upload.js';
+import { getCollectScanStatus } from '../controllers/livreurController.js';
 
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
@@ -81,6 +82,7 @@ router.post('/categories', createCategory);
 router.get('/orders', getVendorOrders);
 router.post('/orders/:id_commande/validate', validateOrder);
 router.get('/orders/:id_commande/qrcode', getOrderQRCode);
+router.get('/orders/:id_commande/scan-status', getCollectScanStatus);
 
 // Retours
 router.get('/returns', getVendorReturns);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { CheckCircle, Truck, XCircle, Undo2, ChevronDown } from 'lucide-react'
+import { CheckCircle, Truck, XCircle, Undo2, ChevronDown, Search } from 'lucide-react'
 
 const PAGE_SIZE = 10
 
@@ -12,6 +12,7 @@ export default function Historique() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const [search, setSearch] = useState('')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
@@ -21,7 +22,17 @@ export default function Historique() {
       .finally(() => setLoading(false))
   }, [])
 
-  const filtered = filter === 'all' ? deliveries : deliveries.filter(d => d.statut_livraison === filter)
+  const baseList = filter === 'all' ? deliveries : deliveries.filter(d => d.statut_livraison === filter)
+  const filtered = search.trim()
+    ? baseList.filter(d => {
+        const q = search.toLowerCase().trim()
+        const cmd = d.commande
+        const id = String(cmd?.id_commande || '')
+        const clientName = ((cmd?.client?.utilisateur?.prenom || '') + ' ' + (cmd?.client?.utilisateur?.nom || '')).toLowerCase()
+        const address = (cmd?.client?.adresse_livraison || '').toLowerCase()
+        return id.includes(q) || clientName.includes(q) || address.includes(q)
+      })
+    : baseList
   const visibleItems = filtered.slice(0, visibleCount)
   const hasMore = visibleCount < filtered.length
 
@@ -89,6 +100,29 @@ export default function Historique() {
         ))}
       </div>
 
+      {/* Barre de recherche */}
+      <div className="relative">
+        <div className="flex items-center gap-2 px-4 py-3 rounded-2xl"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          <input
+            type="text"
+            placeholder="Rechercher par client, n° commande..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
+            className="flex-1 bg-transparent outline-none text-sm font-medium"
+            style={{ color: 'var(--text-primary)' }}
+          />
+          {search && (
+            <button onClick={() => setSearch('')}
+              className="cursor-pointer p-1 rounded-full transition-all"
+              style={{ background: 'var(--surface-alt)', border: 'none' }}>
+              <XCircle size={14} style={{ color: 'var(--text-muted)' }} />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* LIST */}
       <div className="flex flex-col gap-3">
         {filtered.length === 0 && (
@@ -132,8 +166,8 @@ export default function Historique() {
                 </div>
               )}
               <div className="flex items-center justify-between text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                <span>Prise en charge : {d.date_prise_en_charge ? new Date(d.date_prise_en_charge).toLocaleDateString('fr-FR') : '—'}</span>
-                <span>Fin : {d.date_fin_reelle ? new Date(d.date_fin_reelle).toLocaleDateString('fr-FR') : '—'}</span>
+                <span>Prise en charge : {d.date_prise_en_charge ? new Date(d.date_prise_en_charge).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                <span>Fin : {d.date_fin_reelle ? new Date(d.date_fin_reelle).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
               </div>
             </div>
           )

@@ -163,6 +163,9 @@ model Livraison {
   frais_retour_calcules Float     @default(0.0)
   id_commande           Int       @unique
   id_user_livreur       Int
+  dernier_scan_statut   String?
+  dernier_scan_message  String?   @db.Text
+  dernier_scan_at       DateTime?
 
   commande  Commande   @relation(fields: [id_commande], references: [id_commande], onDelete: Cascade)
   livreur   Livreur    @relation(fields: [id_user_livreur], references: [id_user], onDelete: Cascade)

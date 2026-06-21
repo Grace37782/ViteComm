@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { Wallet, Truck, Undo2, ClipboardList, Calendar, ChevronDown } from 'lucide-react'
+import { Wallet, Truck, Undo2, ClipboardList, Calendar, ChevronDown, Search, XCircle } from 'lucide-react'
 
 const PAGE_SIZE = 10
 
@@ -10,6 +10,7 @@ export default function Gains() {
   const isDark = resolved === 'dark'
   const [gains, setGains] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
@@ -67,15 +68,43 @@ export default function Gains() {
       {/* DETAIL LIST */}
       <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
         <div className="text-sm font-black mb-3" style={{ color: 'var(--text-primary)' }}><ClipboardList size={14} className="inline align-middle" /> Détail des livraisons</div>
+
+        {/* Barre de recherche */}
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-3"
+          style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+          <Search size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          <input
+            type="text"
+            placeholder="Rechercher par client, n° commande..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
+            className="flex-1 bg-transparent outline-none text-xs font-medium"
+            style={{ color: 'var(--text-primary)' }}
+          />
+          {search && (
+            <button onClick={() => setSearch('')}
+              className="cursor-pointer p-0.5 rounded-full"
+              style={{ background: 'none', border: 'none' }}>
+              <XCircle size={12} style={{ color: 'var(--text-muted)' }} />
+            </button>
+          )}
+        </div>
+
         {(!gains?.livraisons || gains.livraisons.length === 0) && (
           <div className="text-xs py-4 text-center" style={{ color: 'var(--text-muted)' }}>Aucun gain enregistré.</div>
         )}
-        {(gains?.livraisons || []).slice(0, visibleCount).map(d => (
+        {(gains?.livraisons || []).filter(d => {
+          if (!search.trim()) return true
+          const q = search.toLowerCase().trim()
+          const id = String(d.id_commande || '')
+          const client = (d.client || '').toLowerCase()
+          return id.includes(q) || client.includes(q)
+        }).slice(0, visibleCount).map(d => (
           <div key={d.id_livraison} className="flex items-center justify-between rounded-xl px-4 py-3 mb-2 transition-all hover:shadow-sm"
             style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
             <div className="flex-1 min-w-0">
               <div className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{d.id_commande}</div>
-              <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{d.client} · {d.date ? new Date(d.date).toLocaleDateString('fr-FR') : '—'}</div>
+              <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{d.client} · {d.date ? new Date(d.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</div>
             </div>
             <div className="text-right flex-shrink-0">
               <div className="font-black text-sm" style={{ color: isDark ? '#E87D55' : '#993C1D' }}>{d.total.toLocaleString()} F</div>

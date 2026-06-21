@@ -251,22 +251,38 @@ export const collectDelivery = async (req, res) => {
 
     // RG architecture: vendor must validate order availability before driver can collect
     if (!command.validee_par_vendeur) {
+      await prisma.livraison.update({
+        where: { id_livraison: command.livraison.id_livraison },
+        data: { dernier_scan_statut: 'echec', dernier_scan_message: 'Le vendeur n\'a pas encore validé la disponibilité des articles.', dernier_scan_at: new Date() }
+      });
       return res.status(400).json({ error: 'Le vendeur n\'a pas encore validé la disponibilité des articles.' });
     }
 
     // Verify the scanned vendor QR token (HMAC-signed with client code)
     const verified = verifyVendorQRToken(scanned_qr_data);
     if (!verified) {
+      await prisma.livraison.update({
+        where: { id_livraison: command.livraison.id_livraison },
+        data: { dernier_scan_statut: 'echec', dernier_scan_message: 'QR code invalide ou expiré. Demandez un nouveau QR au vendeur.', dernier_scan_at: new Date() }
+      });
       return res.status(400).json({ error: 'QR code invalide ou expiré. Demandez un nouveau QR au vendeur.' });
     }
 
     // Verify QR was generated for THIS specific order
     if (verified.orderId !== commandId) {
+      await prisma.livraison.update({
+        where: { id_livraison: command.livraison.id_livraison },
+        data: { dernier_scan_statut: 'echec', dernier_scan_message: 'Ce QR code ne correspond pas à cette commande.', dernier_scan_at: new Date() }
+      });
       return res.status(400).json({ error: 'Ce QR code ne correspond pas à cette commande.' });
     }
 
     // Verify embedded code matches this order's client verification code
     if (verified.clientCode !== command.code_verification) {
+      await prisma.livraison.update({
+        where: { id_livraison: command.livraison.id_livraison },
+        data: { dernier_scan_statut: 'echec', dernier_scan_message: 'Le code dans le QR ne correspond pas à la commande.', dernier_scan_at: new Date() }
+      });
       return res.status(400).json({ error: 'Le code dans le QR ne correspond pas à la commande.' });
     }
 
@@ -282,7 +298,7 @@ export const collectDelivery = async (req, res) => {
     await prisma.$transaction([
       prisma.livraison.update({
         where: { id_livraison: command.livraison.id_livraison },
-        data: { statut_livraison: 'Collectee', preuve_collecte: scanned_qr_data }
+        data: { statut_livraison: 'Collectee', preuve_collecte: scanned_qr_data, dernier_scan_statut: 'succes', dernier_scan_message: 'Collecte confirmée avec succès.', dernier_scan_at: new Date() }
       }),
       prisma.commande.update({
         where: { id_commande: commandId },
@@ -364,21 +380,41 @@ export const finalizeDelivery = async (req, res) => {
       // Three-level chain verification: finalize QR must be signed with vendor QR + client code
       const vendorQRToken = command.livraison.preuve_collecte;
       if (!vendorQRToken) {
+        await prisma.livraison.update({
+          where: { id_livraison: command.livraison.id_livraison },
+          data: { dernier_scan_statut: 'echec', dernier_scan_message: 'Aucune collecte enregistrée. Impossible de vérifier le QR.', dernier_scan_at: new Date() }
+        });
         return res.status(400).json({ error: 'Aucune collecte enregistrée. Impossible de vérifier le QR.' });
       }
       const verified = verifyFinalizeQRToken(scanned_qr_data, vendorQRToken);
       if (!verified) {
+        await prisma.livraison.update({
+          where: { id_livraison: command.livraison.id_livraison },
+          data: { dernier_scan_statut: 'echec', dernier_scan_message: 'QR code de finalisation invalide. Le client doit afficher le QR.', dernier_scan_at: new Date() }
+        });
         return res.status(400).json({ error: 'QR code de finalisation invalide. Le client doit afficher le QR.' });
       }
       if (verified.orderId !== commandId) {
+        await prisma.livraison.update({
+          where: { id_livraison: command.livraison.id_livraison },
+          data: { dernier_scan_statut: 'echec', dernier_scan_message: 'Ce QR code ne correspond pas à cette commande.', dernier_scan_at: new Date() }
+        });
         return res.status(400).json({ error: 'Ce QR code ne correspond pas à cette commande.' });
       }
       if (verified.clientCode !== command.code_verification) {
+        await prisma.livraison.update({
+          where: { id_livraison: command.livraison.id_livraison },
+          data: { dernier_scan_statut: 'echec', dernier_scan_message: 'QR code non reconnu pour cette commande.', dernier_scan_at: new Date() }
+        });
         return res.status(400).json({ error: 'QR code non reconnu pour cette commande.' });
       }
     } else if (code_verification) {
       // Fallback: manual code entry
       if (command.code_verification !== code_verification) {
+        await prisma.livraison.update({
+          where: { id_livraison: command.livraison.id_livraison },
+          data: { dernier_scan_statut: 'echec', dernier_scan_message: 'Code de vérification invalide.', dernier_scan_at: new Date() }
+        });
         return res.status(400).json({ error: 'Code de vérification invalide.' });
       }
     } else {
@@ -402,6 +438,9 @@ export const finalizeDelivery = async (req, res) => {
         data: {
           statut_livraison: 'Inspectee',
           date_fin_reelle: new Date(),
+          dernier_scan_statut: 'succes',
+          dernier_scan_message: 'Livraison finalisée avec succès.',
+          dernier_scan_at: new Date(),
         }
       });
 
@@ -949,6 +988,48 @@ export const createSignalement = async (req, res) => {
     return res.status(201).json({
       message: "Signalement envoyé. L'administrateur étudiera le cas.",
       id_signalement: signalement.id_signalement
+    });
+  } catch (error) {
+    return res.status(500).json({ error: internalError(error) });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// 4.10. SCAN STATUS POLLING (real-time feedback for vendor/client)
+// ═══════════════════════════════════════════════════════════
+
+export const getCollectScanStatus = async (req, res) => {
+  try {
+    const { id_commande } = req.params;
+    const livraison = await prisma.livraison.findUnique({
+      where: { id_commande: parseInt(id_commande, 10) },
+      select: { dernier_scan_statut: true, dernier_scan_message: true, dernier_scan_at: true, statut_livraison: true }
+    });
+    if (!livraison) return res.status(404).json({ error: 'Livraison introuvable.' });
+    return res.json({
+      statut_livraison: livraison.statut_livraison,
+      scan_statut: livraison.dernier_scan_statut,
+      scan_message: livraison.dernier_scan_message,
+      scan_at: livraison.dernier_scan_at,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: internalError(error) });
+  }
+};
+
+export const getFinalizeScanStatus = async (req, res) => {
+  try {
+    const { id_commande } = req.params;
+    const livraison = await prisma.livraison.findUnique({
+      where: { id_commande: parseInt(id_commande, 10) },
+      select: { dernier_scan_statut: true, dernier_scan_message: true, dernier_scan_at: true, statut_livraison: true }
+    });
+    if (!livraison) return res.status(404).json({ error: 'Livraison introuvable.' });
+    return res.json({
+      statut_livraison: livraison.statut_livraison,
+      scan_statut: livraison.dernier_scan_statut,
+      scan_message: livraison.dernier_scan_message,
+      scan_at: livraison.dernier_scan_at,
     });
   } catch (error) {
     return res.status(500).json({ error: internalError(error) });
