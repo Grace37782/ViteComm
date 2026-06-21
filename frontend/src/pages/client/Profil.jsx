@@ -124,6 +124,25 @@ export default function Profil() {
         </div>
       )}
 
+      {/* HEADER */}
+      <div className="relative overflow-hidden px-5 pt-5 pb-5"
+        style={{ background: 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
+        <div className="relative z-10 flex items-center gap-3">
+          <button
+            onClick={() => navigate('/client/accueil')}
+            className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
+            style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}
+          >
+            <span className="text-white text-lg">←</span>
+          </button>
+          <div className="flex-1">
+            <div className="text-white font-black text-base leading-tight">Mon profil</div>
+            <div className="text-white/70 text-xs">{theme.label}</div>
+          </div>
+        </div>
+      </div>
+
       {/* Sub-tabs */}
       <div className="px-4 pt-4 pb-2">
         <div className="flex gap-1 overflow-x-auto scrollbar-none px-4">

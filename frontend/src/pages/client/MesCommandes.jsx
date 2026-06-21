@@ -90,22 +90,22 @@ export default function MesCommandes() {
     <div className="w-full min-h-screen font-sans" style={{ background: 'var(--bg)', paddingBottom: 80 }}>
 
       {/* HEADER */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)',
-        padding: '24px 20px',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
+      <div className="relative overflow-hidden px-5 pt-5 pb-5"
+        style={{ background: 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
+        <div className="relative z-10 flex items-center gap-3">
           <button
             onClick={() => navigate('/client/accueil')}
-            style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 12, padding: '8px 14px', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}
+            className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
+            style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}
           >
-            ←
+            <span className="text-white text-lg">←</span>
           </button>
-          <div style={{ fontWeight: 900, fontSize: 22, color: '#fff' }}>Mes commandes</div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>
-            {orders.length} commande{orders.length !== 1 ? 's' : ''} passée{orders.length !== 1 ? 's' : ''}
+          <div className="flex-1">
+            <div className="text-white font-black text-base leading-tight">Mes commandes</div>
+            <div className="text-white/70 text-xs">
+              {orders.length} commande{orders.length !== 1 ? 's' : ''} passée{orders.length !== 1 ? 's' : ''}
+            </div>
           </div>
         </div>
       </div>
