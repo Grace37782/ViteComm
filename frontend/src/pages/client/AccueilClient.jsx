@@ -5,7 +5,7 @@ import { api } from '../../services/api'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Loader2, Search, Store, Ruler, Mountain, ChevronDown, Package, ShoppingCart, ClipboardList, User, Star, ArrowRight, Truck } from 'lucide-react'
+import { Loader2, Search, Store, Ruler, Mountain, ChevronDown, Package, ShoppingCart, ClipboardList, User, Star, ArrowRight, Truck, Map } from 'lucide-react'
 
 // Custom Leaflet marker icons using divIcon (bypasses URL image path issues in Vite)
 const createMarketIcon = (isActive) => L.divIcon({
@@ -132,6 +132,7 @@ export default function AccueilClient() {
   const [mapZoom, setMapZoom] = useState(13)
   const [activeMarket, setActiveMarket] = useState(null)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [showMap, setShowMap] = useState(false)
 
   function demanderPosition() {
     if (!navigator.geolocation) return
@@ -537,46 +538,58 @@ export default function AccueilClient() {
         </div>
       </div>
 
-      {/* 🗺️ Interactive Map Container with absolute selection drawer overlay */}
-      <div className="w-full h-72 md:h-96 relative shadow-inner flex-shrink-0"
-        style={{ borderBottom: `1px solid ${isDark ? 'var(--border)' : '#e5e7eb'}` }}>
-        <MapContainer center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%', zIndex: 10 }}>
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          
-          <MapRecenter center={mapCenter} zoomLevel={mapZoom} />
-
-          {/* User Location Pin */}
-          {geoPosition && (
-            <Marker position={[geoPosition.lat, geoPosition.lng]} icon={createUserIcon()}>
-              <Popup>
-                <div className="p-1 text-center">
-                  <p className="text-xs font-black text-blue-700">Votre position actuelle</p>
-                </div>
-              </Popup>
-            </Marker>
-          )}
-
-          {/* Markets Pins */}
-          {marketsFiltered.map(m => {
-            const isActive = activeMarket?.id_marche === m.id_marche
-            return (
-              <Marker
-                key={m.id_marche}
-                position={[m.latitude, m.longitude]}
-                icon={createMarketIcon(isActive)}
-                eventHandlers={{
-                  click: () => {
-                    setActiveMarket(m)
-                    setMapCenter([m.latitude, m.longitude])
-                    setMapZoom(15)
-                    setRecherche(m.nom)
-                    setShowSuggestions(false)
-                  }
-                }}
+      {/* 🗺️ Interactive Map — collapsible */}
+      <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px solid var(--border)' }}>
+        <button onClick={() => setShowMap(!showMap)}
+          className="w-full px-4 py-3 flex items-center justify-between cursor-pointer transition-all active:scale-99"
+          style={{ background: 'var(--surface)', border: 'none' }}>
+          <div className="flex items-center gap-2">
+            <Map size={16} style={{ color: '#1D9E75' }} />
+            <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
+              {showMap ? 'Masquer la carte' : 'Afficher la carte'}
+            </span>
+          </div>
+          <ChevronDown size={16} style={{ color: 'var(--text-muted)', transform: showMap ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+        </button>
+        {showMap && (
+          <div className="relative shadow-inner flex-shrink-0" style={{ height: 300 }}>
+            <MapContainer center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%', zIndex: 10 }}>
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
+              
+              <MapRecenter center={mapCenter} zoomLevel={mapZoom} />
+
+              {/* User Location Pin */}
+              {geoPosition && (
+                <Marker position={[geoPosition.lat, geoPosition.lng]} icon={createUserIcon()}>
+                  <Popup>
+                    <div className="p-1 text-center">
+                      <p className="text-xs font-black text-blue-700">Votre position actuelle</p>
+                    </div>
+                  </Popup>
+                </Marker>
+              )}
+
+              {/* Markets Pins */}
+              {marketsFiltered.map(m => {
+                const isActive = activeMarket?.id_marche === m.id_marche
+                return (
+                  <Marker
+                    key={m.id_marche}
+                    position={[m.latitude, m.longitude]}
+                    icon={createMarketIcon(isActive)}
+                    eventHandlers={{
+                      click: () => {
+                        setActiveMarket(m)
+                        setMapCenter([m.latitude, m.longitude])
+                        setMapZoom(15)
+                        setRecherche(m.nom)
+                        setShowSuggestions(false)
+                      }
+                    }}
+                  />
             )
           })}
         </MapContainer>
@@ -625,6 +638,8 @@ export default function AccueilClient() {
             >
               Visiter →
             </button>
+          </div>
+        )}
           </div>
         )}
       </div>
