@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { XCircle, CheckCircle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, ChevronDown, QrCode, Search, AlertTriangle } from 'lucide-react'
+import { XCircle, CheckCircle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, ChevronDown, QrCode, Search, AlertTriangle, Hourglass } from 'lucide-react'
 import { Html5Qrcode } from 'html5-qrcode'
 
 /* eslint-disable react-hooks/set-state-in-effect */
@@ -72,6 +72,36 @@ export default function CommandesLivreur() {
     }
   }, [])
 
+  const startCamera = useCallback(async (elementId, onSuccess) => {
+    cleanupScanner()
+    const scanner = new Html5Qrcode(elementId)
+    scannerRef.current = scanner
+    try {
+      const devices = await Html5Qrcode.getCameras()
+      if (!devices || devices.length === 0) {
+        throw new Error("Aucune caméra détectée.")
+      }
+      const backCamera = devices.find(d => 
+        d.label.toLowerCase().includes('back') || 
+        d.label.toLowerCase().includes('rear') || 
+        d.label.toLowerCase().includes('env')
+      )
+      const cameraId = backCamera ? backCamera.id : devices[0].id
+      await scanner.start(
+        cameraId,
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          onSuccess(decodedText)
+          scanner.stop().then(() => scanner.clear()).catch(() => {})
+        },
+        () => {}
+      )
+    } catch (err) {
+      showToast('Caméra impossible: ' + (err.message || err))
+      cleanupScanner()
+    }
+  }, [cleanupScanner])
+
   useEffect(() => {
     return () => cleanupScanner()
   }, [cleanupScanner])
@@ -133,7 +163,9 @@ export default function CommandesLivreur() {
         const clientName = ((cmd.client?.utilisateur?.prenom || '') + ' ' + (cmd.client?.utilisateur?.nom || '')).toLowerCase()
         const products = (cmd.detailsCommande || []).map(d => (d.produit?.nom || '').toLowerCase()).join(' ')
         const address = (cmd.client?.adresse_livraison || '').toLowerCase()
-        return id.includes(q) || clientName.includes(q) || products.includes(q) || address.includes(q)
+        const vendorName = (cmd.detailsCommande || []).map(d => (d.produit?.vendeur?.nom_etablissement || '').toLowerCase()).join(' ')
+        const marketName = (cmd.detailsCommande || []).map(d => (d.produit?.vendeur?.localisation_marche || '').toLowerCase()).join(' ')
+        return id.includes(q) || clientName.includes(q) || products.includes(q) || address.includes(q) || vendorName.includes(q) || marketName.includes(q)
       })
     : baseList
   const visibleItems = showList.slice(0, visibleCount)
@@ -155,7 +187,16 @@ export default function CommandesLivreur() {
 
   function nextAction(d) {
     const s = d.statut_livraison
-    if (s === 'En cours de collecte') return { label: <><Package size={14} className="inline align-middle" /> Scanner le QR du vendeur</>, fn: () => openCollect(d) }
+    if (s === 'En cours de collecte') {
+      if (!d.commande?.validee_par_vendeur) {
+        return {
+          label: <><Hourglass size={14} className="inline align-middle animate-pulse" /> Attente validation vendeur</>,
+          disabled: true,
+          fn: () => {}
+        }
+      }
+      return { label: <><Package size={14} className="inline align-middle" /> Scanner le QR du vendeur</>, fn: () => openCollect(d) }
+    }
     if (s === 'Collectee') return { label: <><Truck size={14} className="inline align-middle" /> Partir en livraison</>, fn: () => marquerEnRoute(d.commande.id_commande) }
     if (s === 'En cours de livraison') return { label: <><CheckCircle size={14} className="inline align-middle" /> Finaliser la livraison</>, fn: () => openFinalize(d) }
     return null
@@ -332,9 +373,17 @@ export default function CommandesLivreur() {
                 </div>
               </div>
               {action && (
-                <button onClick={action.fn}
-                  className="w-full rounded-2xl py-3 font-black text-white cursor-pointer transition-all active:scale-98"
-                  style={{ background: '#D85A30', border: 'none' }}>
+                <button
+                  onClick={action.fn}
+                  disabled={action.disabled}
+                  className="w-full rounded-2xl py-3 font-black text-white transition-all"
+                  style={{
+                    background: action.disabled ? 'var(--border)' : '#D85A30',
+                    color: action.disabled ? 'var(--text-muted)' : '#fff',
+                    border: 'none',
+                    cursor: action.disabled ? 'not-allowed' : 'pointer'
+                  }}
+                >
                   {action.label}
                 </button>
               )}
@@ -389,7 +438,9 @@ export default function CommandesLivreur() {
             <div className="px-5 pb-8 pt-3">
               <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Accepter la course</h2>
               <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-                Commande #{acceptModal.id_commande} — Demandez le code de vérification au client
+                Commande #{acceptModal.id_commande}
+                {acceptModal.date_creation && ` · Créée le ${new Date(acceptModal.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+                {' — '} Demandez le code de vérification au client
               </p>
 
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
@@ -431,7 +482,10 @@ export default function CommandesLivreur() {
             </div>
             <div className="px-5 pb-8 pt-3">
               <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Finaliser la livraison</h2>
-              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{finalizeOpen.commande?.id_commande} — Scannez le QR du client</p>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+                Commande #{finalizeOpen.commande?.id_commande}
+                {finalizeOpen.commande?.date_creation && ` · Créée le ${new Date(finalizeOpen.commande.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+              </p>
 
               {/* QR Scanner — real-time camera */}
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
@@ -450,23 +504,7 @@ export default function CommandesLivreur() {
                   <div id="qr-finalize-reader" className="rounded-xl overflow-hidden" style={{ minHeight: 200 }} />
                 )}
                 {!finalizeScanResult && (
-                  <button onClick={() => {
-                    cleanupScanner()
-                    const scanner = new Html5Qrcode('qr-finalize-reader')
-                    scanner.start(
-                      { facingMode: 'environment' },
-                      { fps: 10, qrbox: { width: 250, height: 250 } },
-                      (decodedText) => {
-                        setFinalizeScanResult(decodedText)
-                        scanner.stop().then(() => scanner.clear()).catch(() => {})
-                      },
-                      () => {}
-                    ).catch(err => {
-                      showToast('Caméra impossible: ' + (err.message || err))
-                      cleanupScanner()
-                    })
-                    scannerRef.current = scanner
-                  }}
+                  <button onClick={() => startCamera('qr-finalize-reader', setFinalizeScanResult)}
                     className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
                     style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
                     <QrCode size={14} className="inline align-middle" /> Activer l'appareil photo
@@ -513,7 +551,10 @@ export default function CommandesLivreur() {
             </div>
             <div className="px-5 pb-8 pt-3">
               <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Scanner le QR du vendeur</h2>
-              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{collectOpen.commande?.id_commande}</p>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+                Commande #{collectOpen.commande?.id_commande}
+                {collectOpen.commande?.date_creation && ` · Créée le ${new Date(collectOpen.commande.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+              </p>
 
               {/* QR Scanner — camera permission required */}
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
@@ -532,23 +573,7 @@ export default function CommandesLivreur() {
                   <div id="qr-collect-reader" className="rounded-xl overflow-hidden" style={{ minHeight: 200 }} />
                 )}
                 {!scanResult && (
-                  <button onClick={() => {
-                    cleanupScanner()
-                    const scanner = new Html5Qrcode('qr-collect-reader')
-                    scanner.start(
-                      { facingMode: 'environment' },
-                      { fps: 10, qrbox: { width: 250, height: 250 } },
-                      (decodedText) => {
-                        setScanResult(decodedText)
-                        scanner.stop().then(() => scanner.clear()).catch(() => {})
-                      },
-                      () => {}
-                    ).catch(err => {
-                      showToast('Caméra impossible: ' + (err.message || err))
-                      cleanupScanner()
-                    })
-                    scannerRef.current = scanner
-                  }}
+                  <button onClick={() => startCamera('qr-collect-reader', setScanResult)}
                     className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
                     style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
                     <QrCode size={14} className="inline align-middle" /> Activer l'appareil photo

@@ -30,7 +30,10 @@ export default function Historique() {
         const id = String(cmd?.id_commande || '')
         const clientName = ((cmd?.client?.utilisateur?.prenom || '') + ' ' + (cmd?.client?.utilisateur?.nom || '')).toLowerCase()
         const address = (cmd?.client?.adresse_livraison || '').toLowerCase()
-        return id.includes(q) || clientName.includes(q) || address.includes(q)
+        const products = (cmd?.detailsCommande || []).map(dt => (dt.produit?.nom || '').toLowerCase()).join(' ')
+        const vendorName = (cmd?.detailsCommande || []).map(dt => (dt.produit?.vendeur?.nom_etablissement || '').toLowerCase()).join(' ')
+        const marketName = (cmd?.detailsCommande || []).map(dt => (dt.produit?.vendeur?.localisation_marche || '').toLowerCase()).join(' ')
+        return id.includes(q) || clientName.includes(q) || address.includes(q) || products.includes(q) || vendorName.includes(q) || marketName.includes(q)
       })
     : baseList
   const visibleItems = filtered.slice(0, visibleCount)
@@ -107,7 +110,7 @@ export default function Historique() {
           <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <input
             type="text"
-            placeholder="Rechercher par client, n° commande..."
+            placeholder="Rechercher par client, n° commande, produit, marché..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
             className="flex-1 bg-transparent outline-none text-sm font-medium"
@@ -149,7 +152,10 @@ export default function Historique() {
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
                   <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{cmd?.id_commande}</div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{clientName}</div>
+                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {clientName}
+                    {cmd?.date_creation && ` · Créée le ${new Date(cmd.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+                  </div>
                 </div>
                 <span className="rounded-2xl px-3 py-1 text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>
                   {d.statut_livraison === 'Livree' ? 'Livrée' : d.statut_livraison === 'Echec' ? 'Échec' : d.statut_livraison}
