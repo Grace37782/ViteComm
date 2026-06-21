@@ -100,7 +100,7 @@ export default function PaiementClient() {
     }
   }, [idCommande, total, isCompleted, isFailed])
 
-  // Fetch facture when payment is completed, then redirect to SuiviCommande
+  // Fetch facture when payment is completed
   useEffect(() => {
     if (paymentStatus === 'completed' && idCommande) {
       api.get(`/client/orders/${idCommande}/facture`)
@@ -110,14 +110,9 @@ export default function PaiementClient() {
             setTotal(data.facture.montant_total_du)
           }
         })
-        .catch(() => {})
-      // After 2s, redirect to SuiviCommande to avoid back-button loop through FedaPay
-      const redirectTimer = setTimeout(() => {
-        navigate('/client/suivi', { state: { id_commande }, replace: true })
-      }, 2000)
-      return () => clearTimeout(redirectTimer)
+        .catch(() => { showToast('Erreur chargement facture — réessayez') })
     }
-  }, [paymentStatus, idCommande, navigate])
+  }, [paymentStatus, idCommande])
 
   async function initierPaiement() {
     if (!telephone.trim()) {
