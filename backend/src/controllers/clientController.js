@@ -39,7 +39,7 @@ export const getProducts = async (req, res) => {
         vendeur: {
           include: {
             utilisateur: {
-              select: { nom: true, prenom: true }
+          select: { nom: true, prenom: true, photo_url: true }
             }
           }
         },
