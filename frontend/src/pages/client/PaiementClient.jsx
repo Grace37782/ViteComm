@@ -43,26 +43,12 @@ export default function PaiementClient() {
       return
     }
 
-    if (statusParam === 'success') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPaymentStatus('completed')
-      setLoading(false)
-      setPortalTimeout(false)
-      return
-    }
-
-    if (statusParam === 'failed') {
-      setPaymentStatus('failed')
-      setLoading(false)
-      setPortalTimeout(false)
-      return
-    }
-
     if (ref) {
       setLoading(true)
       let pollCount = 0
       const MAX_POLLS = 30
-      intervalRef.current = setInterval(async () => {
+
+      const checkStatus = async () => {
         pollCount++
         try {
           const res = await api.get(`/client/payment/status/${ref}`)
@@ -82,10 +68,18 @@ export default function PaiementClient() {
             setLoading(false)
           }
         }
-      }, 4000)
+      }
 
-      return () => clearInterval(intervalRef.current)
+      checkStatus()
+      intervalRef.current = setInterval(checkStatus, 4000)
+
+      return () => { clearInterval(intervalRef.current); setLoading(false) }
     }
+
+    // No ref — use URL status param as fallback display
+    setPaymentStatus(statusParam === 'success' ? 'completed' : statusParam === 'failed' ? 'failed' : statusParam || null)
+    setLoading(false)
+    setPortalTimeout(false)
   }, [idCommande, ref, statusParam, navigate])
 
   // Portal timeout fallback — if FedaPay redirect hangs
