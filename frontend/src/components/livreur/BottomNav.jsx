@@ -1,9 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { BarChart3, ShoppingCart, Undo2 } from 'lucide-react'
+import { BarChart3, ShoppingCart, Bell, Undo2 } from 'lucide-react'
 
 const ITEMS = [
   { id: 'dashboard', label: 'Accueil', icon: BarChart3, route: '/livreur/dashboard' },
   { id: 'commandes', label: 'Commandes', icon: ShoppingCart, route: '/livreur/commandes' },
+  { id: 'notifs',    label: 'Notifs',    icon: Bell, route: '/livreur/notifications' },
   { id: 'retours', label: 'Retours', icon: Undo2, route: '/livreur/retours' },
 ]
 

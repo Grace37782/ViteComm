@@ -1,9 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Home, ClipboardList, ShoppingCart, User } from 'lucide-react'
+import { Home, ClipboardList, Bell, ShoppingCart, User } from 'lucide-react'
 
 const items = [
   { icon: Home, label: 'Accueil',  path: '/client/accueil', activeOn: '/client/accueil' },
   { icon: ClipboardList, label: 'Commandes', path: '/client/mes-commandes', activeOn: '/client/mes-commandes' },
+  { icon: Bell, label: 'Notifs', path: '/client/notifications', activeOn: '/client/notifications' },
   { icon: ShoppingCart, label: 'Panier',   path: '/client/panier',  activeOn: '/client/panier'  },
   { icon: User, label: 'Profil',   path: '/client/profil',  activeOn: '/client/profil'  },
 ]

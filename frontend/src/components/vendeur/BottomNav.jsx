@@ -1,12 +1,13 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { BarChart3, Package, ShoppingCart, Undo2, User } from 'lucide-react'
+import { BarChart3, Package, ShoppingCart, Bell, Undo2, User } from 'lucide-react'
 
 const ITEMS = [
   { id: 'dashboard', label: 'Accueil',   icon: BarChart3, route: '/vendeur/dashboard'  },
   { id: 'catalogue', label: 'Catalogue', icon: Package, route: '/vendeur/catalogue'  },
   { id: 'commandes', label: 'Commandes', icon: ShoppingCart, route: '/vendeur/commandes'  },
+  { id: 'notifs',    label: 'Notifs',    icon: Bell, route: '/vendeur/notifications'  },
   { id: 'retours',   label: 'Retours',   icon: Undo2,  route: '/vendeur/retours'    },
-  { id: 'profil',    label: 'Profil',    icon: User, route: '/profil'             },
+  { id: 'profil',    label: 'Profil',    icon: User, route: '/vendeur/profil' },
 ]
 
 export default function BottomNavVendeur() {
