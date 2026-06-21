@@ -712,7 +712,7 @@ export const inspectionOrder = async (req, res) => {
       // Update order statut to Livree (delivery complete after inspection)
       await tx.commande.update({
         where: { id_commande: commande.id_commande },
-        data: { statut: 'Livree' }
+        data: { statut: 'Livree', mode_paiement_status: 'paye' }
       });
 
       // Save client proof photos (RG31)
