@@ -102,7 +102,7 @@ export default function VendeurProfil() {
     <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-3xl">
 
       {/* HEADER */}
-      <div className="relative overflow-hidden px-5 pt-5 pb-5"
+      <div className="relative overflow-hidden px-5 pt-5 pb-5 -mx-4"
         style={{ background: isDark ? 'linear-gradient(135deg, #3D2A10 0%, #121110 100%)' : 'linear-gradient(135deg, #BA7517 0%, #854F0B 100%)' }}>
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(186,117,23,0.1)' : 'rgba(255,255,255,0.1)' }} />
         <div className="relative z-10 flex items-center gap-3">
