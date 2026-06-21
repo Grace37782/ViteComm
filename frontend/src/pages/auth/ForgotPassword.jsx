@@ -2,17 +2,14 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { KeyRound, Mail, Lock, Eye, EyeOff, MessageCircle, Smartphone, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react'
+import { KeyRound, Mail, Lock, Eye, EyeOff, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react'
 
 export default function ForgotPassword() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
 
-  const [identifiant, setIdentifiant] = useState('')
   const [email, setEmail] = useState('')
-  const [telephone, setTelephone] = useState('')
-  const [channel, setChannel] = useState('email')
   const [step, setStep] = useState('email')
   const [resetToken, setResetToken] = useState('')
   const [code, setCode] = useState('')
@@ -28,14 +25,10 @@ export default function ForgotPassword() {
 
   async function handleSendCode(e) {
     e.preventDefault()
-    if (channel === 'email' && !email) return showError('Entrez votre adresse email.')
-    if (channel !== 'email' && !telephone) return showError('Entrez votre numéro de téléphone.')
+    if (!email) return showError('Entrez votre adresse email.')
     setLoading(true); setError('')
     try {
-      const body = channel === 'email'
-        ? { email, channel: 'email' }
-        : { telephone, channel }
-      const res = await api.post('/auth/forgot-password', body)
+      const res = await api.post('/auth/forgot-password', { email })
       setResetToken(res.token)
       setStep('code')
     } catch (err) { showError(err.message) }
@@ -44,7 +37,7 @@ export default function ForgotPassword() {
 
   async function handleReset(e) {
     e.preventDefault()
-    if (!code) return showError('Entrez le code reçu.')
+    if (!code) return showError('Entrez le code reçu par email.')
     if (!mdp) return showError('Nouveau mot de passe requis.')
     if (mdp !== mdpConfirm) return showError('Les mots de passe ne correspondent pas.')
     if (mdp.length < 8) return showError('Minimum 8 caractères.')
@@ -128,49 +121,17 @@ export default function ForgotPassword() {
                   style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', boxShadow: '0 8px 24px rgba(29,158,117,0.25)' }}><KeyRound size={28} /></div>
                 <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>Mot de passe oublié</h1>
                 <p className="text-sm mt-2 text-center leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  Entrez votre email ou téléphone, nous vous enverrons un code pour réinitialiser votre mot de passe.
+                  Entrez votre email, nous vous enverrons un code pour réinitialiser votre mot de passe.
                 </p>
               </div>
 
               <form onSubmit={handleSendCode} className="flex flex-col gap-5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Email ou téléphone</label>
-                  <input type="text" placeholder="exemple@gmail.com ou +229 97 00 00 00"
-                    value={identifiant}
-                    onChange={e => {
-                      const v = e.target.value; const clean = v.replace(/\s/g, '')
-                      const isPhone = /^[\d+]/.test(clean) && !clean.includes('@')
-                      setIdentifiant(v)
-                      setEmail(isPhone ? '' : clean)
-                      setTelephone(isPhone ? clean : '')
-                      if (isPhone && channel === 'email') setChannel('whatsapp')
-                      if (!isPhone && channel !== 'email') setChannel('email')
-                    }}
+                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Adresse email</label>
+                  <input type="email" placeholder="exemple@gmail.com" value={email}
+                    onChange={e => setEmail(e.target.value)}
                     className="rounded-xl px-4 py-3.5 text-sm outline-none" style={inputStyle} />
                 </div>
-
-                {/* Channel selector — only show when phone is entered */}
-                {telephone && (
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Recevoir le code par</label>
-                    <div className="flex gap-2">
-                      {[
-                        { id: 'whatsapp', Icon: MessageCircle, label: 'WhatsApp', color: '#25D366' },
-                        { id: 'sms', Icon: Smartphone, label: 'SMS', color: '#1D9E75' },
-                      ].map(c => (
-                        <button key={c.id} type="button" onClick={() => setChannel(c.id)}
-                          className="flex-1 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1.5"
-                          style={{
-                            background: channel === c.id ? c.color : 'var(--surface-alt)',
-                            color: channel === c.id ? '#fff' : 'var(--text-secondary)',
-                            border: `1.5px solid ${channel === c.id ? c.color : 'var(--border)'}`,
-                          }}>
-                          <c.Icon size={14} /> {c.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 <button type="submit" disabled={loading}
                   className="rounded-xl py-3.5 text-sm font-black transition-all cursor-pointer"
@@ -185,12 +146,10 @@ export default function ForgotPassword() {
             <>
               <div className="flex flex-col items-center mb-6">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black mb-4"
-                  style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', boxShadow: '0 8px 24px rgba(29,158,117,0.25)' }}>
-                  {channel === 'email' ? <Mail size={28} /> : channel === 'whatsapp' ? <MessageCircle size={28} /> : <Smartphone size={28} />}
-                </div>
+                  style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', boxShadow: '0 8px 24px rgba(29,158,117,0.25)' }}><Mail size={28} /></div>
                 <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>Nouveau mot de passe</h1>
                 <p className="text-sm mt-2 text-center leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  Un code à 6 chiffres vous a été envoyé via {channel === 'email' ? 'email' : channel === 'whatsapp' ? 'WhatsApp' : 'SMS'}. Saisissez-le ci-dessous avec votre nouveau mot de passe.
+                  Un code à 6 chiffres vous a été envoyé par email. Saisissez-le ci-dessous avec votre nouveau mot de passe.
                 </p>
               </div>
 

@@ -316,9 +316,7 @@ model PaiementTransaction {
 
 model VerificationToken {
   id         Int      @id @default(autoincrement())
-  email      String?
-  telephone  String?
-  channel    String   @default("email") // email | whatsapp | sms
+  email      String
   code       String
   token      String   @unique
   data       String   // JSON: full registration payload
@@ -329,9 +327,7 @@ model VerificationToken {
 
 model PasswordResetToken {
   id         Int      @id @default(autoincrement())
-  email      String?
-  telephone  String?
-  channel    String   @default("email") // email | whatsapp | sms
+  email      String
   code       String
   token      String   @unique
   expires_at DateTime

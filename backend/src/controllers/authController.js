@@ -4,7 +4,6 @@ import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import prisma from '../config/db.js';
 import { sendVerificationCode, sendPasswordResetCode } from '../services/mail.js';
-import { sendWhatsAppCode, sendSMSCode } from '../services/whatsapp.js';
 import { moveToPermanent } from '../middleware/upload.js';
 import { errorMessage, internalError } from '../utils/errors.js';
 
@@ -92,7 +91,7 @@ export const register = async (req, res) => {
   const {
     nom, prenom, telephone, email,
     mot_de_passe, mot_de_passe_confirmation,
-    role, channel = 'email',
+    role,
     adresse_livraison,
     nom_etablissement, localisation_marche, id_marche,
     type_vehicule, immatriculation
@@ -105,19 +104,10 @@ export const register = async (req, res) => {
     });
   }
 
-  if (!['email', 'whatsapp', 'sms'].includes(channel)) {
-    return res.status(400).json({ error: 'Canal invalide. Choisissez email, whatsapp ou sms.' });
-  }
-
-  // Email channel requires email; phone channels require telephone
-  if (channel === 'email' && !email) {
-    return res.status(400).json({ error: 'Adresse email requise pour la vérification par email.' });
-  }
-  if (channel !== 'email' && !telephone) {
-    return res.status(400).json({ error: 'Numéro de téléphone requis pour la vérification par ' + channel + '.' });
-  }
   if (!email && !telephone) {
-    return res.status(400).json({ error: 'Email ou téléphone obligatoire.' });
+    return res.status(400).json({
+      error: 'Email ou téléphone obligatoire.'
+    });
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -150,12 +140,14 @@ export const register = async (req, res) => {
   }
 
   try {
-    // Check uniqueness based on channel
-    if (channel === 'email' && email) {
+    // Check if email already has an active user (only if email provided)
+    if (email) {
       const existingUser = await prisma.utilisateur.findUnique({ where: { email } });
       if (existingUser) {
         return res.status(409).json({ error: 'Cette adresse email est déjà utilisée.' });
       }
+
+      // Check for existing pending verification for this email
       const existingPending = await prisma.verificationToken.findFirst({
         where: { email, expires_at: { gt: new Date() } }
       });
@@ -167,23 +159,15 @@ export const register = async (req, res) => {
       }
     }
 
-    if (channel !== 'email' && telephone) {
-      const existingUser = await prisma.utilisateur.findFirst({ where: { telephone } });
-      if (existingUser) {
-        return res.status(409).json({ error: 'Ce numéro de téléphone est déjà utilisé.' });
-      }
-      const existingPending = await prisma.verificationToken.findFirst({
-        where: { telephone, expires_at: { gt: new Date() } }
+    // ── Telephone-only is NOT allowed: email is required for verification ──
+    if (!email && telephone) {
+      return res.status(400).json({
+        error: 'Une adresse email est requise pour vérifier votre compte.'
       });
-      if (existingPending) {
-        return res.status(429).json({
-          error: `Un code de vérification a déjà été envoyé à ce numéro via ${channel === 'whatsapp' ? 'WhatsApp' : 'SMS'}. Attendez 10 minutes.`,
-          pending: true
-        });
-      }
     }
 
-    // ── Generate code and token ──
+    // ── Email provided: send verification code ──
+    // Generate 6-digit code and unique token
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const token = crypto.randomUUID();
 
@@ -199,9 +183,7 @@ export const register = async (req, res) => {
     // Store verification token (expires in 10 min)
     await prisma.verificationToken.create({
       data: {
-        email: channel === 'email' ? email : null,
-        telephone: channel !== 'email' ? telephone : null,
-        channel,
+        email,
         code,
         token,
         data: payload,
@@ -210,19 +192,12 @@ export const register = async (req, res) => {
       }
     });
 
-    // ── Send code via selected channel ──
-    if (channel === 'email') {
-      await sendVerificationCode(email, code, prenom);
-    } else if (channel === 'whatsapp') {
-      await sendWhatsAppCode(telephone, code, prenom);
-    } else if (channel === 'sms') {
-      await sendSMSCode(telephone, code, prenom);
-    }
+    // Send email
+    await sendVerificationCode(email, code, prenom);
 
-    const channelLabel = channel === 'email' ? 'email' : channel === 'whatsapp' ? 'WhatsApp' : 'SMS';
     return res.status(200).json({
-      message: `Code de vérification envoyé par ${channelLabel}.`,
-      token,
+      message: 'Code de vérification envoyé par email.',
+      token, // frontend uses this to verify later
     });
   } catch (error) {
     return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
@@ -257,19 +232,11 @@ export const verifyEmail = async (req, res) => {
       return res.status(400).json({ error: 'Code incorrect.' });
     }
 
-    // Check uniqueness based on channel
-    if (vt.channel === 'email') {
-      const existingUser = await prisma.utilisateur.findUnique({ where: { email: vt.email } });
-      if (existingUser) {
-        await prisma.verificationToken.delete({ where: { id: vt.id } });
-        return res.status(409).json({ error: 'Cette adresse email est déjà utilisée.' });
-      }
-    } else {
-      const existingUser = await prisma.utilisateur.findFirst({ where: { telephone: vt.telephone } });
-      if (existingUser) {
-        await prisma.verificationToken.delete({ where: { id: vt.id } });
-        return res.status(409).json({ error: 'Ce numéro de téléphone est déjà utilisé.' });
-      }
+    // Check email still free (defensive)
+    const existingUser = await prisma.utilisateur.findUnique({ where: { email: vt.email } });
+    if (existingUser) {
+      await prisma.verificationToken.delete({ where: { id: vt.id } });
+      return res.status(409).json({ error: 'Cette adresse email est déjà utilisée.' });
     }
 
     const data = JSON.parse(vt.data);
@@ -282,8 +249,8 @@ export const verifyEmail = async (req, res) => {
         data: {
           nom: data.nom,
           prenom: data.prenom,
-          telephone: data.telephone || null,
-          email: vt.email || `${data.telephone}@phone.vitecomm.local`,
+          telephone: data.telephone,
+          email: vt.email,
           mot_de_passe: hashedPassword,
           statut_compte: 'Actif',
           est_admin: false,
@@ -380,17 +347,9 @@ export const resendCode = async (req, res) => {
       }
     });
 
-    // Resend via the original channel
-    if (vt.channel === 'email') {
-      await sendVerificationCode(vt.email, newCode, data.prenom);
-    } else if (vt.channel === 'whatsapp') {
-      await sendWhatsAppCode(vt.telephone, newCode, data.prenom);
-    } else if (vt.channel === 'sms') {
-      await sendSMSCode(vt.telephone, newCode, data.prenom);
-    }
+    await sendVerificationCode(vt.email, newCode, data.prenom);
 
-    const channelLabel = vt.channel === 'email' ? 'email' : vt.channel === 'whatsapp' ? 'WhatsApp' : 'SMS';
-    return res.json({ message: `Nouveau code envoyé par ${channelLabel}.` });
+    return res.json({ message: 'Nouveau code envoyé par email.' });
   } catch (error) {
     return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
@@ -402,28 +361,19 @@ export const resendCode = async (req, res) => {
 // Body: { email }
 // ────────────────────────────────────────────────────────────
 export const forgotPassword = async (req, res) => {
-  const { email, telephone, channel = 'email' } = req.body;
-
-  if (channel === 'email' && !email) return res.status(400).json({ error: 'Email requis.' });
-  if (channel !== 'email' && !telephone) return res.status(400).json({ error: 'Numéro de téléphone requis.' });
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email requis.' });
 
   try {
-    // Find user by email or telephone
-    let user;
-    if (channel === 'email') {
-      user = await prisma.utilisateur.findUnique({ where: { email } });
-    } else {
-      user = await prisma.utilisateur.findFirst({ where: { telephone } });
-    }
-    if (!user) return res.status(404).json({ error: 'Aucun compte trouvé avec ces identifiants.' });
+    const user = await prisma.utilisateur.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ error: 'Aucun compte trouvé avec cet email.' });
 
-    const lookupField = channel === 'email' ? { email } : { telephone };
     const existing = await prisma.passwordResetToken.findFirst({
-      where: { ...lookupField, expires_at: { gt: new Date() } }
+      where: { email, expires_at: { gt: new Date() } }
     });
     if (existing) {
       return res.status(429).json({
-        error: 'Un code a déjà été envoyé. Attendez 10 minutes.',
+        error: 'Un code a déjà été envoyé. Vérifiez vos spams ou attendez 10 minutes.',
         pending: true
       });
     }
@@ -432,27 +382,12 @@ export const forgotPassword = async (req, res) => {
     const token = crypto.randomUUID();
 
     await prisma.passwordResetToken.create({
-      data: {
-        email: channel === 'email' ? email : null,
-        telephone: channel !== 'email' ? telephone : null,
-        channel,
-        code,
-        token,
-        expires_at: new Date(Date.now() + 10 * 60 * 1000)
-      }
+      data: { email, code, token, expires_at: new Date(Date.now() + 10 * 60 * 1000) }
     });
 
-    // Send via selected channel
-    if (channel === 'email') {
-      await sendPasswordResetCode(email, code, user.prenom);
-    } else if (channel === 'whatsapp') {
-      await sendWhatsAppCode(telephone, code, user.prenom);
-    } else if (channel === 'sms') {
-      await sendSMSCode(telephone, code, user.prenom);
-    }
+    await sendPasswordResetCode(email, code, user.prenom);
 
-    const channelLabel = channel === 'email' ? 'email' : channel === 'whatsapp' ? 'WhatsApp' : 'SMS';
-    return res.json({ message: `Code de réinitialisation envoyé par ${channelLabel}.`, token });
+    return res.json({ message: 'Code de réinitialisation envoyé par email.', token });
   } catch (error) {
     return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
   }
