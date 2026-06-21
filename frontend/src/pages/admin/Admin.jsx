@@ -112,7 +112,7 @@ function Header({ admin, onLogout, tab, onTabChange }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <NotificationBell notificationsPath="/admin/notifications" />
+            <NotificationBell notificationsPath="__admin_notifications" onNavigate={(path) => { if (path === '__admin_notifications') onTabChange('notifications') }} />
             <button onClick={onLogout} className="hidden sm:block text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer" style={{ background: 'rgba(255,255,255,0.1)' }}>
               Déconnexion
             </button>

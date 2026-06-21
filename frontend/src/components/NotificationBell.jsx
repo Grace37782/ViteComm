@@ -22,7 +22,7 @@ const TYPE_COLORS = {
   system: '#6B7280',
 }
 
-export default function NotificationBell({ notificationsPath = '/client/notifications' }) {
+export default function NotificationBell({ notificationsPath = '/client/notifications', onNavigate }) {
   const navigate = useNavigate()
   const [unreadCount, setUnreadCount] = useState(0)
   const [notifications, setNotifications] = useState([])
@@ -69,21 +69,30 @@ export default function NotificationBell({ notificationsPath = '/client/notifica
     } catch { /* ignore */ }
   }
 
-  function handleClick(n) {
-    if (!n.lu) {
-      api.post('/notifications/read', { ids: [n.id] }).catch(() => {})
-      setNotifications(prev => prev.map(pn => pn.id === n.id ? { ...pn, lu: true } : pn))
+  async function markOneRead(id) {
+    try {
+      await api.post('/notifications/read', { ids: [id] })
+      setNotifications(prev => prev.map(pn => pn.id === id ? { ...pn, lu: true } : pn))
       setUnreadCount(prev => Math.max(0, prev - 1))
-    }
+    } catch { /* ignore */ }
+  }
+
+  function handleClick(n) {
+    if (!n.lu) markOneRead(n.id)
     setOpen(false)
     if (n.reference) {
       const [type, id] = n.reference.split(':')
+      if (type === 'admin' && onNavigate) {
+        if (id === 'signalements') onNavigate('__admin_signalements')
+        else if (id === 'users') onNavigate('__admin_users')
+        else if (id === 'litiges') onNavigate('__admin_litiges')
+        return
+      }
       const basePath = notificationsPath.replace('/notifications', '')
       if (type === 'order') navigate(`${basePath}/mes-commandes`)
       else if (type === 'delivery') navigate(`${basePath}/suivi-commande?id=${id}`)
       else if (type === 'payment') navigate(`${basePath}/mes-commandes`)
       else if (type === 'feedback') navigate(`${basePath}/mes-commandes`)
-      else if (type === 'admin') navigate('/admin/dashboard')
     }
   }
 
@@ -112,7 +121,7 @@ export default function NotificationBell({ notificationsPath = '/client/notifica
                   Tout lu
                 </button>
               )}
-              <button onClick={() => { setOpen(false); navigate(notificationsPath) }}
+              <button onClick={() => { setOpen(false); onNavigate ? onNavigate(notificationsPath) : navigate(notificationsPath) }}
                 className="text-[10px] font-bold cursor-pointer"
                 style={{ color: '#1D9E75', background: 'none', border: 'none' }}>
                 Voir tout →
