@@ -91,8 +91,8 @@ export default function MesCommandes() {
 
       {/* HEADER */}
       <div className="relative overflow-hidden px-5 pt-5 pb-5"
-        style={{ background: 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
+        style={{ background: isDark ? 'linear-gradient(135deg, #164032 0%, #121311 100%)' : 'linear-gradient(135deg, #1D9E75 0%, #0F6E56 100%)' }}>
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(45,196,145,0.1)' : 'rgba(255,255,255,0.1)' }} />
         <div className="relative z-10 flex items-center gap-3">
           <button
             onClick={() => navigate('/client/accueil')}
