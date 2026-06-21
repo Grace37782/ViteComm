@@ -8,37 +8,6 @@ import { Html5Qrcode } from 'html5-qrcode'
 
 const PAGE_SIZE = 10
 
-async function startCameraScanner(scanner, elementId, onScan) {
-  const configs = [
-    { facingMode: 'environment' },
-    { facingMode: 'user' },
-  ]
-  for (const cfg of configs) {
-    try {
-      await scanner.start(
-        cfg,
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        onScan,
-        () => {}
-      )
-      return
-    } catch { /* try next config */ }
-  }
-  try {
-    const devices = await Html5Qrcode.getCameras()
-    if (devices && devices.length > 0) {
-      await scanner.start(
-        devices[0].id,
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        onScan,
-        () => {}
-      )
-      return
-    }
-  } catch { /* ignore */ }
-  throw new Error('Aucune caméra disponible sur cet appareil')
-}
-
 export default function CommandesLivreur() {
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
@@ -484,16 +453,16 @@ export default function CommandesLivreur() {
                   <button onClick={() => {
                     cleanupScanner()
                     const scanner = new Html5Qrcode('qr-finalize-reader')
-                    startCameraScanner(scanner, 'qr-finalize-reader', (decodedText) => {
-                      setFinalizeScanResult(decodedText)
-                      scanner.stop().then(() => scanner.clear()).catch(() => {})
-                    }).catch(err => {
-                      const msg = err?.message || String(err)
-                      if (msg.includes('NotAllowedError') || msg.includes('Permission')) {
-                        showToast('Accès caméra refusé — autorisez l\'accès dans les paramètres de votre navigateur')
-                      } else {
-                        showToast('Caméra impossible: ' + msg)
-                      }
+                    scanner.start(
+                      { facingMode: 'environment' },
+                      { fps: 10, qrbox: { width: 250, height: 250 } },
+                      (decodedText) => {
+                        setFinalizeScanResult(decodedText)
+                        scanner.stop().then(() => scanner.clear()).catch(() => {})
+                      },
+                      () => {}
+                    ).catch(err => {
+                      showToast('Caméra impossible: ' + (err.message || err))
                       cleanupScanner()
                     })
                     scannerRef.current = scanner
@@ -566,16 +535,16 @@ export default function CommandesLivreur() {
                   <button onClick={() => {
                     cleanupScanner()
                     const scanner = new Html5Qrcode('qr-collect-reader')
-                    startCameraScanner(scanner, 'qr-collect-reader', (decodedText) => {
-                      setScanResult(decodedText)
-                      scanner.stop().then(() => scanner.clear()).catch(() => {})
-                    }).catch(err => {
-                      const msg = err?.message || String(err)
-                      if (msg.includes('NotAllowedError') || msg.includes('Permission')) {
-                        showToast('Accès caméra refusé — autorisez l\'accès dans les paramètres de votre navigateur')
-                      } else {
-                        showToast('Caméra impossible: ' + msg)
-                      }
+                    scanner.start(
+                      { facingMode: 'environment' },
+                      { fps: 10, qrbox: { width: 250, height: 250 } },
+                      (decodedText) => {
+                        setScanResult(decodedText)
+                        scanner.stop().then(() => scanner.clear()).catch(() => {})
+                      },
+                      () => {}
+                    ).catch(err => {
+                      showToast('Caméra impossible: ' + (err.message || err))
                       cleanupScanner()
                     })
                     scannerRef.current = scanner
