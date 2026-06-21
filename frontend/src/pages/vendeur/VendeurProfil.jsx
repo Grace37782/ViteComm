@@ -111,7 +111,7 @@ export default function VendeurProfil() {
             style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}>
             <span className="text-white text-lg">←</span>
           </button>
-          <div className="flex-1">
+          <div className="flex-1 flex items-center">
             <div className="text-white font-black text-base leading-tight">Mon profil</div>
           </div>
         </div>
