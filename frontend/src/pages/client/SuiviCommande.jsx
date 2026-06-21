@@ -88,7 +88,7 @@ export default function SuiviCommande() {
     fetchVendorStatus()
     const interval = setInterval(fetchVendorStatus, 10000)
     return () => { active = false; setVendorStatus(null); clearInterval(interval) }
-  }, [id_commande, order?.statut])
+  }, [id_commande, order?.statut, order])
 
   const statut = order?.statut || 'En attente'
   const livreur = order?.livraison?.livreur

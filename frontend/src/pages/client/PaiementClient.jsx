@@ -74,11 +74,6 @@ export default function PaiementClient() {
 
       return () => { clearInterval(intervalRef.current); setLoading(false) }
     }
-
-    // No ref — use URL status param as fallback display
-    setPaymentStatus(statusParam === 'success' ? 'completed' : statusParam === 'failed' ? 'failed' : statusParam || null)
-    setLoading(false)
-    setPortalTimeout(false)
   }, [idCommande, ref, statusParam, navigate])
 
   // Portal timeout fallback — if FedaPay redirect hangs
