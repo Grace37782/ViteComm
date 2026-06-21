@@ -822,9 +822,63 @@ async function main() {
   console.log('=================================');
   console.log('Db Seeding termine !');
   console.log('=================================');
+
+  // ── Seed test notifications ──
+  console.log('Notifications de test...');
+  const notifUsers = await prisma.utilisateur.findMany({ select: { id_user: true, est_admin: true, client: true, vendeur: true, livreur: true } });
+  const adminIds = notifUsers.filter(u => u.est_admin).map(u => u.id_user);
+  const clientIds = notifUsers.filter(u => u.client).map(u => u.id_user);
+  const vendorIds = notifUsers.filter(u => u.vendeur).map(u => u.id_user);
+  const driverIds = notifUsers.filter(u => u.livreur).map(u => u.id_user);
+
+  const notifTemplates = [
+    // Client notifications
+    { types: clientIds, titre: 'Commande #1557 validée', message: 'Lionel Sisso a validé votre commande', type: 'order', reference: 'order:1557' },
+    { types: clientIds, titre: 'Livreur assigné — #1557', message: 'Temitayo Sisso a accepté votre livraison', type: 'delivery', reference: 'delivery:1557' },
+    { types: clientIds, titre: 'Commande #1557 — En transit', message: 'Votre livreur est en route', type: 'delivery', reference: 'delivery:1557' },
+    { types: clientIds, titre: 'Paiement reçu — #1557', message: '15 000 F reçus via Mobile Money', type: 'payment', reference: 'payment:1557' },
+    { types: clientIds, titre: 'Bienvenue sur ViteComm !', message: 'Découvrez les marchés autour de vous', type: 'system', reference: null },
+    // Vendor notifications
+    { types: vendorIds, titre: 'Nouvelle commande #1557', message: 'Immaculee Koudjo a passé une commande de 15 000 F', type: 'order', reference: 'order:1557' },
+    { types: vendorIds, titre: 'Nouvel avis — #1550', message: 'Un client a donné 4/5 étoiles', type: 'feedback', reference: 'feedback:1550' },
+    { types: vendorIds, titre: 'Commande #1548 collectée', message: 'Le livreur a collecté vos articles', type: 'order', reference: 'order:1548' },
+    { types: vendorIds, titre: 'Stock faible — Tomates', message: 'Il ne reste que 3 kg en stock', type: 'system', reference: null },
+    { types: vendorIds, titre: 'Nouvelle commande #1560', message: 'Adela Agbeke a passé une commande de 8 500 F', type: 'order', reference: 'order:1560' },
+    // Driver notifications
+    { types: driverIds, titre: 'Nouvelle commande #1557', message: 'Une course est disponible pour vous', type: 'order', reference: 'order:1557' },
+    { types: driverIds, titre: 'Commande #1557 — Collecte', message: 'Rendez-vous chez le vendeur pour la collecte', type: 'delivery', reference: 'delivery:1557' },
+    { types: driverIds, titre: 'Commande #1557 — Livraison', message: 'Direction le client pour la livraison', type: 'delivery', reference: 'delivery:1557' },
+    { types: driverIds, titre: 'Nouvel avis — #1550', message: 'Un client a donné 5/5 étoiles', type: 'feedback', reference: 'feedback:1550' },
+    { types: driverIds, titre: 'Gains du jour', message: 'Vous avez gagné 4 500 F aujourd\'hui', type: 'payment', reference: null },
+    // Admin notifications
+    { types: adminIds, titre: 'Nouveau signalement', message: 'Immaculee Koudjo a signalé un vendeur', type: 'system', reference: 'admin:signalements' },
+    { types: adminIds, titre: 'Nouvel utilisateur', message: 'Un nouveau client s\'est inscrit', type: 'system', reference: 'admin:users' },
+    { types: adminIds, titre: 'Nouveau litige — #1545', message: 'Un client a ouvert un litige', type: 'system', reference: 'admin:litiges' },
+    { types: adminIds, titre: 'Nouveau signalement', message: 'Un vendeur a signalé un livreur', type: 'system', reference: 'admin:signalements' },
+    { types: adminIds, titre: 'Rapport hebdomadaire', message: '12 commandes cette semaine, 3 litiges en cours', type: 'system', reference: null },
+  ];
+
+  let notifCount = 0;
+  for (const tmpl of notifTemplates) {
+    for (const userId of tmpl.types) {
+      await prisma.notification.create({
+        data: {
+          id_user: userId,
+          titre: tmpl.titre,
+          message: tmpl.message,
+          type: tmpl.type,
+          reference: tmpl.reference,
+          lu: Math.random() > 0.5,
+        }
+      });
+      notifCount++;
+    }
+  }
+  console.log(`  -> ${notifCount} notifications créées`);
+
   console.log(`  8 marches | 6 categories | 20 clients`);
   console.log(`  50 vendeurs | 10 livreurs | ${allProducts.length} produits`);
-  console.log(`  ${orderCount} commandes | 10 signalements`);
+  console.log(`  ${orderCount} commandes | 10 signalements | ${notifCount} notifications`);
   console.log('---------------------------------');
   console.log('Comptes de test :');
   console.log('  Admin    : admin@vitecomm.com (admin123)');

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { BarChart3, Package, ShoppingCart, Undo2, TrendingUp, Banknote, AlertTriangle, User } from 'lucide-react'
+import { BarChart3, Package, ShoppingCart, Undo2, TrendingUp, Banknote, AlertTriangle, User, Bell } from 'lucide-react'
 import MobileDrawer from '../MobileDrawer'
 import NotificationBell from '../NotificationBell'
 import { subscribeToPush } from '../../services/push'
@@ -13,6 +13,7 @@ const NAV_TABS = [
   { icon: Undo2, label: 'Retours', path: '/vendeur/retours' },
   { icon: TrendingUp, label: 'Stats', path: '/vendeur/statistiques' },
   { icon: Banknote, label: 'Factures', path: '/vendeur/factures' },
+  { icon: Bell, label: 'Notifications', path: '/vendeur/notifications' },
   { icon: AlertTriangle, label: 'Signaler', path: '/vendeur/signalement' },
   { icon: User, label: 'Profil', path: '/vendeur/profil' },
 ]
@@ -69,7 +70,7 @@ export default function VendeurLayout() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <NotificationBell />
+              <NotificationBell notificationsPath="/vendeur/notifications" />
               <button onClick={() => { logout(); navigate('/connect') }}
                 className="hidden sm:block text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer flex-shrink-0"
                 style={{ background: 'rgba(255,255,255,0.1)' }}>

@@ -1,18 +1,44 @@
 import prisma from '../config/db.js';
 import { internalError } from '../utils/errors.js';
 
+const PAGE_SIZE = 15;
+
 export async function getNotifications(req, res) {
   try {
     const userId = req.user.id_user;
-    const notifications = await prisma.notification.findMany({
-      where: { id_user: userId },
-      orderBy: { created_at: 'desc' },
-      take: 50,
+    const { search, type, unread, page = 1 } = req.query;
+    const where = { id_user: userId };
+
+    if (type && type !== 'all') where.type = type;
+    if (unread === 'true') where.lu = false;
+    if (search) {
+      where.OR = [
+        { titre: { contains: search } },
+        { message: { contains: search } },
+      ];
+    }
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const skip = (pageNum - 1) * PAGE_SIZE;
+
+    const [notifications, total, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where,
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: PAGE_SIZE,
+      }),
+      prisma.notification.count({ where }),
+      prisma.notification.count({ where: { id_user: userId, lu: false } }),
+    ]);
+
+    return res.json({
+      notifications,
+      unreadCount,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / PAGE_SIZE),
     });
-    const unreadCount = await prisma.notification.count({
-      where: { id_user: userId, lu: false },
-    });
-    return res.json({ notifications, unreadCount });
   } catch (error) {
     return res.status(500).json({ error: internalError(error) });
   }

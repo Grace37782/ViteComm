@@ -22,7 +22,7 @@ const TYPE_COLORS = {
   system: '#6B7280',
 }
 
-export default function NotificationBell() {
+export default function NotificationBell({ notificationsPath = '/client/notifications' }) {
   const navigate = useNavigate()
   const [unreadCount, setUnreadCount] = useState(0)
   const [notifications, setNotifications] = useState([])
@@ -78,10 +78,12 @@ export default function NotificationBell() {
     setOpen(false)
     if (n.reference) {
       const [type, id] = n.reference.split(':')
-      if (type === 'order') navigate('/client/mes-commandes')
-      else if (type === 'delivery') navigate('/client/suivi-commande?id=' + id)
-      else if (type === 'payment') navigate('/client/mes-commandes')
-      else if (type === 'feedback') navigate('/client/mes-commandes')
+      const basePath = notificationsPath.replace('/notifications', '')
+      if (type === 'order') navigate(`${basePath}/mes-commandes`)
+      else if (type === 'delivery') navigate(`${basePath}/suivi-commande?id=${id}`)
+      else if (type === 'payment') navigate(`${basePath}/mes-commandes`)
+      else if (type === 'feedback') navigate(`${basePath}/mes-commandes`)
+      else if (type === 'admin') navigate('/admin/dashboard')
     }
   }
 
@@ -103,12 +105,19 @@ export default function NotificationBell() {
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
             <span className="text-xs font-black" style={{ color: 'var(--text-primary)' }}>Notifications</span>
-            {unreadCount > 0 && (
-              <button onClick={markAllRead} className="text-[10px] font-bold cursor-pointer"
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <button onClick={markAllRead} className="text-[10px] font-bold cursor-pointer"
+                  style={{ color: '#1D9E75', background: 'none', border: 'none' }}>
+                  Tout lu
+                </button>
+              )}
+              <button onClick={() => { setOpen(false); navigate(notificationsPath) }}
+                className="text-[10px] font-bold cursor-pointer"
                 style={{ color: '#1D9E75', background: 'none', border: 'none' }}>
-                Tout marquer lu
+                Voir tout →
               </button>
-            )}
+            </div>
           </div>
 
           {loading ? (

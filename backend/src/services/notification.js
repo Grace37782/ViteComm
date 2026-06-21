@@ -236,6 +236,32 @@ export async function notifyFeedbackReceived(orderId, vendorUserId, vendorName, 
   }
 }
 
+// ─── Admin notifications ───
+
+export async function notifyAdminNewSignalement(adminUserId, authorName, motif, targetType) {
+  const titre = `Nouveau signalement`;
+  const message = `${authorName} a signalé un ${targetType} : ${motif}`;
+  const ref = 'admin:signalements';
+  await createNotification({ userId: adminUserId, titre, message, type: 'system', reference: ref });
+  await sendPush(adminUserId, titre, message, `/admin/dashboard`);
+}
+
+export async function notifyAdminNewUser(adminUserId, userName, role) {
+  const titre = `Nouvel utilisateur`;
+  const message = `${userName} s'est inscrit en tant que ${role}`;
+  const ref = 'admin:users';
+  await createNotification({ userId: adminUserId, titre, message, type: 'system', reference: ref });
+  await sendPush(adminUserId, titre, message, `/admin/dashboard`);
+}
+
+export async function notifyAdminNewLitige(adminUserId, clientName, orderId, motif) {
+  const titre = `Nouveau litige — #${orderId}`;
+  const message = `${clientName} a ouvert un litige : ${motif}`;
+  const ref = 'admin:litiges';
+  await createNotification({ userId: adminUserId, titre, message, type: 'system', reference: ref });
+  await sendPush(adminUserId, titre, message, `/admin/dashboard`);
+}
+
 // ─── Generate VAPID keys (for setup) ───
 export function generateVapidKeys() {
   return webpush.generateVAPIDKeys();

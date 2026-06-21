@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
 import { AlertTriangle, CheckCircle, ChevronDown } from 'lucide-react'
@@ -6,6 +7,7 @@ import { AlertTriangle, CheckCircle, ChevronDown } from 'lucide-react'
 const PAGE_SIZE = 10
 
 export default function RetourVendeur() {
+  const navigate = useNavigate()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
   const [retours, setRetours] = useState([])
@@ -97,6 +99,22 @@ export default function RetourVendeur() {
 
   return (
     <div className="px-4 py-4 flex flex-col gap-4">
+
+      {/* HEADER */}
+      <div className="relative overflow-hidden px-5 pt-5 pb-5"
+        style={{ background: isDark ? 'linear-gradient(135deg, #3D2A10 0%, #121110 100%)' : 'linear-gradient(135deg, #BA7517 0%, #854F0B 100%)' }}>
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(186,117,23,0.1)' : 'rgba(255,255,255,0.1)' }} />
+        <div className="relative z-10 flex items-center gap-3">
+          <button onClick={() => navigate(-1)}
+            className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
+            style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}>
+            <span className="text-white text-lg">←</span>
+          </button>
+          <div className="flex-1">
+            <div className="text-white font-black text-base leading-tight">Retours</div>
+          </div>
+        </div>
+      </div>
 
       {/* Résumé */}
       <div className="rounded-2xl p-4"

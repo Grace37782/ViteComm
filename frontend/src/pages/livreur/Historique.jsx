@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
 import { CheckCircle, Truck, XCircle, Undo2, ChevronDown, Search } from 'lucide-react'
@@ -6,6 +7,7 @@ import { CheckCircle, Truck, XCircle, Undo2, ChevronDown, Search } from 'lucide-
 const PAGE_SIZE = 10
 
 export default function Historique() {
+  const navigate = useNavigate()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
   const [deliveries, setDeliveries] = useState([])
@@ -64,6 +66,23 @@ export default function Historique() {
   return (
     <div className="px-4 py-4 flex flex-col gap-4 ">
 
+      {/* HEADER */}
+      <div className="relative overflow-hidden px-5 pt-5 pb-5"
+        style={{ background: isDark ? 'linear-gradient(135deg, #3D1A10 0%, #121011 100%)' : 'linear-gradient(135deg, #D85A30 0%, #993C1D 100%)' }}>
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(216,90,48,0.1)' : 'rgba(255,255,255,0.1)' }} />
+        <div className="relative z-10 flex items-center gap-3">
+          <button onClick={() => navigate(-1)}
+            className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer flex-shrink-0"
+            style={{ background: 'rgba(255,255,255,0.2)', border: 'none' }}>
+            <span className="text-white text-lg">←</span>
+          </button>
+          <div className="flex-1">
+            <div className="text-white font-black text-base leading-tight">Historique</div>
+          </div>
+        </div>
+      </div>
+
+      {/* STATS */}
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[

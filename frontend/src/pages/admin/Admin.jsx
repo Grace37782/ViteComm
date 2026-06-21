@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import MobileDrawer from '../../components/MobileDrawer'
-import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User, DollarSign, TrendingUp, Store, Motorbike, ShoppingCart, Shield, Mail, Lock, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Building, ChevronDown, LogOut, Star, ArrowRight } from 'lucide-react'
+import NotificationBell from '../../components/NotificationBell'
+import Notifications from '../Notifications'
+import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User, DollarSign, TrendingUp, Store, Motorbike, ShoppingCart, Shield, Mail, Lock, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Building, ChevronDown, LogOut, Star, ArrowRight, Bell } from 'lucide-react'
 
 const TABS = [
   { id: 'dashboard', label: 'Tableau de bord', icon: <LayoutDashboard size={14} /> },
@@ -11,6 +13,7 @@ const TABS = [
   { id: 'marchés', label: 'Marchés', icon: <MapPin size={14} /> },
   { id: 'signalements', label: 'Signalements', icon: <Flag size={14} /> },
   { id: 'litiges', label: 'Litiges', icon: <Scale size={14} /> },
+  { id: 'notifications', label: 'Notifications', icon: <Bell size={14} /> },
   { id: 'profil', label: 'Mon Profil', icon: <User size={14} /> },
 ]
 
@@ -21,6 +24,7 @@ const ADMIN_NAV_TABS = [
   { icon: MapPin, label: 'Marchés', path: '__marchés' },
   { icon: Flag, label: 'Signalements', path: '__signalements' },
   { icon: Scale, label: 'Litiges', path: '__litiges' },
+  { icon: Bell, label: 'Notifications', path: '__notifications' },
   { icon: User, label: 'Mon Profil', path: '__profil' },
 ]
 
@@ -59,6 +63,7 @@ export default function Admin() {
         {tab === 'marchés' && <MarketsTab />}
         {tab === 'signalements' && <SignalementsTab initialFilter={tabFilter} />}
         {tab === 'litiges' && <LitigesTab initialFilter={tabFilter} />}
+        {tab === 'notifications' && <Notifications basePath="/admin/notifications" />}
         {tab === 'profil' && <ProfilTab admin={admin} onLogout={() => { localStorage.clear(); navigate('/accueil') }} />}
       </main>
     </div>
@@ -106,9 +111,12 @@ function Header({ admin, onLogout, tab, onTabChange }) {
               </div>
             </div>
           </div>
-          <button onClick={onLogout} className="hidden sm:block text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer" style={{ background: 'rgba(255,255,255,0.1)' }}>
-            Déconnexion
-          </button>
+          <div className="flex items-center gap-2">
+            <NotificationBell notificationsPath="/admin/notifications" />
+            <button onClick={onLogout} className="hidden sm:block text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer" style={{ background: 'rgba(255,255,255,0.1)' }}>
+              Déconnexion
+            </button>
+          </div>
         </div>
         {/* Desktop tab bar — hidden on mobile */}
         <div className="hidden md:flex gap-1 overflow-x-auto pb-1 scrollbar-none">

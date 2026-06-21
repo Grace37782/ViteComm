@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { errorMessage, internalError } from '../utils/errors.js';
 import { generateFinalizeQRToken } from '../utils/vendorQR.js';
-import { notifyOrderPlaced, notifyFeedbackReceived } from '../services/notification.js';
+import { notifyOrderPlaced, notifyFeedbackReceived, notifyAdminNewSignalement, notifyAdminNewLitige } from '../services/notification.js';
 
 // --- 2.1. Tableau de bord Client - Recherche de produits et marchés ---
 
@@ -656,6 +656,14 @@ export const createSignalement = async (req, res) => {
       }
     });
 
+    // Notify all admins about new signalement
+    const admins = await prisma.utilisateur.findMany({ where: { est_admin: true }, select: { id_user: true } });
+    const authorUser = await prisma.utilisateur.findUnique({ where: { id_user: req.user.id_user }, select: { prenom: true, nom: true } });
+    const authorName = authorUser ? `${authorUser.prenom} ${authorUser.nom}` : 'Un utilisateur';
+    for (const admin of admins) {
+      notifyAdminNewSignalement(admin.id_user, authorName, motif, type_cible_cible).catch(() => {});
+    }
+
     return res.status(201).json({
       message: "Signalement envoyé. L'administrateur étudiera le cas.",
       id_signalement: signalement.id_signalement
@@ -816,6 +824,16 @@ export const inspectionOrder = async (req, res) => {
 
       return { fraisRetour, totalFinal: montantTotalDu };
     });
+
+    // Notify admins about any litiges from this inspection
+    if (result.fraisRetour > 0) {
+      const admins = await prisma.utilisateur.findMany({ where: { est_admin: true }, select: { id_user: true } });
+      const clientUser = await prisma.utilisateur.findUnique({ where: { id_user: req.user.id_user }, select: { prenom: true, nom: true } });
+      const clientName = clientUser ? `${clientUser.prenom} ${clientUser.nom}` : 'Un client';
+      for (const admin of admins) {
+        notifyAdminNewLitige(admin.id_user, clientName, commande.id_commande, 'Articles rejetés lors de l\'inspection').catch(() => {});
+      }
+    }
 
     return res.json({
       message: 'Inspection enregistrée.',

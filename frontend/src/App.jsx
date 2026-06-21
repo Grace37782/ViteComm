@@ -41,6 +41,7 @@ import Evaluation from './pages/client/Evaluation'
 import Inspection from './pages/client/Inspection'
 import PaiementClient from './pages/client/PaiementClient'
 import UserDetail from './pages/client/UserDetail'
+import Notifications from './pages/Notifications'
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
@@ -87,6 +88,7 @@ export default function App() {
           <Route path="evaluation" element={<Evaluation />} />
           <Route path="inspection" element={<Inspection />} />
           <Route path="paiement" element={<PaiementClient />} />
+          <Route path="notifications" element={<Notifications basePath="/client/notifications" />} />
           <Route path="user/:userId" element={<UserDetail />} />
         </Route>
 
@@ -98,6 +100,7 @@ export default function App() {
           <Route path="statistiques" element={<StatistiquesVendeur />} />
           <Route path="factures" element={<FacturesVendeur />} />
           <Route path="signalement" element={<SignalementVendeur />} />
+          <Route path="notifications" element={<Notifications basePath="/vendeur/notifications" />} />
           <Route path="profil" element={<VendeurProfil />} />
         </Route>
         <Route path="/livreur" element={<LivreurLayout />}>
@@ -106,6 +109,7 @@ export default function App() {
           <Route path="gains" element={<GainsLivreur />} />
           <Route path="historique" element={<HistoriqueLivreur />} />
           <Route path="retours" element={<RetourLivreur />} />
+          <Route path="notifications" element={<Notifications basePath="/livreur/notifications" />} />
           <Route path="profil" element={<LivreurProfil />} />
         </Route>
         <Route path="/admin/dashboard" element={<Admin />} />

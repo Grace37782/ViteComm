@@ -6,6 +6,7 @@ import prisma from '../config/db.js';
 import { sendVerificationCode, sendPasswordResetCode } from '../services/mail.js';
 import { moveToPermanent } from '../middleware/upload.js';
 import { errorMessage, internalError } from '../utils/errors.js';
+import { notifyAdminNewUser } from '../services/notification.js';
 
 const { JWT_SECRET, JWT_EXPIRES_IN, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL, FRONTEND_URL } = process.env;
 if (!JWT_SECRET) {
@@ -290,6 +291,14 @@ export const verifyEmail = async (req, res) => {
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES }
     );
+
+    // Notify all admins about new user registration
+    const admins = await prisma.utilisateur.findMany({ where: { est_admin: true }, select: { id_user: true } });
+    const userName = `${newUser.prenom} ${newUser.nom}`;
+    const roleLabel = vt.role === 'client' ? 'client' : vt.role === 'vendeur' ? 'vendeur' : 'livreur';
+    for (const admin of admins) {
+      notifyAdminNewUser(admin.id_user, userName, roleLabel).catch(() => {});
+    }
 
     return res.status(201).json({
       message: 'Compte créé avec succès.',

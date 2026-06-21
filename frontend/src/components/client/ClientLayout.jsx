@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { Home, ClipboardList, Star, ShoppingCart, User } from 'lucide-react'
+import { Home, ClipboardList, Star, ShoppingCart, User, Bell } from 'lucide-react'
 import MobileDrawer from '../MobileDrawer'
 import NotificationBell from '../NotificationBell'
 import { subscribeToPush } from '../../services/push'
@@ -10,6 +10,7 @@ const NAV_TABS = [
   { icon: Home, label: 'Accueil', path: '/client/accueil' },
   { icon: ClipboardList, label: 'Commandes', path: '/client/mes-commandes' },
   { icon: Star, label: 'Évaluer', path: '/client/evaluation' },
+  { icon: Bell, label: 'Notifications', path: '/client/notifications' },
   { icon: ShoppingCart, label: 'Panier', path: '/client/panier' },
   { icon: User, label: 'Profil', path: '/client/profil' },
 ]

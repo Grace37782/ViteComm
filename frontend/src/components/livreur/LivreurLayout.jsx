@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { BarChart3, ShoppingCart, Wallet, ClipboardList, Undo2, User } from 'lucide-react'
+import { BarChart3, ShoppingCart, Wallet, ClipboardList, Undo2, User, Bell } from 'lucide-react'
 import MobileDrawer from '../MobileDrawer'
 import NotificationBell from '../NotificationBell'
 import { subscribeToPush } from '../../services/push'
@@ -12,6 +12,7 @@ const NAV_TABS = [
   { icon: Wallet, label: 'Gains', path: '/livreur/gains' },
   { icon: ClipboardList, label: 'Historique', path: '/livreur/historique' },
   { icon: Undo2, label: 'Retours', path: '/livreur/retours' },
+  { icon: Bell, label: 'Notifications', path: '/livreur/notifications' },
   { icon: User, label: 'Profil', path: '/livreur/profil' },
 ]
 
@@ -67,7 +68,7 @@ export default function LivreurLayout() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <NotificationBell />
+              <NotificationBell notificationsPath="/livreur/notifications" />
               <button onClick={() => { logout(); navigate('/connect') }}
                 className="hidden sm:block text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer flex-shrink-0"
                 style={{ background: 'rgba(255,255,255,0.1)' }}>
