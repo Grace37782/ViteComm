@@ -441,7 +441,7 @@ export const getVendorCollectStatus = async (req, res) => {
         livraison: true,
         collecteVendeurs: {
           include: {
-            vendeur: { include: { utilisateur: { select: { nom: true, prenom: true } } } }
+            vendeur: { include: { utilisateur: { select: { nom: true, prenom: true, photo_url: true } } } }
           }
         }
       }
