@@ -99,10 +99,10 @@ export default function VendeurProfil() {
   }
 
   return (
-    <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-3xl">
+    <div className="flex flex-col">
 
       {/* HEADER */}
-      <div className="relative overflow-hidden px-5 pt-5 pb-5 -mx-4 -mt-4"
+      <div className="relative overflow-hidden px-5 pt-5 pb-5 -mt-4"
         style={{ background: isDark ? 'linear-gradient(135deg, #3D2A10 0%, #121110 100%)' : 'linear-gradient(135deg, #BA7517 0%, #854F0B 100%)' }}>
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: isDark ? 'rgba(186,117,23,0.1)' : 'rgba(255,255,255,0.1)' }} />
         <div className="relative z-10 flex items-center gap-3">
@@ -116,6 +116,8 @@ export default function VendeurProfil() {
           </div>
         </div>
       </div>
+
+      <div className="px-4 py-4 flex flex-col gap-4 mx-auto max-w-3xl w-full">
 
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl"
@@ -351,6 +353,7 @@ export default function VendeurProfil() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
