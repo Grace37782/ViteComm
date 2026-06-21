@@ -67,7 +67,7 @@ export default function CommandesLivreur() {
   const [collectOpen, setCollectOpen] = useState(null)
   const [vendorStatus, setVendorStatus] = useState([])
   const [activeVendorIndex, setActiveVendorIndex] = useState(0)
-  const [collectPhase, setCollectPhase] = useState(null) // 'scanning' | 'verifying' | 'confirmed' | null
+  const [, setCollectPhase] = useState(null) // 'scanning' | 'verifying' | 'confirmed' | null
   const [collectScanData, setCollectScanData] = useState(null)
   const [collectError, setCollectError] = useState(null)
   const [collectVerified, setCollectVerified] = useState(false)

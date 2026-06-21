@@ -44,7 +44,6 @@ export default function PaiementClient() {
     }
 
     if (ref) {
-      setLoading(true)
       let pollCount = 0
       const MAX_POLLS = 30
 

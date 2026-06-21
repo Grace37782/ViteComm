@@ -77,7 +77,7 @@ export default function SuiviCommande() {
   useEffect(() => {
     if (!id_commande || !order) return
     const collectStatuses = ['En collecte', 'En transit', 'Inspectee', 'Livree']
-    if (!collectStatuses.includes(order.statut)) { setVendorStatus(null); return }
+    if (!collectStatuses.includes(order.statut)) return
     let active = true
     const fetchVendorStatus = async () => {
       try {
@@ -87,7 +87,7 @@ export default function SuiviCommande() {
     }
     fetchVendorStatus()
     const interval = setInterval(fetchVendorStatus, 10000)
-    return () => { active = false; clearInterval(interval) }
+    return () => { active = false; setVendorStatus(null); clearInterval(interval) }
   }, [id_commande, order?.statut])
 
   const statut = order?.statut || 'En attente'

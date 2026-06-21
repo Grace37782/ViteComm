@@ -522,7 +522,6 @@ async function main() {
 
   // ── Immaculee's orders in various states for testing ──
   console.log('Commandes Immaculee (test payment flow)...');
-  const immaculeeIdx = 20; // immaculee is at clients[20]
   const immOrders = [];
 
   // Helper: create order specifically for Immaculee with chosen vendors
