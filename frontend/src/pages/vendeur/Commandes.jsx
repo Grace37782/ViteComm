@@ -18,6 +18,9 @@ export default function CommandesVendeur() {
   const [qrModal, setQrModal] = useState(null)
   const [qrData, setQrData] = useState(null)
   const [scanStatus, setScanStatus] = useState(null)
+  const [toast, setToast] = useState(null)
+
+  function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 4000) }
 
   useEffect(() => {
     fetchOrders()
@@ -91,7 +94,7 @@ export default function CommandesVendeur() {
         prev.map((c) => (c.id === cmd.id ? { ...c, validee_par_vendeur: true } : c))
       )
     } catch (err) {
-      console.error('Validation error:', err)
+      showToast(err.message || 'Erreur lors de la validation')
     } finally {
       setValidating((p) => ({ ...p, [cmd.id]: false }))
     }
@@ -145,6 +148,11 @@ export default function CommandesVendeur() {
   return (
     <div className="px-4 py-4 flex flex-col gap-4">
 
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl" style={{ background: '#BA7517' }}>
+          {toast}
+        </div>
+      )}
       {/* Filtres */}
       <div className="flex gap-2">
         {[
