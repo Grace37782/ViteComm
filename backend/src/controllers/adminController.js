@@ -436,7 +436,7 @@ export const getAdminMe = async (req, res) => {
     const user = await prisma.utilisateur.findUnique({
       where: { id_user: req.user.id_user },
       select: {
-        id_user: true, nom: true, prenom: true, telephone: true,
+        id_user: true, nom: true, prenom: true,
         email: true, photo_url: true, est_admin: true, statut_compte: true
       }
     });
@@ -449,15 +449,15 @@ export const getAdminMe = async (req, res) => {
 
 // Admin update their own profile
 export const updateAdminProfile = async (req, res) => {
-  const { nom, prenom, telephone, email, photo_url, mot_de_passe } = req.body;
+  const { nom, prenom, email, photo_url, mot_de_passe } = req.body;
   const adminId = req.user.id_user;
 
-  if (!nom || !prenom || !telephone || !email) {
-    return res.status(400).json({ error: 'Les champs nom, prenom, telephone et email sont requis.' });
+  if (!nom || !prenom || !email) {
+    return res.status(400).json({ error: 'Les champs nom, prenom et email sont requis.' });
   }
 
   try {
-    const data = { nom, prenom, telephone, email };
+    const data = { nom, prenom, email };
 
     // Handle uploaded photo
     if (req.file) {
@@ -476,7 +476,7 @@ export const updateAdminProfile = async (req, res) => {
       where: { id_user: adminId },
       data,
       select: {
-        id_user: true, nom: true, prenom: true, telephone: true,
+        id_user: true, nom: true, prenom: true,
         email: true, photo_url: true, est_admin: true, statut_compte: true
       }
     });

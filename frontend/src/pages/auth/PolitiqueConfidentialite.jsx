@@ -8,7 +8,7 @@ export default function PolitiqueConfidentialite() {
     {
       icon: <Eye size={16} />,
       title: '1. Données collectées',
-      content: `ViteComm collecte les données personnelles suivantes lors de l'inscription et de l'utilisation de la plateforme : nom, prénom, adresse email, numéro de téléphone, adresse de livraison, photo de profil (optionnelle), et données de transaction (historique des commandes, paiements). Ces données sont collectées uniquement dans le cadre du fonctionnement de la plateforme.`
+      content: `ViteComm collecte les données personnelles suivantes lors de l'inscription et de l'utilisation de la plateforme : nom, prénom, adresse email, adresse de livraison, photo de profil (optionnelle), et données de transaction (historique des commandes, paiements). Ces données sont collectées uniquement dans le cadre du fonctionnement de la plateforme.`
     },
     {
       icon: <Database size={16} />,

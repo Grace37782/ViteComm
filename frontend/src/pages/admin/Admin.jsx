@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import MobileDrawer from '../../components/MobileDrawer'
-import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User, DollarSign, TrendingUp, Store, Motorbike, ShoppingCart, Shield, Mail, Smartphone, Lock, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Building, ChevronDown, LogOut, Star, ArrowRight } from 'lucide-react'
+import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User, DollarSign, TrendingUp, Store, Motorbike, ShoppingCart, Shield, Mail, Lock, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Building, ChevronDown, LogOut, Star, ArrowRight } from 'lucide-react'
 
 const TABS = [
   { id: 'dashboard', label: 'Tableau de bord', icon: <LayoutDashboard size={14} /> },
@@ -409,7 +409,7 @@ function UsersTab({ initialFilter, leaderboardData }) {
                        <span className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{u.prenom} {u.nom}</span>
                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: `${STATUS_COLORS[u.statut_compte]}18`, color: STATUS_COLORS[u.statut_compte] }}>{u.statut_compte}</span>
                      </div>
-                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{u.email} · {u.telephone} · Rôle: {role}</div>
+                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{u.email} · Rôle: {role}</div>
                   </div>
                 </div>
                 </button>
@@ -477,7 +477,6 @@ function UserDetailModal({ details, onClose, onUpdateStatus, onDelete }) {
           {/* Info rows */}
           <div className="flex flex-col gap-2 mb-5">
             <InfoRow label="Email" value={user.email} icon={<Mail size={14} />} />
-            <InfoRow label="Telephone" value={user.telephone || '—'} icon={<Smartphone size={14} />} />
             {user.date_inscription && (
               <InfoRow label="Inscrit le" value={new Date(user.date_inscription).toLocaleDateString()} icon={<Flag size={14} />} />
             )}
@@ -933,7 +932,7 @@ function SignalementsTab({ initialFilter }) {
 function ProfilTab({ onLogout }) {
   const [profile, setProfile] = useState(null)
   const [edit, setEdit] = useState(false)
-  const [form, setForm] = useState({ nom: '', prenom: '', email: '', telephone: '', mot_de_passe: '', confirm: '' })
+  const [form, setForm] = useState({ nom: '', prenom: '', email: '', mot_de_passe: '', confirm: '' })
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState('')
   const [saving, setSaving] = useState(false)
@@ -943,7 +942,7 @@ function ProfilTab({ onLogout }) {
   useEffect(() => {
     api.get('/admin/me').then(d => {
       setProfile(d)
-      setForm({ nom: d.nom, prenom: d.prenom, email: d.email, telephone: d.telephone || '', mot_de_passe: '', confirm: '' })
+      setForm({ nom: d.nom, prenom: d.prenom, email: d.email, mot_de_passe: '', confirm: '' })
     }).catch(e => setErr(e.message))
   }, [])
 
@@ -972,7 +971,6 @@ function ProfilTab({ onLogout }) {
       body.set('nom', form.nom)
       body.set('prenom', form.prenom)
       body.set('email', form.email)
-      body.set('telephone', form.telephone)
       if (photoFile) body.set('photo', photoFile)
       if (form.mot_de_passe) body.set('mot_de_passe', form.mot_de_passe)
 
@@ -1022,7 +1020,6 @@ function ProfilTab({ onLogout }) {
 
             <div className="flex flex-col gap-3 mb-5">
               <InfoRow label="Email" value={profile.email} icon={<Mail size={14} />} />
-              <InfoRow label="Téléphone" value={profile.telephone || '—'} icon={<Smartphone size={14} />} />
               <InfoRow label="Statut" value={profile.statut_compte} icon={<Lock size={14} />} />
             </div>
 
@@ -1068,7 +1065,6 @@ function ProfilTab({ onLogout }) {
               <Field label="Prénom" value={form.prenom} onChange={v => setForm(p => ({ ...p, prenom: v }))} />
             </div>
             <Field label="Email" type="email" value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} />
-            <Field label="Téléphone" value={form.telephone} onChange={v => setForm(p => ({ ...p, telephone: v }))} />
 
             <hr className="border-t my-1" style={{ borderColor: 'var(--border)' }} />
             {profile?.auth_provider === 'google' ? (
@@ -1091,7 +1087,7 @@ function ProfilTab({ onLogout }) {
               </button>
               <button type="button" onClick={() => {
                 setEdit(false); setPhotoFile(null); setPhotoPreview('')
-                setForm({ nom: profile.nom, prenom: profile.prenom, email: profile.email, telephone: profile.telephone || '', mot_de_passe: '', confirm: '' })
+                setForm({ nom: profile.nom, prenom: profile.prenom, email: profile.email, mot_de_passe: '', confirm: '' })
               }}
                 className="rounded-2xl py-3 px-5 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                 style={{ background: '#F0EFEA', color: 'var(--text-muted)', border: 'none' }}>

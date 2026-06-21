@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { ArrowLeft, User, Star, Truck, Package, MapPin, Phone, Mail, Shield, Loader2, ShoppingCart, Store } from 'lucide-react'
+import { ArrowLeft, User, Star, Truck, Package, MapPin, Mail, Shield, Loader2, ShoppingCart, Store } from 'lucide-react'
 
 export default function UserDetail() {
   const navigate = useNavigate()
@@ -85,12 +85,6 @@ export default function UserDetail() {
               <div className="flex items-center gap-3">
                 <Mail size={14} style={{ color: 'var(--text-muted)' }} />
                 <span className="text-xs" style={{ color: 'var(--text-primary)' }}>{user.email}</span>
-              </div>
-            )}
-            {user.telephone && (
-              <div className="flex items-center gap-3">
-                <Phone size={14} style={{ color: 'var(--text-muted)' }} />
-                <span className="text-xs" style={{ color: 'var(--text-primary)' }}>{user.telephone}</span>
               </div>
             )}
           </div>

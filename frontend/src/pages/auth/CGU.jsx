@@ -53,7 +53,7 @@ export default function CGU() {
     {
       icon: <Lock size={16} />,
       title: '10. Protection des données personnelles',
-      content: `ViteComm collecte les données personnelles nécessaires au fonctionnement de la plateforme (nom, prénom, email, téléphone, adresse de livraison). Ces données ne sont jamais vendues à des tiers. Elles sont utilisées uniquement pour : la gestion des comptes, le traitement des commandes, l'envoi de codes de vérification, et l'amélioration du service. Conformément à la législation béninoise, vous disposez d'un droit d'accès, de rectification et de suppression de vos données.`
+      content: `ViteComm collecte les données personnelles nécessaires au fonctionnement de la plateforme (nom, prénom, email, adresse de livraison). Ces données ne sont jamais vendues à des tiers. Elles sont utilisées uniquement pour : la gestion des comptes, le traitement des commandes, l'envoi de codes de vérification, et l'amélioration du service. Conformément à la législation béninoise, vous disposez d'un droit d'accès, de rectification et de suppression de vos données.`
     },
     {
       icon: <FileText size={16} />,

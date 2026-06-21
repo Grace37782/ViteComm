@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { ShoppingCart, Package, Bike, User, Lock, Mail, Smartphone, MapPin, CheckCircle, Pencil, Camera, Save, KeyRound, LogOut, Loader2, XCircle, AlertTriangle } from 'lucide-react'
+import { ShoppingCart, Package, Bike, User, Lock, Mail, MapPin, CheckCircle, Pencil, Camera, Save, KeyRound, LogOut, Loader2, XCircle, AlertTriangle } from 'lucide-react'
 
 const ROLE_THEMES = {
   client: { primary: '#1D9E75', dark: '#0F6E56', label: 'Client ViteComm', icon: ShoppingCart },
@@ -33,7 +33,7 @@ export default function Profil() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ nom: '', prenom: '', email: '', telephone: '', adresse_livraison: '', mot_de_passe: '', confirm: '' })
+  const [form, setForm] = useState({ nom: '', prenom: '', email: '', adresse_livraison: '', mot_de_passe: '', confirm: '' })
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState('')
   const [toast, setToast] = useState(null)
@@ -47,7 +47,7 @@ export default function Profil() {
       setProfile(data)
       setForm(f => ({
         ...f, nom: data.nom || '', prenom: data.prenom || '',
-        telephone: data.telephone || '', email: data.email || '',
+        email: data.email || '',
         adresse_livraison: data.profil?.adresse_livraison || '',
       }))
     }).catch(e => showToast(<><XCircle size={14} className="inline" /> {e.message}</>, 'error'))
@@ -79,7 +79,6 @@ export default function Profil() {
       body.set('nom', form.nom)
       body.set('prenom', form.prenom)
       body.set('email', form.email)
-      body.set('telephone', form.telephone)
       body.set('adresse_livraison', form.adresse_livraison)
       if (photoFile) body.set('photo', photoFile)
       if (form.mot_de_passe) {
@@ -170,7 +169,6 @@ export default function Profil() {
                   <InfoRow label="Prénom" value={profile?.prenom} icon={<User size={14} />} />
                   <InfoRow label="Nom" value={profile?.nom} icon={<User size={14} />} />
                   <InfoRow label="Email" value={profile?.email} icon={<Mail size={14} />} />
-                  <InfoRow label="Téléphone" value={profile?.telephone || '—'} icon={<Smartphone size={14} />} />
                   <InfoRow label="Adresse livraison" value={profile?.profil?.adresse_livraison || '—'} icon={<MapPin size={14} />} />
                   <InfoRow label="Statut" value={profile?.statut_compte || '—'} icon={profile?.statut_compte === 'Actif' ? <CheckCircle size={14} /> : <Lock size={14} />} />
                 </div>
@@ -211,7 +209,6 @@ export default function Profil() {
                     <Field label="Prénom" value={form.prenom} onChange={v => setForm(p => ({ ...p, prenom: v }))} />
                   </div>
                   <Field label="Email" type="email" value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} />
-                  <Field label="Téléphone" value={form.telephone} onChange={v => setForm(p => ({ ...p, telephone: v }))} />
                   <Field label="Adresse de livraison" value={form.adresse_livraison} onChange={v => setForm(p => ({ ...p, adresse_livraison: v }))} />
 
                   <div className="flex gap-3 mt-2">
@@ -224,7 +221,7 @@ export default function Profil() {
                       setEditing(false); setPhotoFile(null); setPhotoPreview('')
                       setForm(f => ({
                         ...f, nom: profile?.nom || '', prenom: profile?.prenom || '',
-                        telephone: profile?.telephone || '', email: profile?.email || '',
+                        email: profile?.email || '',
                         adresse_livraison: profile?.profil?.adresse_livraison || '',
                       }))
                     }}

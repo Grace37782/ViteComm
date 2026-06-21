@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { ClipboardList, Inbox, ShoppingCart, ShieldCheck, Motorbike, CheckCircle, ChevronDown, Smartphone, FileText } from 'lucide-react'
+import { ClipboardList, Inbox, ShoppingCart, ShieldCheck, Motorbike, CheckCircle, ChevronDown, FileText } from 'lucide-react'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -216,7 +216,6 @@ export default function MesCommandes() {
                         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}><Motorbike size={12} className="inline" /> Livreur</span>
                         <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
                           {livreurNom}
-                          {livreur?.utilisateur?.telephone && ` · ${livreur.utilisateur.telephone}`}
                         </span>
                       </div>
                     )}

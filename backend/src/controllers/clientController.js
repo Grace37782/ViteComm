@@ -154,7 +154,7 @@ export const getDrivers = async (req, res) => {
       },
       include: {
         utilisateur: {
-          select: { nom: true, prenom: true, telephone: true }
+          select: { nom: true, prenom: true }
         }
       }
     });
@@ -480,7 +480,7 @@ export const getMyOrders = async (req, res) => {
           include: {
             livreur: {
               include: {
-                utilisateur: { select: { nom: true, prenom: true, telephone: true } }
+                utilisateur: { select: { nom: true, prenom: true } }
               }
             }
           }

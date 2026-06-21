@@ -29,7 +29,6 @@ const buildUserPayload = async (user) => {
     id_user: user.id_user,
     nom: user.nom,
     prenom: user.prenom,
-    telephone: user.telephone,
     email: user.email,
     statut_compte: user.statut_compte,
     est_admin: user.est_admin,
@@ -81,7 +80,7 @@ const findUserWithRole = (where) =>
 // Guide §1.3 - Écran d'Inscription
 // Étape 1 : valide les champs, génère un code, envoie l'email,
 //            stocke un VerificationToken (pas d'utilisateur en DB)
-// Body: { nom, prenom, telephone, email, mot_de_passe,
+// Body: { nom, prenom, email, mot_de_passe,
 //         mot_de_passe_confirmation, role,
 //         /* client */ adresse_livraison,
 //         /* vendeur */ nom_etablissement, localisation_marche,
@@ -89,7 +88,7 @@ const findUserWithRole = (where) =>
 // ────────────────────────────────────────────────────────────
 export const register = async (req, res) => {
   const {
-    nom, prenom, telephone, email,
+    nom, prenom, email,
     mot_de_passe, mot_de_passe_confirmation,
     role,
     adresse_livraison,
@@ -98,20 +97,14 @@ export const register = async (req, res) => {
   } = req.body;
 
   // ── Validate common required fields ──────────────────────
-  if (!nom || !prenom || !mot_de_passe) {
+  if (!nom || !prenom || !email || !mot_de_passe) {
     return res.status(400).json({
-      error: 'Champs obligatoires manquants : nom, prenom, mot_de_passe.'
-    });
-  }
-
-  if (!email && !telephone) {
-    return res.status(400).json({
-      error: 'Email ou téléphone obligatoire.'
+      error: 'Champs obligatoires manquants : nom, prenom, email, mot_de_passe.'
     });
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (email && !emailRegex.test(email)) {
+  if (!emailRegex.test(email)) {
     return res.status(400).json({ error: "Format de l'adresse email invalide." });
   }
 
@@ -140,29 +133,20 @@ export const register = async (req, res) => {
   }
 
   try {
-    // Check if email already has an active user (only if email provided)
-    if (email) {
-      const existingUser = await prisma.utilisateur.findUnique({ where: { email } });
-      if (existingUser) {
-        return res.status(409).json({ error: 'Cette adresse email est déjà utilisée.' });
-      }
-
-      // Check for existing pending verification for this email
-      const existingPending = await prisma.verificationToken.findFirst({
-        where: { email, expires_at: { gt: new Date() } }
-      });
-      if (existingPending) {
-        return res.status(429).json({
-          error: 'Un code de vérification a déjà été envoyé à cet email. Vérifiez vos spams ou attendez 10 minutes.',
-          pending: true
-        });
-      }
+    // Check if email already has an active user
+    const existingUser = await prisma.utilisateur.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(409).json({ error: 'Cette adresse email est déjà utilisée.' });
     }
 
-    // ── Telephone-only is NOT allowed: email is required for verification ──
-    if (!email && telephone) {
-      return res.status(400).json({
-        error: 'Une adresse email est requise pour vérifier votre compte.'
+    // Check for existing pending verification for this email
+    const existingPending = await prisma.verificationToken.findFirst({
+      where: { email, expires_at: { gt: new Date() } }
+    });
+    if (existingPending) {
+      return res.status(429).json({
+        error: 'Un code de vérification a déjà été envoyé à cet email. Vérifiez vos spams ou attendez 10 minutes.',
+        pending: true
       });
     }
 
@@ -174,7 +158,7 @@ export const register = async (req, res) => {
     // Build payload as JSON
     const photoFile = req.file?.filename;
     const payload = JSON.stringify({
-      nom, prenom, telephone, email, mot_de_passe,
+      nom, prenom, email, mot_de_passe,
       adresse_livraison, nom_etablissement, localisation_marche, id_marche,
       type_vehicule, immatriculation,
       photo: photoFile || null,
@@ -249,7 +233,6 @@ export const verifyEmail = async (req, res) => {
         data: {
           nom: data.nom,
           prenom: data.prenom,
-          telephone: data.telephone,
           email: vt.email,
           mot_de_passe: hashedPassword,
           statut_compte: 'Actif',
@@ -440,24 +423,18 @@ export const resetPassword = async (req, res) => {
 // ────────────────────────────────────────────────────────────
 // POST /auth/login
 // Guide §1.2 - Écran de Connexion
-// Body: { email?, telephone?, mot_de_passe }
+// Body: { email, mot_de_passe }
 // ────────────────────────────────────────────────────────────
 export const login = async (req, res) => {
-  const { email, telephone, mot_de_passe } = req.body;
+  const { email, mot_de_passe } = req.body;
 
-  if ((!email && !telephone) || !mot_de_passe) {
-    return res.status(400).json({ error: 'Email ou téléphone et mot de passe requis.' });
+  if (!email || !mot_de_passe) {
+    return res.status(400).json({ error: 'Email et mot de passe requis.' });
   }
 
   try {
-    // Find by email OR telephone (guide §1.2)
-    const user = await prisma.utilisateur.findFirst({
-      where: {
-        OR: [
-          email ? { email } : undefined,
-          telephone ? { telephone } : undefined
-        ].filter(Boolean)
-      },
+    const user = await prisma.utilisateur.findUnique({
+      where: { email },
       include: { client: true, vendeur: true, livreur: true }
     });
 
@@ -543,7 +520,7 @@ export const getProfile = async (req, res) => {
 // ────────────────────────────────────────────────────────────
 export const updateProfile = async (req, res) => {
   const {
-    nom, prenom, telephone, email,
+    nom, prenom, email,
     mot_de_passe, mot_de_passe_confirmation,
     // Client
     adresse_livraison,
@@ -575,7 +552,6 @@ export const updateProfile = async (req, res) => {
       const baseData = {};
       if (nom) baseData.nom = nom;
       if (prenom) baseData.prenom = prenom;
-      if (telephone) baseData.telephone = telephone;
       if (email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) throw new Error('Format de l\'adresse email invalide.');
@@ -692,7 +668,6 @@ export const googleAuth = async (req, res) => {
           data: {
             nom: family_name || sub,
             prenom: given_name || 'Utilisateur',
-            telephone: '',
             email,
             mot_de_passe: await bcryptjs.hash(crypto.randomUUID(), 12),
             statut_compte: 'Actif',
@@ -815,7 +790,6 @@ export const googleCallback = async (req, res) => {
           data: {
             nom: family_name || sub,
             prenom: given_name || 'Utilisateur',
-            telephone: '',
             email,
             mot_de_passe: await bcryptjs.hash(crypto.randomUUID(), 12),
             statut_compte: 'Actif',

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { Loader2, XCircle, Star, Phone, Car, Motorbike, Frown, ChevronDown, Banknote } from 'lucide-react'
+import { Loader2, XCircle, Star, Car, Motorbike, Frown, ChevronDown, Banknote } from 'lucide-react'
 
 const PAGE_SIZE = 10
 
@@ -176,7 +176,6 @@ export default function SelectionLivreur() {
                         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                           <Star size={14} /> {drv.score_reputation.toFixed(1)} · {drv.type_vehicule}
                         </span>
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}><Phone size={14} /> {drv.utilisateur.telephone}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold px-2 py-1 rounded-lg"

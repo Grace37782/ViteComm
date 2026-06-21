@@ -14,7 +14,7 @@ export const getDriverDashboard = async (req, res) => {
 
     const driver = await prisma.livreur.findUnique({
       where: { id_user: driverId },
-      include: { utilisateur: { select: { nom: true, prenom: true, email: true, telephone: true, photo_url: true } } }
+      include: { utilisateur: { select: { nom: true, prenom: true, email: true, photo_url: true } } }
     });
     if (!driver) return res.status(403).json({ error: 'Espace réservé aux livreurs.' });
 
@@ -63,7 +63,6 @@ export const getDriverDashboard = async (req, res) => {
       nom: driver.utilisateur.nom,
       prenom: driver.utilisateur.prenom,
       email: driver.utilisateur.email,
-      telephone: driver.utilisateur.telephone,
       photo_url: driver.utilisateur.photo_url,
       score_reputation: avgRating,
       nb_avis: feedbacks.length,
@@ -148,7 +147,7 @@ export const getAvailableDeliveries = async (req, res) => {
           }
         },
         client: {
-          include: { utilisateur: { select: { nom: true, prenom: true, telephone: true } } }
+          include: { utilisateur: { select: { nom: true, prenom: true } } }
         }
       },
       orderBy: { date_creation: 'asc' }
@@ -586,7 +585,7 @@ export const getMyDeliveries = async (req, res) => {
         commande: {
           include: {
             client: {
-              include: { utilisateur: { select: { nom: true, prenom: true, telephone: true } } }
+              include: { utilisateur: { select: { nom: true, prenom: true } } }
             },
             detailsCommande: {
               include: {
@@ -624,7 +623,7 @@ export const getLivreurHistorique = async (req, res) => {
         commande: {
           include: {
             client: {
-              include: { utilisateur: { select: { nom: true, prenom: true, telephone: true } } }
+              include: { utilisateur: { select: { nom: true, prenom: true } } }
             }
           }
         },
@@ -962,7 +961,7 @@ export const getLivreurProfil = async (req, res) => {
   try {
     const driver = await prisma.livreur.findUnique({
       where: { id_user: req.user.id_user },
-      include: { utilisateur: { select: { nom: true, prenom: true, email: true, telephone: true, photo_url: true, statut_compte: true } } }
+      include: { utilisateur: { select: { nom: true, prenom: true, email: true, photo_url: true, statut_compte: true } } }
     });
     if (!driver) return res.status(403).json({ error: 'Espace réservé aux livreurs.' });
 
@@ -979,7 +978,6 @@ export const getLivreurProfil = async (req, res) => {
       nom: driver.utilisateur.nom,
       prenom: driver.utilisateur.prenom,
       email: driver.utilisateur.email,
-      telephone: driver.utilisateur.telephone,
       photo_url: driver.utilisateur.photo_url,
       statut_compte: driver.utilisateur.statut_compte,
       type_vehicule: driver.type_vehicule,
@@ -993,7 +991,7 @@ export const getLivreurProfil = async (req, res) => {
 };
 
 export const updateLivreurProfil = async (req, res) => {
-  const { type_vehicule, immatriculation, nom, prenom, email, telephone, mot_de_passe, mot_de_passe_confirmation } = req.body;
+  const { type_vehicule, immatriculation, nom, prenom, email, mot_de_passe, mot_de_passe_confirmation } = req.body;
 
   try {
     const driver = await prisma.livreur.findUnique({ where: { id_user: req.user.id_user } });
@@ -1016,7 +1014,6 @@ export const updateLivreurProfil = async (req, res) => {
     if (nom !== undefined) userData.nom = nom;
     if (prenom !== undefined) userData.prenom = prenom;
     if (email !== undefined) userData.email = email;
-    if (telephone !== undefined) userData.telephone = telephone;
 
     // Handle password change
     if (mot_de_passe) {
@@ -1049,7 +1046,7 @@ export const updateLivreurProfil = async (req, res) => {
     // Return updated profile
     const updated = await prisma.livreur.findUnique({
       where: { id_user: req.user.id_user },
-      include: { utilisateur: { select: { nom: true, prenom: true, email: true, telephone: true, photo_url: true } } }
+      include: { utilisateur: { select: { nom: true, prenom: true, email: true, photo_url: true } } }
     });
 
     return res.json({
@@ -1057,7 +1054,6 @@ export const updateLivreurProfil = async (req, res) => {
       nom: updated.utilisateur.nom,
       prenom: updated.utilisateur.prenom,
       email: updated.utilisateur.email,
-      telephone: updated.utilisateur.telephone,
       photo_url: updated.utilisateur.photo_url,
       type_vehicule: updated.type_vehicule,
       immatriculation: updated.immatriculation,

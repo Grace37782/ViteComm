@@ -195,7 +195,7 @@ async function main() {
   await prisma.utilisateur.create({
     data: {
       nom: 'Nkoulou', prenom: 'Lionel', email: 'admin@vitecomm.com',
-      telephone: '+237600000001', mot_de_passe: hashedAdmin,
+      mot_de_passe: hashedAdmin,
       statut_compte: 'Actif', est_admin: true,
       photo_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80'
     }
@@ -210,7 +210,6 @@ async function main() {
       data: {
         nom, prenom,
         email: `${prenom.toLowerCase()}.${nom.toLowerCase()}${i}@gmail.com`,
-        telephone: `+237699${String(100000 + i).slice(-6)}`,
         mot_de_passe: hashedCommon, statut_compte: 'Actif', est_admin: false,
         photo_url: clientPhotos[i % clientPhotos.length],
         client: { create: { adresse_livraison: adresses[i % adresses.length] } }
@@ -224,7 +223,7 @@ async function main() {
   const immaculee = await prisma.utilisateur.create({
     data: {
       nom: 'Koudjo', prenom: 'Immaculee', email: 'immaculee@gmail.com',
-      telephone: '+237699100099', mot_de_passe: hashedCommon,
+      mot_de_passe: hashedCommon,
       statut_compte: 'Actif', est_admin: false,
       photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&h=150&q=80',
       client: { create: { adresse_livraison: 'Fidjrosse, Cotonou' } }
@@ -245,7 +244,6 @@ async function main() {
       data: {
         nom, prenom,
         email: `${prenom.toLowerCase()}.${nom.toLowerCase()}${i}@shop.com`,
-        telephone: `+237677${String(100000 + i).slice(-6)}`,
         mot_de_passe: hashedCommon, statut_compte: 'Actif', est_admin: false,
         photo_url: vendorPhotos[i % vendorPhotos.length],
         vendeur: {
@@ -271,7 +269,6 @@ async function main() {
       data: {
         nom: nomsLivreurs[i], prenom: prenomsLivreurs[i],
         email: `${prenomsLivreurs[i].toLowerCase()}.${nomsLivreurs[i].toLowerCase()}${i}@express.com`,
-        telephone: `+237655${String(100000 + i).slice(-6)}`,
         mot_de_passe: hashedCommon, statut_compte: 'Actif', est_admin: false,
         photo_url: driverPhotos[i % driverPhotos.length],
         livreur: {

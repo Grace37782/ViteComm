@@ -395,7 +395,7 @@ export const getVendorOrders = async (req, res) => {
           include: { produit: true }
         },
         client: {
-          include: { utilisateur: { select: { nom: true, prenom: true, telephone: true } } }
+          include: { utilisateur: { select: { nom: true, prenom: true } } }
         },
         livraison: {
           include: {
@@ -419,14 +419,13 @@ export const getVendorOrders = async (req, res) => {
 
       // Livreur info
       const livreur = o.livraison?.livreur?.utilisateur
-        ? { nom: `${o.livraison.livreur.utilisateur.prenom} ${o.livraison.livreur.utilisateur.nom}`, telephone: o.livraison.livreur.utilisateur.telephone }
-        : { nom: 'Non assigné', telephone: '' };
+        ? { nom: `${o.livraison.livreur.utilisateur.prenom} ${o.livraison.livreur.utilisateur.nom}` }
+        : { nom: 'Non assigné' };
 
       // Client info
       const clientNom = o.client?.utilisateur
         ? `${o.client.utilisateur.prenom} ${o.client.utilisateur.nom}`
         : 'Client inconnu';
-      const clientTelephone = o.client?.utilisateur?.telephone || '';
       const clientAdresse = o.client?.adresse_livraison || '';
 
       // Articles (vendor's products only)
@@ -446,7 +445,7 @@ export const getVendorOrders = async (req, res) => {
         statut_collecte,
         validee_par_vendeur: o.validee_par_vendeur,
         livreur,
-        client: { nom: clientNom, telephone: clientTelephone, adresse: clientAdresse },
+        client: { nom: clientNom, adresse: clientAdresse },
         articles
       };
     });
@@ -770,8 +769,6 @@ function formatFacture(f) {
   const clientNom = f.commande.client
     ? `${f.commande.client.utilisateur.prenom} ${f.commande.client.utilisateur.nom}`
     : 'Client inconnu';
-  const clientTelephone = f.commande.client?.utilisateur?.telephone || null;
-
   return {
     id: `FAC-${new Date(f.date_emission).getFullYear()}-${String(f.id_facture).padStart(4, '0')}`,
     id_facture: f.id_facture,
@@ -779,7 +776,6 @@ function formatFacture(f) {
     date_raw: f.date_emission,
     commandeId: f.commande.id_commande,
     client: clientNom,
-    client_telephone: clientTelephone,
     articles: vendorArticles,
     nb_articles: vendorArticles.length,
     nb_acceptes: vendorArticles.filter((a) => a.statut === 'Accepte').length,
@@ -1160,7 +1156,7 @@ export const getVendorSignalements = async (req, res) => {
       where: { id_auteur: req.user.id_user },
       include: {
         cible: {
-          select: { nom: true, prenom: true, email: true, telephone: true }
+          select: { nom: true, prenom: true, email: true }
         }
       },
       orderBy: { date_heure: 'desc' }
@@ -1176,7 +1172,6 @@ export const getVendorSignalements = async (req, res) => {
         id: s.id_signalement,
         cible: `${s.cible.prenom} ${s.cible.nom}`,
         cible_email: s.cible.email,
-        cible_telephone: s.cible.telephone,
         type: s.type_cible_cible,
         motif,
         description,
@@ -1212,7 +1207,7 @@ export const createSignalement = async (req, res) => {
   const cibleType = validTypes.includes(type_cible) ? type_cible : 'client';
 
   try {
-    // Search target user: try full name match first, then partial on nom/prenom/email/telephone
+    // Search target user: try full name match first, then partial on nom/prenom/email
     const searchTerms = cible.trim().split(/\s+/);
     let targetUser = null;
 
@@ -1228,22 +1223,21 @@ export const createSignalement = async (req, res) => {
       });
     }
 
-    // Fallback: search by single name, email, or telephone
+    // Fallback: search by single name, or email
     if (!targetUser) {
       targetUser = await prisma.utilisateur.findFirst({
         where: {
           OR: [
             { nom: { contains: cible.trim() } },
             { prenom: { contains: cible.trim() } },
-            { email: { contains: cible.trim() } },
-            { telephone: { contains: cible.trim() } }
+            { email: { contains: cible.trim() } }
           ]
         }
       });
     }
 
     if (!targetUser) {
-      return res.status(404).json({ error: 'Utilisateur introuvable. Vérifiez le nom, email ou téléphone.' });
+      return res.status(404).json({ error: 'Utilisateur introuvable. Vérifiez le nom ou l\'email.' });
     }
 
     // Prevent self-reporting
@@ -1361,7 +1355,6 @@ export const getVendorProfil = async (req, res) => {
       nom: user.nom,
       prenom: user.prenom,
       email: user.email,
-      telephone: user.telephone,
       photo_url: user.photo_url,
       statut_compte: user.statut_compte,
       vendeur: {
@@ -1431,7 +1424,6 @@ export const updateVendorProfil = async (req, res) => {
         id_user: user.id_user,
         nom: user.nom,
         prenom: user.prenom,
-        telephone: user.telephone,
         email: user.email,
         statut_compte: user.statut_compte,
         est_admin: user.est_admin,

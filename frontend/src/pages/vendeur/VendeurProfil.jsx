@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
-import { Timer, Star, MessageCircle, Handshake, Loader2, User, Lock, XCircle, AlertTriangle, CheckCircle, Store, MapPin, Mail, Smartphone, Pencil, Save, Camera, KeyRound, LogOut, Package } from 'lucide-react'
+import { Timer, Star, MessageCircle, Handshake, Loader2, User, Lock, XCircle, AlertTriangle, CheckCircle, Store, MapPin, Mail, Pencil, Save, Camera, KeyRound, LogOut, Package } from 'lucide-react'
 
 const MOTIFS_REPUTATION = [
   { label: 'Ponctualité', icon: Timer, description: 'Respect des horaires de livraison' },
@@ -18,7 +18,7 @@ export default function VendeurProfil() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ nom_etablissement: '', localisation_marche: '', nom: '', prenom: '', email: '', telephone: '' })
+  const [form, setForm] = useState({ nom_etablissement: '', localisation_marche: '', nom: '', prenom: '', email: '' })
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState('')
   const [toast, setToast] = useState(null)
@@ -33,7 +33,6 @@ export default function VendeurProfil() {
         nom: data.nom || '',
         prenom: data.prenom || '',
         email: data.email || '',
-        telephone: data.telephone || '',
         nom_etablissement: data.vendeur?.nom_etablissement || '',
         localisation_marche: data.vendeur?.localisation_marche || '',
       }))
@@ -156,7 +155,6 @@ export default function VendeurProfil() {
                 <InfoRow label="Établissement" value={form.nom_etablissement || '—'} icon={Store} />
                 <InfoRow label="Marché" value={form.localisation_marche || '—'} icon={MapPin} />
                 <InfoRow label="Email" value={profile?.email} icon={Mail} />
-                <InfoRow label="Téléphone" value={profile?.telephone || '—'} icon={Smartphone} />
                 <InfoRow label="Score réputation" value={`${scoreReputation}/5`} icon={Star} />
                 <InfoRow label="Statut" value={profile?.statut_compte || '—'} icon={profile?.statut_compte === 'Actif' ? CheckCircle : Lock} />
               </div>
@@ -211,7 +209,6 @@ export default function VendeurProfil() {
                   <Field label="Prénom" value={form.prenom} onChange={v => setForm(p => ({ ...p, prenom: v }))} />
                 </div>
                 <Field label="Email" type="email" value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} />
-                <Field label="Téléphone" value={form.telephone} onChange={v => setForm(p => ({ ...p, telephone: v }))} />
 
                 <div className="flex gap-3 mt-2">
                   <button type="submit" disabled={saving}
@@ -223,7 +220,7 @@ export default function VendeurProfil() {
                     setEditing(false); setPhotoFile(null); setPhotoPreview('')
                     setForm(f => ({
                       ...f, nom: profile?.nom || '', prenom: profile?.prenom || '',
-                      telephone: profile?.telephone || '', email: profile?.email || '',
+                      email: profile?.email || '',
                       nom_etablissement: profile?.vendeur?.nom_etablissement || '',
                       localisation_marche: profile?.vendeur?.localisation_marche || '',
                     }))

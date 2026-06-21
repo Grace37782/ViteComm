@@ -4,13 +4,7 @@ import { login as apiLogin } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import GoogleSignInButton from '../../components/GoogleSignInButton'
-import { AlertTriangle, Lock, Ban, WifiOff, Smartphone, Mail, Eye, EyeOff, Loader2 } from 'lucide-react'
-
-function detecterTypeIdentifiant(valeur) {
-  if (valeur.includes('@')) return 'email'
-  if (/^\d/.test(valeur))   return 'telephone'
-  return null
-}
+import { AlertTriangle, Lock, Ban, WifiOff, Mail, Eye, EyeOff, Loader2 } from 'lucide-react'
 
 function messageErreur(err) {
   const msg = err.message?.toLowerCase() || ''
@@ -51,16 +45,13 @@ export default function Connexion() {
   const [erreur,      setErreur]      = useState(null)
   const [loading,     setLoading]     = useState(false)
 
-  const typeIdent = detecterTypeIdentifiant(identifiant)
   const alreadyLoggedIn = !!user && !!localStorage.getItem('vc_token')
 
   function valider() {
     if (!identifiant.trim())
-      return 'Entrez votre email ou numéro de téléphone.'
-    if (typeIdent === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifiant))
+      return 'Entrez votre email.'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifiant))
       return 'Format email invalide.'
-    if (typeIdent === 'telephone' && !/^\d{8,10}$/.test(identifiant.replace(/\s/g, '')))
-      return 'Numéro de téléphone invalide (8 à 10 chiffres).'
     if (!motDePasse)
       return 'Entrez votre mot de passe.'
     return null
@@ -73,10 +64,7 @@ export default function Connexion() {
     if (errValidation) return setErreur({ texte: errValidation, type: 'erreur' })
     setLoading(true)
     try {
-      const payload = typeIdent === 'email'
-        ? { email: identifiant, mot_de_passe: motDePasse }
-        : { telephone: identifiant, mot_de_passe: motDePasse }
-      const data = await apiLogin(payload)
+      const data = await apiLogin({ email: identifiant, mot_de_passe: motDePasse })
       updateAuthContext(data.user, data.token)
       const role = data.user?.role || data.role
       const redirects = {
@@ -174,7 +162,7 @@ export default function Connexion() {
             {/* Identifiant */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                Email ou téléphone
+                Email
               </label>
               <div
                 className="flex items-center rounded-xl overflow-hidden transition-all"
@@ -184,25 +172,17 @@ export default function Connexion() {
                 }}
               >
                 <span className="pl-4 text-sm select-none">
-                  {typeIdent === 'telephone' ? <Smartphone size={16} color="var(--text-muted)" /> : <Mail size={16} color="var(--text-muted)" />}
+                  <Mail size={16} color="var(--text-muted)" />
                 </span>
                 <input
-                  type="text"
-                  placeholder="exemple@gmail.com ou 97000000"
+                  type="email"
+                  placeholder="exemple@gmail.com"
                   value={identifiant}
                   onChange={(e) => { setIdentifiant(e.target.value); setErreur(null) }}
                   autoComplete="username"
                   className="flex-1 bg-transparent px-3 py-3.5 text-sm outline-none"
                   style={{ color: 'var(--text-primary)' }}
                 />
-                {typeIdent && (
-                  <span
-                    className="px-2.5 mr-2 py-1 rounded-lg text-[10px] font-bold flex-shrink-0"
-                    style={{ background: 'var(--accent)', color: '#fff', opacity: 0.9 }}
-                  >
-                    {typeIdent === 'email' ? 'Email' : 'Tél.'}
-                  </span>
-                )}
               </div>
             </div>
 

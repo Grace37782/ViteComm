@@ -462,7 +462,7 @@ export default function AccueilClient() {
                           {d.utilisateur?.prenom} {d.utilisateur?.nom}
                         </p>
                         <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
-                          Livreur • {d.utilisateur?.telephone}
+                          Livreur
                         </p>
                       </div>
                       <Truck size={14} style={{ color: '#1D9E75' }} />

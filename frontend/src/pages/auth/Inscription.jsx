@@ -130,7 +130,7 @@ export default function Inscription() {
   const [photoPreview, setPhotoPreview]   = useState('')
 
   const [form, setForm] = useState({
-    nom: '', prenom: '', email: '', telephone: '',
+    nom: '', prenom: '', email: '',
     identifiant: '',
     mot_de_passe: '', mot_de_passe_confirmation: '',
     adresse_livraison: '',
@@ -182,7 +182,7 @@ export default function Inscription() {
       if (photoFile) body.set('photo', photoFile)
       const res = await api.post('/auth/register', body)
       setVerifyToken(res.token)
-      setVerifyEmail(form.email || form.telephone)
+      setVerifyEmail(form.email)
       setStep('verify')
     } catch (err) { showError(err.message) }
     finally { setLoading(false) }
@@ -331,13 +331,10 @@ export default function Inscription() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Email ou téléphone</label>
-                  <input type="text" placeholder="exemple@gmail.com ou +229 97 00 00 00"
-                    value={form.identifiant || ''}
-                    onChange={e => {
-                      const v = e.target.value; const clean = v.replace(/\s/g, '')
-                      setForm(p => ({ ...p, identifiant: v, email: clean.includes('@') ? clean : '', telephone: /^[\d+]/.test(clean) && !clean.includes('@') ? clean : '' }))
-                    }}
+                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Email</label>
+                  <input type="email" placeholder="exemple@gmail.com"
+                    value={form.email}
+                    onChange={set('email')}
                     className="rounded-xl px-4 py-3.5 text-sm outline-none" style={inputStyle} />
                 </div>
 
@@ -447,7 +444,7 @@ export default function Inscription() {
                   <strong style={{ color: 'var(--text-primary)' }}>{verifyEmail}</strong>
                 </p>
                 <p className="text-xs mt-1 text-center" style={{ color: 'var(--text-muted)' }}>
-                  {verifyEmail?.includes('@') ? 'Vérifiez vos spams si vous ne trouvez pas le message.' : 'Vérifiez votre téléphone.'}
+                  Vérifiez vos spams si vous ne trouvez pas le message.
                 </p>
               </div>
 

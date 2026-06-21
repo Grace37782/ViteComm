@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
-import { User, Star, Lock, Clock, MessageCircle, Shield, Bike, Hash, Mail, Smartphone, CheckCircle, Pencil, Camera, Save, KeyRound, LogOut, X, Loader2 } from 'lucide-react'
+import { User, Star, Lock, Clock, MessageCircle, Shield, Bike, Hash, Mail, CheckCircle, Pencil, Camera, Save, KeyRound, LogOut, X, Loader2 } from 'lucide-react'
 
 const MOTIFS_REPUTATION = [
   { label: 'Ponctualité', icon: <Clock size={20} />, description: 'Respect des horaires de livraison' },
@@ -21,7 +21,7 @@ export default function LivreurProfil() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ nom: '', prenom: '', email: '', telephone: '', type_vehicule: '', immatriculation: '' })
+  const [form, setForm] = useState({ nom: '', prenom: '', email: '', type_vehicule: '', immatriculation: '' })
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState('')
   const [toast, setToast] = useState(null)
@@ -36,7 +36,6 @@ export default function LivreurProfil() {
           nom: data.nom || '',
           prenom: data.prenom || '',
           email: data.email || '',
-          telephone: data.telephone || '',
           type_vehicule: data.type_vehicule || '',
           immatriculation: data.immatriculation || '',
         })
@@ -65,7 +64,6 @@ export default function LivreurProfil() {
       body.set('nom', form.nom)
       body.set('prenom', form.prenom)
       body.set('email', form.email)
-      body.set('telephone', form.telephone)
       body.set('type_vehicule', form.type_vehicule)
       body.set('immatriculation', form.immatriculation)
       if (photoFile) body.set('photo', photoFile)
@@ -149,7 +147,6 @@ export default function LivreurProfil() {
                 <InfoRow label="Véhicule" value={profile?.type_vehicule || '—'} icon={<Bike size={14} />} />
                 <InfoRow label="Immatriculation" value={profile?.immatriculation || '—'} icon={<Hash size={14} />} />
                 <InfoRow label="Email" value={profile?.email || '—'} icon={<Mail size={14} />} />
-                <InfoRow label="Téléphone" value={profile?.telephone || '—'} icon={<Smartphone size={14} />} />
                 <InfoRow label="Réputation" value={`${score.toFixed(1)}/5 (${profile?.nb_avis || 0} avis)`} icon={<Star size={14} />} />
                 <InfoRow label="Statut" value={profile?.statut_compte || '—'} icon={profile?.statut_compte === 'Actif' ? <CheckCircle size={14} /> : <Lock size={14} />} />
               </div>
@@ -190,7 +187,6 @@ export default function LivreurProfil() {
                   <Field label="Prénom" value={form.prenom} onChange={v => setForm(p => ({ ...p, prenom: v }))} isDark={isDark} />
                 </div>
                 <Field label={<><Mail size={12} className="inline align-middle" /> Email</>} type="email" value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} isDark={isDark} />
-                <Field label={<><Smartphone size={12} className="inline align-middle" /> Téléphone</>} value={form.telephone} onChange={v => setForm(p => ({ ...p, telephone: v }))} isDark={isDark} />
 
                 <div className="flex gap-3 mt-2">
                   <button type="submit" disabled={saving}
@@ -202,7 +198,7 @@ export default function LivreurProfil() {
                     setEditing(false); setPhotoFile(null); setPhotoPreview('')
                     setForm({
                       nom: profile?.nom || '', prenom: profile?.prenom || '',
-                      email: profile?.email || '', telephone: profile?.telephone || '',
+                      email: profile?.email || '',
                       type_vehicule: profile?.type_vehicule || '', immatriculation: profile?.immatriculation || '',
                     })
                   }}
