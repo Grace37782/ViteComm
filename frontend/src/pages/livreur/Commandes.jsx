@@ -452,6 +452,10 @@ export default function CommandesLivreur() {
                 {!finalizeScanResult && (
                   <button onClick={() => {
                     cleanupScanner()
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                      showToast('Caméra non supportée — ouvrez cette page dans un navigateur récent (Chrome/Safari) et en HTTPS')
+                      return
+                    }
                     const scanner = new Html5Qrcode('qr-finalize-reader')
                     scanner.start(
                       { facingMode: 'environment' },
@@ -462,7 +466,16 @@ export default function CommandesLivreur() {
                       },
                       () => {}
                     ).catch(err => {
-                      showToast('Caméra impossible: ' + (err.message || err))
+                      const msg = err?.message || String(err)
+                      if (msg.includes('NotAllowedError') || msg.includes('Permission')) {
+                        showToast('Accès caméra refusé — autorisez l\'accès dans les paramètres de votre navigateur')
+                      } else if (msg.includes('NotFoundError') || msg.includes('DevicesNotFound')) {
+                        showToast('Aucune caméra détectée sur cet appareil')
+                      } else if (msg.includes('NotReadableError') || msg.includes('TrackStartError')) {
+                        showToast('Caméra déjà utilisée par une autre application')
+                      } else {
+                        showToast('Caméra impossible: ' + msg)
+                      }
                       cleanupScanner()
                     })
                     scannerRef.current = scanner
@@ -529,14 +542,15 @@ export default function CommandesLivreur() {
                     <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>QR du vendeur scanné avec succès !</div>
                   </div>
                 ) : (
-                  <div id="qr-collect-reader" className="rounded-xl overflow-hidden" />
-                )}
-                {!scanResult && (
                   <div id="qr-collect-reader" className="rounded-xl overflow-hidden" style={{ minHeight: 200 }} />
                 )}
                 {!scanResult && (
                   <button onClick={() => {
                     cleanupScanner()
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                      showToast('Caméra non supportée — ouvrez cette page dans un navigateur récent (Chrome/Safari) et en HTTPS')
+                      return
+                    }
                     const scanner = new Html5Qrcode('qr-collect-reader')
                     scanner.start(
                       { facingMode: 'environment' },
@@ -547,7 +561,16 @@ export default function CommandesLivreur() {
                       },
                       () => {}
                     ).catch(err => {
-                      showToast('Caméra impossible: ' + (err.message || err))
+                      const msg = err?.message || String(err)
+                      if (msg.includes('NotAllowedError') || msg.includes('Permission')) {
+                        showToast('Accès caméra refusé — autorisez l\'accès dans les paramètres de votre navigateur')
+                      } else if (msg.includes('NotFoundError') || msg.includes('DevicesNotFound')) {
+                        showToast('Aucune caméra détectée sur cet appareil')
+                      } else if (msg.includes('NotReadableError') || msg.includes('TrackStartError')) {
+                        showToast('Caméra déjà utilisée par une autre application')
+                      } else {
+                        showToast('Caméra impossible: ' + msg)
+                      }
                       cleanupScanner()
                     })
                     scannerRef.current = scanner
