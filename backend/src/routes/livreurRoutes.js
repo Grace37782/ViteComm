@@ -17,7 +17,9 @@ import {
   getFeedbacks,
   getLivreurProfil,
   updateLivreurProfil,
-  createSignalement
+  createSignalement,
+  verifyCollectQR,
+  verifyFinalizeQR
 } from '../controllers/livreurController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { uploadAvatar } from '../middleware/upload.js';
@@ -45,8 +47,10 @@ router.post('/deliveries/:id_commande/accept', acceptDelivery);
 // ── Flux de livraison ──
 router.get('/deliveries', getMyDeliveries);
 router.get('/historique', getLivreurHistorique);
+router.post('/deliveries/:id_commande/verify-collect', verifyCollectQR);
 router.post('/deliveries/:id_commande/collect', collectDelivery);
 router.post('/deliveries/:id_commande/depart', departDelivery);
+router.post('/deliveries/:id_commande/verify-finalize', verifyFinalizeQR);
 router.post('/deliveries/:id_commande/finalize', finalizeDelivery);
 
 // ── Retours (RG09, RG16) ──

@@ -318,6 +318,106 @@ export const collectDelivery = async (req, res) => {
 };
 
 // ═══════════════════════════════════════════════════════════
+// 4.3a-bis. VÉRIFICATION QR SANS EXÉCUTION
+// ═══════════════════════════════════════════════════════════
+
+export const verifyCollectQR = async (req, res) => {
+  const { id_commande } = req.params;
+  const { scanned_qr_data } = req.body;
+  const driverId = req.user.id_user;
+
+  if (!scanned_qr_data) {
+    return res.status(400).json({ error: 'Le QR code du vendeur est obligatoire.' });
+  }
+
+  try {
+    const commandId = parseInt(id_commande, 10);
+
+    const command = await prisma.commande.findUnique({
+      where: { id_commande: commandId },
+      include: { livraison: true }
+    });
+
+    if (!command || !command.livraison || command.livraison.id_user_livreur !== driverId) {
+      return res.status(404).json({ error: 'Livraison introuvable ou non assignée.' });
+    }
+
+    if (command.livraison.statut_livraison !== 'En cours de collecte') {
+      return res.status(400).json({ error: 'Cette livraison n\'est pas en phase de collecte.' });
+    }
+
+    if (!command.validee_par_vendeur) {
+      return res.status(400).json({ error: 'Le vendeur n\'a pas encore validé la disponibilité des articles.' });
+    }
+
+    const verified = verifyVendorQRToken(scanned_qr_data);
+    if (!verified) {
+      return res.status(400).json({ error: 'QR code invalide ou expiré. Demandez un nouveau QR au vendeur.' });
+    }
+
+    if (verified.orderId !== commandId) {
+      return res.status(400).json({ error: 'Ce QR code ne correspond pas à cette commande.' });
+    }
+
+    if (verified.clientCode !== command.code_verification) {
+      return res.status(400).json({ error: 'Le code dans le QR ne correspond pas à la commande.' });
+    }
+
+    return res.json({ message: 'QR code validé avec succès.' });
+  } catch (error) {
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
+  }
+};
+
+export const verifyFinalizeQR = async (req, res) => {
+  const { id_commande } = req.params;
+  const { scanned_qr_data } = req.body;
+  const driverId = req.user.id_user;
+
+  if (!scanned_qr_data) {
+    return res.status(400).json({ error: 'Le QR code du client est obligatoire.' });
+  }
+
+  try {
+    const commandId = parseInt(id_commande, 10);
+
+    const command = await prisma.commande.findUnique({
+      where: { id_commande: commandId },
+      include: { livraison: true }
+    });
+
+    if (!command || !command.livraison || command.livraison.id_user_livreur !== driverId) {
+      return res.status(404).json({ error: 'Livraison introuvable ou non assignée.' });
+    }
+
+    if (command.livraison.statut_livraison !== 'Inspectee') {
+      return res.status(400).json({ error: 'Cette livraison n\'est pas prête pour la finalisation.' });
+    }
+
+    if (!command.code_verification) {
+      return res.status(400).json({ error: 'Code de vérification client manquant.' });
+    }
+
+    const verified = verifyFinalizeQRToken(scanned_qr_data, command.livraison.preuve_collecte);
+    if (!verified) {
+      return res.status(400).json({ error: 'QR code invalide ou expiré. Demandez au client un nouveau QR.' });
+    }
+
+    if (verified.orderId !== commandId) {
+      return res.status(400).json({ error: 'Ce QR code ne correspond pas à cette commande.' });
+    }
+
+    if (verified.clientCode !== command.code_verification) {
+      return res.status(400).json({ error: 'Le code dans le QR ne correspond pas à la commande.' });
+    }
+
+    return res.json({ message: 'QR code de finalisation validé.' });
+  } catch (error) {
+    return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
 // 4.3b. DÉPART LIVRAISON
 // ═══════════════════════════════════════════════════════════
 

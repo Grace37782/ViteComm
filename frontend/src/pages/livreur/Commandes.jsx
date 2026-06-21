@@ -27,6 +27,8 @@ export default function CommandesLivreur() {
   const [acceptCode, setAcceptCode] = useState('')
   const [collectError, setCollectError] = useState(null)
   const [finalizeError, setFinalizeError] = useState(null)
+  const [collectVerified, setCollectVerified] = useState(false)
+  const [finalizeVerified, setFinalizeVerified] = useState(false)
   const scannerRef = useRef(null)
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000) }
@@ -61,6 +63,7 @@ export default function CommandesLivreur() {
     setCollectOpen(delivery)
     setScanResult(null)
     setCollectError(null)
+    setCollectVerified(false)
   }
 
   const cleanupScanner = useCallback(() => {
@@ -92,22 +95,18 @@ export default function CommandesLivreur() {
     }
   }, [cleanupScanner])
 
-  useEffect(() => {
-    return () => cleanupScanner()
-  }, [cleanupScanner])
-
-  async function submitCollection() {
-    if (!scanResult) return showToast('Scannez le QR code du vendeur')
+  // Phase 1: Verify QR on scan — don't execute yet
+  async function verifyCollectScan(scannedData) {
     if (!collectOpen) return
     setSubmitting(true)
+    setCollectError(null)
     try {
-      await api.post(`/livreur/deliveries/${collectOpen.commande.id_commande}/collect`, {
-        scanned_qr_data: scanResult
+      await api.post(`/livreur/deliveries/${collectOpen.commande.id_commande}/verify-collect`, {
+        scanned_qr_data: scannedData
       })
-      showToast('Collecte confirmée !')
-      setCollectOpen(null); setScanResult(null); setCollectError(null)
-      cleanupScanner()
-      loadDataFn()
+      setCollectVerified(true)
+      setScanResult(scannedData)
+      showToast('QR code validé !')
     } catch (e) {
       setCollectError(e.message)
       setScanResult(null)
@@ -115,6 +114,61 @@ export default function CommandesLivreur() {
     }
     finally { setSubmitting(false) }
   }
+
+  // Phase 2: Execute collect after user clicks confirm
+  async function submitCollect() {
+    if (!collectOpen || !scanResult) return
+    setSubmitting(true)
+    try {
+      await api.post(`/livreur/deliveries/${collectOpen.commande.id_commande}/collect`, {
+        scanned_qr_data: scanResult
+      })
+      showToast('Collecte confirmée !')
+      setCollectOpen(null); setScanResult(null); setCollectVerified(false)
+      cleanupScanner()
+      loadDataFn()
+    } catch (e) {
+      setCollectError(e.message)
+    }
+    finally { setSubmitting(false) }
+  }
+
+  // Phase 1: Verify finalize QR on scan
+  async function verifyFinalizeScan(scannedData) {
+    if (!finalizeOpen) return
+    setSubmitting(true)
+    setFinalizeError(null)
+    try {
+      await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/verify-finalize`, { scanned_qr_data: scannedData })
+      setFinalizeVerified(true)
+      setFinalizeScanResult(scannedData)
+      showToast('QR code de finalisation validé !')
+    } catch (e) {
+      setFinalizeError(e.message)
+      setFinalizeScanResult(null)
+    }
+    finally { setSubmitting(false) }
+  }
+
+  // Phase 2: Execute finalize after user clicks confirm
+  async function submitFinalize() {
+    if (!finalizeOpen || !finalizeScanResult) return
+    setSubmitting(true)
+    try {
+      await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/finalize`, { scanned_qr_data: finalizeScanResult })
+      showToast('Livraison finalisée !')
+      setFinalizeOpen(null); setFinalizeScanResult(null); setFinalizeVerified(false)
+      cleanupScanner()
+      loadDataFn()
+    } catch (e) {
+      setFinalizeError(e.message)
+    }
+    finally { setSubmitting(false) }
+  }
+
+  useEffect(() => {
+    return () => cleanupScanner()
+  }, [cleanupScanner])
 
   async function marquerEnRoute(id_commande) {
     try {
@@ -124,22 +178,7 @@ export default function CommandesLivreur() {
     } catch (e) { showToast(e.message) }
   }
 
-  function openFinalize(delivery) { setFinalizeOpen(delivery); setFinalizeScanResult(null); setFinalizeError(null) }
-
-  async function handleFinalize() {
-    if (!finalizeScanResult) return showToast('Scannez le QR du client')
-    if (!finalizeOpen) return
-    setSubmitting(true)
-    try {
-      await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/finalize`, { scanned_qr_data: finalizeScanResult })
-      showToast('Livraison finalisée !')
-      setFinalizeOpen(null); setFinalizeError(null); loadDataFn()
-    } catch (e) {
-      setFinalizeError(e.message)
-      setFinalizeScanResult(null)
-    }
-    finally { setSubmitting(false) }
-  }
+  function openFinalize(delivery) { setFinalizeOpen(delivery); setFinalizeScanResult(null); setFinalizeError(null); setFinalizeVerified(false) }
 
   const activeDeliveries = deliveries.filter(d => d.statut_livraison !== 'Livree' && d.statut_livraison !== 'Echec')
   const historyDeliveries = deliveries.filter(d => d.statut_livraison === 'Livree' || d.statut_livraison === 'Echec')
@@ -477,27 +516,39 @@ export default function CommandesLivreur() {
                 {finalizeOpen.commande?.date_creation && ` · Créée le ${new Date(finalizeOpen.commande.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
               </p>
 
-              {/* QR Scanner — real-time camera */}
+              {/* QR Scanner — verify on scan, execute on confirm */}
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
                   <QrCode size={12} /> Scanner le QR code de finalisation
                 </div>
                 <div className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
-                  Demandez au client d'afficher son QR de finalisation. Scannez-le avec l'appareil photo.
+                  Demandez au client d'afficher son QR de finalisation. Scannez-le pour confirmer la livraison.
                 </div>
-                {finalizeScanResult ? (
-                  <div className="rounded-xl p-3 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
-                    <CheckCircle size={20} className="mx-auto mb-1" style={{ color: '#1D9E75' }} />
-                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>QR scanné avec succès !</div>
+                {finalizeVerified ? (
+                  <div className="rounded-xl p-4 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
+                    <CheckCircle size={22} className="mx-auto mb-1" style={{ color: '#1D9E75' }} />
+                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>QR code de finalisation validé !</div>
                   </div>
-                ) : (
+                ) : submitting ? (
+                  <div className="rounded-xl p-4 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
+                    <Loader2 size={20} className="mx-auto mb-1 animate-spin" style={{ color: '#1D9E75' }} />
+                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>Vérification du QR code en cours…</div>
+                  </div>
+                ) : !finalizeError ? (
                   <div id="qr-finalize-reader" className="rounded-xl overflow-hidden" style={{ minHeight: 200 }} />
-                )}
-                {!finalizeScanResult && (
-                  <button onClick={() => startCamera('qr-finalize-reader', setFinalizeScanResult)}
+                ) : null}
+                {!submitting && !finalizeError && !finalizeVerified && (
+                  <button onClick={() => startCamera('qr-finalize-reader', verifyFinalizeScan)}
                     className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
                     style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
                     <QrCode size={14} className="inline align-middle" /> Activer l'appareil photo
+                  </button>
+                )}
+                {finalizeError && (
+                  <button onClick={() => { setFinalizeError(null); setFinalizeScanResult(null); setFinalizeVerified(false) }}
+                    className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
+                    style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
+                    <QrCode size={14} className="inline align-middle" /> Réessayer le scan
                   </button>
                 )}
               </div>
@@ -512,18 +563,18 @@ export default function CommandesLivreur() {
                     {finalizeError}
                   </div>
                   <div className="text-[10px] mt-2" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
-                    Demandez au client d'afficher à nouveau son QR de finalisation.
+                    Vérifiez que vous scannez le QR code de la bonne commande.
                   </div>
                 </div>
               )}
 
-              <button onClick={handleFinalize} disabled={submitting || !finalizeScanResult}
+              <button onClick={submitFinalize} disabled={submitting || !finalizeVerified}
                 className="w-full py-4 rounded-2xl text-white font-black text-sm cursor-pointer transition-all active:scale-98"
                 style={{
-                  background: (!finalizeScanResult || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
+                  background: (!finalizeVerified || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
                   border: 'none', opacity: submitting ? 0.7 : 1,
                 }}>
-                {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Envoi…</> : <><CheckCircle size={14} className="inline align-middle" /> Confirmer la livraison</>}
+                {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Envoi…</> : <><CheckCircle size={14} className="inline align-middle" /> Finaliser la livraison</>}
               </button>
             </div>
           </div>
@@ -546,27 +597,39 @@ export default function CommandesLivreur() {
                 {collectOpen.commande?.date_creation && ` · Créée le ${new Date(collectOpen.commande.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
               </p>
 
-              {/* QR Scanner — camera permission required */}
+              {/* QR Scanner — verify on scan, execute on confirm */}
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
                   <QrCode size={12} /> Scanner le QR code du vendeur
                 </div>
                 <div className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
-                  Demandez au vendeur d'afficher son QR code. Scannez-le avec l'appareil photo pour confirmer la collecte.
+                  Demandez au vendeur d'afficher son QR code. Scannez-le pour confirmer la collecte.
                 </div>
-                {scanResult ? (
-                  <div className="rounded-xl p-3 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
-                    <CheckCircle size={20} className="mx-auto mb-1" style={{ color: '#1D9E75' }} />
-                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>QR du vendeur scanné avec succès !</div>
+                {collectVerified ? (
+                  <div className="rounded-xl p-4 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
+                    <CheckCircle size={22} className="mx-auto mb-1" style={{ color: '#1D9E75' }} />
+                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>QR code validé avec succès !</div>
                   </div>
-                ) : (
+                ) : submitting ? (
+                  <div className="rounded-xl p-4 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
+                    <Loader2 size={20} className="mx-auto mb-1 animate-spin" style={{ color: '#1D9E75' }} />
+                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>Vérification du QR code en cours…</div>
+                  </div>
+                ) : !collectError ? (
                   <div id="qr-collect-reader" className="rounded-xl overflow-hidden" style={{ minHeight: 200 }} />
-                )}
-                {!scanResult && (
-                  <button onClick={() => startCamera('qr-collect-reader', setScanResult)}
+                ) : null}
+                {!submitting && !collectError && !collectVerified && (
+                  <button onClick={() => startCamera('qr-collect-reader', verifyCollectScan)}
                     className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
                     style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
                     <QrCode size={14} className="inline align-middle" /> Activer l'appareil photo
+                  </button>
+                )}
+                {collectError && (
+                  <button onClick={() => { setCollectError(null); setScanResult(null); setCollectVerified(false) }}
+                    className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
+                    style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
+                    <QrCode size={14} className="inline align-middle" /> Réessayer le scan
                   </button>
                 )}
               </div>
@@ -581,15 +644,15 @@ export default function CommandesLivreur() {
                     {collectError}
                   </div>
                   <div className="text-[10px] mt-2" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
-                    Réessayez en scannant à nouveau le QR du vendeur.
+                    Vérifiez que vous scannez le QR code de la bonne commande.
                   </div>
                 </div>
               )}
 
-              <button onClick={submitCollection} disabled={submitting || !scanResult}
+              <button onClick={submitCollect} disabled={submitting || !collectVerified}
                 className="w-full py-4 rounded-2xl text-white font-black text-sm cursor-pointer transition-all active:scale-98"
                 style={{
-                  background: (!scanResult || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
+                  background: (!collectVerified || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
                   border: 'none', opacity: submitting ? 0.7 : 1,
                 }}>
                 {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Confirmation…</> : <><CheckCircle size={14} className="inline align-middle" /> Confirmer la collecte</>}
