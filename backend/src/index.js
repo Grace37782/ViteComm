@@ -10,6 +10,7 @@ import vendeurRoutes from './routes/vendeurRoutes.js';
 import livreurRoutes from './routes/livreurRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import { handleWebhook } from './controllers/paymentController.js';
 import { internalError } from './utils/errors.js';
 
@@ -93,6 +94,7 @@ app.use('/api/client/payment', paymentRoutes);
 app.use('/api/vendor', vendeurRoutes);
 app.use('/api/livreur', livreurRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error handling middleware
 app.use((err, req, res, _next) => {

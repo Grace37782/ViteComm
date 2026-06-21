@@ -1,6 +1,7 @@
 import prisma from '../config/db.js';
 import { errorMessage, internalError } from '../utils/errors.js';
 import { moveToPermanent } from '../middleware/upload.js';
+import { notifyOrderValidated } from '../services/notification.js';
 import QRCode from 'qrcode';
 import { generateVendorQRToken } from '../utils/vendorQR.js';
 import path from 'path';
@@ -517,6 +518,13 @@ export const validateOrder = async (req, res) => {
         where: { id_commande: commandId },
         data: { validee_par_vendeur: true, statut: 'Validee' }
       });
+      // Notify client that all vendors validated
+      const cmd = await prisma.commande.findUnique({ where: { id_commande: commandId }, include: { client: { include: { utilisateur: { select: { nom: true, prenom: true } } } } } });
+      if (cmd?.client?.utilisateur) {
+        const vendorUser = await prisma.utilisateur.findUnique({ where: { id_user: vendorId }, select: { nom: true, prenom: true } });
+        const vendorName = vendorUser ? `${vendorUser.prenom} ${vendorUser.nom}` : 'Le vendeur';
+        notifyOrderValidated({ id_commande: commandId }, cmd.id_user_client, `${cmd.client.utilisateur.prenom} ${cmd.client.utilisateur.nom}`, vendorName).catch(() => {});
+      }
     }
 
     return res.json({ message: 'Commande validée. Les articles sont disponibles pour retrait.' });

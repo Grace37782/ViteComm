@@ -3,6 +3,7 @@ import bcryptjs from 'bcryptjs';
 import { errorMessage, internalError } from '../utils/errors.js';
 import { verifyVendorQRToken, verifyFinalizeQRToken } from '../utils/vendorQR.js';
 import { moveToPermanent } from '../middleware/upload.js';
+import { notifyDriverAssigned, notifyDeliveryStatus } from '../services/notification.js';
 
 // ═══════════════════════════════════════════════════════════
 // 4.1. TABLEAU DE BORD (RG10, RG15, RG19)
@@ -219,6 +220,11 @@ export const acceptDelivery = async (req, res) => {
 
       return liv;
     });
+
+    // Notify client that driver accepted
+    const driverUser = await prisma.utilisateur.findUnique({ where: { id_user: driverId }, select: { prenom: true, nom: true } });
+    const driverName = driverUser ? `${driverUser.prenom} ${driverUser.nom}` : 'Un livreur';
+    notifyDriverAssigned({ id_commande: commandId }, command.id_user_client, '', driverName).catch(() => {});
 
     return res.status(201).json({ message: 'Course acceptée.', livraison });
   } catch (error) {
@@ -666,6 +672,9 @@ export const departDelivery = async (req, res) => {
       }),
     ]);
 
+    // Notify client: driver departed
+    notifyDeliveryStatus({ id_commande: commandId }, command.id_user_client, '', 'En cours de livraison').catch(() => {});
+
     return res.json({ message: 'Départ enregistré. En route vers le client.' });
   } catch (error) {
     return res.status(400).json({ error: errorMessage(error, 'Une erreur est survenue.') });
@@ -776,6 +785,9 @@ export const finalizeDelivery = async (req, res) => {
         data: { id_user_livreur: driverId, est_disponible: true }
       });
     });
+
+    // Notify client: delivery finalized (pending inspection)
+    notifyDeliveryStatus({ id_commande: commandId }, command.id_user_client, '', 'Inspectee').catch(() => {});
 
     return res.json({ message: 'Livraison finalisée avec succès.' });
   } catch (error) {

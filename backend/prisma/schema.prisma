@@ -22,6 +22,8 @@ model Utilisateur {
   livreur          Livreur?
   signalementsAuteur Signalement[]  @relation("SignalementsAuteur")
   signalementsCible  Signalement[]  @relation("SignalementsCible")
+  notifications      Notification[]
+  pushSubscriptions  PushSubscription[]
 }
 
 model Client {
@@ -360,4 +362,33 @@ model BonDeLivraison {
   id_livraison          Int
 
   livraison Livraison @relation(fields: [id_livraison], references: [id_livraison], onDelete: Cascade)
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  titre       String
+  message     String
+  type        String   // order, payment, delivery, feedback, system
+  reference   String?  // e.g. "order:155" or "delivery:42"
+  lu          Boolean  @default(false)
+  id_user     Int
+  created_at  DateTime @default(now())
+
+  utilisateur Utilisateur @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+
+  @@index([id_user, lu])
+  @@index([id_user, created_at])
+}
+
+model PushSubscription {
+  id           Int      @id @default(autoincrement())
+  endpoint     String
+  p256dh       String
+  auth         String
+  id_user      Int
+  created_at   DateTime @default(now())
+
+  utilisateur Utilisateur @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+
+  @@unique([endpoint, id_user])
 }

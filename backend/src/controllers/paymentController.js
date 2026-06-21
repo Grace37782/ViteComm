@@ -1,6 +1,7 @@
 import prisma from '../config/db.js';
 import { initiatePayment, verifyWebhookSignature, generateTransactionId, verifyTransactionStatus } from '../services/fedapayService.js';
 import { internalError } from '../utils/errors.js';
+import { notifyPaymentReceived } from '../services/notification.js';
 
 const FEDAPAY_WEBHOOK_SECRET = process.env.FEDAPAY_WEBHOOK_SECRET;
 
@@ -170,6 +171,17 @@ export const handleWebhook = async (req, res) => {
           data: { mode_paiement_status: 'paye' },
         });
       });
+
+      // Notify client + vendors about payment (fire-and-forget)
+      const cmd = await prisma.commande.findUnique({
+        where: { id_commande: paiementTransaction.id_commande },
+        include: { client: { include: { utilisateur: { select: { nom: true, prenom: true } } } } }
+      });
+      if (cmd?.client?.utilisateur) {
+        const clientName = `${cmd.client.utilisateur.prenom} ${cmd.client.utilisateur.nom}`;
+        const recipients = [{ userId: cmd.id_user_client, name: clientName }];
+        notifyPaymentReceived({ id_commande: paiementTransaction.id_commande }, recipients, paiementTransaction.montant, paiementTransaction.mode_paiement).catch(() => {});
+      }
     } else if (eventType === 'transaction.declined') {
       await prisma.paiementTransaction.update({
         where: { id_paiement_transaction: paiementTransaction.id_paiement_transaction },

@@ -3,6 +3,8 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { BarChart3, Package, ShoppingCart, Undo2, TrendingUp, Banknote, AlertTriangle, User } from 'lucide-react'
 import MobileDrawer from '../MobileDrawer'
+import NotificationBell from '../NotificationBell'
+import { subscribeToPush } from '../../services/push'
 
 const NAV_TABS = [
   { icon: BarChart3, label: 'Accueil', path: '/vendeur/dashboard' },
@@ -36,6 +38,8 @@ export default function VendeurLayout() {
     return () => document.documentElement.classList.remove('role-vendeur')
   }, [])
 
+  useEffect(() => { if (user) subscribeToPush().catch(() => {}) }, [user])
+
   const initials = ((user?.prenom?.[0] || '') + (user?.nom?.[0] || '')).toUpperCase() || '?'
 
   return (
@@ -64,11 +68,14 @@ export default function VendeurLayout() {
                 <div className="text-white/60 text-xs truncate">{user?.prenom} {user?.nom}</div>
               </div>
             </div>
-            <button onClick={() => { logout(); navigate('/connect') }}
-              className="hidden sm:block text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer flex-shrink-0"
-              style={{ background: 'rgba(255,255,255,0.1)' }}>
-              Déconnexion
-            </button>
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <button onClick={() => { logout(); navigate('/connect') }}
+                className="hidden sm:block text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer flex-shrink-0"
+                style={{ background: 'rgba(255,255,255,0.1)' }}>
+                Déconnexion
+              </button>
+            </div>
           </div>
           {/* Desktop tab bar — hidden on mobile */}
           <div className="hidden md:flex gap-1 mt-2 overflow-x-auto scrollbar-none">

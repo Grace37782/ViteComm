@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { errorMessage, internalError } from '../utils/errors.js';
 import { generateFinalizeQRToken } from '../utils/vendorQR.js';
+import { notifyOrderPlaced, notifyFeedbackReceived } from '../services/notification.js';
 
 // --- 2.1. Tableau de bord Client - Recherche de produits et marchés ---
 
@@ -469,6 +470,21 @@ export const createOrder = async (req, res) => {
       return newCommand;
     });
 
+    // Notify each vendor about the new order (fire-and-forget)
+    const details = await prisma.detailCommande.findMany({ where: { id_commande: command.id_commande } });
+    const productIds = details.map(d => d.id_produit);
+    const products = await prisma.produit.findMany({ where: { id_produit: { in: productIds } }, select: { id_produit: true, id_user_vendeur: true, nom: true } });
+    const vendorIds = [...new Set(products.map(p => p.id_user_vendeur))];
+    const items = details.map(d => { const p = products.find(pp => pp.id_produit === d.id_produit); return `${d.quantite_commandee}x ${p?.nom || 'produit'}`; }).join(', ');
+
+    for (const vId of vendorIds) {
+      const vUser = await prisma.utilisateur.findUnique({ where: { id_user: vId }, select: { prenom: true, nom: true } });
+      const vName = vUser ? `${vUser.prenom} ${vUser.nom}` : 'Vendeur';
+      const clientUser = await prisma.utilisateur.findUnique({ where: { id_user: req.user.id_user }, select: { prenom: true, nom: true } });
+      const clientName = clientUser ? `${clientUser.prenom} ${clientUser.nom}` : 'Client';
+      notifyOrderPlaced({ id_commande: command.id_commande }, vId, vName, clientName, items, command.total_marchandises).catch(() => {});
+    }
+
     return res.status(201).json({
       message: 'Commande créée avec succès.',
       id_commande: command.id_commande,
@@ -601,6 +617,15 @@ export const createFeedback = async (req, res) => {
         });
       }
     });
+
+    // Notify vendor about feedback (fire-and-forget)
+    if (type_feedback === 'VENDEUR' && id_user_vendeur) {
+      const vendorUser = await prisma.utilisateur.findUnique({ where: { id_user: parseInt(id_user_vendeur, 10) }, select: { prenom: true, nom: true } });
+      const clientUser = await prisma.utilisateur.findUnique({ where: { id_user: req.user.id_user }, select: { prenom: true, nom: true } });
+      if (vendorUser && clientUser) {
+        notifyFeedbackReceived(livraison.id_commande, parseInt(id_user_vendeur, 10), `${vendorUser.prenom} ${vendorUser.nom}`, parseInt(note, 10), commentaire, `${clientUser.prenom} ${clientUser.nom}`).catch(() => {});
+      }
+    }
 
     return res.json({ message: 'Évaluation enregistrée avec succès.' });
   } catch (error) {
