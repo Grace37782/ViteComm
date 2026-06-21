@@ -78,8 +78,8 @@ export default function CommandesLivreur() {
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
-  function loadDataFn() {
-    setLoading(true)
+  function loadDataFn(silent = false) {
+    if (!silent) setLoading(true)
     Promise.all([
       api.get('/livreur/deliveries/available'),
       api.get('/livreur/deliveries'),
@@ -88,7 +88,7 @@ export default function CommandesLivreur() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { loadDataFn(); const interval = setInterval(loadDataFn, 10000); return () => clearInterval(interval) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadDataFn(); const interval = setInterval(() => loadDataFn(true), 10000); return () => clearInterval(interval) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function accepterCourse(id_commande) {
     if (!acceptCode.trim()) return showToast('Entrez le code de vérification du client')
