@@ -799,6 +799,52 @@ export const inspectionOrder = async (req, res) => {
   }
 };
 
+// --- Per-vendor collection status for client ---
+
+export const getClientOrderVendorStatus = async (req, res) => {
+  const { id_commande } = req.params;
+
+  try {
+    const commandId = parseInt(id_commande, 10);
+    const command = await prisma.commande.findUnique({
+      where: { id_commande: commandId },
+      include: {
+        collecteVendeurs: {
+          include: {
+            vendeur: {
+              include: {
+                utilisateur: { select: { nom: true, prenom: true } },
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!command) return res.status(404).json({ error: 'Commande introuvable.' });
+    if (command.id_user_client !== req.user.id_user) {
+      return res.status(403).json({ error: 'Accès interdit.' });
+    }
+
+    const vendors = command.collecteVendeurs.map(cv => ({
+      id_collecte: cv.id_collecte,
+      id_user_vendeur: cv.id_user_vendeur,
+      nom: cv.vendeur?.utilisateur ? `${cv.vendeur.utilisateur.prenom} ${cv.vendeur.utilisateur.nom}` : 'Vendeur',
+      nom_etablissement: cv.vendeur?.nom_etablissement || '',
+      statut_collecte: cv.statut_collecte,
+    }));
+
+    return res.json({
+      id_commande: commandId,
+      total_vendors: vendors.length,
+      collected_count: vendors.filter(v => v.statut_collecte === 'collectee').length,
+      vendors
+    });
+  } catch (error) {
+    return res.status(500).json({ error: internalError(error) });
+  }
+};
+
 // --- 2.8. Marchés (Localmarts) ---
 
 export const getMarkets = async (req, res) => {

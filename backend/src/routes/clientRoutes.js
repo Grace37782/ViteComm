@@ -24,7 +24,8 @@ import {
   getFinalizeQRCode,
   getOrderFacture,
   getClientFactures,
-  cancelOrder
+  cancelOrder,
+  getClientOrderVendorStatus
 } from '../controllers/clientController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { getFinalizeScanStatus } from '../controllers/livreurController.js';
@@ -87,6 +88,7 @@ router.get('/orders/:id_commande/finalize-qrcode', requireAuth, requireRole(['cl
 router.get('/orders/:id_commande/scan-status', requireAuth, requireRole(['client']), getFinalizeScanStatus);
 router.post('/orders/:id_commande/cancel', requireAuth, requireRole(['client']), cancelOrder);
 router.get('/orders/:id_commande/facture', requireAuth, requireRole(['client']), getOrderFacture);
+router.get('/orders/:id_commande/vendor-status', requireAuth, requireRole(['client']), getClientOrderVendorStatus);
 router.get('/factures', requireAuth, requireRole(['client']), getClientFactures);
 
 // Feedback (RG23)

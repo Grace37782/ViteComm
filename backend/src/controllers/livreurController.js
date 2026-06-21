@@ -141,7 +141,7 @@ export const getAvailableDeliveries = async (req, res) => {
           include: {
             produit: {
               include: {
-                vendeur: { select: { nom_etablissement: true, localisation_marche: true } }
+                vendeur: { select: { nom_etablissement: true, localisation_marche: true, latitude: true, longitude: true } }
               }
             }
           }
@@ -796,7 +796,7 @@ export const getMyDeliveries = async (req, res) => {
             detailsCommande: {
               include: {
                 produit: {
-                  include: { vendeur: { select: { nom_etablissement: true, localisation_marche: true } } }
+                  include: { vendeur: { select: { nom_etablissement: true, localisation_marche: true, latitude: true, longitude: true } } }
                 }
               }
             },

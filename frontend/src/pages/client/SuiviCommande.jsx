@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCheck, Home, Smartphone, QrCode, XCircle, Ban, AlertTriangle } from 'lucide-react'
+import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCheck, Home, Smartphone, QrCode, XCircle, Ban, AlertTriangle, Clock, Store } from 'lucide-react'
 
 const STATUT_STEPS = [
   { key: 'En attente', icon: Loader2, titre: 'En attente', desc: 'En attente de validation' },
@@ -27,6 +27,7 @@ export default function SuiviCommande() {
   const [finalizeQR, setFinalizeQR] = useState(null)
   const [showFinalizeQR, setShowFinalizeQR] = useState(false)
   const [finalizeScanStatus, setFinalizeScanStatus] = useState(null)
+  const [vendorStatus, setVendorStatus] = useState(null)
 
   const fetchOrder = useCallback(async () => {
     if (!id_commande) return
@@ -72,6 +73,22 @@ export default function SuiviCommande() {
     const interval = setInterval(poll, 3000)
     return () => clearInterval(interval)
   }, [showFinalizeQR, id_commande])
+
+  useEffect(() => {
+    if (!id_commande || !order) return
+    const collectStatuses = ['En collecte', 'En transit', 'Inspectee', 'Livree']
+    if (!collectStatuses.includes(order.statut)) { setVendorStatus(null); return }
+    let active = true
+    const fetchVendorStatus = async () => {
+      try {
+        const data = await api.get(`/client/orders/${id_commande}/vendor-status`)
+        if (active) setVendorStatus(data)
+      } catch { /* ignore */ }
+    }
+    fetchVendorStatus()
+    const interval = setInterval(fetchVendorStatus, 10000)
+    return () => { active = false; clearInterval(interval) }
+  }, [id_commande, order?.statut])
 
   const statut = order?.statut || 'En attente'
   const livreur = order?.livraison?.livreur
@@ -271,6 +288,39 @@ export default function SuiviCommande() {
             })}
           </div>
         </div>
+
+        {/* VENDOR COLLECTION PROGRESS */}
+        {vendorStatus && vendorStatus.total_vendors > 1 && (
+          <div className="rounded-2xl p-4"
+            style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+            <div className="text-[11px] font-extrabold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
+              <Store size={12} className="inline" /> Collecte par vendeur ({vendorStatus.collected_count}/{vendorStatus.total_vendors})
+            </div>
+            <div className="w-full h-2 rounded-full mb-3" style={{ background: 'var(--surface-alt)' }}>
+              <div className="h-full rounded-full transition-all"
+                style={{
+                  width: `${vendorStatus.total_vendors > 0 ? (vendorStatus.collected_count / vendorStatus.total_vendors) * 100 : 0}%`,
+                  background: '#1D9E75'
+                }} />
+            </div>
+            <div className="flex flex-col gap-2">
+              {vendorStatus.vendors.map(v => (
+                <div key={v.id_collecte} className="flex items-center gap-2.5">
+                  {v.statut_collecte === 'collectee'
+                    ? <CheckCircle size={14} style={{ color: '#1D9E75', flexShrink: 0 }} />
+                    : <Clock size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold truncate" style={{ color: 'var(--text-primary)' }}>{v.nom_etablissement || v.nom}</div>
+                    {v.nom_etablissement && <div className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{v.nom}</div>}
+                  </div>
+                  <div className="text-[10px] font-bold flex-shrink-0" style={{ color: v.statut_collecte === 'collectee' ? '#1D9E75' : 'var(--text-muted)' }}>
+                    {v.statut_collecte === 'collectee' ? 'Collecté' : v.statut_collecte === 'validee' ? 'Validé' : 'En attente'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ACTIONS */}
         <div className="flex flex-col gap-2">
