@@ -243,7 +243,7 @@ async function main() {
   ];
 
   for (let i = 0; i < 50; i++) {
-    const isSisso = sissoVendors.find(s => ['Lionel', 'Lilian', 'Liesse'].includes(prenoms[i % prenoms.length]) && i < 3);
+    const isSisso = i < 3 ? sissoVendors[i] : null;
     const prenom = isSisso ? isSisso.prenom : prenoms[i % prenoms.length];
     const nom = isSisso ? isSisso.nom : noms[i % noms.length];
     const marche = marches[isSisso ? isSisso.marcheIdx : (i % marches.length)];

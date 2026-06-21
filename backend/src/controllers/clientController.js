@@ -103,6 +103,9 @@ export const getVendors = async (req, res) => {
         utilisateur: {
           select: { nom: true, prenom: true, photo_url: true }
         },
+        marche: {
+          select: { nom: true, id_marche: true }
+        },
         _count: {
           select: { produits: true }
         }
