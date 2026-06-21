@@ -77,18 +77,8 @@ export default function CommandesLivreur() {
     const scanner = new Html5Qrcode(elementId)
     scannerRef.current = scanner
     try {
-      const devices = await Html5Qrcode.getCameras()
-      if (!devices || devices.length === 0) {
-        throw new Error("Aucune caméra détectée.")
-      }
-      const backCamera = devices.find(d => 
-        d.label.toLowerCase().includes('back') || 
-        d.label.toLowerCase().includes('rear') || 
-        d.label.toLowerCase().includes('env')
-      )
-      const cameraId = backCamera ? backCamera.id : devices[0].id
       await scanner.start(
-        cameraId,
+        { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
           onSuccess(decodedText)
