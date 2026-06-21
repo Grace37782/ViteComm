@@ -234,21 +234,30 @@ async function main() {
 
   console.log('Vendeurs (50)...');
   const vendeurs = [];
+
+  // Named Sisso vendor accounts (indices 0, 1, 2)
+  const sissoVendors = [
+    { prenom: 'Lionel', nom: 'Sisso', email: 'sissolionel@gmail.com', etablissement: 'Sisso Frais Market', marcheIdx: 0 },
+    { prenom: 'Lilian', nom: 'Sisso', email: 'sissolilian@gmail.com', etablissement: 'Sisso Epicerie', marcheIdx: 1 },
+    { prenom: 'Liesse', nom: 'Sisso', email: 'sissoliesse@gmail.com', etablissement: 'Sisso Saveurs', marcheIdx: 2 },
+  ];
+
   for (let i = 0; i < 50; i++) {
-    const prenom = prenoms[i % prenoms.length];
-    const nom = noms[i % noms.length];
-    const marche = marches[i % marches.length];
+    const isSisso = sissoVendors.find(s => ['Lionel', 'Lilian', 'Liesse'].includes(prenoms[i % prenoms.length]) && i < 3);
+    const prenom = isSisso ? isSisso.prenom : prenoms[i % prenoms.length];
+    const nom = isSisso ? isSisso.nom : noms[i % noms.length];
+    const marche = marches[isSisso ? isSisso.marcheIdx : (i % marches.length)];
     const baseLat = marche.latitude + (Math.random() - 0.5) * 0.002;
     const baseLon = marche.longitude + (Math.random() - 0.5) * 0.002;
     const v = await prisma.utilisateur.create({
       data: {
         nom, prenom,
-        email: `${prenom.toLowerCase()}.${nom.toLowerCase()}${i}@shop.com`,
+        email: isSisso ? isSisso.email : `${prenom.toLowerCase()}.${nom.toLowerCase()}${i}@shop.com`,
         mot_de_passe: hashedCommon, statut_compte: 'Actif', est_admin: false,
         photo_url: vendorPhotos[i % vendorPhotos.length],
         vendeur: {
           create: {
-            nom_etablissement: etablissements[i],
+            nom_etablissement: isSisso ? isSisso.etablissement : etablissements[i],
             localisation_marche: `${marche.nom} - Allee ${String.fromCharCode(65 + (i % 26))}, Box ${i + 1}`,
             id_marche: marche.id_marche,
             latitude: baseLat, longitude: baseLon,
@@ -262,13 +271,14 @@ async function main() {
 
   console.log('Livreurs (10)...');
   const livreursData = [];
-  const prenomsLivreurs = ['Vincent', 'Karl', 'Aristide', 'Sosthene', 'Brice', 'Cedric', 'Desire', 'Fernand', 'Gerard', 'Hugues'];
-  const nomsLivreurs = ['Aboubakar', 'Toko', 'Gnonlonfin', 'Koudjo', 'Sehoue', 'Agbeke', 'Dossou', 'Fagnon', 'Hounbedji', 'Sassa'];
+  const prenomsLivreurs = ['Temitayo', 'Karl', 'Aristide', 'Sosthene', 'Brice', 'Cedric', 'Desire', 'Fernand', 'Gerard', 'Hugues'];
+  const nomsLivreurs = ['Sisso', 'Toko', 'Gnonlonfin', 'Koudjo', 'Sehoue', 'Agbeke', 'Dossou', 'Fagnon', 'Hounbedji', 'Sassa'];
   for (let i = 0; i < 10; i++) {
+    const isTemitayo = i === 0;
     const l = await prisma.utilisateur.create({
       data: {
         nom: nomsLivreurs[i], prenom: prenomsLivreurs[i],
-        email: `${prenomsLivreurs[i].toLowerCase()}.${nomsLivreurs[i].toLowerCase()}${i}@express.com`,
+        email: isTemitayo ? 'sissotemitayo@gmail.com' : `${prenomsLivreurs[i].toLowerCase()}.${nomsLivreurs[i].toLowerCase()}${i}@express.com`,
         mot_de_passe: hashedCommon, statut_compte: 'Actif', est_admin: false,
         photo_url: driverPhotos[i % driverPhotos.length],
         livreur: {
@@ -510,6 +520,264 @@ async function main() {
 
   console.log(`  -> ${orderCount} commandes crees`);
 
+  // ── Immaculee's orders in various states for testing ──
+  console.log('Commandes Immaculee (test payment flow)...');
+  const immaculeeIdx = 20; // immaculee is at clients[20]
+  const immOrders = [];
+
+  // Helper: create order specifically for Immaculee with chosen vendors
+  async function createImmaculeeOrder(config) {
+    const { daysAgo, prodCount, statut, vendorIndices, paymentMode, hasReturn, hasFeedback } = config;
+    const products = [];
+    const usedProductIds = new Set();
+    for (const vi of (vendorIndices || [0, 1, 2])) {
+      const vendor = vendeurs[vi % vendeurs.length];
+      const vendorProducts = allProducts.filter(p => p.id_user_vendeur === vendor.id_user);
+      if (vendorProducts.length > 0) {
+        const prod = pick(vendorProducts);
+        if (!usedProductIds.has(prod.id_produit)) {
+          usedProductIds.add(prod.id_produit);
+          products.push(prod);
+        }
+      }
+    }
+    if (products.length === 0) {
+      for (let j = 0; j < (prodCount || 2); j++) {
+        const p = pick(allProducts);
+        if (!products.find(x => x.id_produit === p.id_produit)) products.push(p);
+      }
+    }
+    const actualCount = Math.min(products.length, prodCount || products.length);
+    const selected = products.slice(0, actualCount);
+    const quantities = selected.map(() => rand(1, 5));
+    const totalMarchandises = selected.reduce((s, p, i) => s + p.prix_reference * quantities[i], 0);
+    const fraisLivraison = 1500;
+    const commission = +(totalMarchandises * 0.006).toFixed(2);
+    const fraisRetour = hasReturn ? 500 : 0;
+
+    const order = await prisma.commande.create({
+      data: {
+        id_user_client: immaculee.id_user,
+        date_creation: new Date(now - daysAgo * day + rand(0, 6) * hour),
+        statut: statut || 'Livree',
+        code_verification: uid(),
+        total_marchandises: totalMarchandises,
+        frais_livraison: fraisLivraison,
+        commission,
+        mode_paiement: paymentMode || 'MOBILE_MONEY',
+        mode_paiement_status: statut === 'Livree' ? (paymentMode === 'MOBILE_MONEY' ? 'paye' : 'paye') : statut === 'En attente' ? 'en_attente' : null,
+        detailsCommande: {
+          createMany: {
+            data: selected.map((p, i) => ({
+              id_produit: p.id_produit,
+              quantite_commandee: quantities[i],
+              prix_vente_applique: p.prix_reference,
+              statut_acceptation: hasReturn && i === 0 ? 'Rejete' : 'Accepte'
+            }))
+          }
+        }
+      }
+    });
+
+    // CollecteVendeur
+    const vendorIds = [...new Set(selected.map(p => p.id_user_vendeur))];
+    for (const vId of vendorIds) {
+      let cvStatus, preuve = null, scanAt = null;
+      if (['Livree', 'En transit', 'Inspectee', 'Collectee', 'En collecte'].includes(statut)) {
+        cvStatus = 'collectee';
+        preuve = `{"v":1,"t":"vendor","p":"${order.id_commande}:${uid()}:${Date.now()}","s":"fake"}`;
+        scanAt = new Date(now - daysAgo * day + rand(5, 15) * 60000);
+      } else if (statut === 'Validee') {
+        cvStatus = 'validee';
+      } else {
+        cvStatus = 'en_attente';
+      }
+      await prisma.collecteVendeur.create({
+        data: {
+          id_commande: order.id_commande,
+          id_user_vendeur: vId,
+          code_verification: uid(),
+          statut_collecte: cvStatus,
+          preuve_collecte: preuve,
+          qr_scanne_at: scanAt,
+        }
+      });
+    }
+
+    // Mark validated if not en_attente
+    if (statut !== 'En attente') {
+      await prisma.commande.update({
+        where: { id_commande: order.id_commande },
+        data: { validee_par_vendeur: true, statut: statut === 'Validee' ? 'Validee' : order.statut }
+      });
+    }
+
+    // Livraison
+    const deliveryStatus = statut === 'Echec' ? 'Echec' : statut === 'En attente' ? 'En cours de collecte' : statut === 'Validee' ? 'Collectee' : statut === 'En transit' ? 'En cours de livraison' : statut === 'Inspectee' ? 'Inspectee' : statut === 'Livree' ? 'Livree' : 'En cours de collecte';
+    const livreur = livreursData[0]; // Temitayo
+
+    if (!['En attente', 'Validee'].includes(statut)) {
+      const delivery = await prisma.livraison.create({
+        data: {
+          id_commande: order.id_commande,
+          id_user_livreur: livreur.id_user,
+          statut_livraison: deliveryStatus,
+          date_prise_en_charge: new Date(now - daysAgo * day),
+          date_fin_reelle: deliveryStatus === 'Livree' || deliveryStatus === 'Echec'
+            ? new Date(now - daysAgo * day + rand(20, 60) * 60000) : null,
+          preuve_collecte: vendorIds.map(() => `{"v":1,"t":"vendor","p":"proof"}`).join('|'),
+          frais_retour_calcules: fraisRetour
+        }
+      });
+
+      if (deliveryStatus === 'Livree') {
+        await prisma.bonDeLivraison.create({
+          data: {
+            id_livraison: delivery.id_livraison, statut_bon: 'SIGNE',
+            date_signature_client: new Date(now - daysAgo * day + rand(15, 45) * 60000),
+            observations_livreur: 'Colis remis en bon etat.'
+          }
+        });
+
+        const montantTotal = totalMarchandises + fraisLivraison - fraisRetour;
+        const facture = await prisma.facture.create({
+          data: {
+            id_commande: order.id_commande,
+            montant_marchandises: totalMarchandises,
+            montant_frais_livraison: fraisLivraison,
+            montant_frais_retour: fraisRetour,
+            montant_commission: commission,
+            montant_total_du: montantTotal,
+            statut_paiement: paymentMode === 'MOBILE_MONEY' ? 'Paye' : (Math.random() > 0.3 ? 'Paye' : 'En attente')
+          }
+        });
+
+        if (facture.statut_paiement === 'Paye') {
+          await prisma.paiement.create({
+            data: {
+              id_facture: facture.id_facture,
+              montant_percu: montantTotal,
+              mode_reglement: paymentMode === 'MOBILE_MONEY' ? 'MOBILE_MONEY' : 'ESPECES',
+              reference_transaction: paymentMode === 'MOBILE_MONEY' ? `TXN-${uid()}` : undefined,
+              statut: 'Effectue'
+            }
+          });
+        }
+
+        if (hasFeedback) {
+          await prisma.feedback.create({
+            data: {
+              note: rand(4, 5),
+              commentaire: pick(['Excellent!', 'Tres bien.', 'Satisfait.', 'Rapide et soigne.']),
+              type_feedback: pick(['LIVREUR', 'VENDEUR']),
+              id_user_client: immaculee.id_user,
+              id_livraison: delivery.id_livraison
+            }
+          });
+        }
+      }
+    }
+
+    return order;
+  }
+
+  // Livree + paye (mobile money) — 3 orders
+  for (let i = 0; i < 3; i++) {
+    immOrders.push(await createImmaculeeOrder({
+      daysAgo: rand(3, 15), prodCount: rand(2, 4), statut: 'Livree',
+      vendorIndices: [i, (i + 1) % 3, (i + 2) % 3],
+      paymentMode: 'MOBILE_MONEY', hasFeedback: true
+    }));
+    orderCount++;
+  }
+
+  // Livree + paye (especes) — 2 orders
+  for (let i = 0; i < 2; i++) {
+    immOrders.push(await createImmaculeeOrder({
+      daysAgo: rand(2, 10), prodCount: rand(1, 3), statut: 'Livree',
+      vendorIndices: [i % 3, (i + 1) % 3],
+      paymentMode: 'ESPECES', hasFeedback: true
+    }));
+    orderCount++;
+  }
+
+  // Livree + impaye (en_attente paiement) — 2 orders
+  for (let i = 0; i < 2; i++) {
+    immOrders.push(await createImmaculeeOrder({
+      daysAgo: rand(1, 5), prodCount: rand(1, 3), statut: 'Livree',
+      vendorIndices: [0, 1],
+      paymentMode: 'MOBILE_MONEY', hasFeedback: false
+    }));
+    // Override payment status to en_attente
+    await prisma.commande.update({
+      where: { id_commande: immOrders[immOrders.length - 1].id_commande },
+      data: { mode_paiement_status: 'en_attente' }
+    });
+    const fact = await prisma.facture.findFirst({ where: { id_commande: immOrders[immOrders.length - 1].id_commande } });
+    if (fact) await prisma.facture.update({ where: { id_facture: fact.id_facture }, data: { statut_paiement: 'En attente' } });
+    orderCount++;
+  }
+
+  // Inspectee — 2 orders
+  for (let i = 0; i < 2; i++) {
+    immOrders.push(await createImmaculeeOrder({
+      daysAgo: rand(0, 1), prodCount: rand(2, 3), statut: 'Inspectee',
+      vendorIndices: [0, 2],
+      paymentMode: 'MOBILE_MONEY'
+    }));
+    orderCount++;
+  }
+
+  // En transit — 2 orders
+  for (let i = 0; i < 2; i++) {
+    immOrders.push(await createImmaculeeOrder({
+      daysAgo: 0, prodCount: rand(1, 3), statut: 'En transit',
+      vendorIndices: [1, 2],
+      paymentMode: 'MOBILE_MONEY'
+    }));
+    orderCount++;
+  }
+
+  // En collecte — 2 orders (livreur accepted, collecting from vendors)
+  for (let i = 0; i < 2; i++) {
+    immOrders.push(await createImmaculeeOrder({
+      daysAgo: 0, prodCount: rand(2, 3), statut: 'En collecte',
+      vendorIndices: [0, 1, 2],
+      paymentMode: 'ESPECES'
+    }));
+    orderCount++;
+  }
+
+  // Validee (all vendors validated, waiting for livreur) — 2 orders
+  for (let i = 0; i < 2; i++) {
+    immOrders.push(await createImmaculeeOrder({
+      daysAgo: 0, prodCount: rand(1, 3), statut: 'Validee',
+      vendorIndices: [0, 2],
+      paymentMode: 'MOBILE_MONEY'
+    }));
+    orderCount++;
+  }
+
+  // En attente (no vendor validated yet) — 2 orders
+  for (let i = 0; i < 2; i++) {
+    immOrders.push(await createImmaculeeOrder({
+      daysAgo: 0, prodCount: rand(1, 2), statut: 'En attente',
+      vendorIndices: [1, 2],
+      paymentMode: 'ESPECES'
+    }));
+    orderCount++;
+  }
+
+  // Echec — 1 order
+  immOrders.push(await createImmaculeeOrder({
+    daysAgo: rand(1, 5), prodCount: 2, statut: 'Echec',
+    vendorIndices: [0, 1],
+    paymentMode: 'ESPECES'
+  }));
+  orderCount++;
+
+  console.log(`  -> ${immOrders.length} commandes Immaculee ajoutees`);
+
   console.log('Signalements...');
   const sigTypes = ['Vendeur', 'Client', 'Livreur'];
   const allUsers = [...clients, ...vendeurs, ...livreursData];
@@ -560,10 +828,15 @@ async function main() {
   console.log(`  ${orderCount} commandes | 10 signalements`);
   console.log('---------------------------------');
   console.log('Comptes de test :');
-  console.log('  Admin   : admin@vitecomm.com (admin123)');
-  console.log('  Client  : adela.agbeke0@gmail.com (password123)');
-  console.log('  Vendeur : adela.agbeke0@shop.com (password123)');
-  console.log('  Livreur : vincent.aboubakar0@express.com (password123)');
+  console.log('  Admin    : admin@vitecomm.com (admin123)');
+  console.log('  Client   : immaculee@gmail.com (password123)');
+  console.log('  Client   : adela.agbeke0@gmail.com (password123)');
+  console.log('  Vendeur  : sissolionel@gmail.com (password123) — Lionel Sisso');
+  console.log('  Vendeur  : sissolilian@gmail.com (password123) — Lilian Sisso');
+  console.log('  Vendeur  : sissoliesse@gmail.com (password123) — Liesse Sisso');
+  console.log('  Livreur  : sissotemitayo@gmail.com (password123) — Temitayo Sisso');
+  console.log('  Vendeur  : adela.agbeke0@shop.com (password123)');
+  console.log('  Livreur  : karl.toko1@express.com (password123)');
 }
 
 main()

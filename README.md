@@ -270,9 +270,11 @@ npm run dev
 | **Admin** | `admin@vitecomm.com` | `admin123` |
 | **Client** | `immaculee@gmail.com` | `password123` |
 | **Client** | `adela.agbeke0@gmail.com` | `password123` |
+| **Vendeur** | `sissolionel@gmail.com` | `password123` |
+| **Vendeur** | `sissolilian@gmail.com` | `password123` |
+| **Vendeur** | `sissoliesse@gmail.com` | `password123` |
+| **Livreur** | `sissotemitayo@gmail.com` | `password123` |
 | **Vendeur** | `adela.agbeke0@shop.com` | `password123` |
-| **Vendeur** | `bodjona.koudjo1@shop.com` | `password123` |
-| **Livreur** | `vincent.aboubakar0@express.com` | `password123` |
 | **Livreur** | `karl.toko1@express.com` | `password123` |
 
 > **Note :** Les comptes de test sont générés aléatoirement par le seed. Utilisez les emails ci-dessus pour vous connecter.
