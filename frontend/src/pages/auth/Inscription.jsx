@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
-import { ShoppingCart, Store, Motorbike, Lock, Eye, EyeOff, Camera, Mail, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react'
+import { ShoppingCart, Store, Motorbike, Lock, Eye, EyeOff, Camera, Mail, MessageCircle, Smartphone, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react'
 
 const profils = [
   { id: 'client',  Icon: ShoppingCart, label: 'Acheter',  color: '#1D9E75' },
@@ -128,6 +128,7 @@ export default function Inscription() {
   const [success, setSuccess]             = useState('')
   const [photoFile, setPhotoFile]         = useState(null)
   const [photoPreview, setPhotoPreview]   = useState('')
+  const [channel, setChannel]             = useState('email') // email | whatsapp | sms
 
   const [form, setForm] = useState({
     nom: '', prenom: '', email: '', telephone: '',
@@ -179,10 +180,11 @@ export default function Inscription() {
       const body = new FormData()
       for (const [k, v] of Object.entries(form)) body.append(k, v)
       body.set('role', profil)
+      body.set('channel', channel)
       if (photoFile) body.set('photo', photoFile)
       const res = await api.post('/auth/register', body)
       setVerifyToken(res.token)
-      setVerifyEmail(form.email || form.telephone)
+      setVerifyEmail(channel === 'email' ? form.email : form.telephone)
       setStep('verify')
     } catch (err) { showError(err.message) }
     finally { setLoading(false) }
@@ -336,10 +338,36 @@ export default function Inscription() {
                     value={form.identifiant || ''}
                     onChange={e => {
                       const v = e.target.value; const clean = v.replace(/\s/g, '')
-                      setForm(p => ({ ...p, identifiant: v, email: clean.includes('@') ? clean : '', telephone: /^[\d+]/.test(clean) && !clean.includes('@') ? clean : '' }))
+                      const isPhone = /^[\d+]/.test(clean) && !clean.includes('@')
+                      setForm(p => ({ ...p, identifiant: v, email: isPhone ? '' : clean, telephone: isPhone ? clean : '' }))
+                      if (isPhone && channel === 'email') setChannel('whatsapp')
+                      if (!isPhone && channel !== 'email') setChannel('email')
                     }}
                     className="rounded-xl px-4 py-3.5 text-sm outline-none" style={inputStyle} />
                 </div>
+
+                {/* Channel selector — only show when phone is entered */}
+                {form.telephone && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Recevoir le code par</label>
+                    <div className="flex gap-2">
+                      {[
+                        { id: 'whatsapp', Icon: MessageCircle, label: 'WhatsApp', color: '#25D366' },
+                        { id: 'sms', Icon: Smartphone, label: 'SMS', color: '#1D9E75' },
+                      ].map(c => (
+                        <button key={c.id} type="button" onClick={() => setChannel(c.id)}
+                          className="flex-1 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                          style={{
+                            background: channel === c.id ? c.color : 'var(--surface-alt)',
+                            color: channel === c.id ? '#fff' : 'var(--text-secondary)',
+                            border: `1.5px solid ${channel === c.id ? c.color : 'var(--border)'}`,
+                          }}>
+                          <c.Icon size={14} /> {c.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <PasswordStrengthInput showMdp={showMdp} setShowMdp={setShowMdp} value={form.mot_de_passe} onChange={set('mot_de_passe')} isDark={isDark} />
 
@@ -440,14 +468,20 @@ export default function Inscription() {
               {/* Step 2: Verification */}
               <div className="flex flex-col items-center mb-6">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black mb-4"
-                  style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', boxShadow: '0 8px 24px rgba(29,158,117,0.25)' }}><Mail size={28} /></div>
-                <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>Vérifiez votre email</h1>
+                  style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', boxShadow: '0 8px 24px rgba(29,158,117,0.25)' }}>
+                  {channel === 'email' ? <Mail size={28} /> : channel === 'whatsapp' ? <MessageCircle size={28} /> : <Smartphone size={28} />}
+                </div>
+                <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>
+                  {channel === 'email' ? 'Vérifiez votre email' : 'Vérifiez votre téléphone'}
+                </h1>
                 <p className="text-sm mt-2 text-center leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  Nous avons envoyé un code à 6 chiffres à<br />
-                  <strong style={{ color: 'var(--text-primary)' }}>{verifyEmail}</strong>
+                  {channel === 'email'
+                    ? <>Nous avons envoyé un code à 6 chiffres à<br /><strong style={{ color: 'var(--text-primary)' }}>{verifyEmail}</strong></>
+                    : <>Un code à 6 chiffres a été envoyé via<br /><strong style={{ color: 'var(--text-primary)' }}>{channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} au {verifyEmail}</strong></>
+                  }
                 </p>
                 <p className="text-xs mt-1 text-center" style={{ color: 'var(--text-muted)' }}>
-                  {verifyEmail?.includes('@') ? 'Vérifiez vos spams si vous ne trouvez pas le message.' : 'Vérifiez votre téléphone.'}
+                  {channel === 'email' ? 'Vérifiez vos spams si vous ne trouvez pas le message.' : 'Vérifiez vos messages.'}
                 </p>
               </div>
 
