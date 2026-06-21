@@ -101,7 +101,7 @@ export default function MesCommandes() {
             onClick={() => navigate('/client/accueil')}
             style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 12, padding: '8px 14px', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            ← Accueil
+            ←
           </button>
           <div style={{ fontWeight: 900, fontSize: 22, color: '#fff' }}>Mes commandes</div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>
