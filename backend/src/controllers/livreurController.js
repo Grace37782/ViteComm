@@ -135,19 +135,24 @@ export const getAvailabilityHistory = async (req, res) => {
 export const getAvailableDeliveries = async (req, res) => {
   try {
     const available = await prisma.commande.findMany({
-      where: { statut: 'En attente', livraison: null, validee_par_vendeur: true },
+      where: { statut: 'En attente', livraison: null },
       include: {
         detailsCommande: {
           include: {
             produit: {
               include: {
-                vendeur: { select: { nom_etablissement: true, localisation_marche: true, latitude: true, longitude: true } }
+                vendeur: { select: { id_user: true, nom_etablissement: true, localisation_marche: true, latitude: true, longitude: true } }
               }
             }
           }
         },
         client: {
           include: { utilisateur: { select: { nom: true, prenom: true } } }
+        },
+        collecteVendeurs: {
+          include: {
+            vendeur: { include: { utilisateur: { select: { nom: true, prenom: true } } } }
+          }
         }
       },
       orderBy: { date_creation: 'asc' }
@@ -800,7 +805,12 @@ export const getMyDeliveries = async (req, res) => {
                 }
               }
             },
-            preuvesCollecte: { include: { medias: true } }
+            preuvesCollecte: { include: { medias: true } },
+            collecteVendeurs: {
+              include: {
+                vendeur: { include: { utilisateur: { select: { nom: true, prenom: true } } } }
+              }
+            }
           }
         },
         litiges: true,

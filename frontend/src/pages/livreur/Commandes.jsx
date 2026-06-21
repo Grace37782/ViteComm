@@ -118,7 +118,7 @@ export default function CommandesLivreur() {
     try {
       const data = await api.get(`/livreur/deliveries/${delivery.commande.id_commande}/vendor-status`)
       setVendorStatus(data.vendors || [])
-      const nextIdx = (data.vendors || []).findIndex(v => v.statut_collecte !== 'collected')
+      const nextIdx = (data.vendors || []).findIndex(v => v.statut_collecte !== 'collectee')
       setActiveVendorIndex(nextIdx >= 0 ? nextIdx : 0)
       if (nextIdx < 0) {
         setAllCollected(true)
@@ -197,7 +197,7 @@ export default function CommandesLivreur() {
 
       const data = await api.get(`/livreur/deliveries/${collectOpen.commande.id_commande}/vendor-status`)
       setVendorStatus(data.vendors || [])
-      const nextIdx = (data.vendors || []).findIndex(v => v.statut_collecte !== 'collected')
+      const nextIdx = (data.vendors || []).findIndex(v => v.statut_collecte !== 'collectee')
       if (nextIdx >= 0) {
         setActiveVendorIndex(nextIdx)
       } else {
@@ -292,9 +292,12 @@ export default function CommandesLivreur() {
   function nextAction(d) {
     const s = d.statut_livraison
     if (s === 'En cours de collecte') {
+      const collectes = d.commande?.collecteVendeurs || []
+      const validated = collectes.filter(cv => cv.statut_collecte !== 'en_attente').length
+      const total = collectes.length || 1
       if (!d.commande?.validee_par_vendeur) {
         return {
-          label: <><Hourglass size={14} className="inline align-middle animate-pulse" /> Attente validation vendeur</>,
+          label: <><Hourglass size={14} className="inline align-middle animate-pulse" /> En attente de {validated}/{total} vendeur{total > 1 ? 's' : ''}</>,
           disabled: true,
           fn: () => {}
         }
@@ -307,9 +310,17 @@ export default function CommandesLivreur() {
   }
 
   function getVendorCounts(d) {
+    const collectes = d.commande?.collecteVendeurs || []
+    if (collectes.length > 0) {
+      return {
+        total: collectes.length,
+        collected: collectes.filter(cv => cv.statut_collecte === 'collectee').length,
+        validated: collectes.filter(cv => cv.statut_collecte !== 'en_attente').length,
+      }
+    }
     const vendors = d.commande?.detailsCommande || []
-    const uniqueVendors = new Set(vendors.map(v => v.produit?.vendeur?.id_user_vendeur).filter(Boolean))
-    return { total: uniqueVendors.size || 1, collected: 0 }
+    const uniqueVendors = new Set(vendors.map(v => v.produit?.vendeur?.id_user_vendeur || v.produit?.vendeur?.nom_etablissement).filter(Boolean))
+    return { total: uniqueVendors.size || 1, collected: 0, validated: 0 }
   }
 
   // Collect all active delivery markers for the map
@@ -477,7 +488,11 @@ export default function CommandesLivreur() {
         )}
 
         {/* DISPONIBLES - can accept */}
-        {activeTab === 'disponibles' && visibleItems.map(c => (
+        {activeTab === 'disponibles' && visibleItems.map(c => {
+          const collectes = c.collecteVendeurs || []
+          const validatedCount = collectes.filter(cv => cv.statut_collecte !== 'en_attente').length
+          const totalCount = collectes.length || new Set((c.detailsCommande || []).map(d => d.produit?.vendeur?.nom_etablissement).filter(Boolean)).size
+          return (
           <div key={c.id_commande} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                <div className="flex items-start justify-between gap-3 mb-3">
@@ -488,7 +503,7 @@ export default function CommandesLivreur() {
                   {' · '}
                   {c.date_creation ? new Date(c.date_creation).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
                   {' · '}
-                  {c.detailsCommande?.[0]?.produit?.vendeur?.localisation_marche || 'Marché'} → {c.client?.adresse_livraison || '—'}
+                  {c.client?.adresse_livraison || '—'}
                 </div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                   <User size={12} className="inline align-middle" /> {c.client?.utilisateur?.prenom} {c.client?.utilisateur?.nom}
@@ -499,16 +514,37 @@ export default function CommandesLivreur() {
                 <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>dont {c.frais_livraison?.toLocaleString() || '0'} F livraison</div>
               </div>
             </div>
-            <div className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
-              {c.detailsCommande?.reduce((sum, d) => sum + (d.quantite_commandee || 0), 0) || 0} article(s) · {c.detailsCommande?.map(d => d.produit?.nom).filter(Boolean).join(', ')}
+            {/* Group articles by vendor */}
+            {(() => {
+              const byVendor = {}
+              ;(c.detailsCommande || []).forEach(d => {
+                const vName = d.produit?.vendeur?.nom_etablissement || 'Autre vendeur'
+                const vMarket = d.produit?.vendeur?.localisation_marche || ''
+                if (!byVendor[vName]) byVendor[vName] = { market: vMarket, items: [] }
+                byVendor[vName].items.push(d)
+              })
+              return Object.entries(byVendor).map(([vName, { market, items }]) => (
+                <div key={vName} className="rounded-xl px-3 py-2 mb-1.5" style={{ background: 'var(--surface-alt)', border: '1px solid var(--border)' }}>
+                  <div className="text-[11px] font-bold" style={{ color: 'var(--text-primary)' }}>{vName}</div>
+                  <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{market} · {items.length} article{items.length > 1 ? 's' : ''}</div>
+                </div>
+              ))
+            })()}
+            <div className="text-[11px] mb-3 font-bold" style={{ color: c.validee_par_vendeur ? '#1D9E75' : '#BA7517' }}>
+              {c.validee_par_vendeur
+                ? <>✓ {totalCount} vendeur{totalCount > 1 ? 's' : ''} validé{totalCount > 1 ? 's' : ''}</>
+                : <>En attente de {validatedCount}/{totalCount} vendeur{totalCount > 1 ? 's' : ''}</>
+              }
             </div>
             <button onClick={() => { setAcceptModal(c); setAcceptCode('') }}
+              disabled={!c.validee_par_vendeur}
               className="w-full rounded-2xl py-3 font-black text-white cursor-pointer transition-all active:scale-98"
-              style={{ background: '#D85A30', border: 'none' }}>
-              <Rocket size={14} className="inline align-middle" /> Accepter cette course
+              style={{ background: !c.validee_par_vendeur ? 'var(--border)' : '#D85A30', color: !c.validee_par_vendeur ? 'var(--text-muted)' : '#fff', border: 'none', cursor: !c.validee_par_vendeur ? 'not-allowed' : 'pointer' }}>
+              <Rocket size={14} className="inline align-middle" /> {c.validee_par_vendeur ? 'Accepter cette course' : 'En attente des vendeurs'}
             </button>
           </div>
-        ))}
+          )
+        })}
 
         {/* ACTIVES - show next action based on statut */}
         {activeTab === 'actives' && visibleItems.map(d => {
@@ -537,7 +573,7 @@ export default function CommandesLivreur() {
               <div className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}><MapPin size={12} className="inline align-middle" /> {cmd?.client?.adresse_livraison || '—'}</div>
               {vc.total > 0 && (
                 <div className="text-[11px] mb-2 font-bold" style={{ color: 'var(--text-muted)' }}>
-                  <Package size={11} className="inline align-middle" /> {vc.total} vendeur{vc.total > 1 ? 's' : ''}
+                  <Package size={11} className="inline align-middle" /> {vc.total} vendeur{vc.total > 1 ? 's' : ''} · {vc.validated}/{vc.total} validé{vc.validated > 1 ? 's' : ''} · {vc.collected}/{vc.total} collecté{vc.collected > 1 ? 's' : ''}
                 </div>
               )}
               <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
@@ -749,7 +785,7 @@ export default function CommandesLivreur() {
               {/* Vendor Stepper */}
               <div className="flex flex-col gap-3 mb-5">
                 {vendorStatus.map((v, i) => {
-                  const collected = v.statut_collecte === 'collected'
+                  const collected = v.statut_collecte === 'collectee'
                   const isCurrent = i === activeVendorIndex && !allCollected
                   return (
                     <div key={v.id_collecte} className="rounded-2xl p-3 transition-all" style={{
@@ -790,11 +826,11 @@ export default function CommandesLivreur() {
                 <div className="mb-5">
                   <div className="flex justify-between text-[11px] font-bold mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     <span>Progression</span>
-                    <span>{vendorStatus.filter(v => v.statut_collecte === 'collected').length}/{vendorStatus.length}</span>
+                    <span>{vendorStatus.filter(v => v.statut_collecte === 'collectee').length}/{vendorStatus.length}</span>
                   </div>
                   <div className="h-2 rounded-full overflow-hidden" style={{ background: isDark ? '#2A2B28' : '#E5E7EB' }}>
                     <div className="h-full rounded-full transition-all duration-500" style={{
-                      width: `${vendorStatus.length > 0 ? (vendorStatus.filter(v => v.statut_collecte === 'collected').length / vendorStatus.length) * 100 : 0}%`,
+                      width: `${vendorStatus.length > 0 ? (vendorStatus.filter(v => v.statut_collecte === 'collectee').length / vendorStatus.length) * 100 : 0}%`,
                       background: '#D85A30',
                     }} />
                   </div>
