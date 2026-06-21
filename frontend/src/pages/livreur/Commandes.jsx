@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
-import { XCircle, CheckCircle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, ChevronDown, QrCode, Search } from 'lucide-react'
+import { XCircle, CheckCircle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, ChevronDown, QrCode, Search, AlertTriangle } from 'lucide-react'
 import { Html5Qrcode } from 'html5-qrcode'
 
 /* eslint-disable react-hooks/set-state-in-effect */
@@ -25,6 +25,8 @@ export default function CommandesLivreur() {
   const [finalizeScanResult, setFinalizeScanResult] = useState(null)
   const [acceptModal, setAcceptModal] = useState(null)
   const [acceptCode, setAcceptCode] = useState('')
+  const [collectError, setCollectError] = useState(null)
+  const [finalizeError, setFinalizeError] = useState(null)
   const scannerRef = useRef(null)
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000) }
@@ -58,6 +60,7 @@ export default function CommandesLivreur() {
   function openCollect(delivery) {
     setCollectOpen(delivery)
     setScanResult(null)
+    setCollectError(null)
   }
 
   const cleanupScanner = useCallback(() => {
@@ -82,12 +85,12 @@ export default function CommandesLivreur() {
         scanned_qr_data: scanResult
       })
       showToast('Collecte confirmée !')
-      setCollectOpen(null); setScanResult(null)
+      setCollectOpen(null); setScanResult(null); setCollectError(null)
       cleanupScanner()
       loadDataFn()
     } catch (e) {
-      showToast(e.message)
-      setCollectOpen(null); setScanResult(null)
+      setCollectError(e.message)
+      setScanResult(null)
       cleanupScanner()
     }
     finally { setSubmitting(false) }
@@ -101,7 +104,7 @@ export default function CommandesLivreur() {
     } catch (e) { showToast(e.message) }
   }
 
-  function openFinalize(delivery) { setFinalizeOpen(delivery); setFinalizeScanResult(null) }
+  function openFinalize(delivery) { setFinalizeOpen(delivery); setFinalizeScanResult(null); setFinalizeError(null) }
 
   async function handleFinalize() {
     if (!finalizeScanResult) return showToast('Scannez le QR du client')
@@ -110,10 +113,10 @@ export default function CommandesLivreur() {
     try {
       await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/finalize`, { scanned_qr_data: finalizeScanResult })
       showToast('Livraison finalisée !')
-      setFinalizeOpen(null); loadDataFn()
+      setFinalizeOpen(null); setFinalizeError(null); loadDataFn()
     } catch (e) {
-      showToast(e.message)
-      setFinalizeOpen(null)
+      setFinalizeError(e.message)
+      setFinalizeScanResult(null)
     }
     finally { setSubmitting(false) }
   }
@@ -241,9 +244,20 @@ export default function CommandesLivreur() {
       <div className="flex flex-col gap-3">
         {showList.length === 0 && (
           <div className="text-center text-sm py-10 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-muted)' }}>
-            {activeTab === 'actives' && 'Aucune course active.'}
-            {activeTab === 'disponibles' && 'Aucune course disponible.'}
-            {activeTab === 'historique' && 'Aucune livraison dans l\'historique.'}
+            {search.trim() ? `Aucun résultat pour "${search}"` : (
+              <>
+                {activeTab === 'actives' && 'Aucune course active.'}
+                {activeTab === 'disponibles' && 'Aucune course disponible.'}
+                {activeTab === 'historique' && 'Aucune livraison dans l\'historique.'}
+              </>
+            )}
+            {search.trim() && (
+              <button onClick={() => setSearch('')}
+                className="mt-3 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
+                Effacer la recherche
+              </button>
+            )}
           </div>
         )}
 
@@ -255,6 +269,8 @@ export default function CommandesLivreur() {
               <div>
                 <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{c.id_commande}</div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  {c.date_creation ? new Date(c.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}
+                  {' · '}
                   {c.date_creation ? new Date(c.date_creation).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
                   {' · '}
                   {c.detailsCommande?.[0]?.produit?.vendeur?.localisation_marche || 'Marché'} → {c.client?.adresse_livraison || '—'}
@@ -291,6 +307,8 @@ export default function CommandesLivreur() {
                 <div>
                   <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{cmd?.id_commande}</div>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {cmd?.date_creation ? new Date(cmd.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}
+                    {' · '}
                     {cmd?.date_creation ? new Date(cmd.date_creation).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
                     {' · '}
                     {cmd?.client?.utilisateur?.prenom} {cmd?.client?.utilisateur?.nom}
@@ -342,7 +360,9 @@ export default function CommandesLivreur() {
                 {cmd?.client?.utilisateur?.prenom} {cmd?.client?.utilisateur?.nom} · {((cmd?.total_marchandises || 0) + (cmd?.frais_livraison || 0)).toLocaleString()} F ({cmd?.detailsCommande?.reduce((sum, d) => sum + (d.quantite_commandee || 0), 0) || 0} articles)
               </div>
               <div className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                {d.date_fin_reelle ? new Date(d.date_fin_reelle).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
+                Passée le {cmd?.date_creation ? new Date(cmd.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
+                {' · '}
+                Livrée {d.date_fin_reelle ? new Date(d.date_fin_reelle).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
               </div>
             </div>
           )
@@ -454,6 +474,21 @@ export default function CommandesLivreur() {
                 )}
               </div>
 
+              {finalizeError && (
+                <div className="rounded-2xl p-4 mb-4" style={{ background: isDark ? 'rgba(226,75,74,0.12)' : '#FEE2E2', border: '1.5px solid rgba(226,75,74,0.3)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <AlertTriangle size={16} style={{ color: '#E24B4A' }} />
+                    <span className="text-xs font-black" style={{ color: '#E24B4A' }}>Échec de la vérification</span>
+                  </div>
+                  <div className="text-xs" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
+                    {finalizeError}
+                  </div>
+                  <div className="text-[10px] mt-2" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
+                    Demandez au client d'afficher à nouveau son QR de finalisation.
+                  </div>
+                </div>
+              )}
+
               <button onClick={handleFinalize} disabled={submitting || !finalizeScanResult}
                 className="w-full py-4 rounded-2xl text-white font-black text-sm cursor-pointer transition-all active:scale-98"
                 style={{
@@ -523,6 +558,21 @@ export default function CommandesLivreur() {
                   </button>
                 )}
               </div>
+
+              {collectError && (
+                <div className="rounded-2xl p-4 mb-4" style={{ background: isDark ? 'rgba(226,75,74,0.12)' : '#FEE2E2', border: '1.5px solid rgba(226,75,74,0.3)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <AlertTriangle size={16} style={{ color: '#E24B4A' }} />
+                    <span className="text-xs font-black" style={{ color: '#E24B4A' }}>Échec de la vérification</span>
+                  </div>
+                  <div className="text-xs" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
+                    {collectError}
+                  </div>
+                  <div className="text-[10px] mt-2" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
+                    Réessayez en scannant à nouveau le QR du vendeur.
+                  </div>
+                </div>
+              )}
 
               <button onClick={submitCollection} disabled={submitting || !scanResult}
                 className="w-full py-4 rounded-2xl text-white font-black text-sm cursor-pointer transition-all active:scale-98"

@@ -136,7 +136,7 @@ export const getAvailabilityHistory = async (req, res) => {
 export const getAvailableDeliveries = async (req, res) => {
   try {
     const available = await prisma.commande.findMany({
-      where: { statut: 'En attente', livraison: null },
+      where: { statut: 'En attente', livraison: null, validee_par_vendeur: true },
       include: {
         detailsCommande: {
           include: {
@@ -179,6 +179,11 @@ export const acceptDelivery = async (req, res) => {
 
     if (!command) return res.status(404).json({ error: 'Commande introuvable.' });
     if (command.livraison) return res.status(400).json({ error: 'Cette commande a déjà un livreur assigné.' });
+
+    // RG architecture: vendor must validate availability before driver can accept
+    if (!command.validee_par_vendeur) {
+      return res.status(400).json({ error: 'Le vendeur n\'a pas encore validé la disponibilité des articles. Patientez.' });
+    }
 
     // Verify client's code before accepting (RG06)
     if (command.code_verification !== code_verification.trim().toUpperCase()) {

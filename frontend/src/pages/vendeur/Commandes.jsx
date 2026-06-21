@@ -31,7 +31,7 @@ export default function CommandesVendeur() {
       try {
         const data = await api.get(`/vendor/orders/${qrModal.id}/scan-status`)
         setScanStatus(data)
-        if (data.statut === 'echec') return
+        if (data.scan_statut === 'echec') return
       } catch { /* polling error, ignore */ }
     }
     poll()
@@ -333,14 +333,14 @@ export default function CommandesVendeur() {
                 <XCircle size={20} style={{ color: 'var(--text-muted)' }} />
               </button>
             </div>
-            {scanStatus?.statut === 'echec' && (
+            {scanStatus?.scan_statut === 'echec' && (
               <div className="rounded-2xl p-4 mb-4" style={{ background: isDark ? 'rgba(226,75,74,0.12)' : '#FEE2E2', border: '1.5px solid rgba(226,75,74,0.3)' }}>
                 <div className="flex items-center gap-2 mb-1">
                   <AlertTriangle size={16} style={{ color: '#E24B4A' }} />
                   <span className="text-xs font-black" style={{ color: '#E24B4A' }}>Échec de la vérification</span>
                 </div>
                 <div className="text-xs" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
-                  {scanStatus.message || 'Le code QR n\'a pas été reconnu.'}
+                  {scanStatus.scan_message || 'Le code QR n\'a pas été reconnu.'}
                 </div>
                 <div className="text-[10px] mt-2" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
                   Le livreur peut réessayer en ouvrant à nouveau la caméra.

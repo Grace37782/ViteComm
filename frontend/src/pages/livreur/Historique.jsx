@@ -127,7 +127,14 @@ export default function Historique() {
       <div className="flex flex-col gap-3">
         {filtered.length === 0 && (
           <div className="text-center text-sm py-10 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-muted)' }}>
-            Aucune livraison trouvée.
+            {search.trim() ? `Aucun résultat pour "${search}"` : 'Aucune livraison trouvée.'}
+            {search.trim() && (
+              <button onClick={() => setSearch('')}
+                className="mt-3 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
+                Effacer la recherche
+              </button>
+            )}
           </div>
         )}
 

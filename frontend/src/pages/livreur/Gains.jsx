@@ -68,59 +68,87 @@ export default function Gains() {
       {/* DETAIL LIST */}
       <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
         <div className="text-sm font-black mb-3" style={{ color: 'var(--text-primary)' }}><ClipboardList size={14} className="inline align-middle" /> Détail des livraisons</div>
+      </div>
 
-        {/* Barre de recherche */}
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-3"
-          style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-          <Search size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+      {/* Barre de recherche */}
+      <div className="relative">
+        <div className="flex items-center gap-2 px-4 py-3 rounded-2xl"
+          style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+          <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <input
             type="text"
             placeholder="Rechercher par client, n° commande..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
-            className="flex-1 bg-transparent outline-none text-xs font-medium"
+            className="flex-1 bg-transparent outline-none text-sm font-medium"
             style={{ color: 'var(--text-primary)' }}
           />
           {search && (
             <button onClick={() => setSearch('')}
-              className="cursor-pointer p-0.5 rounded-full"
-              style={{ background: 'none', border: 'none' }}>
-              <XCircle size={12} style={{ color: 'var(--text-muted)' }} />
+              className="cursor-pointer p-1 rounded-full transition-all"
+              style={{ background: 'var(--surface-alt)', border: 'none' }}>
+              <XCircle size={14} style={{ color: 'var(--text-muted)' }} />
             </button>
           )}
         </div>
+      </div>
 
+      <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
         {(!gains?.livraisons || gains.livraisons.length === 0) && (
           <div className="text-xs py-4 text-center" style={{ color: 'var(--text-muted)' }}>Aucun gain enregistré.</div>
         )}
-        {(gains?.livraisons || []).filter(d => {
-          if (!search.trim()) return true
-          const q = search.toLowerCase().trim()
-          const id = String(d.id_commande || '')
-          const client = (d.client || '').toLowerCase()
-          return id.includes(q) || client.includes(q)
-        }).slice(0, visibleCount).map(d => (
-          <div key={d.id_livraison} className="flex items-center justify-between rounded-xl px-4 py-3 mb-2 transition-all hover:shadow-sm"
-            style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-            <div className="flex-1 min-w-0">
-              <div className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{d.id_commande}</div>
-              <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{d.client} · {d.date ? new Date(d.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</div>
+        {gains?.livraisons && gains.livraisons.length > 0 && (() => {
+          const filtered = gains.livraisons.filter(d => {
+            if (!search.trim()) return true
+            const q = search.toLowerCase().trim()
+            const id = String(d.id_commande || '')
+            const client = (d.client || '').toLowerCase()
+            return id.includes(q) || client.includes(q)
+          })
+          if (filtered.length === 0) {
+            return (
+              <div className="text-center text-sm py-6" style={{ color: 'var(--text-muted)' }}>
+                {search.trim() ? `Aucun résultat pour "${search}"` : 'Aucune livraison.'}
+                {search.trim() && (
+                  <button onClick={() => setSearch('')}
+                    className="mt-2 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer block mx-auto"
+                    style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
+                    Effacer la recherche
+                  </button>
+                )}
+              </div>
+            )
+          }
+          return filtered.slice(0, visibleCount).map(d => (
+            <div key={d.id_livraison} className="flex items-center justify-between rounded-xl px-4 py-3 mb-2 transition-all hover:shadow-sm"
+              style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{d.id_commande}</div>
+                <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{d.client} · {d.date ? new Date(d.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</div>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <div className="font-black text-sm" style={{ color: isDark ? '#E87D55' : '#993C1D' }}>{d.total.toLocaleString()} F</div>
+                {d.frais_retour > 0 && (
+                  <div className="text-[10px]" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>+{d.frais_retour.toLocaleString()} F retour</div>
+                )}
+              </div>
             </div>
-            <div className="text-right flex-shrink-0">
-              <div className="font-black text-sm" style={{ color: isDark ? '#E87D55' : '#993C1D' }}>{d.total.toLocaleString()} F</div>
-              {d.frais_retour > 0 && (
-                <div className="text-[10px]" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>+{d.frais_retour.toLocaleString()} F retour</div>
-              )}
-            </div>
-          </div>
-        ))}
-        {gains?.livraisons && gains.livraisons.length > visibleCount && (
-          <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
-            className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
-            style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-            <ChevronDown size={14} /> Charger plus ({gains.livraisons.length - visibleCount} restant{gains.livraisons.length - visibleCount > 1 ? 's' : ''})
-          </button>
-        )}
+          ))
+        })()}
+        {(() => {
+          const filteredCount = (gains?.livraisons || []).filter(d => {
+            if (!search.trim()) return true
+            const q = search.toLowerCase().trim()
+            return String(d.id_commande || '').includes(q) || (d.client || '').toLowerCase().includes(q)
+          }).length
+          return filteredCount > visibleCount ? (
+            <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+              className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
+              style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
+              <ChevronDown size={14} /> Charger plus ({filteredCount - visibleCount} restant{filteredCount - visibleCount > 1 ? 's' : ''})
+            </button>
+          ) : null
+        })()}
       </div>
 
       {/* MONTHLY */}
