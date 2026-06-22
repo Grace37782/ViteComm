@@ -468,7 +468,7 @@ export const createOrder = async (req, res) => {
       }
 
       return newCommand;
-    });
+    }, { timeout: 30000 });
 
     // Notify each vendor about the new order (fire-and-forget)
     const details = await prisma.detailCommande.findMany({ where: { id_commande: command.id_commande } });
