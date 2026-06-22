@@ -4,6 +4,37 @@ import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
 import { KeyRound, Mail, Lock, Eye, EyeOff, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react'
 
+const PWD_RULES = [
+  { key: 'min',   label: '8+',     test: v => v.length >= 8 },
+  { key: 'upper', label: 'A',      test: v => /[A-Z]/.test(v) },
+  { key: 'lower', label: 'a',      test: v => /[a-z]/.test(v) },
+  { key: 'digit', label: '1',      test: v => /\d/.test(v) },
+  { key: 'sym',   label: '!@#',    test: v => /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'/`~]/.test(v) }, // eslint-disable-line no-useless-escape
+]
+
+function PasswordChecklist({ value, isDark }) {
+  return (
+    <div className="flex gap-2 flex-wrap mt-1">
+      {PWD_RULES.map(r => {
+        const ok = r.test(value)
+        return (
+          <span key={r.key}
+            className="text-[13px] font-black px-3 py-1.5 rounded-full transition-all"
+            style={{
+              background: ok
+                ? (isDark ? 'rgba(45,196,145,0.15)' : 'rgba(29,158,117,0.15)')
+                : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'),
+              color: ok ? 'var(--accent)' : 'var(--text-muted)',
+              border: `1px solid ${ok ? 'var(--accent)' : 'var(--border)'}`,
+            }}>
+            {ok ? '✓ ' : ''}{r.label}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function ForgotPassword() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
@@ -176,6 +207,7 @@ export default function ForgotPassword() {
                       {showMdp ? <EyeOff size={18} color="var(--text-muted)" /> : <Eye size={18} color="var(--text-muted)" />}
                     </button>
                   </div>
+                  <PasswordChecklist value={mdp} isDark={isDark} />
                 </div>
 
                 <div className="flex flex-col gap-1.5">

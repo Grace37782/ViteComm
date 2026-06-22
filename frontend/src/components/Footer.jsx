@@ -11,8 +11,8 @@ const ROLE_LINKS = {
     links: [
       { label: 'Accueil', path: '/accueil' },
       { label: 'Marchés', path: '/client/accueil' },
-      { label: 'Contact', href: 'mailto:support@vitecomm.bj' },
-      { label: 'Aide', href: 'mailto:support@vitecomm.bj' },
+      { label: 'Contact', href: 'mailto:viteecom@gmail.com' },
+      { label: 'Aide', href: 'mailto:viteecom@gmail.com' },
     ],
   },
   client: {
@@ -53,7 +53,7 @@ const ROLE_LINKS = {
     title: 'Mon espace admin',
     links: [
       { label: 'Dashboard', path: '/admin/dashboard' },
-      { label: 'Contact support', href: 'mailto:support@vitecomm.bj' },
+      { label: 'Contact support', href: 'mailto:viteecom@gmail.com' },
     ],
   },
 }
@@ -114,10 +114,10 @@ export default function Footer() {
               Livraison rapide par zemidjan, paiement sécurisé.
             </p>
             <div className="flex gap-2">
-              <a href="mailto:support@vitecomm.bj"
+              <a href="mailto:viteecom@gmail.com"
                 className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
                 style={{ background: 'var(--surface-alt)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
-                <Mail size={14} /> support@vitecomm.bj
+                <Mail size={14} /> viteecom@gmail.com
               </a>
             </div>
           </div>
@@ -176,7 +176,7 @@ export default function Footer() {
                 <div className="flex flex-col gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                   <p>Marketplace alimentaire connectant marchands, clients et livreurs à Cotonou.</p>
                   <div className="flex flex-col gap-1.5">
-                    <a href="mailto:support@vitecomm.bj" className="flex items-center gap-1.5 text-xs font-medium"
+                    <a href="mailto:viteecom@gmail.com" className="flex items-center gap-1.5 text-xs font-medium"
                       style={{ color: 'var(--accent)' }}><Mail size={13} /> Contacter le support</a>
                     <button onClick={() => navigate('/accueil')}
                       className="flex items-center gap-1.5 text-xs font-medium text-left cursor-pointer"
