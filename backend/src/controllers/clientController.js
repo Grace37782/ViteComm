@@ -475,14 +475,14 @@ export const createOrder = async (req, res) => {
     const productIds = details.map(d => d.id_produit);
     const products = await prisma.produit.findMany({ where: { id_produit: { in: productIds } }, select: { id_produit: true, id_user_vendeur: true, nom: true } });
     const vendorIds = [...new Set(products.map(p => p.id_user_vendeur))];
-    const items = details.map(d => { const p = products.find(pp => pp.id_produit === d.id_produit); return `${d.quantite_commandee}x ${p?.nom || 'produit'}`; }).join(', ');
+    const notifItems = details.map(d => { const p = products.find(pp => pp.id_produit === d.id_produit); return `${d.quantite_commandee}x ${p?.nom || 'produit'}`; }).join(', ');
 
     for (const vId of vendorIds) {
       const vUser = await prisma.utilisateur.findUnique({ where: { id_user: vId }, select: { prenom: true, nom: true } });
       const vName = vUser ? `${vUser.prenom} ${vUser.nom}` : 'Vendeur';
       const clientUser = await prisma.utilisateur.findUnique({ where: { id_user: req.user.id_user }, select: { prenom: true, nom: true } });
       const clientName = clientUser ? `${clientUser.prenom} ${clientUser.nom}` : 'Client';
-      notifyOrderPlaced({ id_commande: command.id_commande }, vId, vName, clientName, items, command.total_marchandises).catch(() => {});
+      notifyOrderPlaced({ id_commande: command.id_commande }, vId, vName, clientName, notifItems, command.total_marchandises).catch(() => {});
     }
 
     return res.status(201).json({
