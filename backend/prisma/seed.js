@@ -780,6 +780,8 @@ async function main() {
   console.log('Signalements...');
   const sigTypes = ['Vendeur', 'Client', 'Livreur'];
   const allUsers = [...clients, ...vendeurs, ...livreursData];
+  const sissoVendorIds = vendeurs.slice(0, 3).map(v => v.id_user);
+  const sissoDriverId = livreursData[0]?.id_user;
   for (let i = 0; i < 10; i++) {
     const auteur = allUsers[i % allUsers.length];
     const cible = allUsers[(i + 5) % allUsers.length];
@@ -790,6 +792,45 @@ async function main() {
         motif: pick(litigeDescriptions),
         statut_traitement: pick(['En attente', 'Traite', 'En attente']),
         date_heure: new Date(now - rand(1, 30) * day)
+      }
+    });
+  }
+
+  // Sisso-specific signalements (for vendor/livreur signalement tabs)
+  const clientForSig = clients[0]?.id_user;
+  if (clientForSig) {
+    // Client reports Sisso vendors
+    for (const vId of sissoVendorIds) {
+      await prisma.signalement.create({
+        data: {
+          id_auteur: clientForSig, id_cible: vId,
+          type_cible_cible: 'Vendeur',
+          motif: pick(['Article non conforme à la description', 'Retard de livraison important', 'Produit avarié']),
+          statut_traitement: pick(['En attente', 'Traite', 'En attente']),
+          date_heure: new Date(now - rand(1, 15) * day)
+        }
+      });
+    }
+    // Client reports Sisso livreur
+    if (sissoDriverId) {
+      await prisma.signalement.create({
+        data: {
+          id_auteur: clientForSig, id_cible: sissoDriverId,
+          type_cible_cible: 'Livreur',
+          motif: pick(['Livreur non professionnel', 'Retard important', 'Article endommagé']),
+          statut_traitement: 'En attente',
+          date_heure: new Date(now - rand(1, 10) * day)
+        }
+      });
+    }
+    // Sisso vendor reports a client
+    await prisma.signalement.create({
+      data: {
+        id_auteur: sissoVendorIds[0], id_cible: clientForSig,
+        type_cible_cible: 'Client',
+        motif: pick(['Client impoli', 'Paiement refusé']),
+        statut_traitement: 'En attente',
+        date_heure: new Date(now - rand(1, 10) * day)
       }
     });
   }
@@ -832,6 +873,20 @@ async function main() {
   const driverIds = notifUsers.filter(u => u.livreur).map(u => u.id_user);
 
   const notifTemplates = [
+    // Sisso vendor notifications (Lionel, Lilian, Liesse)
+    { types: [sissoVendorIds[0]], titre: 'Commande #1557 validée', message: 'Votre commande a été validée par le client', type: 'order', reference: 'order:1557' },
+    { types: [sissoVendorIds[0]], titre: 'Nouvel avis — #1557', message: 'Immaculee Koudjo a donné 5/5 étoiles', type: 'feedback', reference: 'feedback:1557' },
+    { types: [sissoVendorIds[0]], titre: 'Nouvelle commande #1561', message: 'Un client a passé une commande de 12 000 F', type: 'order', reference: 'order:1561' },
+    { types: [sissoVendorIds[1]], titre: 'Nouvelle commande #1562', message: 'Un client a passé une commande de 8 500 F', type: 'order', reference: 'order:1562' },
+    { types: [sissoVendorIds[1]], titre: 'Signalement reçu', message: 'Un client vous a signalé pour retard', type: 'system', reference: null },
+    { types: [sissoVendorIds[2]], titre: 'Commande #1560 collectée', message: 'Le livreur a collecté vos articles', type: 'order', reference: 'order:1560' },
+    { types: [sissoVendorIds[2]], titre: 'Stock faible — Manioc', message: 'Il ne reste que 2 kg en stock', type: 'system', reference: null },
+    // Sisso livreur notifications (Temitayo)
+    { types: [sissoDriverId], titre: 'Nouvelle commande #1563', message: 'Une course est disponible pour vous', type: 'order', reference: 'order:1563' },
+    { types: [sissoDriverId], titre: 'Commande #1557 — Collecte', message: 'Rendez-vous chez Sisso Frais Market', type: 'delivery', reference: 'delivery:1557' },
+    { types: [sissoDriverId], titre: 'Nouvel avis — #1557', message: 'Immaculee Koudjo a donné 5/5 étoiles', type: 'feedback', reference: 'feedback:1557' },
+    { types: [sissoDriverId], titre: 'Gains de la semaine', message: 'Vous avez gagné 28 500 F cette semaine', type: 'payment', reference: null },
+    { types: [sissoDriverId], titre: 'Signalement reçu', message: 'Un client vous a signalé', type: 'system', reference: null },
     // Client notifications
     { types: clientIds, titre: 'Commande #1557 validée', message: 'Lionel Sisso a validé votre commande', type: 'order', reference: 'order:1557' },
     { types: clientIds, titre: 'Livreur assigné — #1557', message: 'Temitayo Sisso a accepté votre livraison', type: 'delivery', reference: 'delivery:1557' },
@@ -860,7 +915,8 @@ async function main() {
 
   let notifCount = 0;
   for (const tmpl of notifTemplates) {
-    for (const userId of tmpl.types) {
+    const validTypes = tmpl.types.filter(Boolean);
+    for (const userId of validTypes) {
       await prisma.notification.create({
         data: {
           id_user: userId,

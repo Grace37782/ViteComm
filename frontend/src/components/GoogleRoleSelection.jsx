@@ -3,7 +3,7 @@ import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { completeGoogleRegistration, api } from '../services/api'
-import { ShoppingCart, Store, Truck, Loader2, ChevronRight, MapPin, Car } from 'lucide-react'
+import { ShoppingCart, Store, Truck, Loader2, ChevronRight, MapPin, Car, ChevronDown } from 'lucide-react'
 
 export default function GoogleRoleSelection({ user, onComplete }) {
   const { resolved } = useTheme()
@@ -168,21 +168,24 @@ export default function GoogleRoleSelection({ user, onComplete }) {
               <label className="text-xs font-bold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>
                 <MapPin size={12} className="inline align-middle mr-1" /> Marché *
               </label>
-              <select
-                value={idMarche}
-                onChange={(e) => {
-                  const id = e.target.value
-                  const m = markets.find(m => String(m.id_marche) === id)
-                  setIdMarche(id)
-                  setLocalisationMarche(m ? m.nom : '')
-                  setError('')
-                }}
-                className="w-full px-4 py-3 rounded-xl text-sm outline-none appearance-none cursor-pointer"
-                style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)', colorScheme: isDark ? 'dark' : 'light' }}
-              >
-                <option value="">Sélectionnez un marché</option>
-                {markets.map(m => <option key={m.id_marche} value={m.id_marche}>{m.nom}</option>)}
-              </select>
+              <div className="relative">
+                <select
+                  value={idMarche}
+                  onChange={(e) => {
+                    const id = e.target.value
+                    const m = markets.find(m => String(m.id_marche) === id)
+                    setIdMarche(id)
+                    setLocalisationMarche(m ? m.nom : '')
+                    setError('')
+                  }}
+                  className="w-full px-4 py-3 rounded-xl text-sm outline-none appearance-none cursor-pointer"
+                  style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)', colorScheme: isDark ? 'dark' : 'light' }}
+                >
+                  <option value="">Sélectionnez un marché</option>
+                  {markets.map(m => <option key={m.id_marche} value={m.id_marche}>{m.nom}</option>)}
+                </select>
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
+              </div>
             </div>
 
             <button
