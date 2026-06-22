@@ -224,7 +224,9 @@ export const acceptDelivery = async (req, res) => {
     // Notify client that driver accepted
     const driverUser = await prisma.utilisateur.findUnique({ where: { id_user: driverId }, select: { prenom: true, nom: true } });
     const driverName = driverUser ? `${driverUser.prenom} ${driverUser.nom}` : 'Un livreur';
-    notifyDriverAssigned({ id_commande: commandId }, command.id_user_client, '', driverName).catch(() => {});
+    const clientUser = await prisma.utilisateur.findUnique({ where: { id_user: command.id_user_client }, select: { prenom: true, nom: true } });
+    const clientName = clientUser ? `${clientUser.prenom} ${clientUser.nom}` : 'Un client';
+    notifyDriverAssigned({ id_commande: commandId }, command.id_user_client, clientName, driverName).catch(() => {});
 
     return res.status(201).json({ message: 'Course acceptée.', livraison });
   } catch (error) {
@@ -673,7 +675,9 @@ export const departDelivery = async (req, res) => {
     ]);
 
     // Notify client: driver departed
-    notifyDeliveryStatus({ id_commande: commandId }, command.id_user_client, '', 'En cours de livraison').catch(() => {});
+    const clientUser = await prisma.utilisateur.findUnique({ where: { id_user: command.id_user_client }, select: { prenom: true, nom: true } });
+    const clientName = clientUser ? `${clientUser.prenom} ${clientUser.nom}` : 'Un client';
+    notifyDeliveryStatus({ id_commande: commandId }, command.id_user_client, clientName, 'En cours de livraison').catch(() => {});
 
     return res.json({ message: 'Départ enregistré. En route vers le client.' });
   } catch (error) {
@@ -787,7 +791,9 @@ export const finalizeDelivery = async (req, res) => {
     });
 
     // Notify client: delivery finalized (pending inspection)
-    notifyDeliveryStatus({ id_commande: commandId }, command.id_user_client, '', 'Inspectee').catch(() => {});
+    const clientUser = await prisma.utilisateur.findUnique({ where: { id_user: command.id_user_client }, select: { prenom: true, nom: true } });
+    const clientName = clientUser ? `${clientUser.prenom} ${clientUser.nom}` : 'Un client';
+    notifyDeliveryStatus({ id_commande: commandId }, command.id_user_client, clientName, 'Inspectee').catch(() => {});
 
     return res.json({ message: 'Livraison finalisée avec succès.' });
   } catch (error) {

@@ -358,7 +358,10 @@ export const forgotPassword = async (req, res) => {
 
   try {
     const user = await prisma.utilisateur.findUnique({ where: { email } });
-    if (!user) return res.status(404).json({ error: 'Aucun compte trouvé avec cet email.' });
+    if (!user) {
+      // Return same response as success to avoid email enumeration
+      return res.json({ message: 'Si un compte existe avec cet email, un code a été envoyé.', token: null });
+    }
 
     const existing = await prisma.passwordResetToken.findFirst({
       where: { email, expires_at: { gt: new Date() } }
