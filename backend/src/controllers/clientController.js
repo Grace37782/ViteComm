@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { errorMessage, internalError } from '../utils/errors.js';
 import { generateFinalizeQRToken } from '../utils/vendorQR.js';
-import { notifyOrderPlaced, notifyFeedbackReceived, notifyAdminNewSignalement, notifyAdminNewLitige } from '../services/notification.js';
+import { notifyOrderPlaced, notifyFeedbackReceived, notifyAdminNewSignalement, notifyAdminNewLitige, notifyOrderCancelled } from '../services/notification.js';
 
 // --- 2.1. Tableau de bord Client - Recherche de produits et marchés ---
 
@@ -1130,6 +1130,20 @@ export const cancelOrder = async (req, res) => {
         });
       }
     });
+
+    // Notify vendors about cancellation
+    const clientUser = await prisma.utilisateur.findUnique({ where: { id_user: req.user.id_user }, select: { prenom: true, nom: true } });
+    const clientName = clientUser ? `${clientUser.prenom} ${clientUser.nom}` : 'Un client';
+    const details = await prisma.detailCommande.findMany({ where: { id_commande: order.id_commande } });
+    const productIds = details.map(d => d.id_produit);
+    const products = await prisma.produit.findMany({ where: { id_produit: { in: productIds } }, select: { id_user_vendeur: true } });
+    const vendorIds = [...new Set(products.map(p => p.id_user_vendeur))];
+    const recipients = [];
+    for (const vId of vendorIds) {
+      const vUser = await prisma.utilisateur.findUnique({ where: { id_user: vId }, select: { prenom: true, nom: true } });
+      recipients.push({ userId: vId, name: vUser ? `${vUser.prenom} ${vUser.nom}` : 'Vendeur' });
+    }
+    notifyOrderCancelled(order.id_commande, recipients, clientName).catch(() => {});
 
     return res.json({ message: 'Commande annulée.' });
   } catch (error) {

@@ -262,6 +262,47 @@ export async function notifyAdminNewLitige(adminUserId, clientName, orderId, mot
   await sendPush(adminUserId, titre, message, `/admin/dashboard`);
 }
 
+export async function notifyOrderRejected(orderId, clientUserId, clientName, vendorName) {
+  const titre = `Commande #${orderId} — Articles rejetés`;
+  const message = `${vendorName} a rejeté certains articles de votre commande`;
+  const ref = `order:${orderId}`;
+  await createNotification({ userId: clientUserId, titre, message, type: 'order', reference: ref });
+  await sendPush(clientUserId, titre, message, `/client/suivi-commande?id=${orderId}`);
+  const client = await prisma.utilisateur.findUnique({ where: { id_user: clientUserId }, select: { email: true } });
+  if (client) {
+    const tpl = emailTemplates.delivery_status({ orderId, clientName, status: 'Articles rejetés par le vendeur' });
+    await sendEmail(client.email, tpl.subject, tpl.html);
+  }
+}
+
+export async function notifyOrderCancelled(orderId, recipients, clientName) {
+  for (const r of recipients) {
+    const titre = `Commande #${orderId} annulée`;
+    const message = `${clientName} a annulé la commande`;
+    const ref = `order:${orderId}`;
+    await createNotification({ userId: r.userId, titre, message, type: 'order', reference: ref });
+    await sendPush(r.userId, titre, message, `/vendor/commandes`);
+    const user = await prisma.utilisateur.findUnique({ where: { id_user: r.userId }, select: { email: true } });
+    if (user) {
+      const tpl = emailTemplates.delivery_status({ orderId, clientName: r.name, status: 'Commande annulée' });
+      await sendEmail(user.email, tpl.subject, tpl.html);
+    }
+  }
+}
+
+export async function notifyDeliveryFailed(orderId, clientUserId, clientName, reason) {
+  const titre = `Commande #${orderId} — Livraison échouée`;
+  const message = reason || 'La livraison a échoué';
+  const ref = `delivery:${orderId}`;
+  await createNotification({ userId: clientUserId, titre, message, type: 'delivery', reference: ref });
+  await sendPush(clientUserId, titre, message, `/client/suivi-commande?id=${orderId}`);
+  const client = await prisma.utilisateur.findUnique({ where: { id_user: clientUserId }, select: { email: true } });
+  if (client) {
+    const tpl = emailTemplates.delivery_status({ orderId, clientName, status: 'Livraison échouée' });
+    await sendEmail(client.email, tpl.subject, tpl.html);
+  }
+}
+
 // ─── Generate VAPID keys (for setup) ───
 export function generateVapidKeys() {
   return webpush.generateVAPIDKeys();
