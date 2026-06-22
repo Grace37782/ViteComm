@@ -149,6 +149,7 @@ export default function Signalement() {
           </button>
           <div className="flex-1">
             <div className="text-white font-black text-base leading-tight">Signaler</div>
+            <div className="text-white/70 text-xs">{signalements?.length ?? 0} signalement(s)</div>
           </div>
         </div>
       </div>

@@ -67,6 +67,13 @@ export default function Admin() {
             tab === 'signalements' ? 'Signalements' :
             tab === 'litiges' ? 'Litiges' :
             'Mon profil'
+          } subtitle={
+            tab === 'users' ? 'Utilisateurs de la plateforme' :
+            tab === 'products' ? 'Produits en catalogue' :
+            tab === 'marchés' ? 'Lieux de vente' :
+            tab === 'signalements' ? 'Signalements en attente' :
+            tab === 'litiges' ? 'Litiges à traiter' :
+            'Profil administrateur'
           } onBack={() => navigateTo('dashboard')} />}
           <main className="max-w-7xl mx-auto px-4 py-6 pb-24">
             {tab === 'dashboard' && <DashboardTab onNavigate={navigateTo} onLeaderboardReady={setLeaderboardData} onProductRankingsReady={setProductRankings} />}
@@ -83,7 +90,7 @@ export default function Admin() {
   )
 }
 
-function AdminTabHeader({ title, onBack }) {
+function AdminTabHeader({ title, subtitle, onBack }) {
   const isDark = document.documentElement.classList.contains('dark')
   return (
     <div className="relative overflow-hidden px-5 pt-5 pb-5"
@@ -99,6 +106,7 @@ function AdminTabHeader({ title, onBack }) {
         )}
         <div className="flex-1">
           <div className="text-white font-black text-base leading-tight">{title}</div>
+          {subtitle && <div className="text-white/70 text-xs mt-0.5">{subtitle}</div>}
         </div>
       </div>
     </div>

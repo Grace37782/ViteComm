@@ -284,6 +284,7 @@ export default function CatalogueVendeur() {
           </button>
           <div className="flex-1">
             <div className="text-white font-black text-base leading-tight">Catalogue</div>
+            <div className="text-white/70 text-xs">{produits?.length ?? 0} produit(s)</div>
           </div>
         </div>
       </div>

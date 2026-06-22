@@ -70,6 +70,7 @@ export default function RetourLivreur() {
           </button>
           <div className="flex-1">
             <div className="text-white font-black text-base leading-tight">Retours</div>
+            <div className="text-white/70 text-xs">{retours?.length ?? 0} retour(s)</div>
           </div>
         </div>
       </div>

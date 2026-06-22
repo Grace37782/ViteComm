@@ -54,6 +54,7 @@ export default function Gains() {
           </button>
           <div className="flex-1">
             <div className="text-white font-black text-base leading-tight">Gains</div>
+            <div className="text-white/70 text-xs">{(gains?.total_gains ?? 0).toLocaleString()} F gagnés</div>
           </div>
         </div>
       </div>

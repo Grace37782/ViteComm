@@ -110,6 +110,7 @@ export default function LivreurProfil() {
           </button>
           <div className="flex-1">
             <div className="text-white font-black text-base leading-tight">Mon profil</div>
+            <div className="text-white/70 text-xs">Livreur ViteComm</div>
           </div>
         </div>
       </div>

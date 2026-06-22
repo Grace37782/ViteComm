@@ -81,6 +81,7 @@ export default function Factures() {
           </button>
           <div className="flex-1">
             <div className="text-white font-black text-base leading-tight">Factures</div>
+            <div className="text-white/70 text-xs">{factures?.length ?? 0} facture(s)</div>
           </div>
         </div>
       </div>

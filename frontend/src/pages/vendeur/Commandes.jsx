@@ -161,6 +161,7 @@ export default function CommandesVendeur() {
           </button>
           <div className="flex-1">
             <div className="text-white font-black text-base leading-tight">Commandes</div>
+            <div className="text-white/70 text-xs">{commandes?.length ?? 0} commande(s)</div>
           </div>
         </div>
       </div>

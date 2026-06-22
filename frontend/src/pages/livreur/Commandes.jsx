@@ -369,6 +369,7 @@ export default function CommandesLivreur() {
           </button>
           <div className="flex-1">
             <div className="text-white font-black text-base leading-tight">Commandes</div>
+            <div className="text-white/70 text-xs">{deliveries?.length ?? 0} livraison(s) active(s) + {available?.length ?? 0} disponible(s)</div>
           </div>
         </div>
       </div>
