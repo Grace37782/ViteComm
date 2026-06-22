@@ -338,7 +338,7 @@ model VerificationToken {
   email      String
   code       String
   token      String   @unique
-  data       String   // JSON: full registration payload
+  data       String   @db.Text // JSON: full registration payload
   role       String   // client | vendeur | livreur
   expires_at DateTime
   created_at DateTime @default(now())
