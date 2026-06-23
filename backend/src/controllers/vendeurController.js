@@ -395,6 +395,7 @@ export const getVendorOrders = async (req, res) => {
           },
           include: { produit: true }
         },
+        collecteVendeurs: true,
         client: {
           include: { utilisateur: { select: { nom: true, prenom: true } } }
         },
@@ -439,12 +440,15 @@ export const getVendorOrders = async (req, res) => {
         unite: d.produit.unite || 'kg'
       }));
 
+      const myCollecte = o.collecteVendeurs.find(cv => cv.id_user_vendeur === vendorId);
+
       return {
         id: o.id_commande,
         date_creation: o.date_creation,
         heure: formatHeure(o.date_creation),
         statut_collecte,
         validee_par_vendeur: o.validee_par_vendeur,
+        ma_validation: myCollecte?.statut_collecte || null,
         livreur,
         client: { nom: clientNom, adresse: clientAdresse },
         articles

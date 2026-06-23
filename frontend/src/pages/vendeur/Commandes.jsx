@@ -91,9 +91,7 @@ export default function CommandesVendeur() {
     try {
       setValidating((p) => ({ ...p, [cmd.id]: true }))
       await api.post(`/vendor/orders/${cmd.id}/validate`)
-      setCommandes((prev) =>
-        prev.map((c) => (c.id === cmd.id ? { ...c, validee_par_vendeur: true } : c))
-      )
+      await fetchOrders(true)
     } catch (err) {
       showToast(err.message || 'Erreur lors de la validation')
     } finally {
@@ -289,25 +287,37 @@ export default function CommandesVendeur() {
             {!cmd.validee_par_vendeur && !collecte && (
               <div className="px-4 pb-4 pt-3"
                 style={{ borderTop: '1px solid var(--border)' }}>
-                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-3"
-                  style={{ background: isDark ? 'rgba(234,179,8,0.12)' : '#FEF9C3' }}>
-                  <ShieldCheck size={16} style={{ color: isDark ? '#FACC15' : '#A16207' }} />
-                  <span className="text-xs font-semibold" style={{ color: isDark ? '#FACC15' : '#A16207' }}>
-                    Validez la disponibilité des articles avant la remise
-                  </span>
-                </div>
-                <button
-                  onClick={() => validerCommande(cmd)}
-                  disabled={validating[cmd.id]}
-                  className="w-full py-3 rounded-xl text-sm font-black transition-all"
-                  style={{
-                    background: validating[cmd.id] ? (isDark ? 'var(--border)' : '#D3D1C7') : (isDark ? '#2DC491' : '#0F6E56'),
-                    border: 'none',
-                    color: '#fff',
-                    cursor: validating[cmd.id] ? 'not-allowed' : 'pointer',
-                  }}>
-                  {validating[cmd.id] ? 'Validation…' : 'Articles disponibles →'}
-                </button>
+                {cmd.ma_validation === 'validee' ? (
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
+                    style={{ background: isDark ? 'rgba(234,179,8,0.12)' : '#FEF9C3' }}>
+                    <Loader2 size={16} className="animate-spin" style={{ color: isDark ? '#FACC15' : '#A16207' }} />
+                    <span className="text-xs font-semibold" style={{ color: isDark ? '#FACC15' : '#A16207' }}>
+                      Validé — En attente des autres vendeurs
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-3"
+                      style={{ background: isDark ? 'rgba(234,179,8,0.12)' : '#FEF9C3' }}>
+                      <ShieldCheck size={16} style={{ color: isDark ? '#FACC15' : '#A16207' }} />
+                      <span className="text-xs font-semibold" style={{ color: isDark ? '#FACC15' : '#A16207' }}>
+                        Validez la disponibilité des articles avant la remise
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => validerCommande(cmd)}
+                      disabled={validating[cmd.id]}
+                      className="w-full py-3 rounded-xl text-sm font-black transition-all"
+                      style={{
+                        background: validating[cmd.id] ? (isDark ? 'var(--border)' : '#D3D1C7') : (isDark ? '#2DC491' : '#0F6E56'),
+                        border: 'none',
+                        color: '#fff',
+                        cursor: validating[cmd.id] ? 'not-allowed' : 'pointer',
+                      }}>
+                      {validating[cmd.id] ? 'Validation…' : 'Articles disponibles →'}
+                    </button>
+                  </>
+                )}
               </div>
             )}
 
