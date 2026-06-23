@@ -806,7 +806,7 @@ function ProductsTab({ initialFilter, productRankings }) {
               <h3 className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Historique des prix</h3>
               <button onClick={() => setPriceHistory(null)} style={{ color: 'var(--text-muted)', background: 'none', border: 'none' }} className="hover:opacity-80 text-lg cursor-pointer">✕</button>
             </div>
-            {priceHistory.length === 0 ? <div className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>Aucun historique</div> :
+            {priceHistory.length === 0 ? <div className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>{t('admin.products.noHistory')}</div> :
              <div className="flex flex-col gap-2">
                {priceHistory.map(h => (
                  <div key={h.id_historique} className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: 'var(--surface-alt)' }}>
@@ -1480,7 +1480,7 @@ function MarketsTab() {
           className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-white text-sm font-black cursor-pointer transition-all hover:opacity-90"
           style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)' }}
         >
-          + {t('admin.markets.newMarket')}
+          {t('admin.markets.newMarket')}
         </button>
       </div>
 
@@ -1664,14 +1664,14 @@ function MarketsTab() {
         </select>
       </div>
       {loading ? (
-        <div className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement des marchés...</div>
+        <div className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>{t('admin.markets.loading')}</div>
       ) : filteredMarkets.length === 0 ? (
         <div className="text-center py-16 rounded-3xl border-2 border-dashed" style={{ borderColor: 'var(--border)' }}>
           <div className="mb-3 flex justify-center"><MapPin size={48} style={{ color: 'var(--text-muted)' }} /></div>
-          <p className="font-bold text-sm mb-3" style={{ color: 'var(--text-muted)' }}>Aucun marché enregistré</p>
+          <p className="font-bold text-sm mb-3" style={{ color: 'var(--text-muted)' }}>{t('admin.markets.noMarkets')}</p>
           <button onClick={openCreate}
             className="text-sm font-black px-5 py-2.5 rounded-2xl text-white cursor-pointer"
-            style={{ background: '#1D9E75', border: 'none' }}>+ Créer le premier marché</button>
+            style={{ background: '#1D9E75', border: 'none' }}>{t('admin.markets.createFirst')}</button>
         </div>
       ) : (
         <>
@@ -1694,7 +1694,7 @@ function MarketsTab() {
                 {/* Vendor count badge */}
                 <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-black"
                   style={{ background: 'rgba(255,255,255,0.92)', color: '#0F6E56' }}>
-                  <Store size={10} className="inline align-middle" /> {m._count?.vendeurs || 0} étals
+                  <Store size={10} className="inline align-middle" /> {m._count?.vendeurs || 0} {t('admin.markets.stalls')}
                 </div>
               </div>
 
@@ -1723,7 +1723,7 @@ function MarketsTab() {
                     className="flex-1 text-xs font-bold py-2 rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1"
                     style={{ background: '#E1F5EE', color: '#0F6E56', border: 'none' }}
                   >
-                    <Edit size={12} /> Modifier
+                    <Edit size={12} /> {t('common.edit')}
                   </button>
                   <button
                     onClick={() => handleDelete(m)}
@@ -1741,7 +1741,7 @@ function MarketsTab() {
           <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
             className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
             style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-            <ChevronDown size={16} /> Charger plus ({filteredMarkets.length - visibleCount} restant(s))
+             <ChevronDown size={16} /> {t('admin.markets.loadMore', { count: filteredMarkets.length - visibleCount })}
           </button>
         )}
         </>
