@@ -1,17 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
+import { useLang } from '../context/LangContext'
 import { api } from '../services/api'
 import { Search, CheckCircle, XCircle, Loader2, Package, Truck, Star, Shield, Inbox } from 'lucide-react'
-
-const TYPE_FILTERS = [
-  { id: 'all', label: 'Toutes' },
-  { id: 'order', label: 'Commandes' },
-  { id: 'delivery', label: 'Livraisons' },
-  { id: 'payment', label: 'Paiements' },
-  { id: 'feedback', label: 'Avis' },
-  { id: 'system', label: 'Système' },
-]
 
 const TYPE_COLORS = {
   order: { bg: isDark => isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark => isDark ? '#F3A83B' : '#854F0B', icon: Package },
@@ -21,15 +13,15 @@ const TYPE_COLORS = {
   system: { bg: isDark => isDark ? 'rgba(107,114,128,0.15)' : '#F3F4F6', color: isDark => isDark ? '#9CA3AF' : '#6B7280', icon: Shield },
 }
 
-function relativeTime(dateStr) {
+function relativeTime(dateStr, t) {
   const diff = +new Date() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "à l'instant"
-  if (mins < 60) return `il y a ${mins}m`
+  if (mins < 1) return t('notification.time.justNow')
+  if (mins < 60) return t('notification.time.minutesAgo', { count: mins })
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `il y a ${hours}h`
+  if (hours < 24) return t('notification.time.hoursAgo', { count: hours })
   const days = Math.floor(hours / 24)
-  if (days < 7) return `il y a ${days}j`
+  if (days < 7) return t('notification.time.daysAgo', { count: days })
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
 }
 
@@ -51,7 +43,17 @@ function getRouteForNavigation(reference, basePath) {
 export default function Notifications({ basePath = '/client/notifications' }) {
   const navigate = useNavigate()
   const { resolved } = useTheme()
+  const { t } = useLang()
   const isDark = resolved === 'dark'
+
+  const TYPE_FILTERS = [
+    { id: 'all', label: t('common.all') },
+    { id: 'order', label: t('notification.filter.orders') },
+    { id: 'delivery', label: t('notification.filter.deliveries') },
+    { id: 'payment', label: t('notification.filter.payments') },
+    { id: 'feedback', label: t('notification.filter.reviews') },
+    { id: 'system', label: t('notification.filter.system') },
+  ]
 
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
@@ -103,8 +105,8 @@ export default function Notifications({ basePath = '/client/notifications' }) {
       await api.post('/notifications/read', { ids: [] })
       setNotifications(prev => prev.map(n => ({ ...n, lu: true })))
       setUnreadCount(0)
-      showToast('Toutes marquées comme lues')
-    } catch { showToast('Erreur', 'error') }
+      showToast(t('toast.allMarkedRead'))
+    } catch { showToast(t('toast.error'), 'error') }
   }
 
   async function markOneRead(id) {
@@ -142,16 +144,16 @@ export default function Notifications({ basePath = '/client/notifications' }) {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Notifications</div>
+            <div className="text-white font-black text-base leading-tight">{t('notification.title')}</div>
             <div className="text-white/70 text-xs">
-              {unreadCount > 0 ? `${unreadCount} non lue${unreadCount > 1 ? 's' : ''}` : `${total} notification${total > 1 ? 's' : ''}`}
+              {unreadCount > 0 ? t('notification.unread', { count: unreadCount }) : `${total} notification${total > 1 ? 's' : ''}`}
             </div>
           </div>
           {unreadCount > 0 && (
             <button onClick={markAllRead}
               className="text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer"
               style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}>
-              Tout lu
+              {t('notification.markAllRead')}
             </button>
           )}
         </div>
@@ -163,7 +165,7 @@ export default function Notifications({ basePath = '/client/notifications' }) {
         <div className="flex items-center gap-2 px-4 py-3 rounded-2xl"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-          <input type="text" placeholder="Rechercher..." value={search}
+          <input type="text" placeholder={t('notification.search')} value={search}
             onChange={e => setSearch(e.target.value)}
             className="flex-1 bg-transparent outline-none text-sm font-medium"
             style={{ color: 'var(--text-primary)' }} />
@@ -195,7 +197,7 @@ export default function Notifications({ basePath = '/client/notifications' }) {
               color: unreadFilter ? '#fff' : 'var(--text-secondary)',
               border: `1.5px solid ${unreadFilter ? accentColor : 'var(--border)'}`,
             }}>
-            Non lues
+            {t('notification.unreadFilter')}
           </button>
         </div>
 
@@ -210,8 +212,8 @@ export default function Notifications({ basePath = '/client/notifications' }) {
             <Inbox size={40} className="mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
             <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
               {search.trim() || typeFilter !== 'all' || unreadFilter
-                ? 'Aucun résultat pour vos filtres'
-                : 'Aucune notification'}
+                ? `${t('common.noResults')} ${t('common.all').toLowerCase()}`
+                : t('notification.empty')}
             </div>
           </div>
         ) : (
@@ -240,12 +242,12 @@ export default function Notifications({ basePath = '/client/notifications' }) {
                     <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{n.message}</p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className="text-[9px] font-semibold" style={{ color: 'var(--text-muted)' }}>
-                        {relativeTime(n.created_at)}
+                        {relativeTime(n.created_at, t)}
                       </span>
                       {route && (
                         <span className="text-[9px] font-bold px-2 py-0.5 rounded-full"
                           style={{ background: tc.bg(isDark), color: tc.color(isDark) }}>
-                          Voir →
+                          {t('notification.viewAll')}
                         </span>
                       )}
                     </div>
@@ -266,7 +268,7 @@ export default function Notifications({ basePath = '/client/notifications' }) {
                 color: page <= 1 ? 'var(--text-muted)' : 'var(--text-primary)',
                 opacity: page <= 1 ? 0.5 : 1,
               }}>
-              ← Préc
+              ← {t('common.back').replace('← ', '')}
             </button>
             <span className="text-xs font-bold px-3" style={{ color: 'var(--text-muted)' }}>
               {page} / {totalPages}
@@ -278,7 +280,7 @@ export default function Notifications({ basePath = '/client/notifications' }) {
                 color: page >= totalPages ? 'var(--text-muted)' : 'var(--text-primary)',
                 opacity: page >= totalPages ? 0.5 : 1,
               }}>
-              Suiv →
+              {t('common.next')} →
             </button>
           </div>
         )}

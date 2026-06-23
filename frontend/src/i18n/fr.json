@@ -167,6 +167,11 @@
   "notification.filter.system": "Système",
   "notification.unreadFilter": "Non lues",
   "notification.search": "Rechercher…",
+  "notification.unreadFilter": "Non lues",
+  "notification.time.justNow": "à l'instant",
+  "notification.time.minutesAgo": "il y a {count}m",
+  "notification.time.hoursAgo": "il y a {count}h",
+  "notification.time.daysAgo": "il y a {count}j",
 
   "driver.select": "Choisir un livreur",
   "driver.available": "{count} livreur(s) disponible(s)",

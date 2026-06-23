@@ -167,6 +167,11 @@
   "notification.filter.system": "System",
   "notification.unreadFilter": "Unread",
   "notification.search": "Search…",
+  "notification.unreadFilter": "Unread",
+  "notification.time.justNow": "just now",
+  "notification.time.minutesAgo": "{count}m ago",
+  "notification.time.hoursAgo": "{count}h ago",
+  "notification.time.daysAgo": "{count}d ago",
 
   "driver.select": "Choose a driver",
   "driver.available": "{count} driver(s) available",
