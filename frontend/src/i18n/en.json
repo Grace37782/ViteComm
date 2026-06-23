@@ -1111,6 +1111,14 @@
   "admin.productDetail.market": "Market",
   "admin.productDetail.lastPrice": "Last recorded price",
 
+  "admin.profile.administrator": "Administrator",
+  "admin.profile.changePassword": "Change password (optional)",
+  "admin.profile.email": "Email",
+  "admin.profile.statut": "Status",
+  "admin.profile.modifier": "Edit",
+  "admin.profile.nom": "Last name",
+  "admin.profile.prenom": "First name",
+
   "admin.markets.title": "Market Management",
   "admin.markets.count": "{count} localmart(s) registered on the platform",
   "admin.markets.newMarket": "+ New Market",

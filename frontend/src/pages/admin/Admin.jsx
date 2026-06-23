@@ -986,6 +986,7 @@ function SignalementsTab({ initialFilter }) {
 
 /* ─── PROFIL TAB ─── */
 function ProfilTab({ onLogout }) {
+  const { t } = useLang()
   const [profile, setProfile] = useState(null)
   const [edit, setEdit] = useState(false)
   const [form, setForm] = useState({ nom: '', prenom: '', email: '', mot_de_passe: '', confirm: '' })
@@ -1071,19 +1072,19 @@ function ProfilTab({ onLogout }) {
 
             <div className="text-center mb-5">
               <h2 className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>{profile.prenom} {profile.nom}</h2>
-              <p className="text-sm font-semibold mt-1" style={{ color: '#1D9E75' }}>Administrateur</p>
+              <p className="text-sm font-semibold mt-1" style={{ color: '#1D9E75' }}>{t('admin.profile.administrator')}</p>
             </div>
 
             <div className="flex flex-col gap-3 mb-5">
-              <InfoRow label="Email" value={profile.email} icon={<Mail size={14} />} />
-              <InfoRow label="Statut" value={profile.statut_compte} icon={<Lock size={14} />} />
+              <InfoRow label={t('auth.email')} value={profile.email} icon={<Mail size={14} />} />
+              <InfoRow label={t('vendor.profil.statut')} value={profile.statut_compte} icon={<Lock size={14} />} />
             </div>
 
             <div className="flex gap-3">
               <button onClick={() => setEdit(true)}
                 className="flex-1 rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                 style={{ background: '#1D9E75', color: '#fff', border: 'none' }}>
-                <Edit size={14} className="inline align-middle mr-1" /> Modifier
+                <Edit size={14} className="inline align-middle mr-1" /> {t('common.edit')}
               </button>
               <button onClick={onLogout}
                 className="rounded-2xl py-3 px-5 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
@@ -1117,21 +1118,21 @@ function ProfilTab({ onLogout }) {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Nom" value={form.nom} onChange={v => setForm(p => ({ ...p, nom: v }))} />
-              <Field label="Prénom" value={form.prenom} onChange={v => setForm(p => ({ ...p, prenom: v }))} />
+              <Field label={t('auth.name')} value={form.nom} onChange={v => setForm(p => ({ ...p, nom: v }))} />
+              <Field label={t('auth.firstName')} value={form.prenom} onChange={v => setForm(p => ({ ...p, prenom: v }))} />
             </div>
-            <Field label="Email" type="email" value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} />
+            <Field label={t('auth.email')} type="email" value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} />
 
             <hr className="border-t my-1" style={{ borderColor: 'var(--border)' }} />
             {profile?.auth_provider === 'google' ? (
               <div className="text-center py-3">
-                <p className="text-xs font-bold" style={{ color: '#4285F4' }}>Compte Google — mot de passe géré par Google</p>
+                <p className="text-xs font-bold" style={{ color: '#4285F4' }}>{t('vendor.profil.compteGoogleDesc')}</p>
               </div>
             ) : (
               <>
-                <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Changer le mot de passe (optionnel)</p>
-                <Field label="Nouveau mot de passe" type="password" value={form.mot_de_passe} onChange={v => setForm(p => ({ ...p, mot_de_passe: v }))} />
-                <Field label="Confirmer le mot de passe" type="password" value={form.confirm} onChange={v => setForm(p => ({ ...p, confirm: v }))} />
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t('admin.profile.changePassword')}</p>
+                <Field label={t('profile.newPassword')} type="password" value={form.mot_de_passe} onChange={v => setForm(p => ({ ...p, mot_de_passe: v }))} />
+                <Field label={t('profile.confirmPassword')} type="password" value={form.confirm} onChange={v => setForm(p => ({ ...p, confirm: v }))} />
               </>
             )}
 
@@ -1139,7 +1140,7 @@ function ProfilTab({ onLogout }) {
               <button type="submit" disabled={saving}
                 className="flex-1 rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                 style={{ background: '#1D9E75', color: '#fff', border: 'none', opacity: saving ? 0.7 : 1 }}>
-                {saving ? 'Enregistrement...' : 'Enregistrer'}
+                {saving ? t('common.loading') : t('common.save')}
               </button>
               <button type="button" onClick={() => {
                 setEdit(false); setPhotoFile(null); setPhotoPreview('')
@@ -1147,7 +1148,7 @@ function ProfilTab({ onLogout }) {
               }}
                 className="rounded-2xl py-3 px-5 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                 style={{ background: '#F0EFEA', color: 'var(--text-muted)', border: 'none' }}>
-                Annuler
+                {t('common.cancel')}
               </button>
             </div>
           </form>
