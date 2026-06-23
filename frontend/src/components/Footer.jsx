@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ShoppingCart, Store, Bike, Mail, Sun, Monitor, Moon, Home, Globe } from 'lucide-react'
+import { ShoppingCart, Store, Bike, Mail, Sun, Monitor, Moon, Home, Globe, FileText, Shield } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useLang } from '../context/LangContext'
@@ -183,6 +183,16 @@ export default function Footer() {
                       className="flex items-center gap-1.5 text-xs font-medium text-left cursor-pointer"
                       style={{ color: 'var(--accent)', background: 'none', border: 'none' }}>
                       <Home size={13} /> {t('footer.home')}
+                    </button>
+                    <button onClick={() => navigate('/cgu')}
+                      className="flex items-center gap-1.5 text-xs font-medium text-left cursor-pointer"
+                      style={{ color: 'var(--accent)', background: 'none', border: 'none' }}>
+                      <FileText size={13} /> {t('footer.cgu')}
+                    </button>
+                    <button onClick={() => navigate('/politique-confidentialite')}
+                      className="flex items-center gap-1.5 text-xs font-medium text-left cursor-pointer"
+                      style={{ color: 'var(--accent)', background: 'none', border: 'none' }}>
+                      <Shield size={13} /> {t('footer.privacy')}
                     </button>
                   </div>
                 </div>
