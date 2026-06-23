@@ -29,16 +29,24 @@ export default function CommandesVendeur() {
     if (!qrModal) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setScanStatus(null)
+    let closeTimer = null
     const poll = async () => {
       try {
         const data = await api.get(`/vendor/orders/${qrModal.id}/scan-status`)
         setScanStatus(data)
         if (data.scan_statut === 'echec') return
+        if (data.scan_statut && data.scan_statut !== 'echec') {
+          closeTimer = setTimeout(() => {
+            setQrModal(null)
+            setQrData(null)
+            setScanStatus(null)
+          }, 3000)
+        }
       } catch { /* polling error, ignore */ }
     }
     poll()
     const interval = setInterval(poll, 3000)
-    return () => clearInterval(interval)
+    return () => { clearInterval(interval); if (closeTimer) clearTimeout(closeTimer) }
   }, [qrModal])
 
   async function fetchOrders(silent = false) {

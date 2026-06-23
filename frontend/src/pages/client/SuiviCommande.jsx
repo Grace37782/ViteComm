@@ -64,16 +64,24 @@ export default function SuiviCommande() {
     if (!showFinalizeQR || !id_commande) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setFinalizeScanStatus(null)
+    let closeTimer = null
     const poll = async () => {
       try {
         const data = await api.get(`/client/orders/${id_commande}/scan-status`)
         setFinalizeScanStatus(data)
         if (data.scan_statut === 'echec') return
+        if (data.scan_statut && data.scan_statut !== 'echec') {
+          closeTimer = setTimeout(() => {
+            setShowFinalizeQR(false)
+            setFinalizeQR(null)
+            setFinalizeScanStatus(null)
+          }, 3000)
+        }
       } catch { /* polling error, ignore */ }
     }
     poll()
     const interval = setInterval(poll, 3000)
-    return () => clearInterval(interval)
+    return () => { clearInterval(interval); if (closeTimer) clearTimeout(closeTimer) }
   }, [showFinalizeQR, id_commande])
 
   useEffect(() => {
