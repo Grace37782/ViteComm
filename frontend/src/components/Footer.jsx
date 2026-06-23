@@ -170,6 +170,18 @@ export default function Footer() {
                     )
                   })}
                 </div>
+                <div className="flex flex-col gap-1.5 mt-3">
+                  <button onClick={() => navigate('/cgu')}
+                    className="flex items-center gap-1.5 text-xs font-medium text-left cursor-pointer"
+                    style={{ color: 'var(--accent)', background: 'none', border: 'none' }}>
+                    <FileText size={13} /> {t('footer.cgu')}
+                  </button>
+                  <button onClick={() => navigate('/politique-confidentialite')}
+                    className="flex items-center gap-1.5 text-xs font-medium text-left cursor-pointer"
+                    style={{ color: 'var(--accent)', background: 'none', border: 'none' }}>
+                    <Shield size={13} /> {t('footer.privacy')}
+                  </button>
+                </div>
               </>
             ) : (
               <>
