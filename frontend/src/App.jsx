@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { LangProvider } from './context/LangContext'
 import InstallPrompt from './components/InstallPrompt'
 import Footer from './components/Footer'
 import Accueil from './pages/Accueil/Accueil'
@@ -56,6 +57,7 @@ export default function App() {
   return (
     <AppProviders>
     <ThemeProvider>
+    <LangProvider>
     <AuthProvider>
       <BrowserRouter>
         <InstallPrompt />
@@ -121,6 +123,7 @@ export default function App() {
       <Footer />
       </BrowserRouter>
     </AuthProvider>
+    </LangProvider>
     </ThemeProvider>
     </AppProviders>
   )
