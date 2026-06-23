@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { ClipboardList, Inbox, ShoppingCart, ShieldCheck, Motorbike, CheckCircle, ChevronDown, FileText, Smartphone } from 'lucide-react'
+import { ClipboardList, Inbox, ShoppingCart, ShieldCheck, Motorbike, CheckCircle, ChevronDown, FileText, Smartphone, Search, XCircle } from 'lucide-react'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -64,6 +64,8 @@ export default function MesCommandes() {
   const [loading, setLoading] = useState(true)
   const [copiedId, setCopiedId] = useState(null)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [filtre, setFiltre] = useState('tous')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     api.get('/client/orders')
@@ -72,8 +74,28 @@ export default function MesCommandes() {
       .finally(() => setLoading(false))
   }, [])
 
-  const visibleItems = orders.slice(0, visibleCount)
-  const hasMore = visibleCount < orders.length
+  const filtres = {
+    tous: orders,
+    en_attente: orders.filter(o => ['En attente', 'Validee'].includes(o.statut)),
+    en_cours: orders.filter(o => ['En cours de collecte', 'Collectee', 'En cours de livraison'].includes(o.statut)),
+    livree: orders.filter(o => o.statut === 'Livree'),
+  }
+
+  const baseList = filtres[filtre] || orders
+
+  const liste = search.trim()
+    ? baseList.filter(o => {
+        const q = search.toLowerCase().trim()
+        const id = String(o.id_commande)
+        const livreur = o.livraison?.livreur
+          ? `${o.livraison.livreur.utilisateur?.prenom || ''} ${o.livraison.livreur.utilisateur?.nom || ''}`.toLowerCase()
+          : ''
+        const produits = (o.detailsCommande || []).map(d => (d.produit?.nom || '').toLowerCase()).join(' ')
+        return id.includes(q) || livreur.includes(q) || produits.includes(q)
+      })
+    : baseList
+
+  const hasMore = visibleCount < liste.length
 
   if (loading) {
     return (
@@ -113,6 +135,49 @@ export default function MesCommandes() {
       {/* CONTENT */}
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
+        {/* TABS */}
+        <div className="flex gap-2">
+          {[
+            { id: 'tous', label: 'Tous' },
+            { id: 'en_attente', label: 'En attente' },
+            { id: 'en_cours', label: 'En cours' },
+            { id: 'livree', label: 'Livrée' },
+          ].map(t => (
+            <button key={t.id} onClick={() => { setFiltre(t.id); setVisibleCount(PAGE_SIZE) }}
+              className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all active:scale-95"
+              style={{
+                background: filtre === t.id ? '#1D9E75' : 'var(--surface)',
+                color: filtre === t.id ? '#fff' : 'var(--text-secondary)',
+                border: `1.5px solid ${filtre === t.id ? '#1D9E75' : 'var(--border)'}`,
+              }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* SEARCH */}
+        <div className="relative">
+          <div className="flex items-center gap-2 px-4 py-3 rounded-2xl"
+            style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+            <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+            <input
+              type="text"
+              placeholder="Rechercher par n° commande, livreur, produit..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
+              className="flex-1 bg-transparent outline-none text-sm font-medium"
+              style={{ color: 'var(--text-primary)' }}
+            />
+            {search && (
+              <button onClick={() => setSearch('')}
+                className="cursor-pointer p-1 rounded-full transition-all"
+                style={{ background: 'var(--surface-alt)', border: 'none' }}>
+                <XCircle size={14} style={{ color: 'var(--text-muted)' }} />
+              </button>
+            )}
+          </div>
+        </div>
+
         {orders.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--surface)', borderRadius: 24, border: '1.5px solid var(--border)' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}><Inbox size={48} /></div>
@@ -130,8 +195,17 @@ export default function MesCommandes() {
               <ShoppingCart size={16} className="inline" /> Découvrir les marchés
             </button>
           </div>
+        ) : liste.length === 0 ? (
+          <div className="text-center text-sm py-10 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-muted)' }}>
+            {search.trim() ? `Aucun résultat pour "${search}"` : 'Aucune commande dans cette catégorie.'}
+            {search.trim() && (
+              <button onClick={() => setSearch('')} className="block mx-auto mt-2 text-xs font-bold cursor-pointer" style={{ color: '#1D9E75', background: 'none', border: 'none' }}>
+                Effacer la recherche
+              </button>
+            )}
+          </div>
         ) : (
-          visibleItems.map(order => {
+          liste.slice(0, visibleCount).map(order => {
             const sc = getStatusConfig(order.statut, isDark)
             const livreur = order.livraison?.livreur
             const livreurNom = livreur
@@ -296,7 +370,7 @@ export default function MesCommandes() {
           <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
             className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-            <ChevronDown size={14} /> Charger plus ({orders.length - visibleCount} restant{orders.length - visibleCount > 1 ? 's' : ''})
+            <ChevronDown size={14} /> Charger plus ({liste.length - visibleCount} restant{liste.length - visibleCount > 1 ? 's' : ''})
           </button>
         )}
       </div>

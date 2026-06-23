@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
-import { FileText, Download, ChevronDown, ArrowLeft, Receipt, Loader2, CheckCircle } from 'lucide-react'
+import { FileText, Download, ChevronDown, ArrowLeft, Receipt, Loader2, CheckCircle, Search, XCircle } from 'lucide-react'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 
@@ -16,6 +16,8 @@ export default function MesFactures() {
   const [loading, setLoading] = useState(true)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [detailFacture, setDetailFacture] = useState(null)
+  const [filtre, setFiltre] = useState('tous')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     api.get('/client/factures')
@@ -24,8 +26,26 @@ export default function MesFactures() {
       .finally(() => setLoading(false))
   }, [])
 
-  const visibleItems = factures.slice(0, visibleCount)
-  const hasMore = visibleCount < factures.length
+  const filtres = {
+    tous: factures,
+    paye: factures.filter(f => f.statut_paiement === 'Paye'),
+    attente: factures.filter(f => f.statut_paiement !== 'Paye'),
+  }
+
+  const baseList = filtres[filtre] || factures
+
+  const liste = search.trim()
+    ? baseList.filter(f => {
+        const q = search.toLowerCase().trim()
+        const id = String(f.id_facture)
+        const cmdId = String(f.id_commande)
+        const articles = (f.articles || []).map(a => (a.nom || '').toLowerCase()).join(' ')
+        return id.includes(q) || cmdId.includes(q) || articles.includes(q)
+      })
+    : baseList
+
+  const visibleItems = liste.slice(0, visibleCount)
+  const hasMore = visibleCount < liste.length
 
   function downloadFacture(f) {
     const lines = [
@@ -108,11 +128,62 @@ export default function MesFactures() {
 
         {!detailFacture ? (
           <>
+            {/* TABS */}
+            <div className="flex gap-2">
+              {[
+                { id: 'tous', label: 'Toutes' },
+                { id: 'paye', label: 'Payées' },
+                { id: 'attente', label: 'En attente' },
+              ].map(t => (
+                <button key={t.id} onClick={() => { setFiltre(t.id); setVisibleCount(PAGE_SIZE) }}
+                  className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all active:scale-95"
+                  style={{
+                    background: filtre === t.id ? '#1D9E75' : 'var(--surface)',
+                    color: filtre === t.id ? '#fff' : 'var(--text-secondary)',
+                    border: `1.5px solid ${filtre === t.id ? '#1D9E75' : 'var(--border)'}`,
+                  }}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* SEARCH */}
+            <div className="relative">
+              <div className="flex items-center gap-2 px-4 py-3 rounded-2xl"
+                style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
+                <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                <input
+                  type="text"
+                  placeholder="Rechercher par n° facture, commande, produit..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
+                  className="flex-1 bg-transparent outline-none text-sm font-medium"
+                  style={{ color: 'var(--text-primary)' }}
+                />
+                {search && (
+                  <button onClick={() => setSearch('')}
+                    className="cursor-pointer p-1 rounded-full transition-all"
+                    style={{ background: 'var(--surface-alt)', border: 'none' }}>
+                    <XCircle size={14} style={{ color: 'var(--text-muted)' }} />
+                  </button>
+                )}
+              </div>
+            </div>
+
             {factures.length === 0 ? (
               <div className="text-center py-12 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                 <Receipt size={48} className="mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
                 <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>Aucune facture disponible.</p>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Vos factures apparaîtront après vos achats.</p>
+              </div>
+            ) : liste.length === 0 ? (
+              <div className="text-center text-sm py-10 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-muted)' }}>
+                {search.trim() ? `Aucun résultat pour "${search}"` : 'Aucune facture dans cette catégorie.'}
+                {search.trim() && (
+                  <button onClick={() => setSearch('')} className="block mx-auto mt-2 text-xs font-bold cursor-pointer" style={{ color: '#1D9E75', background: 'none', border: 'none' }}>
+                    Effacer la recherche
+                  </button>
+                )}
               </div>
             ) : (
               visibleItems.map((f) => {
@@ -147,7 +218,7 @@ export default function MesFactures() {
               <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
                 className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer flex items-center justify-center gap-1.5"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-                <ChevronDown size={14} /> Charger plus ({factures.length - visibleCount} restant{factures.length - visibleCount > 1 ? 's' : ''})
+                <ChevronDown size={14} /> Charger plus ({liste.length - visibleCount} restant{liste.length - visibleCount > 1 ? 's' : ''})
               </button>
             )}
           </>
