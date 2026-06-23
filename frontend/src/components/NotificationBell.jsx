@@ -90,7 +90,7 @@ export default function NotificationBell({ notificationsPath = '/client/notifica
       }
       const basePath = notificationsPath.replace('/notifications', '')
       if (type === 'order') navigate(`${basePath}/mes-commandes`)
-      else if (type === 'delivery') navigate(`${basePath}/suivi-commande?id=${id}`)
+      else if (type === 'delivery') navigate(`${basePath}/suivi-commande`, { state: { id_commande: Number(id) } })
       else if (type === 'payment') navigate(`${basePath}/mes-commandes`)
       else if (type === 'feedback') navigate(`${basePath}/mes-commandes`)
     }

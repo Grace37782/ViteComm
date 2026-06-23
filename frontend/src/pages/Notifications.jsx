@@ -33,11 +33,11 @@ function relativeTime(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
 }
 
-function getRouteForReference(reference, basePath) {
+function getRouteForNavigation(reference, basePath) {
   if (!reference) return null
   const [type, id] = reference.split(':')
   if (type === 'order') return basePath === '/admin/dashboard' ? null : `${basePath.replace('/notifications', '')}/mes-commandes`
-  if (type === 'delivery') return `${basePath.replace('/notifications', '')}/suivi-commande?id=${id}`
+  if (type === 'delivery') return { pathname: `${basePath.replace('/notifications', '')}/suivi-commande`, state: { id_commande: Number(id) } }
   if (type === 'payment') return basePath === '/admin/dashboard' ? null : `${basePath.replace('/notifications', '')}/mes-commandes`
   if (type === 'feedback') return basePath === '/admin/dashboard' ? null : `${basePath.replace('/notifications', '')}/mes-commandes`
   if (type === 'admin') {
@@ -117,7 +117,7 @@ export default function Notifications({ basePath = '/client/notifications' }) {
 
   function handleClick(n) {
     if (!n.lu) markOneRead(n.id)
-    const route = getRouteForReference(n.reference, basePath)
+    const route = getRouteForNavigation(n.reference, basePath)
     if (route) navigate(route)
   }
 
@@ -219,7 +219,7 @@ export default function Notifications({ basePath = '/client/notifications' }) {
             {notifications.map(n => {
               const tc = TYPE_COLORS[n.type] || TYPE_COLORS.system
               const Icon = tc.icon
-              const route = getRouteForReference(n.reference, basePath)
+              const route = getRouteForNavigation(n.reference, basePath)
               return (
                 <div key={n.id}
                   onClick={() => handleClick(n)}
