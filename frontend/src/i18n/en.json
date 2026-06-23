@@ -229,7 +229,7 @@
   "vendor.profil.mdpMisAJour": "Password updated.",
   "vendor.profil.nouveauMdp": "New password",
   "vendor.profil.confirmer": "Confirm",
-  "vendor.profil.mettreAJour": "Update"
+  "vendor.profil.mettreAJour": "Update",
 
   "notification.title": "Notifications",
   "notification.markAllRead": "Mark all read",
