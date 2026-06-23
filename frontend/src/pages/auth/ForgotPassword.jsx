@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { KeyRound, Mail, Lock, Eye, EyeOff, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react'
 
 const PWD_RULES = [
@@ -38,6 +39,7 @@ function PasswordChecklist({ value, isDark }) {
 export default function ForgotPassword() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
+  const { t } = useLang()
   const isDark = resolved === 'dark'
 
   const [email, setEmail] = useState('')
@@ -56,7 +58,7 @@ export default function ForgotPassword() {
 
   async function handleSendCode(e) {
     e.preventDefault()
-    if (!email) return showError('Entrez votre adresse email.')
+    if (!email) return showError(t('forgot.val.email'))
     setLoading(true); setError('')
     try {
       const res = await api.post('/auth/forgot-password', { email })
@@ -68,22 +70,22 @@ export default function ForgotPassword() {
 
   async function handleReset(e) {
     e.preventDefault()
-    if (!code) return showError('Entrez le code reçu par email.')
-    if (!mdp) return showError('Nouveau mot de passe requis.')
-    if (mdp !== mdpConfirm) return showError('Les mots de passe ne correspondent pas.')
-    if (mdp.length < 8) return showError('Minimum 8 caractères.')
-    if (!/[A-Z]/.test(mdp)) return showError('Une majuscule requise.')
-    if (!/[a-z]/.test(mdp)) return showError('Une minuscule requise.')
-    if (!/\d/.test(mdp)) return showError('Un chiffre requis.')
+    if (!code) return showError(t('forgot.val.code'))
+    if (!mdp) return showError(t('forgot.val.password'))
+    if (mdp !== mdpConfirm) return showError(t('forgot.val.passwordMismatch'))
+    if (mdp.length < 8) return showError(t('forgot.val.min8'))
+    if (!/[A-Z]/.test(mdp)) return showError(t('forgot.val.uppercase'))
+    if (!/[a-z]/.test(mdp)) return showError(t('forgot.val.lowercase'))
+    if (!/\d/.test(mdp)) return showError(t('forgot.val.digit'))
     if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'/`~]/.test(mdp)) // eslint-disable-line no-useless-escape
-      return showError('Un caractère spécial requis.')
+      return showError(t('forgot.val.special'))
     setLoading(true); setError('')
     try {
       await api.post('/auth/reset-password', {
         token: resetToken, code,
         mot_de_passe: mdp, mot_de_passe_confirmation: mdpConfirm,
       })
-      showSuccess('Mot de passe réinitialisé ! Redirection...')
+      showSuccess(t('forgot.resetSuccess'))
       setTimeout(() => navigate('/connect'), 2000)
     } catch (err) { showError(err.message) }
     finally { setLoading(false) }
@@ -116,7 +118,7 @@ export default function ForgotPassword() {
             color: 'var(--text-secondary)',
             border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
           }}>
-          <span className="text-base">←</span> Connexion
+          <span className="text-base">←</span> {t('forgot.back').replace('← ', '')}
         </button>
 
         {/* Toasts */}
@@ -150,15 +152,15 @@ export default function ForgotPassword() {
               <div className="flex flex-col items-center mb-6">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black mb-4"
                   style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', boxShadow: '0 8px 24px rgba(29,158,117,0.25)' }}><KeyRound size={28} /></div>
-                <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>Mot de passe oublié</h1>
+                <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>{t('forgot.title')}</h1>
                 <p className="text-sm mt-2 text-center leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  Entrez votre email, nous vous enverrons un code pour réinitialiser votre mot de passe.
+                  {t('forgot.desc')}
                 </p>
               </div>
 
               <form onSubmit={handleSendCode} className="flex flex-col gap-5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Adresse email</label>
+                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('forgot.email')}</label>
                   <input type="email" placeholder="exemple@gmail.com" value={email}
                     onChange={e => setEmail(e.target.value)}
                     className="rounded-xl px-4 py-3.5 text-sm outline-none" style={inputStyle} />
@@ -167,7 +169,7 @@ export default function ForgotPassword() {
                 <button type="submit" disabled={loading}
                   className="rounded-xl py-3.5 text-sm font-black transition-all cursor-pointer"
                   style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', border: 'none', opacity: loading ? 0.7 : 1, boxShadow: loading ? 'none' : '0 4px 16px rgba(29,158,117,0.3)' }}>
-                  {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> Envoi...</> : 'Envoyer le code →'}
+                  {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> {t('forgot.sendLoading')}</> : t('forgot.sendBtn')}
                 </button>
               </form>
             </>
@@ -178,15 +180,15 @@ export default function ForgotPassword() {
               <div className="flex flex-col items-center mb-6">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black mb-4"
                   style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', boxShadow: '0 8px 24px rgba(29,158,117,0.25)' }}><Mail size={28} /></div>
-                <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>Nouveau mot de passe</h1>
+                <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>{t('forgot.newTitle')}</h1>
                 <p className="text-sm mt-2 text-center leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  Un code à 6 chiffres vous a été envoyé par email. Saisissez-le ci-dessous avec votre nouveau mot de passe.
+                  {t('forgot.newDesc')}
                 </p>
               </div>
 
               <form onSubmit={handleReset} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Code de réinitialisation</label>
+                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('forgot.resetCode')}</label>
                   <input type="text" inputMode="numeric" placeholder="000000" value={code}
                     onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     className="rounded-xl px-4 py-3.5 text-sm outline-none text-center tracking-widest text-lg font-black"
@@ -194,7 +196,7 @@ export default function ForgotPassword() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Nouveau mot de passe</label>
+                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('forgot.newPassword')}</label>
                   <div className="flex items-center rounded-xl overflow-hidden"
                     style={{ background: 'var(--surface-alt)', border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }}>
                     <span className="pl-4 text-sm select-none"><Lock size={16} color="var(--text-muted)" /></span>
@@ -211,8 +213,8 @@ export default function ForgotPassword() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Confirmer le mot de passe</label>
-                  <input type={showMdp ? 'text' : 'password'} placeholder="Retaper le mot de passe" value={mdpConfirm}
+                  <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('forgot.confirmPassword')}</label>
+                  <input type={showMdp ? 'text' : 'password'} placeholder={t('forgot.confirmPlaceholder')} value={mdpConfirm}
                     onChange={e => setMdpConfirm(e.target.value)}
                     className="rounded-xl px-4 py-3.5 text-sm outline-none"
                     style={{
@@ -224,18 +226,18 @@ export default function ForgotPassword() {
                 <button type="submit" disabled={loading || code.length < 6}
                   className="rounded-xl py-3.5 text-sm font-black transition-all cursor-pointer"
                   style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', border: 'none', opacity: loading ? 0.7 : 1, boxShadow: loading ? 'none' : '0 4px 16px rgba(29,158,117,0.3)' }}>
-                  {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> Réinitialisation...</> : <><CheckCircle size={14} className="inline-block mr-1.5" /> Réinitialiser</>}
+                  {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> {t('forgot.resetLoading')}</> : <><CheckCircle size={14} className="inline-block mr-1.5" /> {t('forgot.resetBtn')}</>}
                 </button>
               </form>
             </>
           )}
 
           <div className="mt-5 text-center">
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Vous vous êtes souvenu de votre mot de passe ?</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('forgot.rememberPassword')}</p>
             <button onClick={() => navigate('/connect')}
               className="mt-1.5 text-sm font-bold cursor-pointer"
               style={{ background: 'none', border: 'none', color: 'var(--accent)' }}>
-              Se connecter
+              {t('forgot.login')}
             </button>
           </div>
         </div>

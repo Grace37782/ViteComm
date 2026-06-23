@@ -3,26 +3,27 @@ import { useNavigate } from 'react-router-dom'
 import { login as apiLogin } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import GoogleSignInButton from '../../components/GoogleSignInButton'
 import { AlertTriangle, Lock, Ban, WifiOff, Mail, Eye, EyeOff, Loader2 } from 'lucide-react'
 
-function messageErreur(err) {
+function messageErreur(err, t) {
   const msg = err.message?.toLowerCase() || ''
   if (msg === 'network_error')
-    return { texte: 'Impossible de joindre le serveur. Vérifiez votre connexion internet.', type: 'network' }
+    return { texte: t('connect.err.network'), type: 'network' }
   if (msg.includes('google') || msg.includes('continuer avec google'))
-    return { texte: err.message || 'Ce compte utilise uniquement la connexion Google.', type: 'google' }
+    return { texte: err.message || t('connect.err.google'), type: 'google' }
   if (msg.includes('suspendu') || msg.includes('suspended'))
-    return { texte: 'Votre compte a été suspendu. Contactez le support ViteComm.', type: 'suspend' }
+    return { texte: t('connect.err.suspended'), type: 'suspend' }
   if (msg.includes('banni') || msg.includes('banned'))
-    return { texte: 'Votre compte a été banni de la plateforme.', type: 'ban' }
+    return { texte: t('connect.err.banned'), type: 'ban' }
   if (msg.includes('inactif') || msg.includes('inactive'))
-    return { texte: "Votre compte est inactif. Contactez l'administrateur.", type: 'suspend' }
+    return { texte: t('connect.err.inactive'), type: 'suspend' }
   if (msg.includes('invalide') || msg.includes('incorrect') || msg.includes('inexistant') || msg.includes('existe pas'))
-    return { texte: 'Identifiant ou mot de passe incorrect.', type: 'erreur' }
+    return { texte: t('connect.err.incorrect'), type: 'erreur' }
   if (msg.includes('connexion') && (msg.includes('erreur') || msg.includes('500')))
-    return { texte: 'Erreur serveur. Veuillez réessayer plus tard.', type: 'erreur' }
-  return { texte: 'Identifiant ou mot de passe incorrect.', type: 'erreur' }
+    return { texte: t('connect.err.server'), type: 'erreur' }
+  return { texte: t('connect.err.incorrect'), type: 'erreur' }
 }
 
 const erreurStyles = {
@@ -37,6 +38,7 @@ export default function Connexion() {
   const navigate = useNavigate()
   const { user, login: updateAuthContext } = useAuth()
   const { resolved } = useTheme()
+  const { t } = useLang()
   const isDark = resolved === 'dark'
 
   const [identifiant, setIdentifiant] = useState('')
@@ -49,11 +51,11 @@ export default function Connexion() {
 
   function valider() {
     if (!identifiant.trim())
-      return 'Entrez votre email.'
+      return t('connect.val.email')
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifiant))
-      return 'Format email invalide.'
+      return t('connect.val.emailFormat')
     if (!motDePasse)
-      return 'Entrez votre mot de passe.'
+      return t('connect.val.password')
     return null
   }
 
@@ -75,7 +77,7 @@ export default function Connexion() {
       }
       navigate(redirects[role] || '/accueil')
     } catch (err) {
-      setErreur(messageErreur(err))
+      setErreur(messageErreur(err, t))
     } finally {
       setLoading(false)
     }
@@ -117,7 +119,7 @@ export default function Connexion() {
             border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
           }}
         >
-          <span className="text-base">←</span> Accueil
+          <span className="text-base">←</span> {t('connect.back').replace('← ', '')}
         </button>
 
         {/* Main card */}
@@ -153,7 +155,7 @@ export default function Connexion() {
               ViteComm
             </h1>
             <p className="text-sm mt-1.5 text-center" style={{ color: 'var(--text-muted)' }}>
-              Connectez-vous à votre espace
+              {t('connect.subtitle')}
             </p>
           </div>
 
@@ -189,7 +191,7 @@ export default function Connexion() {
             {/* Mot de passe */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                Mot de passe
+                {t('connect.password')}
               </label>
               <div
                 className="flex items-center rounded-xl overflow-hidden transition-all"
@@ -227,7 +229,7 @@ export default function Connexion() {
                 className="text-xs font-semibold cursor-pointer"
                 style={{ background: 'none', border: 'none', color: 'var(--accent)' }}
               >
-                Mot de passe oublié ?
+                {t('connect.forgotPassword')}
               </button>
             </div>
 
@@ -266,7 +268,7 @@ export default function Connexion() {
                   color: 'var(--text-primary)',
                 }}
               >
-                <Lock size={14} className="inline-block mr-1 -mt-0.5" color="#BA7517" /> Vous êtes déjà connecté en tant que <strong>{user.prenom} {user.nom}</strong>.
+                <Lock size={14} className="inline-block mr-1 -mt-0.5" color="#BA7517" /> {t('connect.alreadyLoggedIn')} <strong>{user.prenom} {user.nom}</strong>.
                 <div className="mt-2.5 flex gap-2 justify-center">
                   <button
                     type="button"
@@ -278,7 +280,7 @@ export default function Connexion() {
                       border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'}`,
                     }}
                   >
-                    Se déconnecter
+                    {t('connect.logout')}
                   </button>
                   <button
                     type="button"
@@ -290,7 +292,7 @@ export default function Connexion() {
                     className="text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer"
                     style={{ background: 'var(--accent)', color: '#fff', border: 'none' }}
                   >
-                    Mon espace
+                    {t('connect.mySpace')}
                   </button>
                 </div>
               </div>
@@ -309,14 +311,14 @@ export default function Connexion() {
                 boxShadow: loading ? 'none' : '0 4px 16px rgba(29,158,117,0.3)',
               }}
             >
-              {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> Connexion…</> : 'Se connecter →'}
+              {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> {t('connect.loginLoading')}</> : t('connect.loginBtn')}
             </button>
           </form>
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>ou</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('connect.or')}</span>
             <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
           </div>
 
@@ -332,16 +334,16 @@ export default function Connexion() {
 
           {/* Inscription */}
           <div className="mt-6 text-center">
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Pas encore de compte ?</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('connect.noAccount')}</p>
             <button
               onClick={() => navigate('/register')}
               className="mt-1.5 text-sm font-bold cursor-pointer"
               style={{ background: 'none', border: 'none', color: 'var(--accent)' }}
             >
-              Créer un compte
+              {t('connect.createAccount')}
             </button>
             <p className="text-[11px] mt-3" style={{ color: 'var(--text-muted)' }}>
-              En vous connectant, vous acceptez nos{' '}
+              {t('connect.acceptCGU')}{' '}
               <span onClick={() => navigate('/cgu')} className="font-bold underline cursor-pointer" style={{ color: 'var(--accent)' }}>
                 CGU
               </span>

@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { ShoppingCart, Store, Motorbike, Lock, Eye, EyeOff, Camera, Mail, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react'
 
 const profils = [
-  { id: 'client',  Icon: ShoppingCart, label: 'Acheter',  color: '#1D9E75' },
-  { id: 'vendeur', Icon: Store, label: 'Vendre',   color: '#BA7517' },
-  { id: 'livreur', Icon: Motorbike, label: 'Livrer',   color: '#D85A30' },
+  { id: 'client',  Icon: ShoppingCart, labelKey: 'register.buy',  color: '#1D9E75' },
+  { id: 'vendeur', Icon: Store, labelKey: 'register.sell',   color: '#BA7517' },
+  { id: 'livreur', Icon: Motorbike, labelKey: 'register.deliver',   color: '#D85A30' },
 ]
 
 const PWD_RULES = [
@@ -42,10 +43,10 @@ function PasswordChecklist({ value, isDark }) {
   )
 }
 
-function PasswordStrengthInput({ showMdp, setShowMdp, value, onChange, isDark }) {
+function PasswordStrengthInput({ showMdp, setShowMdp, value, onChange, isDark, t }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Mot de passe</label>
+      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('register.password')}</label>
       <div className="flex items-center rounded-xl overflow-hidden"
         style={{ background: 'var(--surface-alt)', border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }}>
         <span className="pl-4 text-sm select-none"><Lock size={16} color="var(--text-muted)" /></span>
@@ -111,6 +112,7 @@ export default function Inscription() {
   const location = useLocation()
   const { login: updateAuthContext } = useAuth()
   const { resolved } = useTheme()
+  const { t } = useLang()
   const isDark = resolved === 'dark'
 
   const [step, setStep]                   = useState('form')
@@ -169,12 +171,12 @@ export default function Inscription() {
     setError('')
     setLoading(true)
     const mdp = form.mot_de_passe
-    if (!mdp) return void (setLoading(false) || showError('Mot de passe obligatoire.'))
+    if (!mdp) return void (setLoading(false) || showError(t('register.val.passwordRequired')))
     if (mdp !== form.mot_de_passe_confirmation)
-      return void (setLoading(false) || showError('Les mots de passe ne correspondent pas.'))
+      return void (setLoading(false) || showError(t('register.val.passwordMismatch')))
     const failing = PWD_RULES.find(r => !r.test(mdp))
     if (failing)
-      return void (setLoading(false) || showError('Le mot de passe doit contenir au moins ' + PWD_RULES.map(r => r.label).join(', ') + '.'))
+      return void (setLoading(false) || showError(t('register.val.passwordWeak', { rules: PWD_RULES.map(r => r.label).join(', ') })))
     try {
       const body = new FormData()
       for (const [k, v] of Object.entries(form)) body.append(k, v)
@@ -203,7 +205,7 @@ export default function Inscription() {
 
   async function handleResend() {
     setLoading(true); setError('')
-    try { await api.post('/auth/resend-code', { token: verifyToken }); showSuccess('Nouveau code envoyé !') }
+      try { await api.post('/auth/resend-code', { token: verifyToken }); showSuccess(t('register.verifyResent')) }
     catch (err) { showError(err.message) }
     finally { setLoading(false) }
   }
@@ -239,7 +241,7 @@ export default function Inscription() {
             color: 'var(--text-secondary)',
             border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
           }}>
-          <span className="text-base">←</span> Accueil
+          <span className="text-base">←</span> {t('register.back').replace('← ', '')}
         </button>
 
         {/* TOAST */}
@@ -274,8 +276,8 @@ export default function Inscription() {
               <div className="flex flex-col items-center mb-6">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black mb-4"
                   style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', boxShadow: '0 8px 24px rgba(29,158,117,0.25)' }}>V</div>
-                <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>Créer un compte</h1>
-                <p className="text-sm mt-1.5 text-center" style={{ color: 'var(--text-muted)' }}>Rejoignez ViteComm en quelques secondes</p>
+                <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>{t('register.title')}</h1>
+                <p className="text-sm mt-1.5 text-center" style={{ color: 'var(--text-muted)' }}>{t('register.subtitle')}</p>
               </div>
 
               {/* Profile selector */}
@@ -291,7 +293,7 @@ export default function Inscription() {
                           border: `1.5px solid ${actif ? p.color : 'var(--border)'}`,
                         }}>
                         <div className="mb-2" style={{ color: actif ? p.color : 'var(--text-secondary)' }}><p.Icon size={24} /></div>
-                        <div className="text-xs font-bold" style={{ color: actif ? p.color : 'var(--text-secondary)' }}>{p.label}</div>
+                        <div className="text-xs font-bold" style={{ color: actif ? p.color : 'var(--text-secondary)' }}>{t(p.labelKey)}</div>
                       </button>
                     )
                   })}
@@ -319,13 +321,13 @@ export default function Inscription() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Nom</label>
-                    <input type="text" placeholder="Votre nom" value={form.nom} onChange={set('nom')}
+                    <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('register.name')}</label>
+                    <input type="text" placeholder={t('register.namePlaceholder')} value={form.nom} onChange={set('nom')}
                       className="rounded-xl px-4 py-3.5 text-sm outline-none" style={inputStyle} />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Prénom</label>
-                    <input type="text" placeholder="Votre prénom" value={form.prenom} onChange={set('prenom')}
+                    <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('register.firstName')}</label>
+                    <input type="text" placeholder={t('register.firstNamePlaceholder')} value={form.prenom} onChange={set('prenom')}
                       className="rounded-xl px-4 py-3.5 text-sm outline-none" style={inputStyle} />
                   </div>
                 </div>
@@ -342,8 +344,8 @@ export default function Inscription() {
 
                 {form.mot_de_passe && (
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Confirmer le mot de passe</label>
-                    <input type={showMdp ? 'text' : 'password'} placeholder="Retaper le mot de passe"
+                    <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('register.confirmPassword')}</label>
+                    <input type={showMdp ? 'text' : 'password'} placeholder={t('register.confirmPasswordPlaceholder')}
                       value={form.mot_de_passe_confirmation} onChange={set('mot_de_passe_confirmation')}
                       className="rounded-xl px-4 py-3.5 text-sm outline-none"
                       style={{
@@ -357,8 +359,8 @@ export default function Inscription() {
 
                 {profil === 'client' && (
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Adresse de livraison</label>
-                    <input type="text" placeholder="Ex: Akpakpa" value={form.adresse_livraison} onChange={set('adresse_livraison')}
+                    <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('register.address')}</label>
+                    <input type="text" placeholder={t('register.addressPlaceholder')} value={form.adresse_livraison} onChange={set('adresse_livraison')}
                       className="rounded-xl px-4 py-3.5 text-sm outline-none" style={inputStyle} />
                   </div>
                 )}
@@ -366,19 +368,19 @@ export default function Inscription() {
                 {profil === 'vendeur' && (
                   <>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Nom boutique</label>
-                      <input type="text" placeholder="Ex: Grâce Boutique" value={form.nom_etablissement} onChange={set('nom_etablissement')}
+                      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('register.shopName')}</label>
+                      <input type="text" placeholder={t('register.shopNamePlaceholder')} value={form.nom_etablissement} onChange={set('nom_etablissement')}
                         className="rounded-xl px-4 py-3.5 text-sm outline-none" style={inputStyle} />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Marché</label>
+                      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('register.market')}</label>
                       <select value={form.id_marche} onChange={e => {
                         const id = e.target.value; const m = markets.find(m => String(m.id_marche) === id)
                         setForm(p => ({ ...p, id_marche: id, localisation_marche: m ? m.nom : '' }))
                       }}
                         className="rounded-xl px-4 py-3.5 text-sm outline-none appearance-none cursor-pointer"
                         style={{ ...inputStyle, colorScheme: isDark ? 'dark' : 'light' }}>
-                        <option value="">Sélectionnez un marché</option>
+                        <option value="">{t('register.selectMarket')}</option>
                         {markets.map(m => <option key={m.id_marche} value={m.id_marche}>{m.nom}</option>)}
                       </select>
                     </div>
@@ -388,13 +390,13 @@ export default function Inscription() {
                 {profil === 'livreur' && (
                   <>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Type véhicule</label>
-                      <input type="text" placeholder="Ex: Zemidjan" value={form.type_vehicule} onChange={set('type_vehicule')}
+                      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('register.vehicleType')}</label>
+                      <input type="text" placeholder={t('register.vehicleTypePlaceholder')} value={form.type_vehicule} onChange={set('type_vehicule')}
                         className="rounded-xl px-4 py-3.5 text-sm outline-none" style={inputStyle} />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Immatriculation</label>
-                      <input type="text" placeholder="RB-1234" value={form.immatriculation} onChange={set('immatriculation')}
+                      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('register.plateNumber')}</label>
+                      <input type="text" placeholder={t('register.plateNumberPlaceholder')} value={form.immatriculation} onChange={set('immatriculation')}
                         className="rounded-xl px-4 py-3.5 text-sm outline-none" style={inputStyle} />
                     </div>
                   </>
@@ -405,28 +407,27 @@ export default function Inscription() {
                   <input type="checkbox" checked={acceptedCGU} onChange={e => setAcceptedCGU(e.target.checked)}
                     className="mt-0.5 w-4 h-4 rounded accent-[#1D9E75] flex-shrink-0 cursor-pointer" />
                   <span className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    J'accepte les{' '}
+                    {t('register.acceptCGU', { cgu: '' })}{' '}
                     <span onClick={e => { e.preventDefault(); navigate('/cgu') }}
                       className="font-bold underline cursor-pointer" style={{ color: '#1D9E75' }}>
-                      Conditions Générales d'Utilisation
-                    </span>{' '}
-                    de ViteComm
+                      {t('register.cgu')}
+                    </span>
                   </span>
                 </label>
 
                 <button type="submit" disabled={loading || !acceptedCGU}
                   className="mt-1 rounded-xl py-3.5 text-sm font-black transition-all cursor-pointer"
                   style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', border: 'none', opacity: loading || !acceptedCGU ? 0.5 : 1, boxShadow: loading || !acceptedCGU ? 'none' : '0 4px 16px rgba(29,158,117,0.3)' }}>
-                  {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> Envoi du code...</> : 'Créer mon compte →'}
+                  {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> {t('register.submitLoading')}</> : t('register.submit')}
                 </button>
               </form>
 
               <div className="mt-5 text-center">
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Vous avez déjà un compte ?</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('register.hasAccount')}</p>
                 <button onClick={() => navigate('/connect')}
                   className="mt-1.5 text-sm font-bold cursor-pointer"
                   style={{ background: 'none', border: 'none', color: 'var(--accent)' }}>
-                  Se connecter
+                  {t('register.login')}
                 </button>
               </div>
             </>
@@ -438,19 +439,19 @@ export default function Inscription() {
               <div className="flex flex-col items-center mb-6">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black mb-4"
                   style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', boxShadow: '0 8px 24px rgba(29,158,117,0.25)' }}><Mail size={28} /></div>
-                <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>Vérifiez votre email</h1>
+                <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>{t('register.verifyTitle')}</h1>
                 <p className="text-sm mt-2 text-center leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  Nous avons envoyé un code à 6 chiffres à<br />
+                  {t('register.verifyDesc')}<br />
                   <strong style={{ color: 'var(--text-primary)' }}>{verifyEmail}</strong>
                 </p>
                 <p className="text-xs mt-1 text-center" style={{ color: 'var(--text-muted)' }}>
-                  Vérifiez vos spams si vous ne trouvez pas le message.
+                  {t('register.verifySpam')}
                 </p>
               </div>
 
               <form onSubmit={handleVerify} className="flex flex-col gap-6">
                 <div className="flex flex-col gap-3">
-                  <label className="text-xs font-bold uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>Code de vérification</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>{t('register.verifyCode')}</label>
                   <CodeInput value={code} onChange={setCode} isDark={isDark} />
                 </div>
 
@@ -458,23 +459,23 @@ export default function Inscription() {
                   <button type="submit" disabled={loading}
                     className="rounded-xl py-3.5 text-sm font-black transition-all cursor-pointer"
                     style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)', color: '#fff', border: 'none', opacity: loading ? 0.7 : 1 }}>
-                    {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> Vérification...</> : <><CheckCircle size={14} className="inline-block mr-1.5" /> Vérifier mon compte</>}
+                    {loading ? <><Loader2 size={14} className="inline-block animate-spin mr-1.5" /> {t('register.verifyBtnLoading')}</> : <><CheckCircle size={14} className="inline-block mr-1.5" /> {t('register.verifyBtn')}</>}
                   </button>
                 )}
 
                 <div className="flex items-center justify-center gap-2 text-sm">
-                  <span style={{ color: 'var(--text-muted)' }}>Vous n'avez pas reçu le code ?</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{t('register.verifyNoCode')}</span>
                   <button type="button" onClick={handleResend} disabled={loading}
                     className="font-bold underline underline-offset-4 cursor-pointer"
                     style={{ background: 'none', border: 'none', color: 'var(--accent)' }}>
-                    Renvoyer
+                    {t('register.verifyResend')}
                   </button>
                 </div>
 
                 <button type="button" onClick={handleRestart}
                   className="text-sm underline underline-offset-2 cursor-pointer"
                   style={{ background: 'none', border: 'none', color: 'var(--text-muted)' }}>
-                  ← Utiliser un autre identifiant
+                  {t('register.verifyOtherEmail')}
                 </button>
               </form>
             </>

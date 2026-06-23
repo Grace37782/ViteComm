@@ -1,6 +1,15 @@
 import { Component } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
+const MESSAGES = {
+  fr: { title: 'Oups, une erreur est survenue', desc: "L'application a rencontré un problème. Veuillez réessayer.", retry: 'Réessayer' },
+  en: { title: 'Oops, something went wrong', desc: 'The application encountered a problem. Please try again.', retry: 'Try again' },
+}
+
+function getLang() {
+  try { return localStorage.getItem('vc_lang') || 'fr' } catch { return 'fr' }
+}
+
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props)
@@ -17,6 +26,7 @@ export default class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
+      const m = MESSAGES[getLang()] || MESSAGES.fr
       return (
         <div
           className="min-h-screen flex items-center justify-center p-6"
@@ -36,13 +46,13 @@ export default class ErrorBoundary extends Component {
               className="text-lg font-black mb-2"
               style={{ color: 'var(--text-primary)' }}
             >
-              Oups, une erreur est survenue
+              {m.title}
             </h2>
             <p
               className="text-sm mb-6"
               style={{ color: 'var(--text-secondary)' }}
             >
-              L&apos;application a rencontré un problème. Veuillez réessayer.
+              {m.desc}
             </p>
             <button
               onClick={() => {
@@ -57,7 +67,7 @@ export default class ErrorBoundary extends Component {
               }}
             >
               <RefreshCw size={15} />
-              Réessayer
+              {m.retry}
             </button>
           </div>
         </div>

@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useLang } from '../context/LangContext'
 import { X, Download, Smartphone } from 'lucide-react'
 
 export default function InstallPrompt() {
+  const { t } = useLang()
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [showButton, setShowButton] = useState(false)
@@ -73,7 +75,7 @@ export default function InstallPrompt() {
             border: 'none',
             animation: 'bounceIn 0.4s cubic-bezier(0.16,1,0.3,1)',
           }}
-          title="Installer ViteComm"
+          title={t('pwa.title')}
         >
           <Download size={22} color="#fff" />
         </button>
@@ -123,13 +125,13 @@ export default function InstallPrompt() {
                     className="font-black text-base mb-1"
                     style={{ color: 'var(--text-primary)' }}
                   >
-                    Installer ViteComm
+                    {t('pwa.title')}
                   </h3>
                   <p
                     className="text-sm leading-relaxed"
                     style={{ color: 'var(--text-secondary)' }}
                   >
-                    Ajoutez ViteComm à votre écran d'accueil pour un accès rapide et une expérience comme une app native.
+                    {t('pwa.desc')}
                   </p>
                 </div>
               </div>
@@ -144,7 +146,7 @@ export default function InstallPrompt() {
                     border: 'none',
                   }}
                 >
-                  Pas maintenant
+                  {t('pwa.notNow')}
                 </button>
                 <button
                   onClick={handleInstall}
@@ -158,7 +160,7 @@ export default function InstallPrompt() {
                   }}
                 >
                   <Download size={15} />
-                  {isInstalling ? 'Installation...' : 'Installer'}
+                  {isInstalling ? t('pwa.installing') : t('pwa.install')}
                 </button>
               </div>
             </div>
