@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { Star, CheckCircle, Search, Package, Flag, Motorbike, Store, Loader2, ChevronDown, XCircle } from 'lucide-react'
 
 function Etoiles({ note, onChange }) {
@@ -23,6 +24,7 @@ const PAGE_SIZE = 10
 export default function Evaluation() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
+  const { t } = useLang()
   const isDark = resolved === 'dark'
 
   const [orders, setOrders] = useState([])
@@ -55,14 +57,12 @@ export default function Evaluation() {
 
   const commande = orders.find((c) => c.id_commande === evalOpen)
 
-  // Extract livreur info from order
   function getLivreur(o) {
     if (!o?.livraison?.livreur) return null
     const l = o.livraison.livreur
     return { id: l.id_user, nom: `${l.utilisateur?.prenom} ${l.utilisateur?.nom}` }
   }
 
-  // Extract unique vendors from order details
   function getVendeurs(o) {
     if (!o?.detailsCommande) return []
     const seen = new Set()
@@ -109,11 +109,11 @@ export default function Evaluation() {
         }
         if (submitted === 0) return
       }
-      showToast('Évaluation enregistrée !')
+      showToast(t('toast.evaluationSaved'))
       setEvalOpen(null)
       setNoteL(0); setCommentL(''); setNotesV({}); setCommentsV({})
     } catch (err) {
-      showToast(err.message || 'Erreur lors de l\'envoi')
+      showToast(err.message || t('toast.sendError'))
     } finally {
       setSubmitting(false)
     }
@@ -128,19 +128,19 @@ export default function Evaluation() {
         type_cible_cible: signalement.type,
         id_cible: signalement.id,
       })
-      showToast('Signalement envoyé.')
+      showToast(t('toast.reportSent'))
       setSignalement(null)
       setMotifSig('')
     } catch (err) {
-      showToast(err.message || 'Erreur lors de l\'envoi')
+      showToast(err.message || t('toast.sendError'))
     } finally {
       setSubmitting(false)
     }
   }
 
   const STATUT_STYLE = {
-    'Livree': { bg: isDark ? 'rgba(45,196,145,0.15)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', Icon: CheckCircle, label: 'Livrée' },
-    'Inspectee': { bg: isDark ? 'rgba(243,168,59,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B', Icon: Search, label: 'Inspectée' },
+    'Livree': { bg: isDark ? 'rgba(45,196,145,0.15)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', Icon: CheckCircle, labelKey: 'evaluation.filter.delivered' },
+    'Inspectee': { bg: isDark ? 'rgba(243,168,59,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B', Icon: Search, labelKey: 'evaluation.filter.inspected' },
   }
 
   const filtres = {
@@ -185,22 +185,22 @@ export default function Evaluation() {
             <span className="text-white text-lg">←</span>
           </button>
           <div>
-            <div className="text-white font-black text-base">Évaluations</div>
-            <div className="text-white/70 text-xs">{orders.length} commande{orders.length > 1 ? 's' : ''} livrée{orders.length > 1 ? 's' : ''}</div>
+            <div className="text-white font-black text-base">{t('evaluation.title')}</div>
+            <div className="text-white/70 text-xs">{t('evaluation.count', { count: orders.length })}</div>
           </div>
         </div>
       </div>
 
       <div className="px-4 py-4 flex flex-col gap-3">
         {loading && (
-          <div className="text-center py-10 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div>
+          <div className="text-center py-10 text-sm" style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</div>
         )}
 
         {!loading && orders.length === 0 && (
           <div className="text-center py-10">
             <div className="text-4xl mb-3"><Package size={40} /></div>
-            <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Aucune commande livrée</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Évaluez vos commandes une fois livrées.</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{t('evaluation.empty')}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{t('evaluation.emptyDesc')}</p>
           </div>
         )}
 
@@ -209,18 +209,18 @@ export default function Evaluation() {
             {/* TABS */}
             <div className="flex gap-2">
               {[
-                { id: 'tous', label: 'Toutes' },
-                { id: 'livree', label: 'Livrées' },
-                { id: 'inspectee', label: 'Inspectées' },
-              ].map(t => (
-                <button key={t.id} onClick={() => { setFiltre(t.id); setVisibleCount(PAGE_SIZE) }}
+                { id: 'tous', label: t('evaluation.filter.all') },
+                { id: 'livree', label: t('evaluation.filter.delivered') },
+                { id: 'inspectee', label: t('evaluation.filter.inspected') },
+              ].map(ft => (
+                <button key={ft.id} onClick={() => { setFiltre(ft.id); setVisibleCount(PAGE_SIZE) }}
                   className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all active:scale-95"
                   style={{
-                    background: filtre === t.id ? '#1D9E75' : 'var(--surface)',
-                    color: filtre === t.id ? '#fff' : 'var(--text-secondary)',
-                    border: `1.5px solid ${filtre === t.id ? '#1D9E75' : 'var(--border)'}`,
+                    background: filtre === ft.id ? '#1D9E75' : 'var(--surface)',
+                    color: filtre === ft.id ? '#fff' : 'var(--text-secondary)',
+                    border: `1.5px solid ${filtre === ft.id ? '#1D9E75' : 'var(--border)'}`,
                   }}>
-                  {t.label}
+                  {ft.label}
                 </button>
               ))}
             </div>
@@ -232,7 +232,7 @@ export default function Evaluation() {
                 <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                 <input
                   type="text"
-                  placeholder="Rechercher par n° commande, livreur, produit..."
+                  placeholder={t('evaluation.search')}
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
                   className="flex-1 bg-transparent outline-none text-sm font-medium"
@@ -250,10 +250,10 @@ export default function Evaluation() {
 
             {liste.length === 0 && (
               <div className="text-center text-sm py-10 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-muted)' }}>
-                {search.trim() ? `Aucun résultat pour "${search}"` : 'Aucune commande dans cette catégorie.'}
+                {search.trim() ? `${t('common.noResults')} "${search}"` : t('order.noResultsInCategory')}
                 {search.trim() && (
                   <button onClick={() => setSearch('')} className="block mx-auto mt-2 text-xs font-bold cursor-pointer" style={{ color: '#1D9E75', background: 'none', border: 'none' }}>
-                    Effacer la recherche
+                    {t('common.clearSearch')}
                   </button>
                 )}
               </div>
@@ -264,8 +264,6 @@ export default function Evaluation() {
         {visibleItems.map((c) => {
           const st = STATUT_STYLE[c.statut] || STATUT_STYLE['Livree']
           const livreur = getLivreur(c)
-          // eslint-disable-next-line no-unused-vars
-          const vendeurs = getVendeurs(c)
           const nbArticles = c.detailsCommande?.length || 0
           const total = c.total_marchandises || 0
 
@@ -276,17 +274,17 @@ export default function Evaluation() {
               <div className="px-4 py-3 flex items-start justify-between gap-2">
                 <div>
                   <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
-                    Commande #{c.id_commande}
+                    {t('order.title')} #{c.id_commande}
                   </div>
                   <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                     {new Date(c.date_creation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    · {nbArticles} article{nbArticles > 1 ? 's' : ''}
+                    · {nbArticles} {t('common.items')}
                     {livreur && ` · ${livreur.nom}`}
                   </div>
                 </div>
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
                   style={{ background: st.bg, color: st.color }}>
-                  <st.Icon size={14} /> {st.label}
+                  <st.Icon size={14} /> {t(st.labelKey)}
                 </span>
               </div>
 
@@ -296,7 +294,7 @@ export default function Evaluation() {
                   <span className="font-black text-base" style={{ color: 'var(--accent)' }}>
                     {total.toLocaleString()} F
                   </span>
-                  <span className="text-xs ml-2" style={{ color: 'var(--text-muted)' }}>Payé</span>
+                  <span className="text-xs ml-2" style={{ color: 'var(--text-muted)' }}>{t('invoice.paid')}</span>
                 </div>
                 <div className="flex gap-2">
                   {livreur && (
@@ -304,13 +302,13 @@ export default function Evaluation() {
                       onClick={() => { setSignalement({ type: 'livreur', id: livreur.id, nom: livreur.nom }); setMotifSig('') }}
                       className="text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer"
                       style={{ background: isDark ? 'rgba(232,125,85,0.12)' : '#FAECE7', color: isDark ? '#E87D55' : '#D85A30', border: 'none' }}>
-                       <Flag size={14} /> Signaler
+                       <Flag size={14} /> {t('evaluation.report')}
                     </button>
                   )}
                   <button onClick={() => { setEvalOpen(c.id_commande); setTypeEval('livreur') }}
                     className="text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer"
                     style={{ background: 'var(--accent)', color: '#fff', border: 'none' }}>
-                    <Star size={14} /> Évaluer
+                    <Star size={14} /> {t('evaluation.rate')}
                   </button>
                 </div>
               </div>
@@ -322,7 +320,7 @@ export default function Evaluation() {
           <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
             className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-            <ChevronDown size={14} /> Charger plus ({liste.length - visibleCount} restant{liste.length - visibleCount > 1 ? 's' : ''})
+            <ChevronDown size={14} /> {t('common.loadMore')} ({liste.length - visibleCount} {t('common.remaining')}{liste.length - visibleCount > 1 ? 's' : ''})
           </button>
         )}
       </div>
@@ -339,19 +337,19 @@ export default function Evaluation() {
               <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
             </div>
             <div className="px-5 pb-8 pt-3">
-              <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Laisser un avis</h2>
-              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Commande #{commande.id_commande}</p>
+              <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>{t('evaluation.modal.title')}</h2>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>{t('order.title')} #{commande.id_commande}</p>
 
               <div className="flex gap-2 mb-5">
-                {['livreur', 'vendeur'].map((t) => (
-                  <button key={t} onClick={() => setTypeEval(t)}
+                {['livreur', 'vendeur'].map((te) => (
+                  <button key={te} onClick={() => setTypeEval(te)}
                     className="flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all capitalize"
                     style={{
-                      background: typeEval === t ? 'var(--accent)' : 'var(--surface-alt)',
-                      color: typeEval === t ? '#fff' : 'var(--text-secondary)',
-                      border: `1.5px solid ${typeEval === t ? 'var(--accent)' : 'var(--border)'}`,
+                      background: typeEval === te ? 'var(--accent)' : 'var(--surface-alt)',
+                      color: typeEval === te ? '#fff' : 'var(--text-secondary)',
+                      border: `1.5px solid ${typeEval === te ? 'var(--accent)' : 'var(--border)'}`,
                     }}>
-                    {t === 'livreur' ? <><Motorbike size={14} /> Livreur</> : <><Store size={14} /> Vendeur(s)</>}
+                    {te === 'livreur' ? <><Motorbike size={14} /> {t('evaluation.driverTab')}</> : <><Store size={14} /> {t('evaluation.vendorTab')}</>}
                   </button>
                 ))}
               </div>
@@ -360,12 +358,12 @@ export default function Evaluation() {
                 <div className="flex flex-col gap-4">
                   <div className="rounded-2xl p-4" style={{ background: 'var(--surface-alt)' }}>
                     <div className="font-black text-sm mb-1" style={{ color: 'var(--text-primary)' }}>
-                      {getLivreur(commande)?.nom || 'Livreur'}
+                      {getLivreur(commande)?.nom || t('evaluation.driverTab')}
                     </div>
-                    <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Note sur la livraison</div>
+                    <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('evaluation.rating')} — {t('evaluation.driverTab')}</div>
                     <Etoiles note={noteL} onChange={setNoteL} isDark={isDark} />
                   </div>
-                  <textarea placeholder="Commentaire (optionnel)…"
+                  <textarea placeholder={t('evaluation.comment')}
                     value={commentL} onChange={(e) => setCommentL(e.target.value)}
                     rows={3} className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none"
                     style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)', fontFamily: 'inherit' }} />
@@ -376,15 +374,15 @@ export default function Evaluation() {
                 <div className="flex flex-col gap-3">
                   {getVendeurs(commande).length === 0 && (
                     <div className="text-center py-4 rounded-2xl" style={{ background: 'var(--surface-alt)' }}>
-                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Aucun vendeur trouvé pour cette commande.</p>
+                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('evaluation.noVendor')}</p>
                     </div>
                   )}
                   {getVendeurs(commande).map((v) => (
                     <div key={v.id} className="rounded-2xl p-4" style={{ background: 'var(--surface-alt)' }}>
                       <div className="font-black text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{v.nom}</div>
-                      <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Note sur les produits</div>
+                      <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('evaluation.rating')} — {t('evaluation.vendorTab')}</div>
                       <Etoiles note={notesV[v.id] || 0} onChange={(n) => setNotesV((p) => ({ ...p, [v.id]: n }))} isDark={isDark} />
-                      <textarea placeholder="Commentaire (optionnel)…"
+                      <textarea placeholder={t('evaluation.comment')}
                         value={commentsV[v.id] || ''}
                         onChange={(e) => setCommentsV((p) => ({ ...p, [v.id]: e.target.value }))}
                         rows={2} className="w-full px-3 py-2.5 rounded-xl text-xs outline-none resize-none mt-3"
@@ -407,7 +405,7 @@ export default function Evaluation() {
                       background: disabled ? '#D3D1C7' : 'var(--accent)',
                       border: 'none', opacity: submitting ? 0.75 : 1,
                     }}>
-                    {submitting ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" /> Envoi…</span> : 'Soumettre mon avis →'}
+                    {submitting ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" /> {t('evaluation.submitting')}</span> : t('evaluation.submit')}
                   </button>
                 )
               })()}
@@ -428,12 +426,12 @@ export default function Evaluation() {
               <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
             </div>
             <h2 className="font-black text-base mb-1" style={{ color: 'var(--text-primary)' }}>
-               <Flag size={16} /> Signaler {signalement.nom}
+               <Flag size={16} /> {t('evaluation.report')} {signalement.nom}
             </h2>
             <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-              Ce signalement sera traité par l'administrateur ViteComm.
+              {t('evaluation.reportDesc')}
             </p>
-            <textarea placeholder="Décrivez le problème (comportement abusif, fraude…)"
+            <textarea placeholder={t('evaluation.reportPlaceholder')}
               value={motifSig} onChange={(e) => setMotifSig(e.target.value)}
               rows={4} className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none mb-4"
               style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)', fontFamily: 'inherit' }} />
@@ -444,7 +442,7 @@ export default function Evaluation() {
                 background: motifSig.trim() ? '#D85A30' : '#D3D1C7',
                 border: 'none', opacity: submitting ? 0.75 : 1,
               }}>
-              {submitting ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" /> Envoi…</span> : 'Envoyer le signalement →'}
+              {submitting ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" /> {t('evaluation.submitting')}</span> : t('evaluation.reportSubmit')}
             </button>
           </div>
         </div>

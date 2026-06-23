@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { ClipboardList, Inbox, ShoppingCart, ShieldCheck, Motorbike, CheckCircle, ChevronDown, FileText, Smartphone, Search, XCircle } from 'lucide-react'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
@@ -14,35 +15,35 @@ function formatDate(d) {
   })
 }
 
-function getStatusConfig(statut, isDark) {
+function getStatusConfig(statut, isDark, t) {
   const MAP = {
     'En attente': {
-      label: 'En attente',
+      label: t('order.status.pending'),
       color: isDark ? '#FBBF24' : '#F59E0B',
       bg: isDark ? 'rgba(251,191,36,0.15)' : '#FEF3C7',
     },
     'Validee': {
-      label: 'Validée',
+      label: t('order.status.validated'),
       color: isDark ? '#60A5FA' : '#3B82F6',
       bg: isDark ? 'rgba(96,165,250,0.15)' : '#DBEAFE',
     },
     'En cours de collecte': {
-      label: 'Collecte en cours',
+      label: t('order.status.collecting'),
       color: isDark ? '#A78BFA' : '#8B5CF6',
       bg: isDark ? 'rgba(167,139,250,0.15)' : '#EDE9FE',
     },
     'Collectee': {
-      label: 'Collectée',
+      label: t('order.status.collected'),
       color: isDark ? '#FBBF24' : '#F59E0B',
       bg: isDark ? 'rgba(251,191,36,0.15)' : '#FEF3C7',
     },
     'Livree': {
-      label: 'Livrée',
+      label: t('order.status.delivered'),
       color: isDark ? '#34D399' : '#1D9E75',
       bg: isDark ? 'rgba(52,211,153,0.15)' : '#D1FAE5',
     },
     'Annulee': {
-      label: 'Annulée',
+      label: t('order.status.cancelled'),
       color: isDark ? '#F87171' : '#E24B4A',
       bg: isDark ? 'rgba(248,113,113,0.15)' : '#FEE2E2',
     },
@@ -59,6 +60,7 @@ function copyCode(code) {
 export default function MesCommandes() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
+  const { t } = useLang()
   const isDark = resolved === 'dark'
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -102,7 +104,7 @@ export default function MesCommandes() {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}><ClipboardList size={40} /></div>
-          <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>Chargement de vos commandes…</div>
+          <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>{t('order.loading')}</div>
         </div>
       </div>
     )
@@ -124,9 +126,9 @@ export default function MesCommandes() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Mes commandes</div>
+            <div className="text-white font-black text-base leading-tight">{t('order.title')}</div>
             <div className="text-white/70 text-xs">
-              {orders.length} commande{orders.length !== 1 ? 's' : ''} passée{orders.length !== 1 ? 's' : ''}
+              {t('order.count', { count: orders.length })}
             </div>
           </div>
         </div>
@@ -138,19 +140,19 @@ export default function MesCommandes() {
         {/* TABS */}
         <div className="flex gap-2">
           {[
-            { id: 'tous', label: 'Tous' },
-            { id: 'en_attente', label: 'En attente' },
-            { id: 'en_cours', label: 'En cours' },
-            { id: 'livree', label: 'Livrée' },
-          ].map(t => (
-            <button key={t.id} onClick={() => { setFiltre(t.id); setVisibleCount(PAGE_SIZE) }}
+            { id: 'tous', label: t('common.all') },
+            { id: 'en_attente', label: t('order.filter.pending') },
+            { id: 'en_cours', label: t('order.filter.inProgress') },
+            { id: 'livree', label: t('order.filter.delivered') },
+          ].map(ft => (
+            <button key={ft.id} onClick={() => { setFiltre(ft.id); setVisibleCount(PAGE_SIZE) }}
               className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all active:scale-95"
               style={{
-                background: filtre === t.id ? '#1D9E75' : 'var(--surface)',
-                color: filtre === t.id ? '#fff' : 'var(--text-secondary)',
-                border: `1.5px solid ${filtre === t.id ? '#1D9E75' : 'var(--border)'}`,
+                background: filtre === ft.id ? '#1D9E75' : 'var(--surface)',
+                color: filtre === ft.id ? '#fff' : 'var(--text-secondary)',
+                border: `1.5px solid ${filtre === ft.id ? '#1D9E75' : 'var(--border)'}`,
               }}>
-              {t.label}
+              {ft.label}
             </button>
           ))}
         </div>
@@ -162,7 +164,7 @@ export default function MesCommandes() {
             <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
             <input
               type="text"
-              placeholder="Rechercher par n° commande, livreur, produit..."
+              placeholder={t('order.search')}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
               className="flex-1 bg-transparent outline-none text-sm font-medium"
@@ -181,9 +183,9 @@ export default function MesCommandes() {
         {orders.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--surface)', borderRadius: 24, border: '1.5px solid var(--border)' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}><Inbox size={48} /></div>
-            <div style={{ fontWeight: 900, fontSize: 16, color: 'var(--text-primary)', marginBottom: 6 }}>Aucune commande</div>
+            <div style={{ fontWeight: 900, fontSize: 16, color: 'var(--text-primary)', marginBottom: 6 }}>{t('order.empty')}</div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
-              Vous n'avez pas encore passé de commande.
+              {t('order.emptyDesc')}
             </div>
             <button
               onClick={() => navigate('/client/accueil')}
@@ -192,21 +194,21 @@ export default function MesCommandes() {
                 padding: '14px 28px', fontSize: 14, fontWeight: 900, cursor: 'pointer',
               }}
             >
-              <ShoppingCart size={16} className="inline" /> Découvrir les marchés
+              <ShoppingCart size={16} className="inline" /> {t('order.discover')}
             </button>
           </div>
         ) : liste.length === 0 ? (
           <div className="text-center text-sm py-10 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-muted)' }}>
-            {search.trim() ? `Aucun résultat pour "${search}"` : 'Aucune commande dans cette catégorie.'}
+            {search.trim() ? t('common.noResults') + ` "${search}"` : t('order.noResultsInCategory')}
             {search.trim() && (
               <button onClick={() => setSearch('')} className="block mx-auto mt-2 text-xs font-bold cursor-pointer" style={{ color: '#1D9E75', background: 'none', border: 'none' }}>
-                Effacer la recherche
+                {t('common.clearSearch')}
               </button>
             )}
           </div>
         ) : (
           liste.slice(0, visibleCount).map(order => {
-            const sc = getStatusConfig(order.statut, isDark)
+            const sc = getStatusConfig(order.statut, isDark, t)
             const livreur = order.livraison?.livreur
             const livreurNom = livreur
               ? `${livreur.utilisateur?.prenom} ${livreur.utilisateur?.nom}`
@@ -250,7 +252,7 @@ export default function MesCommandes() {
                   }}>
                     <div>
                       <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        <ShieldCheck size={12} className="inline" /> Code de vérification
+                        <ShieldCheck size={12} className="inline" /> {t('order.codeVerification')}
                       </div>
                       <div style={{
                         fontSize: 24, fontWeight: 900, letterSpacing: 6,
@@ -274,20 +276,20 @@ export default function MesCommandes() {
                         display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
                       }}
                     >
-                      {copiedId === order.id_commande ? <><CheckCircle size={12} className="inline" /> Copié</> : <><ClipboardList size={12} className="inline" /> Copier</>}
+                      {copiedId === order.id_commande ? <><CheckCircle size={12} className="inline" /> {t('common.copied')}</> : <><ClipboardList size={12} className="inline" /> {t('common.copy')}</>}
                     </button>
                   </div>
 
                   {/* Details */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Date</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('order.date')}</span>
                       <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{formatDate(order.date_creation)}</span>
                     </div>
 
                     {livreurNom && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}><Motorbike size={12} className="inline" /> Livreur</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}><Motorbike size={12} className="inline" /> {t('order.driver')}</span>
                         <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
                           {livreurNom}
                         </span>
@@ -295,14 +297,14 @@ export default function MesCommandes() {
                     )}
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Articles</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('order.articles')}</span>
                       <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {order.detailsCommande?.reduce((s, d) => s + d.quantite_commandee, 0)} produit(s)
+                        {order.detailsCommande?.reduce((s, d) => s + d.quantite_commandee, 0)} {t('common.items')}
                       </span>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>Total</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>{t('order.total')}</span>
                       <span style={{ fontSize: 14, fontWeight: 900, color: '#1D9E75' }}>
                         {formatPrice(order.total_marchandises + order.frais_livraison)}
                       </span>
@@ -329,7 +331,7 @@ export default function MesCommandes() {
                         border: 'none',
                       }}
                     >
-                      <Smartphone size={12} className="inline" /> Payer
+                      <Smartphone size={12} className="inline" /> {t('order.pay')}
                     </button>
                   )}
                   {order.factures && order.factures.length > 0 && order.factures[0].statut_paiement === 'Paye' && (
@@ -341,7 +343,7 @@ export default function MesCommandes() {
                         cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
                       }}
                     >
-                      <FileText size={12} className="inline" /> Facture
+                      <FileText size={12} className="inline" /> {t('order.invoice')}
                     </button>
                   )}
                   <button
@@ -358,7 +360,7 @@ export default function MesCommandes() {
                       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
                     }}
                   >
-                    Voir le suivi →
+                    {t('order.track')}
                   </button>
                 </div>
               </div>
@@ -370,7 +372,7 @@ export default function MesCommandes() {
           <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
             className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-            <ChevronDown size={14} /> Charger plus ({liste.length - visibleCount} restant{liste.length - visibleCount > 1 ? 's' : ''})
+            <ChevronDown size={14} /> {t('common.loadMore')} ({liste.length - visibleCount} {t('common.remaining')}{liste.length - visibleCount > 1 ? 's' : ''})
           </button>
         )}
       </div>
