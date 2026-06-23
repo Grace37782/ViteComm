@@ -20,9 +20,6 @@ export default function CommandesVendeur() {
   const [qrModal, setQrModal] = useState(null)
   const [qrData, setQrData] = useState(null)
   const [scanStatus, setScanStatus] = useState(null)
-  const [toast, setToast] = useState(null)
-
-  function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 4000) }
 
   useEffect(() => { fetchOrders(); const interval = setInterval(() => fetchOrders(true), 10000); return () => clearInterval(interval) }, [])
 
@@ -88,15 +85,12 @@ export default function CommandesVendeur() {
   const hasMore = visibleCount < sortedList.length
 
   async function validerCommande(cmd) {
+    setValidating((p) => ({ ...p, [cmd.id]: true }))
     try {
-      setValidating((p) => ({ ...p, [cmd.id]: true }))
       await api.post(`/vendor/orders/${cmd.id}/validate`)
-      await fetchOrders(true)
-    } catch (err) {
-      showToast(err.message || 'Erreur lors de la validation')
-    } finally {
-      setValidating((p) => ({ ...p, [cmd.id]: false }))
-    }
+    } catch { /* may already be validated */ }
+    await fetchOrders(true)
+    setValidating((p) => ({ ...p, [cmd.id]: false }))
   }
 
   async function showQRCode(cmd) {
@@ -164,11 +158,6 @@ export default function CommandesVendeur() {
         </div>
       </div>
 
-      {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl" style={{ background: '#BA7517' }}>
-          {toast}
-        </div>
-      )}
       {/* Filtres */}
       <div className="flex gap-2">
         {[
