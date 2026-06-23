@@ -340,7 +340,7 @@ export default function Inscription() {
                     className="rounded-xl px-4 py-3.5 text-sm outline-none" style={inputStyle} />
                 </div>
 
-                <PasswordStrengthInput showMdp={showMdp} setShowMdp={setShowMdp} value={form.mot_de_passe} onChange={set('mot_de_passe')} isDark={isDark} />
+                <PasswordStrengthInput showMdp={showMdp} setShowMdp={setShowMdp} value={form.mot_de_passe} onChange={set('mot_de_passe')} isDark={isDark} t={t} />
 
                 {form.mot_de_passe && (
                   <div className="flex flex-col gap-1.5">
