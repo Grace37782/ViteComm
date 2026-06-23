@@ -1,29 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { api } from '../../services/api'
 import { AlertTriangle, CheckCircle, Search, Loader2, ClipboardList, BarChart3, ShoppingCart, Package, Bike, Send, ChevronDown } from 'lucide-react'
-
-const MOTIFS = [
-  'Comportement inapproprié',
-  'Fraude ou arnaque',
-  'Produit non conforme',
-  'Non-respect des délais',
-  'Harcèlement',
-  'Autre',
-]
-
-const STATUT_ICONS = {
-  en_attente: Loader2,
-  en_cours: Search,
-  traite: CheckCircle,
-}
-
-const STATUT_COLORS = {
-  en_attente: { bg: '#FFF8E7', text: '#854F0B', border: '#FAC775', label: 'En attente' },
-  en_cours: { bg: '#E6F1FB', text: '#2B6CB0', border: '#90CDF4', label: 'En cours' },
-  traite: { bg: '#E1F5EE', text: '#0F6E56', border: '#9AE6B4', label: 'Traité' },
-}
 
 const PAGE_SIZE = 10
 
@@ -31,6 +11,7 @@ export default function Signalement() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
   const [signalements, setSignalements] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -65,6 +46,27 @@ export default function Signalement() {
     setTimeout(() => setToast(null), 3000)
   }
 
+  const STATUT_ICONS = {
+    en_attente: Loader2,
+    en_cours: Search,
+    traite: CheckCircle,
+  }
+
+  const STATUT_COLORS = {
+    en_attente: { bg: '#FFF8E7', text: '#854F0B', border: '#FAC775', label: t('vendor.signalement.enAttente') },
+    en_cours: { bg: '#E6F1FB', text: '#2B6CB0', border: '#90CDF4', label: t('vendor.signalement.enCours') },
+    traite: { bg: '#E1F5EE', text: '#0F6E56', border: '#9AE6B4', label: t('vendor.signalement.traite') },
+  }
+
+  const MOTIFS = [
+    t('vendor.signalement.motifComportement'),
+    t('vendor.signalement.motifFraude'),
+    t('vendor.signalement.motifProduit'),
+    t('vendor.signalement.motifDelais'),
+    t('vendor.signalement.motifHarcelement'),
+    t('vendor.signalement.motifAutre'),
+  ]
+
   const filtres = signalements.filter((s) =>
     filtreStatut === 'tous' || s.statut === filtreStatut
   )
@@ -80,9 +82,9 @@ export default function Signalement() {
 
   function valider() {
     const e = {}
-    if (!form.cible.trim()) e.cible = 'Nom de la cible requis'
-    if (!form.motif) e.motif = 'Motif requis'
-    if (!form.description.trim()) e.description = 'Description requise'
+    if (!form.cible.trim()) e.cible = t('vendor.signalement.erreurCible')
+    if (!form.motif) e.motif = t('vendor.signalement.erreurMotif')
+    if (!form.description.trim()) e.description = t('vendor.signalement.erreurDescription')
     setErreurs(e)
     return Object.keys(e).length === 0
   }
@@ -100,7 +102,7 @@ export default function Signalement() {
       setForm({ cible: '', type: 'client', motif: '', description: '' })
       setErreurs({})
       setShowForm(false)
-      showToast("Signalement envoyé à l'administrateur")
+      showToast(t('vendor.signalement.envoye'))
       fetchSignalements()
     } catch (e) {
       showToast(e.message, 'error')
@@ -148,8 +150,8 @@ export default function Signalement() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Signaler</div>
-            <div className="text-white/70 text-xs">{signalements?.length ?? 0} signalement(s)</div>
+            <div className="text-white font-black text-base leading-tight">{t('vendor.signalement.signaler')}</div>
+            <div className="text-white/70 text-xs">{signalements?.length ?? 0} {t('vendor.signalement.signalements')}</div>
           </div>
         </div>
       </div>
@@ -165,8 +167,8 @@ export default function Signalement() {
 
       <div className="flex gap-2">
         {[
-          { id: 'liste', label: 'Mes signalements', icon: ClipboardList },
-          { id: 'stats', label: 'Résumé', icon: BarChart3 },
+          { id: 'liste', label: t('vendor.signalement.mesSignalements'), icon: ClipboardList },
+          { id: 'stats', label: t('vendor.signalement.resume'), icon: BarChart3 },
         ].map((o) => (
           <button key={o.id} onClick={() => { setOnglet(o.id); setDetail(null) }}
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer flex items-center gap-1.5"
@@ -184,10 +186,10 @@ export default function Signalement() {
       {onglet === 'stats' && (
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: 'Total', val: stats.total, accent: 'var(--text-primary)' },
-            { label: 'En attente', val: stats.en_attente, accent: '#854F0B' },
-            { label: 'En cours', val: stats.en_cours, accent: '#2B6CB0' },
-            { label: 'Traités', val: stats.traites, accent: '#0F6E56' },
+            { label: t('vendor.signalement.total'), val: stats.total, accent: 'var(--text-primary)' },
+            { label: t('vendor.signalement.enAttente'), val: stats.en_attente, accent: '#854F0B' },
+            { label: t('vendor.signalement.enCours'), val: stats.en_cours, accent: '#2B6CB0' },
+            { label: t('vendor.signalement.traites'), val: stats.traites, accent: '#0F6E56' },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl p-4"
               style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
@@ -203,7 +205,7 @@ export default function Signalement() {
           <button onClick={() => setShowForm(true)}
             className="w-full py-3 rounded-2xl text-white text-sm font-black cursor-pointer flex items-center justify-center gap-2"
             style={{ background: '#BA7517', border: 'none' }}>
-            <AlertTriangle size={14} /> Nouveau signalement
+            <AlertTriangle size={14} /> {t('vendor.signalement.nouveau')}
           </button>
 
           <div className="flex gap-2 overflow-x-auto scrollbar-none">
@@ -215,7 +217,7 @@ export default function Signalement() {
                   color: filtreStatut === s ? '#fff' : 'var(--text-muted)',
                   border: `1.5px solid ${filtreStatut === s ? '#BA7517' : 'var(--border)'}`,
                 }}>
-                {s === 'tous' ? 'Tous' : (() => { const Icon = STATUT_ICONS[s]; return Icon ? <><Icon size={10} className={s === 'en_attente' ? 'animate-spin' : ''} /> {STATUT_COLORS[s]?.label}</> : s })()}
+                {s === 'tous' ? t('common.all') : (() => { const Icon = STATUT_ICONS[s]; return Icon ? <><Icon size={10} className={s === 'en_attente' ? 'animate-spin' : ''} /> {STATUT_COLORS[s]?.label}</> : s })()}
               </button>
             ))}
           </div>
@@ -223,11 +225,11 @@ export default function Signalement() {
           {showForm && (
             <div className="rounded-2xl p-4 flex flex-col gap-3"
               style={{ background: 'var(--surface)', border: '2px solid #BA7517' }}>
-              <div className="text-sm font-black flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><AlertTriangle size={14} /> Nouveau signalement</div>
+              <div className="text-sm font-black flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><AlertTriangle size={14} /> {t('vendor.signalement.nouveau')}</div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Nom de la personne signalée *</label>
-                <input type="text" placeholder="Ex: Amadou K."
+                <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{t('vendor.signalement.nomCible')}</label>
+                <input type="text" placeholder={t('vendor.signalement.exempleCible')}
                   value={form.cible} onChange={(e) => setForm((p) => ({ ...p, cible: e.target.value }))}
                   className="px-4 py-3 rounded-xl text-sm outline-none"
                   style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)' }} />
@@ -235,40 +237,40 @@ export default function Signalement() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Type d'utilisateur</label>
+                <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{t('vendor.signalement.typeUtilisateur')}</label>
                 <div className="flex gap-2">
                   {[
                     { value: 'client', icon: ShoppingCart },
                     { value: 'vendeur', icon: Package },
                     { value: 'livreur', icon: Bike },
-                  ].map((t) => (
-                    <button key={t.value} type="button" onClick={() => setForm((p) => ({ ...p, type: t.value }))}
+                  ].map((tt) => (
+                    <button key={tt.value} type="button" onClick={() => setForm((p) => ({ ...p, type: tt.value }))}
                       className="flex-1 py-2 rounded-xl text-xs font-bold capitalize cursor-pointer flex items-center justify-center gap-1"
                       style={{
-                        background: form.type === t.value ? '#FAEEDA' : 'var(--surface-alt)',
-                        border: `1.5px solid ${form.type === t.value ? '#BA7517' : 'var(--border)'}`,
-                        color: form.type === t.value ? '#BA7517' : 'var(--text-secondary)',
+                        background: form.type === tt.value ? '#FAEEDA' : 'var(--surface-alt)',
+                        border: `1.5px solid ${form.type === tt.value ? '#BA7517' : 'var(--border)'}`,
+                        color: form.type === tt.value ? '#BA7517' : 'var(--text-secondary)',
                       }}>
-                      <t.icon size={12} /> {t.value}
+                      <tt.icon size={12} /> {tt.value}
                     </button>
                   ))}
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Motif *</label>
+                <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{t('vendor.signalement.motif')} *</label>
                 <select value={form.motif} onChange={(e) => setForm((p) => ({ ...p, motif: e.target.value }))}
                   className="px-4 py-3 rounded-xl text-sm outline-none cursor-pointer"
                   style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)', color: 'var(--text-primary)' }}>
-                  <option value="">Sélectionnez un motif</option>
+                  <option value="">{t('vendor.signalement.selectionnezMotif')}</option>
                   {MOTIFS.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
                 {erreurs.motif && <span className="text-xs flex items-center gap-1" style={{ color: '#E24B4A' }}><AlertTriangle size={12} /> {erreurs.motif}</span>}
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Description *</label>
-                <textarea placeholder="Décrivez l'incident en détail…"
+                <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{t('vendor.signalement.description')} *</label>
+                <textarea placeholder={t('vendor.signalement.descriptionPlaceholder')}
                   value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                   rows={3}
                   className="px-4 py-3 rounded-xl text-sm outline-none resize-none"
@@ -280,12 +282,12 @@ export default function Signalement() {
                 <button onClick={envoyerSignalement} disabled={saving}
                   className="flex-1 py-3 rounded-xl text-white text-sm font-black cursor-pointer flex items-center justify-center gap-2"
                   style={{ background: saving ? '#999' : '#BA7517', border: 'none', opacity: saving ? 0.7 : 1 }}>
-                  {saving ? 'Envoi…' : <><Send size={14} /> Envoyer</>}
+                  {saving ? t('vendor.signalement.envoi') : <><Send size={14} /> {t('vendor.signalement.envoyer')}</>}
                 </button>
                 <button onClick={() => { setShowForm(false); setErreurs({}) }}
                   className="px-4 py-3 rounded-xl text-sm font-semibold cursor-pointer"
                   style={{ background: 'var(--surface-alt)', color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}>
-                  Annuler
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
@@ -294,7 +296,7 @@ export default function Signalement() {
           {filtres.length === 0 ? (
             <div className="text-center py-12">
               <div className="flex justify-center mb-3"><CheckCircle size={48} style={{ color: 'var(--text-muted)' }} /></div>
-              <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Aucun signalement</p>
+              <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>{t('vendor.signalement.aucunSignalement')}</p>
             </div>
           ) : (
             visibleItems.map((s) => (
@@ -329,7 +331,7 @@ export default function Signalement() {
             <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
               className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
               style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-              <ChevronDown size={14} /> Charger plus ({filtres.length - visibleCount} restant{filtres.length - visibleCount > 1 ? 's' : ''})
+              <ChevronDown size={14} /> {t('common.loadMore')} ({filtres.length - visibleCount} {t('vendor.signalement.restant')}{filtres.length - visibleCount > 1 ? 's' : ''})
             </button>
           )}
         </>
@@ -341,7 +343,7 @@ export default function Signalement() {
           <div className="flex items-center justify-between">
             <button onClick={() => setDetail(null)}
               className="text-xs font-bold cursor-pointer"
-              style={{ color: '#BA7517', background: 'none', border: 'none' }}>← Retour</button>
+              style={{ color: '#BA7517', background: 'none', border: 'none' }}>← {t('common.back')}</button>
             <span className="text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"
               style={{ background: STATUT_COLORS[detail.statut]?.bg, color: STATUT_COLORS[detail.statut]?.text, border: `1px solid ${STATUT_COLORS[detail.statut]?.border}` }}>
               {(() => { const Icon = STATUT_ICONS[detail.statut]; return Icon ? <Icon size={10} className={detail.statut === 'en_attente' ? 'animate-spin' : ''} /> : null })()}
@@ -354,21 +356,21 @@ export default function Signalement() {
               {detail.type === 'client' ? <ShoppingCart size={32} style={{ color: 'var(--text-secondary)' }} /> : detail.type === 'vendeur' ? <Package size={32} style={{ color: 'var(--text-secondary)' }} /> : <Bike size={32} style={{ color: 'var(--text-secondary)' }} />}
             </div>
             <div className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>{detail.cible}</div>
-            <div className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>Type: {detail.type}</div>
+            <div className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>{t('vendor.signalement.typeLabel')}: {detail.type}</div>
           </div>
 
           <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)' }}>
-            <div className="text-[10px] uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Motif</div>
+            <div className="text-[10px] uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>{t('vendor.signalement.motif')}</div>
             <div className="text-sm font-black" style={{ color: '#BA7517' }}>{detail.motif}</div>
           </div>
 
           <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)' }}>
-            <div className="text-[10px] uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Description</div>
+            <div className="text-[10px] uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>{t('vendor.signalement.description')}</div>
             <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{detail.description}</div>
           </div>
 
           <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)' }}>
-            <div className="text-[10px] uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Date</div>
+            <div className="text-[10px] uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>{t('vendor.signalement.date')}</div>
             <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{formatDate(detail.date)}</div>
           </div>
         </div>

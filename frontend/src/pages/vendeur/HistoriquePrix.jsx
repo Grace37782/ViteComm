@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../services/api'
+import { useLang } from '../../context/LangContext'
 import { AlertTriangle, CheckCircle, XCircle, BarChart3, Pencil, TrendingUp, TrendingDown, Package } from 'lucide-react'
 
 export default function HistoriquePrix() {
+  const { t } = useLang()
   const [produits, setProduits] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -28,20 +30,19 @@ export default function HistoriquePrix() {
 
   async function enregistrerPrix() {
     if (!produit || !nouveauPrix || isNaN(+nouveauPrix) || +nouveauPrix <= 0) {
-      return showToast(<><AlertTriangle size={14} className="inline" /> Prix invalide</>, 'error')
+      return showToast(<><AlertTriangle size={14} className="inline" /> {t('vendor.historique.prixInvalide')}</>, 'error')
     }
     const prix = +nouveauPrix
     if (prix === produit.prix_actuel) {
-      return showToast(<><AlertTriangle size={14} className="inline" /> Le prix est identique</>, 'error')
+      return showToast(<><AlertTriangle size={14} className="inline" /> {t('vendor.historique.prixIdentique')}</>, 'error')
     }
     try {
       await api.put(`/vendor/products/${produit.id}`, { prix })
-      // Refresh data
       const updated = await api.get('/vendor/price-history')
       setProduits(updated)
       setModeModification(false)
       setNouveauPrix('')
-      showToast(<><CheckCircle size={14} className="inline" /> Prix mis à jour !</>)
+      showToast(<><CheckCircle size={14} className="inline" /> {t('vendor.historique.prixMisAJour')}</>)
     } catch (e) {
       showToast(<><XCircle size={14} className="inline" /> {e.message}</>, 'error')
     }
@@ -79,8 +80,8 @@ export default function HistoriquePrix() {
       {!produitSelectionne ? (
         <>
           <div>
-            <div className="font-black text-sm mb-1" style={{ color: 'var(--text-primary)' }}>Historique des prix</div>
-            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Sélectionnez un produit pour voir son évolution de prix.</div>
+            <div className="font-black text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{t('vendor.historique.titre')}</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('vendor.historique.sousTitre')}</div>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -95,12 +96,12 @@ export default function HistoriquePrix() {
                   <div className="flex-1 min-w-0">
                     <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{p.nom}</div>
                     <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {nbEvents} modification{nbEvents > 1 ? 's' : ''}
+                      {nbEvents} {t('vendor.historique.modification')}{nbEvents > 1 ? 's' : ''}
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <div className="font-black text-sm" style={{ color: '#BA7517' }}>{p.prix_actuel.toLocaleString()} F/{p.unite}</div>
-                    <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>prix actuel</div>
+                    <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('vendor.historique.prixActuel')}</div>
                   </div>
                   <span style={{ color: 'var(--text-muted)' }}>→</span>
                 </button>
@@ -117,7 +118,7 @@ export default function HistoriquePrix() {
             <div className="flex-1">
               <div className="font-black text-sm flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><Package size={20} /> {produit?.nom}</div>
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {historiqueProduit.length} modification{historiqueProduit.length > 1 ? 's' : ''}
+                {historiqueProduit.length} {t('vendor.historique.modification')}{historiqueProduit.length > 1 ? 's' : ''}
               </div>
             </div>
             <div className="text-right">
@@ -130,13 +131,13 @@ export default function HistoriquePrix() {
             <button onClick={() => setModeModification(true)}
               className="w-full py-3 rounded-2xl text-sm font-black cursor-pointer"
               style={{ background: '#BA7517', color: '#fff', border: 'none' }}>
-              <Pencil size={16} className="inline" /> Modifier le prix
+              <Pencil size={16} className="inline" /> {t('vendor.historique.modifierPrix')}
             </button>
           ) : (
             <div className="rounded-2xl p-4 flex flex-col gap-3"
               style={{ background: 'var(--surface)', border: '2px solid #BA7517' }}>
               <div className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>
-                Nouveau prix ({produit?.unite})
+                {t('vendor.historique.nouveauPrix')} ({produit?.unite})
               </div>
               <div className="flex items-center gap-2">
                 <input type="number" value={nouveauPrix} onChange={(e) => setNouveauPrix(e.target.value)}
@@ -148,11 +149,11 @@ export default function HistoriquePrix() {
               <div className="flex gap-2">
                 <button onClick={enregistrerPrix}
                   className="flex-1 py-3 rounded-xl text-white text-sm font-black cursor-pointer"
-                  style={{ background: '#BA7517', border: 'none' }}>Enregistrer</button>
+                  style={{ background: '#BA7517', border: 'none' }}>{t('common.save')}</button>
                 <button onClick={() => { setModeModification(false); setNouveauPrix('') }}
                   className="px-4 py-3 rounded-xl text-sm font-semibold cursor-pointer"
                   style={{ background: 'var(--surface-alt)', color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}>
-                  Annuler
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
@@ -161,11 +162,11 @@ export default function HistoriquePrix() {
           {historiqueProduit.length === 0 ? (
             <div className="text-center py-12">
               <div className="flex justify-center mb-3"><BarChart3 size={48} style={{ color: 'var(--text-muted)' }} /></div>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>Aucune modification de prix enregistrée.</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>{t('vendor.historique.aucuneModification')}</p>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Évolution</div>
+              <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('vendor.historique.evolution')}</div>
               {historiqueProduit.map((h) => {
                 const diff = h.nouveau - h.ancien
                 const hausse = diff > 0

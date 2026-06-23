@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { Package, AlertTriangle, Camera, Loader2, Leaf, Fish, Drumstick, Flame, Droplets, Wheat, CircleDot, UtensilsCrossed, Apple, Citrus } from 'lucide-react'
 
 const FRAIS_RETOUR_PAR_ARTICLE = 500
@@ -28,6 +29,7 @@ export default function Inspection() {
   const location = useLocation()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
   const fileRef = useRef(null)
 
   const orderId = location.state?.id_commande
@@ -105,12 +107,12 @@ export default function Inspection() {
         fd.append('photos', file)
       }
       await api.post(`/client/orders/${commande.id_commande}/inspection`, fd)
-      showToast('Inspection confirmée !')
+      showToast(t('toast.inspectionConfirmed'))
       navigate('/client/paiement', {
         state: { id_commande: commande.id_commande, total: totalFinal }
       })
     } catch (err) {
-      showToast(err.message || 'Erreur lors de la confirmation')
+      showToast(err.message || t('toast.inspectionError'))
     } finally {
       setSubmitting(false)
     }
@@ -119,7 +121,7 @@ export default function Inspection() {
   if (loading) {
     return (
       <div className="w-full min-h-screen font-sans flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-        <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Chargement de la commande...</div>
+        <div className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('inspection.loading')}</div>
       </div>
     )
   }
@@ -147,8 +149,8 @@ export default function Inspection() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base">Inspection — Commande #{commande.id_commande}</div>
-            <div className="text-white/70 text-xs">Inspectez chaque article avant de payer</div>
+            <div className="text-white font-black text-base">{t('inspection.title', { id: commande.id_commande })}</div>
+            <div className="text-white/70 text-xs">{t('inspection.subtitle')}</div>
           </div>
         </div>
       </div>
@@ -160,7 +162,7 @@ export default function Inspection() {
           style={{ background: isDark ? 'rgba(232,125,85,0.08)' : '#FAECE7', border: `1.5px solid ${isDark ? 'rgba(232,125,85,0.2)' : '#F5C4B3'}` }}>
           <span className="flex-shrink-0"><Package size={20} /></span>
           <p className="text-xs font-semibold leading-relaxed" style={{ color: isDark ? '#E87D55' : '#993C1D' }}>
-            Inspectez chaque article <strong>en présence du livreur</strong>. Acceptez ou rejetez article par article. Vous ne payez que ce que vous acceptez.
+            {t('inspection.instruction')}
           </p>
         </div>
 
@@ -198,7 +200,7 @@ export default function Inspection() {
                       color: st === 'accepte' ? '#fff' : 'var(--text-secondary)',
                       border: `1.5px solid ${st === 'accepte' ? '#1D9E75' : 'var(--border)'}`,
                     }}>
-                    {st === 'accepte' ? '✓ Accepté' : '✓ Accepter'}
+                    {st === 'accepte' ? t('inspection.accepted') : t('inspection.accept')}
                   </button>
                   <button onClick={() => setStatut(a.id_produit, 'rejete')}
                     className="flex-1 py-2.5 rounded-xl text-sm font-black cursor-pointer transition-all"
@@ -207,14 +209,14 @@ export default function Inspection() {
                       color: st === 'rejete' ? '#fff' : 'var(--text-secondary)',
                       border: `1.5px solid ${st === 'rejete' ? '#D85A30' : 'var(--border)'}`,
                     }}>
-                    {st === 'rejete' ? '✗ Rejeté' : '✗ Rejeter'}
+                    {st === 'rejete' ? t('inspection.rejected') : t('inspection.reject')}
                   </button>
                 </div>
 
                 {st === 'rejete' && (
                   <div className="px-4 pb-3">
                     <textarea
-                      placeholder="Motif du rejet obligatoire (ex: produit avarié, mauvaise qualité…)"
+                      placeholder={t('inspection.rejectPlaceholder')}
                       value={motifs[a.id_produit] || ''}
                       onChange={(e) => setMotifs((p) => ({ ...p, [a.id_produit]: e.target.value }))}
                       rows={2}
@@ -227,7 +229,7 @@ export default function Inspection() {
                       }}
                     />
                     {!motifs[a.id_produit]?.trim() && (
-                      <p className="text-xs mt-1" style={{ color: '#E24B4A' }}>⚠ Motif requis</p>
+                      <p className="text-xs mt-1" style={{ color: '#E24B4A' }}>{t('inspection.reasonRequired')}</p>
                     )}
                   </div>
                 )}
@@ -242,19 +244,19 @@ export default function Inspection() {
             <div className="flex items-center gap-2">
               <span className="flex-shrink-0"><Camera size={18} /></span>
               <h3 className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
-                Photos de preuve <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optionnel)</span>
+                {t('inspection.proofPhotos')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('inspection.optional')}</span>
               </h3>
             </div>
             <button onClick={() => fileRef.current?.click()}
               className="text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer"
               style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', border: 'none' }}>
-              + Ajouter
+              {t('inspection.addPhoto')}
             </button>
             <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={ajouterPhoto} />
           </div>
           {photos.length === 0 ? (
             <div className="rounded-xl py-4 text-center" style={{ background: 'var(--surface-alt)' }}>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Ajoutez des photos si vous contestez la qualité</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('inspection.photoHint')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-2">
@@ -276,26 +278,26 @@ export default function Inspection() {
         {tousDefinis && (
           <div className="rounded-2xl p-4"
             style={{ background: tousRejetes ? (isDark ? 'rgba(232,125,85,0.06)' : '#FAECE7') : (isDark ? 'rgba(45,196,145,0.06)' : '#E1F5EE'), border: `1.5px solid ${tousRejetes ? (isDark ? 'rgba(232,125,85,0.15)' : '#F5C4B3') : (isDark ? 'rgba(45,196,145,0.15)' : '#9FE1CB')}` }}>
-            <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Récapitulatif de paiement</h3>
+            <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>{t('inspection.summaryTitle')}</h3>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between text-sm">
-                <span style={{ color: 'var(--text-secondary)' }}>Articles acceptés ({articlesAcceptes.length}/{articles.length})</span>
+                <span style={{ color: 'var(--text-secondary)' }}>{t('inspection.acceptedItems', { accepted: articlesAcceptes.length, total: articles.length })}</span>
                 <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{totalMarchandises.toLocaleString()} F</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: 'var(--text-secondary)' }}>Frais de livraison</span>
+                <span style={{ color: 'var(--text-secondary)' }}>{t('inspection.deliveryFees')}</span>
                 <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{fraisLivraison.toLocaleString()} F</span>
               </div>
               {fraisRetour > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: '#D85A30' }}>Frais de retour ({articlesRejetes.length} article{articlesRejetes.length > 1 ? 's' : ''})</span>
+                  <span style={{ color: '#D85A30' }}>{t('inspection.returnFees', { count: articlesRejetes.length, s: articlesRejetes.length > 1 ? 's' : '' })}</span>
                   <span className="font-semibold" style={{ color: '#D85A30' }}>+{fraisRetour.toLocaleString()} F</span>
                 </div>
               )}
               <div className="flex justify-between pt-2 mt-1"
                 style={{ borderTop: `1.5px solid ${tousRejetes ? (isDark ? 'rgba(232,125,85,0.15)' : '#F5C4B3') : (isDark ? 'rgba(45,196,145,0.15)' : '#9FE1CB')}` }}>
                 <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>
-                  {tousRejetes ? 'Frais de retour uniquement' : 'Total à payer maintenant'}
+                  {tousRejetes ? t('inspection.returnOnly') : t('inspection.totalToPay')}
                 </span>
                 <span className="font-black text-base"
                   style={{ color: tousRejetes ? '#D85A30' : '#1D9E75' }}>
@@ -317,11 +319,11 @@ export default function Inspection() {
             cursor: (!tousDefinis || motifManquant) ? 'not-allowed' : 'pointer',
             opacity: submitting ? 0.75 : 1,
           }}>
-          {submitting ? <><Loader2 size={16} className="inline animate-spin" /> Confirmation…</>
-            : !tousDefinis ? 'Inspectez tous les articles pour continuer'
-            : motifManquant ? 'Renseignez les motifs de rejet'
-            : tousRejetes ? `Confirmer le retour — ${fraisRetour.toLocaleString()} F →`
-            : `Confirmer et payer — ${totalFinal.toLocaleString()} F →`}
+          {submitting ? <><Loader2 size={16} className="inline animate-spin" /> {t('inspection.confirming')}</>
+            : !tousDefinis ? t('inspection.inspectAll')
+            : motifManquant ? t('inspection.fillReasons')
+            : tousRejetes ? t('inspection.confirmReturn', { amount: fraisRetour.toLocaleString() })
+            : t('inspection.confirmPay', { amount: totalFinal.toLocaleString() })}
         </button>
       </div>
     </div>

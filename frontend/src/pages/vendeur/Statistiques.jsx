@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { api } from '../../services/api'
 import { AlertTriangle, BarChart3, Trophy, Package } from 'lucide-react'
 
@@ -8,6 +9,7 @@ export default function Statistiques() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
   const [onglet, setOnglet] = useState('apercu')
   const [produits, setProduits] = useState([])
   const [loading, setLoading] = useState(true)
@@ -62,17 +64,17 @@ export default function Statistiques() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Statistiques</div>
-            <div className="text-white/70 text-xs">{totalVendus ?? 0} produit(s) vendu(s)</div>
+            <div className="text-white font-black text-base leading-tight">{t('vendor.stats.title')}</div>
+            <div className="text-white/70 text-xs">{totalVendus ?? 0} {t('vendor.stats.productsSold')}</div>
           </div>
         </div>
       </div>
 
       <div className="flex gap-2">
         {[
-          { id: 'apercu', label: <><BarChart3 size={14} className="inline" /> Aperçu</> },
-          { id: 'vendus', label: <><Trophy size={14} className="inline" /> Top ventes</> },
-          { id: 'rejets', label: <><AlertTriangle size={14} className="inline" /> Top rejets</> },
+          { id: 'apercu', label: <><BarChart3 size={14} className="inline" /> {t('vendor.stats.tabOverview')}</> },
+          { id: 'vendus', label: <><Trophy size={14} className="inline" /> {t('vendor.stats.tabTopSales')}</> },
+          { id: 'rejets', label: <><AlertTriangle size={14} className="inline" /> {t('vendor.stats.tabTopRejects')}</> },
         ].map((o) => (
           <button key={o.id} onClick={() => setOnglet(o.id)}
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer"
@@ -90,10 +92,10 @@ export default function Statistiques() {
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: 'Total vendus', val: totalVendus, accent: '#1D9E75', sub: 'unités' },
-              { label: 'Taux de rejet', val: `${tauxRejet}%`, accent: '#D85A30', sub: `${totalRejets} articles` },
-              { label: 'Revenu brut', val: `${totalRevenu.toLocaleString()} F`, accent: '#BA7517', sub: 'tous produits' },
-              { label: 'Produits actifs', val: produits.length, accent: 'var(--text-primary)', sub: 'en catalogue' },
+              { label: t('vendor.stats.totalSold'), val: totalVendus, accent: '#1D9E75', sub: t('vendor.stats.units') },
+              { label: t('vendor.stats.rejectionRate'), val: `${tauxRejet}%`, accent: '#D85A30', sub: `${totalRejets} ${t('vendor.stats.articles')}` },
+              { label: t('vendor.stats.grossRevenue'), val: `${totalRevenu.toLocaleString()} F`, accent: '#BA7517', sub: t('vendor.stats.allProducts') },
+              { label: t('vendor.stats.activeProducts'), val: produits.length, accent: 'var(--text-primary)', sub: t('vendor.stats.inCatalog') },
             ].map((s) => (
               <div key={s.label} className="rounded-2xl p-4"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
@@ -104,7 +106,7 @@ export default function Statistiques() {
             ))}
           </div>
 
-          <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Détail par produit</div>
+          <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('vendor.stats.detailByProduct')}</div>
           {produits.map((p) => {
             const pctVentes = totalVendus > 0 ? (p.vendus / totalVendus * 100).toFixed(0) : 0
             return (
@@ -115,7 +117,7 @@ export default function Statistiques() {
                     style={{ background: 'var(--surface-alt)' }}><Package size={18} /></div>
                   <div className="flex-1 min-w-0">
                     <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{p.nom}</div>
-                    <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Stock: {p.stock} {p.unite}</div>
+                    <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('vendor.stats.stock')}: {p.stock} {p.unite}</div>
                   </div>
                   <div className="text-right">
                     <div className="font-black text-sm" style={{ color: '#BA7517' }}>{p.revenu.toLocaleString()} F</div>
@@ -125,8 +127,8 @@ export default function Statistiques() {
                   <div className="h-full rounded-full" style={{ width: `${pctVentes}%`, background: '#BA7517' }} />
                 </div>
                 <div className="flex justify-between text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                  <span>{p.vendus} vendus ({pctVentes}%)</span>
-                  <span>{p.rejets} rejeté{p.rejets > 1 ? 's' : ''}</span>
+                  <span>{p.vendus} {t('vendor.stats.sold')} ({pctVentes}%)</span>
+                  <span>{p.rejets} {t('vendor.stats.rejected', { count: p.rejets })}</span>
                 </div>
               </div>
             )
@@ -136,7 +138,7 @@ export default function Statistiques() {
 
       {onglet === 'vendus' && (
         <>
-          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Produits classés par nombre de ventes.</div>
+          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('vendor.stats.rankedBySales')}</div>
           {TOP_VENDUS.map((p, i) => (
             <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl"
               style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
@@ -147,11 +149,11 @@ export default function Statistiques() {
               <Package size={18} />
               <div className="flex-1 min-w-0">
                 <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{p.nom}</div>
-                <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{p.revenu.toLocaleString()} F de revenu</div>
+                <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{p.revenu.toLocaleString()} F {t('vendor.stats.revenue')}</div>
               </div>
               <div className="text-right">
                 <div className="font-black text-sm" style={{ color: '#1D9E75' }}>{p.vendus}</div>
-                <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>vendus</div>
+                <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('vendor.stats.sold')}</div>
               </div>
             </div>
           ))}
@@ -160,7 +162,7 @@ export default function Statistiques() {
 
       {onglet === 'rejets' && (
         <>
-          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Produits classés par nombre de rejets.</div>
+          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('vendor.stats.rankedByRejects')}</div>
           {TOP_REJETES.map((p, i) => {
             const tauxRejetProd = p.vendus > 0 ? ((p.rejets / p.vendus) * 100).toFixed(1) : 0
             return (
@@ -173,11 +175,11 @@ export default function Statistiques() {
                 <Package size={18} />
                 <div className="flex-1 min-w-0">
                   <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{p.nom}</div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Taux: {tauxRejetProd}%</div>
+                  <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('vendor.stats.rate')}: {tauxRejetProd}%</div>
                 </div>
                 <div className="text-right">
                   <div className="font-black text-sm" style={{ color: '#D85A30' }}>{p.rejets}</div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>rejeté{p.rejets > 1 ? 's' : ''}</div>
+                  <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('vendor.stats.rejected', { count: p.rejets })}</div>
                 </div>
               </div>
             )

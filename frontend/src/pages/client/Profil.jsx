@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { api } from '../../services/api'
 import { ShoppingCart, Package, Bike, User, Lock, Mail, MapPin, CheckCircle, Pencil, Camera, Save, KeyRound, LogOut, Loader2, XCircle, AlertTriangle } from 'lucide-react'
 
@@ -17,17 +18,19 @@ function getRole(pathname) {
   return 'client'
 }
 
-const TABS = [
-  { id: 'infos', label: 'Mon Profil', icon: User },
-  { id: 'securite', label: 'Sécurité', icon: Lock },
-]
-
 export default function Profil() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user: ctxUser, login: updateCtx, logout: ctxLogout } = useAuth()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
+
+  const TABS = [
+    { id: 'infos', labelKey: 'profil.infoTab', icon: User },
+    { id: 'securite', labelKey: 'profil.securityTab', icon: Lock },
+  ]
+
   const [tab, setTab] = useState('infos')
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -70,9 +73,9 @@ export default function Profil() {
 
   async function handleSave(e) {
     e.preventDefault()
-    if (!form.nom || !form.prenom || !form.email) return showToast(<><AlertTriangle size={14} className="inline" /> Nom, prénom et email requis.</>, 'error')
-    if (form.mot_de_passe && form.mot_de_passe !== form.confirm) return showToast(<><AlertTriangle size={14} className="inline" /> Les mots de passe ne correspondent pas.</>, 'error')
-    if (form.mot_de_passe && form.mot_de_passe.length < 6) return showToast(<><AlertTriangle size={14} className="inline" /> Le mot de passe doit comporter au moins 6 caractères.</>, 'error')
+    if (!form.nom || !form.prenom || !form.email) return showToast(<><AlertTriangle size={14} className="inline" /> {t('toast.profileRequired')}</>, 'error')
+    if (form.mot_de_passe && form.mot_de_passe !== form.confirm) return showToast(<><AlertTriangle size={14} className="inline" /> {t('toast.passwordMismatch')}</>, 'error')
+    if (form.mot_de_passe && form.mot_de_passe.length < 6) return showToast(<><AlertTriangle size={14} className="inline" /> {t('toast.passwordTooShort')}</>, 'error')
     setSaving(true)
     try {
       const body = new FormData()
@@ -88,7 +91,7 @@ export default function Profil() {
       const res = await api.put('/auth/profile', body)
       setProfile(res.user)
       updateCtx(res.user, localStorage.getItem('vc_token'))
-      showToast(<><CheckCircle size={14} className="inline" /> Profil mis à jour !</>, 'ok')
+      showToast(<><CheckCircle size={14} className="inline" /> {t('toast.profileUpdated')}</>, 'ok')
       setEditing(false)
       setPhotoFile(null)
       setPhotoPreview('')
@@ -108,7 +111,7 @@ export default function Profil() {
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
           <div className="mb-3 flex justify-center"><Loader2 size={32} className="animate-spin" /></div>
-          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Chargement du profil…</div>
+          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>{t('profil.loading')}</div>
         </div>
       </div>
     )
@@ -137,7 +140,7 @@ export default function Profil() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Mon profil</div>
+            <div className="text-white font-black text-base leading-tight">{t('profil.header')}</div>
             <div className="text-white/70 text-xs">{theme.label}</div>
           </div>
         </div>
@@ -146,16 +149,16 @@ export default function Profil() {
       {/* Sub-tabs */}
       <div className="px-4 pt-4 pb-2">
         <div className="flex gap-1 overflow-x-auto scrollbar-none px-4">
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
+          {TABS.map(tabItem => (
+            <button key={tabItem.id} onClick={() => setTab(tabItem.id)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
               style={{
-                background: tab === t.id ? (isDark ? 'rgba(255,255,255,0.08)' : '#fff') : 'transparent',
-                color: tab === t.id ? theme.primary : 'var(--text-muted)',
-                border: tab === t.id ? '1px solid var(--border)' : 'none',
-                boxShadow: tab === t.id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
+                background: tab === tabItem.id ? (isDark ? 'rgba(255,255,255,0.08)' : '#fff') : 'transparent',
+                color: tab === tabItem.id ? theme.primary : 'var(--text-muted)',
+                border: tab === tabItem.id ? '1px solid var(--border)' : 'none',
+                boxShadow: tab === tabItem.id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
               }}>
-              <t.icon size={14} /> {t.label}
+              <tabItem.icon size={14} /> {t(tabItem.labelKey)}
             </button>
           ))}
         </div>
@@ -185,17 +188,17 @@ export default function Profil() {
                 </div>
 
                 <div className="flex flex-col gap-3 mb-5">
-                  <InfoRow label="Prénom" value={profile?.prenom} icon={<User size={14} />} />
-                  <InfoRow label="Nom" value={profile?.nom} icon={<User size={14} />} />
-                  <InfoRow label="Email" value={profile?.email} icon={<Mail size={14} />} />
-                  <InfoRow label="Adresse livraison" value={profile?.profil?.adresse_livraison || '—'} icon={<MapPin size={14} />} />
+                  <InfoRow label={t('auth.firstName')} value={profile?.prenom} icon={<User size={14} />} />
+                  <InfoRow label={t('auth.name')} value={profile?.nom} icon={<User size={14} />} />
+                  <InfoRow label={t('auth.email')} value={profile?.email} icon={<Mail size={14} />} />
+                  <InfoRow label={t('auth.address')} value={profile?.profil?.adresse_livraison || '—'} icon={<MapPin size={14} />} />
                   <InfoRow label="Statut" value={profile?.statut_compte || '—'} icon={profile?.statut_compte === 'Actif' ? <CheckCircle size={14} /> : <Lock size={14} />} />
                 </div>
 
                 <button onClick={() => setEditing(true)}
                   className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                   style={{ background: theme.primary, color: '#fff', border: 'none' }}>
-                  <Pencil size={14} className="inline align-middle" /> Modifier mon profil
+                  <Pencil size={14} className="inline align-middle" /> {t('profil.editProfile')}
                 </button>
               </div>
             ) : (
@@ -209,7 +212,7 @@ export default function Profil() {
                         borderColor: photoPreview ? theme.primary : 'var(--border)',
                       }}>
                       {photoPreview ? (
-                        <img src={photoPreview} alt="Aperçu" className="w-full h-full object-cover" />
+                        <img src={photoPreview} alt={t('profil.photoPreview')} className="w-full h-full object-cover" />
                       ) : profile?.photo_url ? (
                         <img src={profile.photo_url} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -224,17 +227,17 @@ export default function Profil() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="Nom" value={form.nom} onChange={v => setForm(p => ({ ...p, nom: v }))} />
-                    <Field label="Prénom" value={form.prenom} onChange={v => setForm(p => ({ ...p, prenom: v }))} />
+                    <Field label={t('auth.name')} value={form.nom} onChange={v => setForm(p => ({ ...p, nom: v }))} />
+                    <Field label={t('auth.firstName')} value={form.prenom} onChange={v => setForm(p => ({ ...p, prenom: v }))} />
                   </div>
-                  <Field label="Email" type="email" value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} />
-                  <Field label="Adresse de livraison" value={form.adresse_livraison} onChange={v => setForm(p => ({ ...p, adresse_livraison: v }))} />
+                  <Field label={t('auth.email')} type="email" value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} />
+                  <Field label={t('auth.address')} value={form.adresse_livraison} onChange={v => setForm(p => ({ ...p, adresse_livraison: v }))} />
 
                   <div className="flex gap-3 mt-2">
                     <button type="submit" disabled={saving}
                       className="flex-1 rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                       style={{ background: theme.primary, color: '#fff', border: 'none', opacity: saving ? 0.7 : 1 }}>
-                      {saving ? <Loader2 size={14} className="animate-spin inline" /> : <><Save size={14} className="inline align-middle" /> Enregistrer</>}
+                      {saving ? <Loader2 size={14} className="animate-spin inline" /> : <><Save size={14} className="inline align-middle" /> {t('common.save')}</>}
                     </button>
                     <button type="button" onClick={() => {
                       setEditing(false); setPhotoFile(null); setPhotoPreview('')
@@ -246,7 +249,7 @@ export default function Profil() {
                     }}
                       className="rounded-2xl py-3 px-5 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                       style={{ background: isDark ? 'rgba(255,255,255,0.06)' : '#F0EFEA', color: 'var(--text-muted)', border: 'none' }}>
-                      Annuler
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </form>
@@ -263,24 +266,24 @@ export default function Profil() {
                   <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(66,133,244,0.12)' }}>
                     <KeyRound size={20} style={{ color: '#4285F4' }} />
                   </div>
-                  <p className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Compte Google</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Votre compte est lié à Google. Le mot de passe est géré par votre compte Google.</p>
+                  <p className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{t('profil.googleAccount')}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('profile.googleLinked')}</p>
                 </div>
               ) : (
                 <>
-                  <h3 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}><KeyRound size={14} className="inline align-middle" /> Changer le mot de passe</h3>
+                  <h3 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}><KeyRound size={14} className="inline align-middle" /> {t('profile.changePassword')}</h3>
                   <PasswordChangeForm theme={theme} isDark={isDark} />
                 </>
               )}
             </div>
 
             <div className="rounded-2xl p-6 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-              <h3 className="text-sm font-black mb-2" style={{ color: 'var(--text-primary)' }}><LogOut size={14} className="inline align-middle" /> Session</h3>
-              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Déconnectez-vous de votre compte sur cet appareil.</p>
+              <h3 className="text-sm font-black mb-2" style={{ color: 'var(--text-primary)' }}><LogOut size={14} className="inline align-middle" /> {t('profil.session')}</h3>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>{t('profil.sessionDesc')}</p>
               <button onClick={() => setShowLogout(true)}
                 className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
                 style={{ background: isDark ? 'rgba(232,125,85,0.12)' : '#FDE8E2', color: isDark ? '#E87D55' : '#D85A30', border: 'none' }}>
-                <LogOut size={14} className="inline align-middle" /> Se déconnecter
+                <LogOut size={14} className="inline align-middle" /> {t('connect.logout')}
               </button>
             </div>
           </div>
@@ -295,19 +298,19 @@ export default function Profil() {
             onClick={e => e.stopPropagation()}>
             <div className="text-center mb-5">
               <div className="mb-3 flex justify-center"><LogOut size={40} /></div>
-              <h3 className="text-lg font-black" style={{ color: 'var(--text-primary)' }}>Se déconnecter ?</h3>
-              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Vous devrez vous reconnecter pour accéder à votre espace.</p>
+              <h3 className="text-lg font-black" style={{ color: 'var(--text-primary)' }}>{t('profil.logoutConfirm')}</h3>
+              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>{t('profil.logoutDesc')}</p>
             </div>
             <div className="flex flex-col gap-3">
               <button onClick={handleLogout}
                 className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer"
                 style={{ background: isDark ? '#E87D55' : '#D85A30', color: '#fff', border: 'none' }}>
-                Oui, me déconnecter
+                {t('profil.logoutYes')}
               </button>
               <button onClick={() => setShowLogout(false)}
                 className="w-full rounded-2xl py-3 text-sm font-bold cursor-pointer"
                 style={{ background: 'var(--surface-alt)', color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}>
-                Annuler
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -318,6 +321,7 @@ export default function Profil() {
 }
 
 function PasswordChangeForm({ theme, isDark }) {
+  const { t } = useLang()
   const [mdp, setMdp] = useState('')
   const [confirm, setConfirm] = useState('')
   const [saving, setSaving] = useState(false)
@@ -328,16 +332,16 @@ function PasswordChangeForm({ theme, isDark }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!mdp) { setMsg('Entrez un nouveau mot de passe.'); setMsgType('error'); return }
-    if (mdp.length < 6) { setMsg('Au moins 6 caractères.'); setMsgType('error'); return }
-    if (mdp !== confirm) { setMsg('Les mots de passe ne correspondent pas.'); setMsgType('error'); return }
+    if (!mdp) { setMsg(t('profil.enterNewPassword')); setMsgType('error'); return }
+    if (mdp.length < 6) { setMsg(t('profil.min6Chars')); setMsgType('error'); return }
+    if (mdp !== confirm) { setMsg(t('profil.passwordsMismatch')); setMsgType('error'); return }
     setSaving(true); setMsg(null)
     try {
       const body = new FormData()
       body.set('mot_de_passe', mdp)
       body.set('mot_de_passe_confirmation', confirm)
       await api.put('/auth/profile', body)
-      setMsg('Mot de passe mis à jour.'); setMsgType('ok')
+      setMsg(t('profile.passwordUpdated')); setMsgType('ok')
       setMdp(''); setConfirm('')
     } catch (e) { setMsg(e.message); setMsgType('error') }
     finally { setSaving(false) }
@@ -351,12 +355,12 @@ function PasswordChangeForm({ theme, isDark }) {
           {msg}
         </div>
       )}
-      <Field label="Nouveau mot de passe" type="password" value={mdp} onChange={setMdp} />
-      <Field label="Confirmer" type="password" value={confirm} onChange={setConfirm} />
+      <Field label={t('profile.newPassword')} type="password" value={mdp} onChange={setMdp} />
+      <Field label={t('profile.confirmPassword')} type="password" value={confirm} onChange={setConfirm} />
       <button type="submit" disabled={saving}
         className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer mt-1"
         style={{ background: saving ? (isDark ? 'rgba(255,255,255,0.08)' : '#ccc') : (theme?.primary || '#1D9E75'), color: '#fff', border: 'none' }}>
-        {saving ? <Loader2 size={14} className="animate-spin inline" /> : <><KeyRound size={14} className="inline align-middle" /> Mettre à jour</>}
+        {saving ? <Loader2 size={14} className="animate-spin inline" /> : <><KeyRound size={14} className="inline align-middle" /> {t('profil.updatePassword')}</>}
       </button>
     </form>
   )

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
 import { ShoppingCart, Store, Package, Banknote, Lock, Loader2, XCircle } from 'lucide-react'
+import { useLang } from '../../context/LangContext'
 
 const FRAIS_LIVRAISON = 1500
 const COMMISSION_RATE = 0.006
@@ -13,6 +14,7 @@ export default function Panier() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
 
   const [cart, setCart]       = useState(null)
   const [loading, setLoading] = useState(true)
@@ -61,7 +63,7 @@ export default function Panier() {
   // Group by vendor
   const parVendeur = details.reduce((acc, d) => {
     const vid     = d.produit.id_user_vendeur
-    const vnom    = d.produit.vendeur?.nom_etablissement || `Vendeur ${vid}`
+    const vnom    = d.produit.vendeur?.nom_etablissement || `${t('accueil.vendorLabel')} ${vid}`
     const marche  = d.produit.vendeur?.marche?.nom || null
     if (!acc[vid]) acc[vid] = { nom: vnom, marche, items: [] }
     acc[vid].items.push(d)
@@ -74,7 +76,7 @@ export default function Panier() {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}><Loader2 size={40} className="animate-spin" /></div>
-          <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>Chargement du panier…</div>
+          <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>{t('cart.loading')}</div>
         </div>
       </div>
     )
@@ -107,9 +109,9 @@ export default function Panier() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Mon panier</div>
+            <div className="text-white font-black text-base leading-tight">{t('cart.title')}</div>
             <div className="text-white/70 text-xs">
-              {panierCount} article{panierCount > 1 ? 's' : ''} · {Object.keys(parVendeur).length} vendeur{Object.keys(parVendeur).length > 1 ? 's' : ''}
+              {t('cart.itemsCount', { count: panierCount })} · {t('cart.vendorsCount', { count: Object.keys(parVendeur).length })}
             </div>
           </div>
           {panierCount > 0 && (
@@ -118,7 +120,7 @@ export default function Panier() {
               className="text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer"
               style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}
             >
-              Vider
+              {t('cart.emptyCartBtn')}
             </button>
           )}
         </div>
@@ -128,16 +130,16 @@ export default function Panier() {
       {details.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
           <div className="text-6xl mb-4"><ShoppingCart size={64} /></div>
-          <h2 className="font-black text-lg mb-2" style={{ color: 'var(--text-primary)' }}>Votre panier est vide</h2>
+          <h2 className="font-black text-lg mb-2" style={{ color: 'var(--text-primary)' }}>{t('cart.empty')}</h2>
           <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-            Ajoutez des produits depuis les catalogues des marchés.
+            {t('cart.emptyDesc')}
           </p>
           <button
             onClick={() => navigate('/client/accueil')}
             className="px-6 py-3 rounded-2xl text-white font-black cursor-pointer"
             style={{ background: '#1D9E75', border: 'none' }}
           >
-            Explorer les marchés →
+            {t('cart.exploreMarkets')}
           </button>
         </div>
       ) : (
@@ -158,7 +160,7 @@ export default function Panier() {
                 </div>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
                   style={{ background: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', color: '#BA7517' }}>
-                  {etal.items.length} article{etal.items.length > 1 ? 's' : ''}
+                  {t('cart.itemsCount', { count: etal.items.length })}
                 </span>
               </div>
 
@@ -173,7 +175,7 @@ export default function Panier() {
                     <div className="flex-1 min-w-0">
                       <div className="font-black text-sm truncate" style={{ color: 'var(--text-primary)' }}>{d.produit.nom}</div>
                       <div className="text-xs font-medium" style={{ color: '#1D9E75' }}>
-                        {formatPrice(d.produit.prix_reference)} / unité
+                        {formatPrice(d.produit.prix_reference)} {t('cart.perUnit')}
                       </div>
                     </div>
 
@@ -194,7 +196,7 @@ export default function Panier() {
                       </div>
                       <button onClick={() => setQte(d.id_produit, 0)}
                         className="text-xs cursor-pointer mt-0.5"
-                        style={{ color: '#E24B4A', background: 'none', border: 'none' }}>Retirer</button>
+                        style={{ color: '#E24B4A', background: 'none', border: 'none' }}>{t('cart.remove')}</button>
                     </div>
                   </div>
                 ))}
@@ -208,30 +210,30 @@ export default function Panier() {
               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
                 style={{ background: '#BA7517' }}><Banknote size={20} /></div>
               <div>
-                <div className="font-black text-sm" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Mode de paiement</div>
-                <div className="text-xs" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Choisissez votre mode de paiement à l'étape suivante</div>
+                <div className="font-black text-sm" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>{t('cart.paymentMode')}</div>
+                <div className="text-xs" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>{t('cart.paymentModeDesc')}</div>
               </div>
             </div>
           </div>
 
           {/* RÉCAPITULATIF */}
           <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-            <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Récapitulatif</h3>
+            <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>{t('cart.summary')}</h3>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between text-sm">
-                <span style={{ color: 'var(--text-muted)' }}>Sous-total ({panierCount} articles)</span>
+                <span style={{ color: 'var(--text-muted)' }}>{t('cart.subtotalLabel', { count: panierCount })}</span>
                 <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(sousTotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: 'var(--text-muted)' }}>Frais de livraison</span>
+                <span style={{ color: 'var(--text-muted)' }}>{t('cart.deliveryFeesLabel')}</span>
                 <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(FRAIS_LIVRAISON)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: 'var(--text-muted)' }}>Commission plateforme (0,6%)</span>
+                <span style={{ color: 'var(--text-muted)' }}>{t('cart.commissionLabel')}</span>
                 <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(commission)}</span>
               </div>
               <div className="flex justify-between pt-2 mt-1" style={{ borderTop: '1.5px solid var(--border)' }}>
-                <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>Total à payer</span>
+                <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>{t('cart.totalLabel')}</span>
                 <span className="font-black text-base" style={{ color: '#1D9E75' }}>{formatPrice(total)}</span>
               </div>
             </div>
@@ -243,11 +245,11 @@ export default function Panier() {
             className="w-full py-4 rounded-2xl text-white font-black text-base cursor-pointer transition-all active:scale-98"
             style={{ background: '#1D9E75', border: 'none', boxShadow: '0 6px 24px rgba(29,158,117,0.4)' }}
           >
-            Choisir un livreur — {formatPrice(total)} →
+            {t('cart.chooseDriverBtn', { total: formatPrice(total) })}
           </button>
 
           <p className="text-center text-xs pb-2" style={{ color: 'var(--text-muted)' }}>
-            <Lock size={14} style={{verticalAlign: 'middle', marginRight: 4}} /> Paiement sécurisé · Vous inspectez avant de payer
+            <Lock size={14} style={{verticalAlign: 'middle', marginRight: 4}} /> {t('cart.securePayment')}
           </p>
 
         </div>

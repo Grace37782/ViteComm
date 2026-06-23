@@ -6,6 +6,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Loader2, Search, Store, Ruler, Mountain, ChevronDown, Package, ShoppingCart, ClipboardList, User, Star, ArrowRight, Truck, Map } from 'lucide-react'
+import { useLang } from '../../context/LangContext'
 
 // Custom Leaflet marker icons using divIcon (bypasses URL image path issues in Vite)
 const createMarketIcon = (isActive) => L.divIcon({
@@ -117,6 +118,7 @@ export default function AccueilClient() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
 
   const [markets, setMarkets] = useState([])
   const [products, setProducts] = useState([])
@@ -191,11 +193,11 @@ export default function AccueilClient() {
 
   // Quick actions for search
   const quickActions = useMemo(() => [
-    { id: 'cart', label: 'Mon panier', icon: ShoppingCart, path: '/client/panier', keywords: ['panier', 'cart', 'commande'] },
-    { id: 'orders', label: 'Mes commandes', icon: ClipboardList, path: '/client/commandes', keywords: ['commandes', 'orders', 'suivi'] },
-    { id: 'profile', label: 'Mon profil', icon: User, path: '/client/profil', keywords: ['profil', 'profile', 'compte'] },
-    { id: 'catalogue', label: 'Catalogue', icon: Package, path: '/client/catalogue', keywords: ['catalogue', 'produits', 'products'] },
-  ], [])
+    { id: 'cart', label: t('accueil.quickAction.cart'), icon: ShoppingCart, path: '/client/panier', keywords: ['panier', 'cart', 'commande'] },
+    { id: 'orders', label: t('accueil.quickAction.orders'), icon: ClipboardList, path: '/client/commandes', keywords: ['commandes', 'orders', 'suivi'] },
+    { id: 'profile', label: t('accueil.quickAction.profile'), icon: User, path: '/client/profil', keywords: ['profil', 'profile', 'compte'] },
+    { id: 'catalogue', label: t('accueil.quickAction.catalogue'), icon: Package, path: '/client/catalogue', keywords: ['catalogue', 'produits', 'products'] },
+  ], [t])
 
   // Unified search across markets, products, vendors, drivers, and actions
   const unifiedSuggestions = useMemo(() => {
@@ -322,7 +324,7 @@ export default function AccueilClient() {
 
   // Group label helper
   const getGroupLabel = (type) => {
-    const labels = { markets: 'Marchés', products: 'Produits', vendors: 'Vendeurs', drivers: 'Livreurs', actions: 'Actions rapides' }
+    const labels = { markets: t('accueil.group.markets'), products: t('accueil.group.products'), vendors: t('accueil.group.vendors'), drivers: t('accueil.group.drivers'), actions: t('accueil.group.actions') }
     return labels[type] || type
   }
 
@@ -337,7 +339,7 @@ export default function AccueilClient() {
       <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
           <div className="text-4xl mb-3 animate-spin"><Loader2 size={32} /></div>
-          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Chargement de la carte et des marchés…</div>
+          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>{t('accueil.loading')}</div>
         </div>
       </div>
     )
@@ -353,7 +355,7 @@ export default function AccueilClient() {
             <span className="text-gray-300"><Search size={16} /></span>
             <input
               type="text"
-              placeholder="Rechercher marchés, produits, vendeurs..."
+              placeholder={t('accueil.search.placeholder')}
               value={recherche}
               onFocus={() => setShowSuggestions(true)}
               onKeyDown={handleKeyDown}
@@ -404,7 +406,7 @@ export default function AccueilClient() {
                       </div>
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full" 
                         style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#D1FAE5', color: '#1D9E75' }}>
-                        {m._count?.vendeurs || 0} vendeurs
+                        {t('accueil.vendorsCount', { count: m._count?.vendeurs || 0 })}
                       </span>
                     </div>
                   ))}
@@ -430,12 +432,12 @@ export default function AccueilClient() {
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-xs truncate" style={{ color: 'var(--text-primary)' }}>{p.nom}</p>
                         <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
-                          {p.vendeur?.nom_etablissement || 'Vendeur'} • {p.prix_reference?.toLocaleString()} F
+                          {p.vendeur?.nom_etablissement || t('accueil.vendorLabel')} • {p.prix_reference?.toLocaleString()} F
                         </p>
                       </div>
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full"
                         style={{ background: isDark ? 'rgba(245,158,11,0.15)' : '#FEF3C7', color: '#D97706' }}>
-                        Produit
+                        {t('accueil.productBadge')}
                       </span>
                     </div>
                   ))}
@@ -463,7 +465,7 @@ export default function AccueilClient() {
                           {d.utilisateur?.prenom} {d.utilisateur?.nom}
                         </p>
                         <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
-                          Livreur
+                          {t('accueil.driverLabel')}
                         </p>
                       </div>
                       <Truck size={14} style={{ color: '#1D9E75' }} />
@@ -525,7 +527,7 @@ export default function AccueilClient() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-xs" style={{ color: 'var(--text-primary)' }}>{a.label}</p>
-                          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Accès rapide</p>
+                          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('accueil.quickAccess')}</p>
                         </div>
                         <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />
                       </div>
@@ -546,7 +548,7 @@ export default function AccueilClient() {
           <div className="flex items-center gap-2">
             <Map size={16} style={{ color: '#1D9E75' }} />
             <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
-              {showMap ? 'Masquer la carte' : 'Afficher la carte'}
+              {showMap ? t('accueil.hideMap') : t('accueil.showMap')}
             </span>
           </div>
           <ChevronDown size={16} style={{ color: 'var(--text-muted)', transform: showMap ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
@@ -566,7 +568,7 @@ export default function AccueilClient() {
                 <Marker position={[geoPosition.lat, geoPosition.lng]} icon={createUserIcon()}>
                   <Popup>
                     <div className="p-1 text-center">
-                      <p className="text-xs font-black text-blue-700">Votre position actuelle</p>
+                      <p className="text-xs font-black text-blue-700">{t('accueil.userPosition')}</p>
                     </div>
                   </Popup>
                 </Marker>
@@ -622,7 +624,7 @@ export default function AccueilClient() {
               <div className="flex items-center gap-3 mt-2">
                 <span className="text-[9px] font-bold text-emerald-700 px-2 py-0.5 rounded-full"
                   style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#D1FAE5' }}>
-                  <Store size={10} className="inline" /> {activeMarket._count?.vendeurs || 0} étals actifs
+                  <Store size={10} className="inline" /> {t('accueil.activeStalls', { count: activeMarket._count?.vendeurs || 0 })}
                 </span>
                 {geoPosition && (
                   <span className="text-[9px] font-bold" style={{ color: 'var(--text-muted)' }}>
@@ -636,7 +638,7 @@ export default function AccueilClient() {
               onClick={() => navigate('/client/market/' + activeMarket.id_marche)}
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-3 rounded-2xl transition-all flex-shrink-0 cursor-pointer shadow-lg shadow-emerald-600/20"
             >
-              Visiter →
+              {t('accueil.visit')}
             </button>
           </div>
         )}
@@ -647,17 +649,17 @@ export default function AccueilClient() {
       {/* List Section */}
       <div className="px-5 mt-6 flex-1">
         <h3 className="font-black text-base mb-3 flex items-center justify-between" style={{ color: 'var(--text-primary)' }}>
-          <span>Marchés Disponibles</span>
+          <span>{t('accueil.availableMarkets')}</span>
           <span className="text-xs font-semibold text-emerald-600 px-2.5 py-1 rounded-full"
             style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#D1FAE5' }}>
-            {marketsFiltered.length} localmarts
+            {t('accueil.localmartsCount', { count: marketsFiltered.length })}
           </span>
         </h3>
 
         {marketsFiltered.length === 0 ? (
           <div className="text-center py-10 rounded-3xl shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <span className="text-4xl"><Mountain size={40} /></span>
-            <p className="text-xs font-bold mt-2" style={{ color: 'var(--text-muted)' }}>Aucun marché ne correspond à ce secteur.</p>
+            <p className="text-xs font-bold mt-2" style={{ color: 'var(--text-muted)' }}>{t('accueil.noMarkets')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -696,7 +698,7 @@ export default function AccueilClient() {
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                         style={{ color: 'var(--text-muted)', background: isDark ? 'rgba(255,255,255,0.06)' : '#F3F4F6' }}>
-                        <Store size={10} className="inline" /> {m._count?.vendeurs || 0} étals actifs
+                        <Store size={10} className="inline" /> {t('accueil.activeStalls', { count: m._count?.vendeurs || 0 })}
                       </span>
                       <button
                         onClick={(e) => {
@@ -705,7 +707,7 @@ export default function AccueilClient() {
                         }}
                         className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 rounded-xl cursor-pointer transition-all shadow-sm"
                       >
-                        Entrer →
+                        {t('accueil.enter')}
                       </button>
                     </div>
                   </div>
@@ -717,7 +719,7 @@ export default function AccueilClient() {
               <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
                 className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-                <ChevronDown size={14} /> Charger plus ({marketsFiltered.length - visibleCount} restant{marketsFiltered.length - visibleCount > 1 ? 's' : ''})
+                <ChevronDown size={14} /> {t('common.loadMore')} ({marketsFiltered.length - visibleCount} {t('common.remaining')}{marketsFiltered.length - visibleCount > 1 ? 's' : ''})
               </button>
             )}
           </div>

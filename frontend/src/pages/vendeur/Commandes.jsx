@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { api } from '../../services/api'
 import { AlertTriangle, ShoppingCart, Loader2, CheckCircle, Package, ChevronDown, ShieldCheck, QrCode, XCircle, Search } from 'lucide-react'
 
@@ -9,6 +10,7 @@ const PAGE_SIZE = 10
 export default function CommandesVendeur() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
+  const { t } = useLang()
   const isDark = resolved === 'dark'
   const [commandes, setCommandes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -52,8 +54,8 @@ export default function CommandesVendeur() {
   }
 
   const STATUT_STYLE = {
-    en_attente: { label: 'En attente livreur', bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
-    collecte: { label: 'Collecté', bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
+    en_attente: { label: t('vendor.commandes.statusPendingDriver'), bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
+    collecte: { label: t('vendor.commandes.statusCollected'), bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
   }
 
   const filtres = {
@@ -131,7 +133,7 @@ export default function CommandesVendeur() {
           <button onClick={fetchOrders}
             className="mt-3 px-4 py-2 rounded-xl text-xs font-bold"
             style={{ background: '#BA7517', color: '#fff' }}>
-            Réessayer
+            {t('error.retry')}
           </button>
         </div>
       </div>
@@ -152,8 +154,8 @@ export default function CommandesVendeur() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Commandes</div>
-            <div className="text-white/70 text-xs">{commandes?.length ?? 0} commande(s)</div>
+            <div className="text-white font-black text-base leading-tight">{t('nav.commandes')}</div>
+            <div className="text-white/70 text-xs">{commandes?.length ?? 0} {t('vendor.commandes.ordersCount')}</div>
           </div>
         </div>
       </div>
@@ -161,10 +163,10 @@ export default function CommandesVendeur() {
       {/* Filtres */}
       <div className="flex gap-2">
         {[
-          { id: 'tous', label: 'Toutes' },
-          { id: 'a_valider', label: 'À valider' },
-          { id: 'en_attente', label: 'En attente' },
-          { id: 'collecte', label: 'Collectées' },
+          { id: 'tous', label: t('vendor.commandes.filterAll') },
+          { id: 'a_valider', label: t('vendor.commandes.toValidate') },
+          { id: 'en_attente', label: t('vendor.commandes.pending') },
+          { id: 'collecte', label: t('vendor.commandes.collected') },
         ].map((f) => (
           <button key={f.id} onClick={() => { setFiltre(f.id); setVisibleCount(PAGE_SIZE) }}
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer"
@@ -185,7 +187,7 @@ export default function CommandesVendeur() {
           <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <input
             type="text"
-            placeholder="Rechercher par client, livreur, n° commande, produit..."
+            placeholder={t('vendor.commandes.searchPlaceholder')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
             className="flex-1 bg-transparent outline-none text-sm font-medium"
@@ -205,13 +207,13 @@ export default function CommandesVendeur() {
         <div className="text-center py-12">
           <div className="text-5xl mb-3"><ShoppingCart size={40} /></div>
           <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
-            {search.trim() ? `Aucun résultat pour "${search}"` : 'Aucune commande dans cette catégorie'}
+            {search.trim() ? t('vendor.commandes.noResultsFor', { search }) : t('vendor.commandes.noOrdersInCategory')}
           </p>
           {search.trim() && (
             <button onClick={() => setSearch('')}
               className="mt-3 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
               style={{ background: '#BA7517', color: '#fff', border: 'none' }}>
-              Effacer la recherche
+              {t('common.clearSearch')}
             </button>
           )}
         </div>
@@ -238,10 +240,10 @@ export default function CommandesVendeur() {
               }}>
               <div>
                 <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
-                  Commande #{cmd.id}
+                  {t('vendor.commandes.orderNumber')}{cmd.id}
                 </div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  {cmd.client?.nom || 'Client'} · {cmd.date_creation ? new Date(cmd.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''} {cmd.date_creation ? new Date(cmd.date_creation).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''} · Livreur: {cmd.livreur.nom}
+                  {cmd.client?.nom || t('role.client')} · {cmd.date_creation ? new Date(cmd.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''} {cmd.date_creation ? new Date(cmd.date_creation).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''} · {t('vendor.commandes.driver')} {cmd.livreur.nom}
                 </div>
               </div>
               <span className="text-xs font-bold px-2.5 py-1 rounded-full"
@@ -265,7 +267,7 @@ export default function CommandesVendeur() {
                 </div>
               ))}
               <div className="flex justify-between px-1 pt-1">
-                <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Total commande</span>
+                <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t('vendor.commandes.orderTotal')}</span>
                 <span className="text-xs font-black" style={{ color: 'var(--text-primary)' }}>
                   {total.toLocaleString()} F
                 </span>
@@ -281,7 +283,7 @@ export default function CommandesVendeur() {
                     style={{ background: isDark ? 'rgba(234,179,8,0.12)' : '#FEF9C3' }}>
                     <Loader2 size={16} className="animate-spin" style={{ color: isDark ? '#FACC15' : '#A16207' }} />
                     <span className="text-xs font-semibold" style={{ color: isDark ? '#FACC15' : '#A16207' }}>
-                      Validé — En attente des autres vendeurs
+                      {t('vendor.commandes.validatedWaitingVendors')}
                     </span>
                   </div>
                 ) : (
@@ -290,7 +292,7 @@ export default function CommandesVendeur() {
                       style={{ background: isDark ? 'rgba(234,179,8,0.12)' : '#FEF9C3' }}>
                       <ShieldCheck size={16} style={{ color: isDark ? '#FACC15' : '#A16207' }} />
                       <span className="text-xs font-semibold" style={{ color: isDark ? '#FACC15' : '#A16207' }}>
-                        Validez la disponibilité des articles avant la remise
+                        {t('vendor.commandes.validateAvailability')}
                       </span>
                     </div>
                     <button
@@ -303,7 +305,7 @@ export default function CommandesVendeur() {
                         color: '#fff',
                         cursor: validating[cmd.id] ? 'not-allowed' : 'pointer',
                       }}>
-                      {validating[cmd.id] ? 'Validation…' : 'Articles disponibles →'}
+                      {validating[cmd.id] ? t('vendor.commandes.validating') : t('vendor.commandes.articlesAvailable')}
                     </button>
                   </>
                 )}
@@ -317,7 +319,7 @@ export default function CommandesVendeur() {
                 <button onClick={() => showQRCode(cmd)}
                   className="w-full py-3 rounded-xl text-sm font-black cursor-pointer flex items-center justify-center gap-2"
                   style={{ background: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5', border: 'none' }}>
-                  <QrCode size={16} /> Afficher le QR code pour le livreur
+                  <QrCode size={16} /> {t('vendor.commandes.showQRCode')}
                 </button>
               </div>
             )}
@@ -329,7 +331,7 @@ export default function CommandesVendeur() {
                   style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
                   <CheckCircle size={18} />
                   <span className="text-xs font-black" style={{ color: isDark ? '#34D399' : '#0F6E56' }}>
-                    Remise confirmée — Articles collectés par le livreur
+                    {t('vendor.commandes.handoverConfirmed')}
                   </span>
                 </div>
               </div>
@@ -342,7 +344,7 @@ export default function CommandesVendeur() {
         <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
           className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-          <ChevronDown size={14} /> Charger plus ({sortedList.length - visibleCount} restant{sortedList.length - visibleCount > 1 ? 's' : ''})
+          <ChevronDown size={14} /> {t('common.loadMore')} ({sortedList.length - visibleCount} {sortedList.length - visibleCount > 1 ? t('common.remainingPlural') : t('common.remaining')})
         </button>
       )}
 
@@ -353,7 +355,7 @@ export default function CommandesVendeur() {
           <div className="rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: 'var(--surface)' }}
             onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <div className="font-black text-base" style={{ color: 'var(--text-primary)' }}>QR Code — Commande #{qrModal.id}</div>
+              <div className="font-black text-base" style={{ color: 'var(--text-primary)' }}>{t('vendor.commandes.qrCodeOrder')}{qrModal.id}</div>
               <button onClick={() => { setQrModal(null); setQrData(null); setScanStatus(null) }} className="cursor-pointer" style={{ background: 'none', border: 'none' }}>
                 <XCircle size={20} style={{ color: 'var(--text-muted)' }} />
               </button>
@@ -362,13 +364,13 @@ export default function CommandesVendeur() {
               <div className="rounded-2xl p-4 mb-4" style={{ background: isDark ? 'rgba(226,75,74,0.12)' : '#FEE2E2', border: '1.5px solid rgba(226,75,74,0.3)' }}>
                 <div className="flex items-center gap-2 mb-1">
                   <AlertTriangle size={16} style={{ color: '#E24B4A' }} />
-                  <span className="text-xs font-black" style={{ color: '#E24B4A' }}>Échec de la vérification</span>
+                  <span className="text-xs font-black" style={{ color: '#E24B4A' }}>{t('vendor.commandes.verificationFailed')}</span>
                 </div>
                 <div className="text-xs" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
-                  {scanStatus.scan_message || 'Le code QR n\'a pas été reconnu.'}
+                  {scanStatus.scan_message || t('vendor.commandes.qrCodeNotRecognized')}
                 </div>
                 <div className="text-[10px] mt-2" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
-                  Le livreur peut réessayer en ouvrant à nouveau la caméra.
+                  {t('vendor.commandes.driverCanRetry')}
                 </div>
               </div>
             )}
@@ -376,7 +378,7 @@ export default function CommandesVendeur() {
               <>
                 <img src={qrData.qrcode} alt="QR Code" className="mx-auto rounded-2xl mb-3" style={{ maxWidth: 250 }} />
                 <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Le livreur doit scanner ce QR code pour confirmer la collecte
+                  {t('vendor.commandes.driverMustScanQR')}
                 </div>
               </>
             ) : (

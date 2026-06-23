@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { api } from '../../services/api'
 import { AlertTriangle, Star, Package, ShoppingCart, Undo2, Flag } from 'lucide-react'
 
 export default function DashboardVendeur() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
+  const { t } = useLang()
   const isDark = resolved === 'dark'
   const [dashboard, setDashboard] = useState(null)
   const [recentOrders, setRecentOrders] = useState([])
@@ -34,9 +36,9 @@ export default function DashboardVendeur() {
   }
 
   const STATUT_STYLE = {
-    en_attente: { label: 'En attente', bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
-    collecte: { label: 'Collecté', bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
-    livre: { label: 'Livré', bg: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5' },
+    en_attente: { label: t('vendor.dashboard.statusPending'), bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
+    collecte: { label: t('vendor.dashboard.statusCollected'), bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
+    livre: { label: t('vendor.dashboard.statusDelivered'), bg: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5' },
   }
 
   if (loading) {
@@ -61,7 +63,7 @@ export default function DashboardVendeur() {
         <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="text-4xl mb-3"><AlertTriangle size={32} /></div>
           <p className="font-bold text-sm" style={{ color: '#E24B4A' }}>{error}</p>
-          <button onClick={fetchData} className="mt-3 px-4 py-2 rounded-xl text-xs font-bold" style={{ background: '#BA7517', color: '#fff' }}>Réessayer</button>
+          <button onClick={fetchData} className="mt-3 px-4 py-2 rounded-xl text-xs font-bold" style={{ background: '#BA7517', color: '#fff' }}>{t('error.retry')}</button>
         </div>
       </div>
     )
@@ -90,20 +92,20 @@ export default function DashboardVendeur() {
               <span className="font-black text-lg" style={{ color: '#BA7517' }}>{dashboard.score_reputation || '—'}</span>
               <Star size={16} />
             </div>
-            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{dashboard.nb_avis || 0} avis</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{dashboard.nb_avis || 0} {t('vendor.dashboard.reviews')}</div>
           </div>
         </div>
       </div>
 
       {/* BILAN FINANCIER */}
       <div>
-        <h2 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Bilan financier</h2>
+        <h2 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>{t('vendor.dashboard.financialSummary')}</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Revenu brut', val: f.revenu_brut || 0, color: 'var(--text-primary)', bg: 'var(--surface)', border: 'var(--border)' },
-            { label: 'Gains nets', val: f.gains_nets || 0, color: isDark ? '#2DC491' : '#0F6E56', bg: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', border: isDark ? '#2DC491' : '#9FE1CB' },
-            { label: 'Commission 0,6%', val: -(f.commission_plateforme || 0), color: isDark ? '#E87D55' : '#D85A30', bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3' },
-            { label: 'Pertes rejets', val: -(f.pertes_rejets || 0), color: isDark ? '#E87D55' : '#D85A30', bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3' },
+            { label: t('vendor.dashboard.grossRevenue'), val: f.revenu_brut || 0, color: 'var(--text-primary)', bg: 'var(--surface)', border: 'var(--border)' },
+            { label: t('vendor.dashboard.netEarnings'), val: f.gains_nets || 0, color: isDark ? '#2DC491' : '#0F6E56', bg: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', border: isDark ? '#2DC491' : '#9FE1CB' },
+            { label: t('vendor.dashboard.commission'), val: -(f.commission_plateforme || 0), color: isDark ? '#E87D55' : '#D85A30', bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3' },
+            { label: t('vendor.dashboard.rejectedLosses'), val: -(f.pertes_rejets || 0), color: isDark ? '#E87D55' : '#D85A30', bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3' },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl p-4"
               style={{ background: s.bg, border: `1.5px solid ${s.border}` }}>
@@ -125,7 +127,7 @@ export default function DashboardVendeur() {
           }}>
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle size={18} />
-            <h3 className="font-black text-sm" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>Stock faible — action requise</h3>
+            <h3 className="font-black text-sm" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>{t('vendor.dashboard.lowStockActionRequired')}</h3>
           </div>
           <div className="flex flex-col gap-2 mb-3">
             {dashboard.alertes_stock.map((a) => (
@@ -134,7 +136,7 @@ export default function DashboardVendeur() {
                 <span className="text-xl flex-shrink-0"><Package size={18} /></span>
                 <span className="text-sm font-semibold flex-1" style={{ color: isDark ? '#F3A83B' : '#854F0B' }}>{a.nom}</span>
                 <span className="font-black text-xs px-2.5 py-1 rounded-full" style={{ background: '#D85A30', color: '#fff' }}>
-                  {a.stock} restant{a.stock > 1 ? 's' : ''}
+                  {a.stock} {a.stock > 1 ? t('common.remainingPlural') : t('common.remaining')}
                 </span>
               </div>
             ))}
@@ -142,7 +144,7 @@ export default function DashboardVendeur() {
           <button onClick={() => navigate('/vendeur/catalogue')}
             className="w-full py-2.5 rounded-xl text-xs font-black cursor-pointer"
             style={{ background: '#BA7517', color: '#fff', border: 'none' }}>
-            Mettre à jour les stocks →
+            {t('vendor.dashboard.updateStock')}
           </button>
         </div>
       )}
@@ -150,11 +152,11 @@ export default function DashboardVendeur() {
       {/* COMMANDES RECENTES */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commandes récentes</h2>
+          <h2 className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{t('vendor.dashboard.recentOrders')}</h2>
           <button onClick={() => navigate('/vendeur/commandes')}
             className="text-xs font-semibold cursor-pointer"
             style={{ color: '#BA7517', background: 'none', border: 'none' }}>
-            Voir tout →
+            {t('vendor.dashboard.viewAll')}
           </button>
         </div>
         <div className="flex flex-col gap-2">
@@ -166,8 +168,8 @@ export default function DashboardVendeur() {
                 className="w-full text-left rounded-2xl px-4 py-3 flex items-center gap-3 cursor-pointer transition-all active:scale-98"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                 <div className="flex-1">
-                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{c.id}</div>
-                  <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{c.heure} · {c.articles} articles</div>
+                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{t('vendor.dashboard.orderNumber')}{c.id}</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{c.heure} · {c.articles} {t('vendor.dashboard.articles')}</div>
                 </div>
                 <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{c.total.toLocaleString()} F</div>
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
@@ -179,7 +181,7 @@ export default function DashboardVendeur() {
           })}
           {recentOrders.length === 0 && (
             <div className="text-center py-6 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-              <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Aucune commande récente</p>
+              <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t('vendor.dashboard.noRecentOrders')}</p>
             </div>
           )}
         </div>
@@ -188,12 +190,12 @@ export default function DashboardVendeur() {
       {/* ACTIONS RAPIDES */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { icon: Package, label: 'Mon catalogue', sub: 'Gérer mes produits', route: '/vendeur/catalogue' },
-          { icon: ShoppingCart, label: 'Commandes', sub: 'Gérer les remises', route: '/vendeur/commandes' },
-          { icon: Undo2, label: 'Retours', sub: 'Articles rejetés', route: '/vendeur/retours' },
-          { icon: Flag, label: 'Signaler', sub: 'Client ou livreur', route: '/vendeur/signalement' },
+          { icon: Package, label: t('vendor.dashboard.myCatalog'), sub: t('vendor.dashboard.manageProducts'), route: '/vendeur/catalogue' },
+          { icon: ShoppingCart, label: t('vendor.dashboard.orders'), sub: t('vendor.dashboard.manageHandovers'), route: '/vendeur/commandes' },
+          { icon: Undo2, label: t('vendor.dashboard.returns'), sub: t('vendor.dashboard.rejectedItems'), route: '/vendeur/retours' },
+          { icon: Flag, label: t('vendor.dashboard.report'), sub: t('vendor.dashboard.customerOrDriver'), route: '/vendeur/signalement' },
         ].map((a) => (
-          <button key={a.label} onClick={() => navigate(a.route)}
+          <button key={a.route} onClick={() => navigate(a.route)}
             className="rounded-2xl p-4 text-left cursor-pointer transition-all hover:shadow-md active:scale-98"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
             <div className="mb-2"><a.icon size={28} /></div>

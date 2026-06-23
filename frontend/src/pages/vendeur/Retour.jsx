@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { api } from '../../services/api'
 import { AlertTriangle, CheckCircle, ChevronDown } from 'lucide-react'
 
@@ -9,6 +10,7 @@ const PAGE_SIZE = 10
 export default function RetourVendeur() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
+  const { t } = useLang()
   const isDark = resolved === 'dark'
   const [retours, setRetours] = useState([])
   const [loading, setLoading] = useState(true)
@@ -48,8 +50,8 @@ export default function RetourVendeur() {
   }
 
   const STATUT_STYLE = {
-    a_recuperer: { label: 'À récupérer', bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
-    recupere: { label: 'Récupéré', bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
+    a_recuperer: { label: t('vendor.retours.status.aRecuperer'), bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
+    recupere: { label: t('vendor.retours.status.recupere'), bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
   }
 
   const filtres = {
@@ -90,7 +92,7 @@ export default function RetourVendeur() {
           <button onClick={fetchReturns}
             className="mt-3 px-4 py-2 rounded-xl text-xs font-bold"
             style={{ background: '#BA7517', color: '#fff' }}>
-            Réessayer
+            {t('common.retry')}
           </button>
         </div>
       </div>
@@ -111,8 +113,8 @@ export default function RetourVendeur() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Retours</div>
-            <div className="text-white/70 text-xs">{retours?.length ?? 0} retour(s)</div>
+            <div className="text-white font-black text-base leading-tight">{t('vendor.retours.title')}</div>
+            <div className="text-white/70 text-xs">{retours?.length ?? 0} {t('vendor.retours.count')}</div>
           </div>
         </div>
       </div>
@@ -122,11 +124,11 @@ export default function RetourVendeur() {
         style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow)' }}>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <div className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Retours</div>
+            <div className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t('vendor.retours.title')}</div>
             <div className="font-black text-2xl" style={{ color: 'var(--text-primary)' }}>{totalRetours}</div>
           </div>
           <div>
-            <div className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Pertes estimées</div>
+            <div className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t('vendor.retours.estimatedLosses')}</div>
             <div className="font-black text-2xl" style={{ color: '#D85A30' }}>{totalPertes.toLocaleString()} F</div>
           </div>
         </div>
@@ -135,9 +137,9 @@ export default function RetourVendeur() {
       {/* Filtres */}
       <div className="flex flex-wrap gap-2">
         {[
-          { id: 'tous', label: `Tous (${totalRetours})` },
-          { id: 'a_recuperer', label: `À récupérer (${enAttente})` },
-          { id: 'recupere', label: `Récupérés (${filtres.recupere.length})` },
+          { id: 'tous', label: `${t('common.all')} (${totalRetours})` },
+          { id: 'a_recuperer', label: `${t('vendor.retours.status.aRecuperer')} (${enAttente})` },
+          { id: 'recupere', label: `${t('vendor.retours.status.recupere')}s (${filtres.recupere.length})` },
         ].map((item) => (
           <button key={item.id} onClick={() => { setFiltre(item.id); setVisibleCount(PAGE_SIZE) }}
             className="px-3 py-2 rounded-full text-xs font-bold cursor-pointer"
@@ -155,7 +157,7 @@ export default function RetourVendeur() {
         <div className="text-center py-16 rounded-3xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="flex justify-center mb-3"><CheckCircle size={48} style={{ color: 'var(--text-muted)' }} /></div>
           <p className="font-black text-sm" style={{ color: 'var(--text-muted)' }}>
-            Aucun retour à afficher dans cette catégorie.
+            {t('vendor.retours.noReturns')}
           </p>
         </div>
       ) : (
@@ -170,9 +172,9 @@ export default function RetourVendeur() {
                 <div className="flex items-center justify-between gap-3 px-4 py-3"
                   style={{ background: 'var(--surface-alt)', borderBottom: '1px solid var(--border)' }}>
                   <div>
-                    <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Retour #{retour.id_commande}-{retour.id_produit}</div>
+                    <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{t('vendor.retours.return')} #{retour.id_commande}-{retour.id_produit}</div>
                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      Commande #{retour.commandeId} · {retour.date}
+                      {t('vendor.retours.order')} #{retour.commandeId} · {retour.date}
                     </div>
                   </div>
                   <span className="text-xs font-bold px-3 py-1.5 rounded-full"
@@ -184,11 +186,11 @@ export default function RetourVendeur() {
                 <div className="px-4 py-3 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-2xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Produit</div>
+                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('vendor.retours.product')}</div>
                       <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{retour.produit}</div>
                     </div>
                     <div className="rounded-2xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Quantité</div>
+                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('vendor.retours.quantity')}</div>
                       <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
                         {retour.qte} {retour.unite}
                       </div>
@@ -196,24 +198,24 @@ export default function RetourVendeur() {
                   </div>
 
                   <div className="rounded-2xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                    <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Motif du rejet</div>
+                    <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('vendor.retours.rejectionReason')}</div>
                     <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{retour.motif}</div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-2xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Client</div>
+                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('common.client')}</div>
                       <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{retour.client}</div>
                     </div>
                     <div className="rounded-2xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Lieu de retour</div>
+                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('vendor.retours.returnLocation')}</div>
                       <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{retour.lieu}</div>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Perte estimée</div>
+                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('vendor.retours.estimatedLoss')}</div>
                       <div className="font-black text-sm" style={{ color: '#D85A30' }}>{retour.perte.toLocaleString()} F</div>
                     </div>
                     {retour.statut === 'a_recuperer' ? (
@@ -226,10 +228,10 @@ export default function RetourVendeur() {
                           border: 'none',
                           opacity: isUpdating ? 0.7 : 1,
                         }}>
-                        {isUpdating ? '...' : 'Marquer récupéré'}
+                        {isUpdating ? '...' : t('vendor.retours.markRecovered')}
                       </button>
                     ) : (
-                      <div className="text-xs font-bold flex items-center gap-1" style={{ color: isDark ? '#34D399' : '#0F6E56' }}><CheckCircle size={12} /> Récupération confirmée</div>
+                      <div className="text-xs font-bold flex items-center gap-1" style={{ color: isDark ? '#34D399' : '#0F6E56' }}><CheckCircle size={12} /> {t('vendor.retours.recoveryConfirmed')}</div>
                     )}
                   </div>
                 </div>
@@ -243,7 +245,7 @@ export default function RetourVendeur() {
         <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
           className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-          <ChevronDown size={14} /> Charger plus ({liste.length - visibleCount} restant{liste.length - visibleCount > 1 ? 's' : ''})
+          <ChevronDown size={14} /> {t('common.loadMore')} ({liste.length - visibleCount} {liste.length - visibleCount > 1 ? t('common.remainingPlural') : t('common.remainingSingular')})
         </button>
       )}
 

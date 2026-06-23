@@ -2,26 +2,28 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { AlertTriangle, CheckCircle, RefreshCw, Loader2, Receipt, ChevronDown } from 'lucide-react'
 
 const PAGE_SIZE = 10
-
-const STATUT_STYLE = {
-  en_attente: { label: 'En attente', bg: '#FAEEDA', color: '#854F0B', icon: Loader2 },
-  paye: { label: 'Payé', bg: '#E1F5EE', color: '#0F6E56', icon: CheckCircle },
-  partiel: { label: 'Partiel', bg: '#E6F1FB', color: '#185FA5', icon: RefreshCw },
-}
 
 export default function Factures() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
   const [factures, setFactures] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [filtre, setFiltre] = useState('tous')
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [detail, setDetail] = useState(null)
+
+  const STATUT_STYLE = {
+    en_attente: { label: t('vendor.factures.status.enAttente'), bg: '#FAEEDA', color: '#854F0B', icon: Loader2 },
+    paye: { label: t('vendor.factures.status.paye'), bg: '#E1F5EE', color: '#0F6E56', icon: CheckCircle },
+    partiel: { label: t('vendor.factures.status.partiel'), bg: '#E6F1FB', color: '#185FA5', icon: RefreshCw },
+  }
 
   useEffect(() => {
     api.get('/vendor/factures')
@@ -80,8 +82,8 @@ export default function Factures() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Factures</div>
-            <div className="text-white/70 text-xs">{factures?.length ?? 0} facture(s)</div>
+            <div className="text-white font-black text-base leading-tight">{t('vendor.factures.title')}</div>
+            <div className="text-white/70 text-xs">{factures?.length ?? 0} {t('vendor.factures.count')}</div>
           </div>
         </div>
       </div>
@@ -90,9 +92,9 @@ export default function Factures() {
         <>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'En attente', val: totalEnAttente, accent: '#BA7517' },
-              { label: 'Encaissé', val: totalPaye, accent: '#1D9E75' },
-              { label: 'Commissions', val: totalCommission, accent: '#D85A30' },
+              { label: t('vendor.factures.pending'), val: totalEnAttente, accent: '#BA7517' },
+              { label: t('vendor.factures.collected'), val: totalPaye, accent: '#1D9E75' },
+              { label: t('vendor.factures.commissions'), val: totalCommission, accent: '#D85A30' },
             ].map((s) => (
               <div key={s.label} className="rounded-2xl p-3"
                 style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
@@ -104,9 +106,9 @@ export default function Factures() {
 
           <div className="flex gap-2">
             {[
-              { id: 'tous', label: 'Toutes' },
-              { id: 'en_attente', label: 'En attente' },
-              { id: 'paye', label: 'Payées' },
+              { id: 'tous', label: t('common.allFem') },
+              { id: 'en_attente', label: t('vendor.factures.status.enAttente') },
+              { id: 'paye', label: t('vendor.factures.status.payePlural') },
             ].map((f) => (
               <button key={f.id} onClick={() => { setFiltre(f.id); setVisibleCount(PAGE_SIZE) }}
                 className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer"
@@ -123,7 +125,7 @@ export default function Factures() {
           {liste.length === 0 ? (
             <div className="text-center py-12">
               <div className="flex justify-center mb-3"><Receipt size={48} style={{ color: 'var(--text-muted)' }} /></div>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>Aucune facture.</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>{t('vendor.factures.noInvoices')}</p>
             </div>
           ) : (
             visibleItems.map((f) => {
@@ -135,7 +137,7 @@ export default function Factures() {
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{f.id}</div>
-                      <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Cmd #{f.commandeId} · {f.client}</div>
+                      <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('vendor.factures.cmd')} #{f.commandeId} · {f.client}</div>
                     </div>
                     <span className="text-xs font-bold px-2.5 py-1 rounded-full"
                       style={{ background: st.bg, color: st.color }}>
@@ -143,7 +145,7 @@ export default function Factures() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{f.date} · {f.articles.length} articles</span>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{f.date} · {f.articles.length} {t('vendor.factures.articles')}</span>
                     <span className="font-black text-sm" style={{ color: '#BA7517' }}>{f.montant_total_du.toLocaleString()} F</span>
                   </div>
                 </button>
@@ -155,7 +157,7 @@ export default function Factures() {
             <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
               className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
               style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-              <ChevronDown size={14} /> Charger plus ({liste.length - visibleCount} restant{liste.length - visibleCount > 1 ? 's' : ''})
+              <ChevronDown size={14} /> {t('common.loadMore')} ({liste.length - visibleCount} {liste.length - visibleCount > 1 ? t('common.remainingPlural') : t('common.remainingSingular')})
             </button>
           )}
         </>
@@ -167,7 +169,7 @@ export default function Factures() {
               style={{ background: 'var(--surface-alt)', border: '1px solid var(--border)' }}>←</button>
             <div className="flex-1">
               <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{facture.id}</div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Commande #{facture.commandeId}</div>
+              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('vendor.factures.order')} #{facture.commandeId}</div>
             </div>
             <span className="text-xs font-bold px-3 py-1.5 rounded-full"
               style={{ background: STATUT_STYLE[facture.statut_paiement]?.bg, color: STATUT_STYLE[facture.statut_paiement]?.color }}>
@@ -177,14 +179,14 @@ export default function Factures() {
 
           <div className="rounded-2xl p-4"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Client</div>
+            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>{t('common.client')}</div>
             <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{facture.client}</div>
-            <div className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>Date facture : {facture.date}</div>
+            <div className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>{t('vendor.factures.invoiceDate')}: {facture.date}</div>
           </div>
 
           <div className="rounded-2xl p-4"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-            <div className="text-xs font-bold mb-3" style={{ color: 'var(--text-secondary)' }}>Articles</div>
+            <div className="text-xs font-bold mb-3" style={{ color: 'var(--text-secondary)' }}>{t('vendor.factures.articlesTitle')}</div>
             <div className="flex flex-col gap-2">
               {facture.articles.map((a, i) => (
                 <div key={i} className="flex items-center justify-between px-3 py-2.5 rounded-xl"
@@ -198,13 +200,13 @@ export default function Factures() {
 
           <div className="rounded-2xl p-4"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-            <div className="text-xs font-bold mb-3" style={{ color: 'var(--text-secondary)' }}>Détail financier</div>
+            <div className="text-xs font-bold mb-3" style={{ color: 'var(--text-secondary)' }}>{t('vendor.factures.financialDetail')}</div>
             <div className="flex flex-col gap-2">
               {[
-                { label: 'Marchandises', val: facture.total_marchandises },
-                { label: 'Frais livraison', val: facture.frais_livraison },
-                { label: 'Commission (0,6%)', val: facture.commission, negative: true },
-                ...(facture.frais_retour > 0 ? [{ label: 'Frais retour', val: facture.frais_retour, negative: true }] : []),
+                { label: t('vendor.factures.merchandise'), val: facture.total_marchandises },
+                { label: t('vendor.factures.deliveryFees'), val: facture.frais_livraison },
+                { label: t('vendor.factures.commissionRate'), val: facture.commission, negative: true },
+                ...(facture.frais_retour > 0 ? [{ label: t('vendor.factures.returnFees'), val: facture.frais_retour, negative: true }] : []),
               ].map((l) => (
                 <div key={l.label} className="flex items-center justify-between">
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{l.label}</span>
@@ -215,7 +217,7 @@ export default function Factures() {
               ))}
               <div className="h-px my-1" style={{ background: 'var(--border)' }} />
               <div className="flex items-center justify-between">
-                <span className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Total dû</span>
+                <span className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>{t('vendor.factures.totalDue')}</span>
                 <span className="text-sm font-black" style={{ color: '#BA7517' }}>{facture.montant_total_du.toLocaleString()} F</span>
               </div>
             </div>
@@ -226,20 +228,20 @@ export default function Factures() {
               style={{ background: '#E1F5EE', border: '1.5px solid #9FE1CB' }}>
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle size={20} style={{ color: '#0F6E56' }} />
-                <div className="text-xs font-black" style={{ color: '#0F6E56' }}>Paiement reçu</div>
+                <div className="text-xs font-black" style={{ color: '#0F6E56' }}>{t('vendor.factures.paymentReceived')}</div>
               </div>
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between text-xs">
-                  <span style={{ color: '#0F6E56' }}>Mode</span>
+                  <span style={{ color: '#0F6E56' }}>{t('vendor.factures.mode')}</span>
                   <span className="font-bold" style={{ color: '#0F6E56' }}>{facture.mode_reglement}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span style={{ color: '#0F6E56' }}>Montant reçu</span>
+                  <span style={{ color: '#0F6E56' }}>{t('vendor.factures.amountReceived')}</span>
                   <span className="font-bold" style={{ color: '#0F6E56' }}>{(facture.montant_recu || 0).toLocaleString()} F</span>
                 </div>
                 {facture.date_paiement && (
                   <div className="flex justify-between text-xs">
-                    <span style={{ color: '#0F6E56' }}>Date</span>
+                    <span style={{ color: '#0F6E56' }}>{t('common.date')}</span>
                     <span className="font-bold" style={{ color: '#0F6E56' }}>{facture.date_paiement}</span>
                   </div>
                 )}
@@ -253,7 +255,7 @@ export default function Factures() {
               <div className="flex items-center gap-2">
                 <Loader2 size={20} style={{ color: '#854F0B' }} className="animate-spin" />
                 <div className="text-xs font-bold" style={{ color: '#854F0B' }}>
-                  Paiement en attente — le paiement sera effectué en ligne.
+                  {t('vendor.factures.pendingPaymentInfo')}
                 </div>
               </div>
             </div>

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { Loader2, CheckCircle, XCircle, RefreshCw, Smartphone, ShieldCheck, ArrowLeft, Download, FileText } from 'lucide-react'
 
 function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
@@ -9,6 +10,7 @@ function formatPrice(n) { return (n || 0).toLocaleString() + ' F' }
 export default function PaiementClient() {
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
@@ -59,7 +61,7 @@ export default function PaiementClient() {
           } else if (pollCount >= MAX_POLLS) {
             clearInterval(intervalRef.current)
             setLoading(false)
-            showToast('Délai dépassé — vérifiez votre commande depuis l\'historique')
+            showToast(t('toast.timeout'))
           }
         } catch {
           if (pollCount >= MAX_POLLS) {
@@ -74,7 +76,7 @@ export default function PaiementClient() {
 
       return () => { clearInterval(intervalRef.current); setLoading(false) }
     }
-  }, [idCommande, ref, statusParam, navigate])
+  }, [idCommande, ref, statusParam, navigate, t])
 
   // Portal timeout fallback — if FedaPay redirect hangs
   useEffect(() => {
@@ -104,17 +106,17 @@ export default function PaiementClient() {
             setTotal(data.facture.montant_total_du)
           }
         })
-        .catch(() => { showToast('Erreur chargement facture — réessayez') })
+        .catch(() => { showToast(t('toast.invoiceError')) })
     }
-  }, [paymentStatus, idCommande])
+  }, [paymentStatus, idCommande, t])
 
   async function initierPaiement() {
     if (!telephone.trim()) {
-      showToast('Veuillez saisir votre numéro de téléphone')
+      showToast(t('toast.phoneRequired'))
       return
     }
     if (!idCommande) {
-      showToast('Commande introuvable — retour à la liste')
+      showToast(t('toast.orderNotFound'))
       setTimeout(() => navigate('/client/mes-commandes'), 1500)
       return
     }
@@ -127,9 +129,9 @@ export default function PaiementClient() {
       }, { timeout: 60000 })
       window.location.href = res.checkout_url
     } catch (err) {
-      const msg = err.message || 'Erreur lors de l\'initiation du paiement'
+      const msg = err.message || t('toast.retryError')
       showToast(msg.includes('trop de temps') || msg.includes('contacter')
-        ? `${msg}. Le serveur peut se réveiller au prochain essai.`
+        ? `${msg}. ${t('toast.retryError')}`
         : msg)
       setInitiating(false)
     }
@@ -153,39 +155,39 @@ export default function PaiementClient() {
     if (!facture) return
     const lines = [
       '═══════════════════════════════════════',
-      '           VITECOMM — FACTURE',
+      `           ${t('paiement.invoice.header')}`,
       '═══════════════════════════════════════',
       '',
-      `Facture #${facture.facture.id_facture}`,
-      `Commande #${facture.commande.id_commande}`,
-      `Date : ${new Date(facture.facture.date_emission).toLocaleDateString('fr-FR')}`,
+      t('paiement.invoice.invoiceNum', { id: facture.facture.id_facture }),
+      t('paiement.invoice.orderNum', { id: facture.commande.id_commande }),
+      t('paiement.invoice.dateLine', { date: new Date(facture.facture.date_emission).toLocaleDateString('fr-FR') }),
       '',
-      '───────── Articles ─────────',
+      `───────── ${t('paiement.invoice.articlesSection')} ─────────`,
       ...facture.commande.articles.map(a =>
         `  ${a.nom}  ×${a.quantite}  ${formatPrice(a.sous_total)}`
       ),
       '',
-      '───────── Détails ─────────',
-      `  Marchandises    : ${formatPrice(facture.facture.montant_marchandises)}`,
-      `  Livraison       : ${formatPrice(facture.facture.montant_frais_livraison)}`,
-      `  Frais retour    : ${formatPrice(facture.facture.montant_frais_retour)}`,
-      `  Commission      : ${formatPrice(facture.facture.montant_commission)}`,
+      `───────── ${t('paiement.invoice.detailsSection')} ─────────`,
+      `  ${t('paiement.invoice.merchandise')}    : ${formatPrice(facture.facture.montant_marchandises)}`,
+      `  ${t('paiement.invoice.deliveryLabel')}       : ${formatPrice(facture.facture.montant_frais_livraison)}`,
+      `  ${t('paiement.invoice.returnFeeLabel')}    : ${formatPrice(facture.facture.montant_frais_retour)}`,
+      `  ${t('paiement.invoice.commissionLabel')}      : ${formatPrice(facture.facture.montant_commission)}`,
       '─────────────────────────────',
-      `  TOTAL DU        : ${formatPrice(facture.facture.montant_total_du)}`,
+      `  ${t('paiement.invoice.totalDue')}        : ${formatPrice(facture.facture.montant_total_du)}`,
       '',
     ]
     if (facture.paiement) {
       lines.push(
-        '───────── Paiement ─────────',
-        `  Montant reçu    : ${formatPrice(facture.paiement.montant_percu)}`,
-        `  Mode            : ${facture.paiement.mode_reglement}`,
-        `  Référence       : ${facture.paiement.reference_transaction}`,
-        `  Statut          : ${facture.paiement.statut}`,
-        `  Date            : ${new Date(facture.paiement.date_paiement).toLocaleString('fr-FR')}`,
+        `───────── ${t('paiement.invoice.paymentSection')} ─────────`,
+        `  ${t('paiement.invoice.amountReceived')}    : ${formatPrice(facture.paiement.montant_percu)}`,
+        `  ${t('paiement.invoice.methodLabel')}            : ${facture.paiement.mode_reglement}`,
+        `  ${t('paiement.invoice.referenceLabel')}       : ${facture.paiement.reference_transaction}`,
+        `  ${t('paiement.invoice.statusLabel')}          : ${facture.paiement.statut}`,
+        `  ${t('paiement.invoice.dateLabel')}            : ${new Date(facture.paiement.date_paiement).toLocaleString('fr-FR')}`,
         '',
       )
     }
-    lines.push('═══════════════════════════════════════', '  Merci pour votre achat sur ViteComm', '═══════════════════════════════════════')
+    lines.push('═══════════════════════════════════════', `  ${t('paiement.invoice.thankYou')}`, '═══════════════════════════════════════')
 
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
@@ -217,8 +219,8 @@ export default function PaiementClient() {
             <ArrowLeft size={16} className="text-white" />
           </button>
           <div>
-            <div className="text-white font-black text-base">Paiement sécurisé</div>
-            <div className="text-white/70 text-xs">Commande #{idCommande} · Mobile Money</div>
+            <div className="text-white font-black text-base">{t('paiement.title')}</div>
+            <div className="text-white/70 text-xs">{t('paiement.subtitle', { id: idCommande })}</div>
           </div>
         </div>
       </div>
@@ -235,16 +237,16 @@ export default function PaiementClient() {
                   <Smartphone size={24} style={{ color: '#1D9E75' }} />
                 </div>
                 <div>
-                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Payer par Mobile Money</div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>MTN MoMo, Moov Pay, Celtis Cash</div>
+                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{t('paiement.payByMobile')}</div>
+                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('paiement.providers')}</div>
                 </div>
               </div>
 
               <div className="mb-4">
-                <label className="text-xs font-bold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>Numéro de téléphone</label>
+                <label className="text-xs font-bold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>{t('paiement.phoneLabel')}</label>
                 <input
                   type="tel"
-                  placeholder="ex: 0197000000"
+                  placeholder={t('paiement.phonePlaceholder')}
                   value={telephone}
                   onChange={(e) => setTelephone(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none"
@@ -253,7 +255,7 @@ export default function PaiementClient() {
               </div>
 
               <div className="mb-4">
-                <label className="text-xs font-bold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>Mode de paiement</label>
+                <label className="text-xs font-bold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>{t('paiement.paymentMethod')}</label>
                 <div className="flex gap-2">
                   {[
                     { id: 'momo', label: 'MTN MoMo' },
@@ -275,7 +277,7 @@ export default function PaiementClient() {
 
               <div className="flex flex-col gap-2" style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: 'var(--text-muted)' }}>Total à payer</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{t('paiement.totalToPay')}</span>
                   <span className="font-black text-lg" style={{ color: '#1D9E75' }}>{formatPrice(total)}</span>
                 </div>
               </div>
@@ -291,12 +293,12 @@ export default function PaiementClient() {
                 opacity: initiating ? 0.8 : 1,
               }}>
               {initiating
-                ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" /> Redirection vers FedaPay…</span>
-                : <span className="flex items-center justify-center gap-2"><ShieldCheck size={16} /> Payer {formatPrice(total)}</span>}
+                ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" /> {t('paiement.redirecting')}</span>
+                : <span className="flex items-center justify-center gap-2"><ShieldCheck size={16} /> {t('paiement.payAmount', { amount: formatPrice(total) })}</span>}
             </button>
 
             <p className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-              Vous serez redirigé vers FedaPay pour confirmer le paiement.
+              {t('paiement.redirectNotice')}
             </p>
           </div>
         )}
@@ -308,25 +310,25 @@ export default function PaiementClient() {
               <Loader2 size={48} className="animate-spin" style={{ color: '#1D9E75' }} />
             </div>
             <h2 className="font-black text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
-              Paiement en cours…
+              {t('paiement.inProgress')}
             </h2>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              Confirmez le paiement sur votre téléphone.
+              {t('paiement.confirmOnPhone')}
             </p>
             <p className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>
-              Transaction : {ref}
+              {t('paiement.transaction', { ref })}
             </p>
 
             {portalTimeout && (
               <div className="mt-6 rounded-2xl p-5 text-left" style={{ background: isDark ? 'rgba(251,191,36,0.08)' : '#FFFBEB', border: '1.5px solid #F59E0B' }}>
-                <p className="text-sm font-bold mb-2" style={{ color: '#92400E' }}>Le portail FedaPay ne répond pas ?</p>
+                <p className="text-sm font-bold mb-2" style={{ color: '#92400E' }}>{t('paiement.portalNotResponding')}</p>
                 <p className="text-xs mb-3" style={{ color: '#92400E' }}>
-                  Si la page de paiement est bloquée, vous pouvez revenir ici et vérifier le statut de votre paiement.
+                  {t('paiement.portalTimeoutDesc')}
                 </p>
                 <button onClick={manualRefresh}
                   className="w-full py-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center gap-2"
                   style={{ background: '#F59E0B', color: '#fff', border: 'none' }}>
-                  <RefreshCw size={14} /> Vérifier mon paiement
+                  <RefreshCw size={14} /> {t('paiement.checkPayment')}
                 </button>
               </div>
             )}
@@ -335,12 +337,12 @@ export default function PaiementClient() {
               <button onClick={manualRefresh}
                 className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-                <RefreshCw size={14} /> Vérifier
+                <RefreshCw size={14} /> {t('paiement.verify')}
               </button>
               <button onClick={() => { clearInterval(intervalRef.current); navigate('/client/mes-commandes') }}
                 className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-                Annuler
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -356,10 +358,10 @@ export default function PaiementClient() {
                 </div>
               </div>
               <h2 className="font-black text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
-                Paiement confirmé !
+                {t('paiement.confirmed')}
               </h2>
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                Votre commande #{idCommande} a été payée avec succès.
+                {t('paiement.orderPaid', { id: idCommande })}
               </p>
             </div>
 
@@ -368,7 +370,7 @@ export default function PaiementClient() {
               <div className="rounded-2xl p-5 mb-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                 <div className="flex items-center gap-2 mb-3">
                   <FileText size={16} style={{ color: 'var(--text-muted)' }} />
-                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Facture #{facture.facture.id_facture}</div>
+                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{t('paiement.invoiceNumber', { id: facture.facture.id_facture })}</div>
                 </div>
 
                 <div className="space-y-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -382,17 +384,17 @@ export default function PaiementClient() {
 
                 <div className="mt-3 pt-3 space-y-1 text-xs" style={{ borderTop: '1px solid var(--border)' }}>
                   <div className="flex justify-between">
-                    <span style={{ color: 'var(--text-muted)' }}>Livraison</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{t('paiement.delivery')}</span>
                     <span style={{ color: 'var(--text-primary)' }}>{formatPrice(facture.facture.montant_frais_livraison)}</span>
                   </div>
                   {facture.facture.montant_frais_retour > 0 && (
                     <div className="flex justify-between">
-                      <span style={{ color: 'var(--text-muted)' }}>Frais retour</span>
+                      <span style={{ color: 'var(--text-muted)' }}>{t('paiement.returnFee')}</span>
                       <span style={{ color: 'var(--text-primary)' }}>{formatPrice(facture.facture.montant_frais_retour)}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-black text-sm pt-1">
-                    <span style={{ color: 'var(--text-primary)' }}>Total payé</span>
+                    <span style={{ color: 'var(--text-primary)' }}>{t('paiement.totalPaid')}</span>
                     <span style={{ color: '#1D9E75' }}>{formatPrice(facture.facture.montant_total_du)}</span>
                   </div>
                 </div>
@@ -400,29 +402,29 @@ export default function PaiementClient() {
                 {facture.paiement && (
                   <div className="mt-3 pt-3 text-[10px] space-y-1" style={{ borderTop: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                     <div>Réf: {facture.paiement.reference_transaction}</div>
-                    <div>Payé le {new Date(facture.paiement.date_paiement).toLocaleString('fr-FR')}</div>
+                    <div>{t('paiement.paidOn', { date: new Date(facture.paiement.date_paiement).toLocaleString('fr-FR') })}</div>
                   </div>
                 )}
 
                 <button onClick={downloadFacture}
                   className="mt-4 w-full py-3 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center gap-2"
                   style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', border: 'none' }}>
-                  <Download size={14} /> Télécharger la facture
+                  <Download size={14} /> {t('invoice.download')}
                 </button>
               </div>
             )}
 
             {!facture && isCompleted && idCommande && (
               <div className="rounded-2xl p-4 mb-4 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-                <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Facture en cours de chargement…</p>
+                <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('paiement.invoiceLoading')}</p>
                 <button onClick={() => {
                   api.get(`/client/orders/${idCommande}/facture`)
                     .then(data => { setFacture(data); if (data?.facture?.montant_total_du) setTotal(data.facture.montant_total_du) })
-                    .catch(() => showToast('Erreur — réessayez'))
+                    .catch(() => showToast(t('toast.retryError')))
                 }}
                   className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
                   style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', border: 'none' }}>
-                  <RefreshCw size={14} className="inline" /> Réessayer
+                  <RefreshCw size={14} className="inline" /> {t('paiement.retry')}
                 </button>
               </div>
             )}
@@ -432,7 +434,7 @@ export default function PaiementClient() {
               className="w-full py-3 rounded-2xl text-white font-black text-sm cursor-pointer"
               style={{ background: '#1D9E75', border: 'none' }}
             >
-              Évaluer ma commande →
+              {t('paiement.reviewOrder')}
             </button>
           </div>
         )}
@@ -446,10 +448,10 @@ export default function PaiementClient() {
               </div>
             </div>
             <h2 className="font-black text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
-              Paiement échoué
+              {t('paiement.failed')}
             </h2>
             <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-              Le paiement n'a pas pu être traité. Vous pouvez réessayer.
+              {t('paiement.failedDesc')}
             </p>
             <button
               onClick={() => {
@@ -459,7 +461,7 @@ export default function PaiementClient() {
               className="w-full py-3 rounded-2xl text-white font-black text-sm cursor-pointer flex items-center justify-center gap-2"
               style={{ background: '#1D9E75', border: 'none' }}
             >
-              <RefreshCw size={14} /> Réessayer le paiement
+              <RefreshCw size={14} /> {t('paiement.retryPayment')}
             </button>
           </div>
         )}

@@ -6,6 +6,7 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Package, Loader2, XCircle, Building2, Search, Star, Home, Leaf, Flame, Droplets, Wheat, Fish, Egg, Beef, Apple, ChevronDown } from 'lucide-react'
+import { useLang } from '../../context/LangContext'
 
 const CATEGORY_ICONS = {
   'Légumes': Leaf,
@@ -65,6 +66,7 @@ export default function MarcheDetail() {
   const { marketId } = useParams()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
 
   const [market, setMarket] = useState(null)
   const [categories, setCategories] = useState([])
@@ -156,7 +158,7 @@ export default function MarcheDetail() {
       <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
           <div className="mb-3 flex justify-center"><Loader2 size={32} className="animate-spin" /></div>
-          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Chargement de l'étal virtuel…</div>
+          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>{t('marche.loading')}</div>
         </div>
       </div>
     )
@@ -167,9 +169,9 @@ export default function MarcheDetail() {
       <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
           <div className="mb-3 flex justify-center"><XCircle size={32} /></div>
-          <div className="font-bold text-sm mb-4" style={{ color: 'var(--text-muted)' }}>Marché introuvable</div>
+          <div className="font-bold text-sm mb-4" style={{ color: 'var(--text-muted)' }}>{t('marche.notFound')}</div>
           <button onClick={() => navigate('/client/accueil')} className="text-sm font-bold text-emerald-600 cursor-pointer">
-            ← Retour à l'accueil
+            {t('marche.backToHome')}
           </button>
         </div>
       </div>
@@ -198,7 +200,7 @@ export default function MarcheDetail() {
 
         <div className="absolute bottom-4 left-4 right-4 text-white">
           <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-600">
-            <Building2 size={10} className="inline align-middle" /> Marché Virtuel
+            <Building2 size={10} className="inline align-middle" /> {t('marche.virtualMarket')}
           </span>
           <h1 className="text-lg font-black mt-1 leading-tight">{market.nom}</h1>
           <p className="text-[10px] text-gray-300 mt-0.5 line-clamp-1">{market.description}</p>
@@ -252,7 +254,7 @@ export default function MarcheDetail() {
               <div className="flex gap-2 mt-0.5 text-[9px] font-bold">
                 <span className="text-amber-600"><Star size={10} className="inline align-middle" /> {activeVendor.score_reputation.toFixed(1)}</span>
                 <span style={{ color: 'var(--text-muted)' }}>•</span>
-                <span style={{ color: 'var(--text-muted)' }}><Package size={10} className="inline align-middle" /> {activeVendor._count?.produits || 0} articles</span>
+                <span style={{ color: 'var(--text-muted)' }}><Package size={10} className="inline align-middle" /> {t('marche.articles', { count: activeVendor._count?.produits || 0 })}</span>
               </div>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -267,7 +269,7 @@ export default function MarcheDetail() {
                 onClick={() => goToVendorCatalogue(activeVendor.id_user)}
                 className="bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black px-3 py-1.5 rounded-xl transition-all cursor-pointer"
               >
-                Visiter →
+                {t('accueil.visit')}
               </button>
             </div>
           </div>
@@ -281,7 +283,7 @@ export default function MarcheDetail() {
           <input
             id="marche-search"
             type="text"
-            placeholder="Filtrer étals ou produits dans ce marché..."
+            placeholder={t('marche.search.placeholder')}
             value={recherche}
             onChange={e => setRecherche(e.target.value)}
             className="flex-1 bg-transparent outline-none text-xs font-medium"
@@ -319,15 +321,15 @@ export default function MarcheDetail() {
       {/* === Vendor Stalls Horizontal Scroll === */}
       <div className="px-5 mt-5">
         <h3 className="font-black text-[11px] uppercase tracking-widest mb-2.5 flex items-center justify-between" style={{ color: 'var(--text-primary)' }}>
-          <span>Étals dans ce marché</span>
+          <span>{t('marche.stallsInMarket')}</span>
           <span className="font-bold text-[10px] text-emerald-600 px-2.5 py-0.5 rounded-full normal-case" style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#ECFDF5' }}>
-            {vendorsFiltered.length} étals actifs
+            {t('marche.activeStalls', { count: vendorsFiltered.length })}
           </span>
         </h3>
 
         {vendorsFiltered.length === 0 ? (
           <div className="text-center py-5 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-            <p className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>Aucun étal trouvé.</p>
+            <p className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>{t('marche.noStalls')}</p>
           </div>
         ) : (
           <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible lg:grid-cols-4">
@@ -347,7 +349,7 @@ export default function MarcheDetail() {
                 </p>
                 <div className="flex items-center justify-between mt-2 pt-2 text-[9px] font-bold" style={{ borderTop: '1px solid var(--border)' }}>
                   <span className="text-amber-600"><Star size={10} className="inline align-middle" /> {v.score_reputation.toFixed(1)}</span>
-                  <span style={{ color: 'var(--text-muted)' }}>{v._count?.produits || 0} art.</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{t('marche.articlesShort', { count: v._count?.produits || 0 })}</span>
                 </div>
               </div>
             ))}
@@ -358,14 +360,14 @@ export default function MarcheDetail() {
       {/* === Market Products Grid === */}
       <div className="px-5 mt-6">
         <h3 className="font-black text-[11px] uppercase tracking-widest mb-2.5 flex items-center justify-between" style={{ color: 'var(--text-primary)' }}>
-          <span>Catalogue du Marché</span>
-          <span className="font-bold text-[10px] normal-case" style={{ color: 'var(--text-muted)' }}>{productsFiltered.length} article{productsFiltered.length !== 1 ? 's' : ''}</span>
+          <span>{t('marche.marketCatalogue')}</span>
+          <span className="font-bold text-[10px] normal-case" style={{ color: 'var(--text-muted)' }}>{t('marche.articlesCount', { count: productsFiltered.length })}</span>
         </h3>
 
         {productsFiltered.length === 0 ? (
           <div className="text-center py-10 rounded-2xl shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <span className="text-3xl flex justify-center"><Search size={24} /></span>
-            <p className="text-[10px] font-bold mt-2" style={{ color: 'var(--text-muted)' }}>Aucun produit disponible dans ce marché.</p>
+            <p className="text-[10px] font-bold mt-2" style={{ color: 'var(--text-muted)' }}>{t('marche.noProducts')}</p>
           </div>
         ) : (
           <>
@@ -410,7 +412,7 @@ export default function MarcheDetail() {
             <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
               className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5 mt-3"
               style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-              <ChevronDown size={14} /> Charger plus ({productsFiltered.length - visibleCount} restant{productsFiltered.length - visibleCount > 1 ? 's' : ''})
+              <ChevronDown size={14} /> {t('common.loadMore')} ({productsFiltered.length - visibleCount} {t('common.remaining')}{productsFiltered.length - visibleCount > 1 ? 's' : ''})
             </button>
           )}
           </>

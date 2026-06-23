@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
 import { Loader2, XCircle, Star, Car, Motorbike, Frown, ChevronDown, Banknote } from 'lucide-react'
+import { useLang } from '../../context/LangContext'
 
 const PAGE_SIZE = 10
 
@@ -12,6 +13,7 @@ export default function SelectionLivreur() {
   const { resolved } = useTheme(); const isDark = resolved === 'dark'
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useLang()
   const stateCart = location.state?.cart
   const stateTotal = location.state?.total
   const stateSousTotal = location.state?.sousTotal
@@ -83,7 +85,7 @@ export default function SelectionLivreur() {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}><Motorbike size={40} /></div>
-          <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>Recherche des livreurs disponibles…</div>
+          <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 13 }}>{t('driver.loading')}</div>
         </div>
       </div>
     )
@@ -112,15 +114,15 @@ export default function SelectionLivreur() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base">Choisir un livreur</div>
+            <div className="text-white font-black text-base">{t('driver.select')}</div>
             <div className="text-white/70 text-xs">
-              {drivers.length} livreur{drivers.length > 1 ? 's' : ''} disponible{drivers.length > 1 ? 's' : ''}
+              {t('driver.availableCount', { count: drivers.length })}
             </div>
           </div>
         </div>
 
         <div className="relative z-10 flex items-center gap-2">
-          {['Panier', 'Livreur', 'Confirmation'].map((etape, i) => (
+          {[t('driver.steps.cart'), t('driver.steps.driver'), t('driver.steps.confirmation')].map((etape, i) => (
             <div key={etape} className="flex items-center gap-2">
               <div className="flex items-center gap-1.5">
                 <div className="w-5 h-5 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0"
@@ -142,12 +144,12 @@ export default function SelectionLivreur() {
           <div className="text-center py-12">
             <div className="text-5xl mb-3"><Frown size={48} /></div>
             <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
-              Aucun livreur disponible pour le moment.<br />Réessayez dans quelques minutes.
+              {t('driver.none.short')}<br />{t('driver.noneRetry')}
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <h2 className="font-black text-base" style={{ color: 'var(--text-primary)' }}>Livreurs disponibles</h2>
+            <h2 className="font-black text-base" style={{ color: 'var(--text-primary)' }}>{t('driver.availableLabel')}</h2>
 
             {visibleItems.map((drv) => {
               const sel = livreurId === drv.id_user
@@ -180,7 +182,7 @@ export default function SelectionLivreur() {
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold px-2 py-1 rounded-lg"
                           style={{ background: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' }}>
-                           <Banknote size={14} /> {formatPrice(FRAIS_LIVRAISON)} livraison
+                           <Banknote size={14} /> {formatPrice(FRAIS_LIVRAISON)} {t('driver.deliveryFee')}
                          </span>
                          <span className="text-xs font-semibold px-2 py-1 rounded-lg"
                            style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56' }}>
@@ -202,7 +204,7 @@ export default function SelectionLivreur() {
               <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
                 className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-                <ChevronDown size={14} /> Charger plus ({drivers.length - visibleCount} restant{drivers.length - visibleCount > 1 ? 's' : ''})
+                <ChevronDown size={14} /> {t('common.loadMore')} ({drivers.length - visibleCount} {t('common.remaining')}{drivers.length - visibleCount > 1 ? 's' : ''})
               </button>
             )}
           </div>
@@ -210,24 +212,24 @@ export default function SelectionLivreur() {
 
         {livreurSelected && (
           <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-            <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Récapitulatif</h3>
+            <h3 className="font-black text-sm mb-3" style={{ color: 'var(--text-primary)' }}>{t('driver.summary')}</h3>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between text-sm">
-                <span style={{ color: 'var(--text-muted)' }}>Articles</span>
+                <span style={{ color: 'var(--text-muted)' }}>{t('driver.articles')}</span>
                 <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(sousTotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: 'var(--text-muted)' }}>Livraison — {livreurSelected.utilisateur.prenom}</span>
+                <span style={{ color: 'var(--text-muted)' }}>{t('driver.deliveryFee')} — {livreurSelected.utilisateur.prenom}</span>
                 <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatPrice(FRAIS_LIVRAISON)}</span>
               </div>
               <div className="flex justify-between pt-2 mt-1" style={{ borderTop: '1.5px solid var(--border)' }}>
-                <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>Total</span>
+                <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>{t('driver.total')}</span>
                 <span className="font-black text-base" style={{ color: '#1D9E75' }}>{formatPrice(totalFinal)}</span>
               </div>
             </div>
             <div className="mt-3 rounded-xl px-3 py-2" style={{ background: isDark ? 'rgba(45,196,145,0.08)' : '#E1F5EE', border: '1px solid rgba(29,158,117,0.15)' }}>
               <p className="text-xs" style={{ color: isDark ? '#34D399' : '#0F6E56' }}>
-                Le paiement sera effectué en ligne via Mobile Money après réception et inspection de vos articles.
+                {t('driver.paymentNote')}
               </p>
             </div>
           </div>
@@ -245,14 +247,14 @@ export default function SelectionLivreur() {
           }}
         >
           {placing
-            ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" /> Confirmation en cours…</span>
+            ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" /> {t('driver.confirmPlacing')}</span>
             : livreurId
-            ? `Confirmer avec ${livreurSelected?.utilisateur?.prenom} →`
-            : 'Sélectionnez un livreur'}
+            ? t('driver.confirmWith', { name: livreurSelected?.utilisateur?.prenom }) + ' →'
+            : t('driver.selectFirst')}
         </button>
 
         <p className="text-center text-xs pb-2" style={{ color: 'var(--text-muted)' }}>
-          Paiement en ligne via Mobile Money après livraison
+          {t('driver.paymentNoteOnline')}
         </p>
       </div>
 

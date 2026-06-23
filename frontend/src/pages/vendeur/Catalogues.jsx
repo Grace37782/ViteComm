@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { api } from '../../services/api'
 import { Apple, Flame, Leaf, Fish, Drumstick, Egg, Wheat, Package, Citrus, Carrot, Droplets, Bean, CircleDot, Salad, Cherry, AlertTriangle, Search, Folder, Pencil, Trash2, ChevronDown, Camera } from 'lucide-react'
 
@@ -16,6 +17,17 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(initial?.photo_url || null)
   const fileRef = useRef(null)
+  const { t } = useLang()
+
+  const uniteLabel = (u) => ({
+    kg: 'kg',
+    tas: t('vendor.catalogues.unitTas'),
+    pièce: t('vendor.catalogues.unitPiece'),
+    régime: t('vendor.catalogues.unitRegime'),
+    litre: t('vendor.catalogues.unitLitre'),
+    paquet: t('vendor.catalogues.unitPaquet'),
+    boîte: t('vendor.catalogues.unitBoite'),
+  })[u] || u
 
   function set(k, v) {
     setForm((p) => ({ ...p, [k]: v }))
@@ -24,10 +36,10 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
 
   function valider() {
     const e = {}
-    if (!form.nom.trim()) e.nom = 'Nom requis'
-    if (!form.description.trim()) e.description = 'Description requise'
-    if (!form.prix || isNaN(+form.prix) || +form.prix <= 0) e.prix = 'Prix positif requis'
-    if (form.stock === '' || isNaN(+form.stock) || +form.stock < 0) e.stock = 'Stock valide requis'
+    if (!form.nom.trim()) e.nom = t('vendor.catalogues.nameRequired')
+    if (!form.description.trim()) e.description = t('vendor.catalogues.descriptionRequired')
+    if (!form.prix || isNaN(+form.prix) || +form.prix <= 0) e.prix = t('vendor.catalogues.pricePositiveRequired')
+    if (form.stock === '' || isNaN(+form.stock) || +form.stock < 0) e.stock = t('vendor.catalogues.validStockRequired')
     setErreurs(e)
     return Object.keys(e).length === 0
   }
@@ -44,7 +56,6 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
     setSaving(true)
     try {
       const result = await onSave({ ...form, prix: +form.prix, stock: +form.stock })
-      // Upload photo if a new one was selected and we have a product ID
       if (photoFile && result?.id) {
         const fd = new FormData()
         fd.append('photo', photoFile)
@@ -63,7 +74,7 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
       style={{ background: 'var(--surface)', border: '2px solid #BA7517' }}>
 
       <div>
-        <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>Photo du produit</div>
+        <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>{t('vendor.catalogues.productPhoto')}</div>
         <div className="flex items-center gap-3">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 cursor-pointer"
             style={{ background: 'var(--surface-alt)', border: '1.5px dashed var(--border)' }}
@@ -79,13 +90,13 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
             <button type="button" onClick={() => fileRef.current?.click()}
               className="text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer"
               style={{ background: '#FAEEDA', color: '#BA7517', border: 'none' }}>
-              {photoPreview ? 'Changer' : 'Ajouter'}
+              {photoPreview ? t('vendor.catalogues.change') : t('vendor.catalogues.addPhoto')}
             </button>
             {photoPreview && (
               <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(null) }}
                 className="text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer"
                 style={{ background: 'var(--surface-alt)', color: 'var(--text-muted)', border: 'none' }}>
-                Supprimer
+                {t('common.delete')}
               </button>
             )}
           </div>
@@ -93,7 +104,7 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
       </div>
 
       <div>
-        <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>Icône du produit</div>
+        <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>{t('vendor.catalogues.productIcon')}</div>
         <div className="flex flex-wrap gap-2">
           {EMOJIS.map((Icon, idx) => (
             <button key={idx} type="button" onClick={() => set('emoji', Icon.displayName || Icon.name)}
@@ -110,8 +121,8 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Nom du produit *</label>
-        <input type="text" placeholder="Ex: Tomates fraîches"
+        <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{t('vendor.catalogues.productName')}</label>
+        <input type="text" placeholder={t('vendor.catalogues.productNamePlaceholder')}
           value={form.nom} onChange={(e) => set('nom', e.target.value)}
           className="px-4 py-3 rounded-xl text-sm outline-none"
           style={erreurs.nom ? err : base} />
@@ -119,8 +130,8 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Description *</label>
-        <input type="text" placeholder="Courte description du produit"
+        <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{t('vendor.catalogues.descriptionLabel')}</label>
+        <input type="text" placeholder={t('vendor.catalogues.descriptionPlaceholder')}
           value={form.description} onChange={(e) => set('description', e.target.value)}
           className="px-4 py-3 rounded-xl text-sm outline-none"
           style={erreurs.description ? err : base} />
@@ -129,7 +140,7 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
 
       <div className="grid grid-cols-2 gap-2">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Prix (F) *</label>
+          <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{t('vendor.catalogues.priceLabel')}</label>
           <input type="number" placeholder="250" value={form.prix} min={1}
             onChange={(e) => set('prix', e.target.value)}
             className="px-3 py-3 rounded-xl text-sm outline-none"
@@ -137,7 +148,7 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
           {erreurs.prix && <span className="text-xs flex items-center gap-1" style={{ color: '#E24B4A' }}><AlertTriangle size={12} /> {erreurs.prix}</span>}
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Stock *</label>
+          <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{t('vendor.catalogues.stockRequired')}</label>
           <input type="number" placeholder="10" value={form.stock} min={0}
             onChange={(e) => set('stock', e.target.value)}
             className="px-3 py-3 rounded-xl text-sm outline-none"
@@ -145,15 +156,15 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
           {erreurs.stock && <span className="text-xs flex items-center gap-1" style={{ color: '#E24B4A' }}><AlertTriangle size={12} /> {erreurs.stock}</span>}
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Unité</label>
+          <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{t('vendor.catalogues.unit')}</label>
           <select value={form.unite} onChange={(e) => set('unite', e.target.value)}
             className="px-3 py-3 rounded-xl text-sm outline-none cursor-pointer"
             style={base}>
-            {UNITES.map((u) => <option key={u} value={u}>{u}</option>)}
+            {UNITES.map((u) => <option key={u} value={u}>{uniteLabel(u)}</option>)}
           </select>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Catégorie</label>
+          <label className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{t('vendor.catalogues.category')}</label>
           <select value={form.categorie} onChange={(e) => set('categorie', e.target.value)}
             className="px-3 py-3 rounded-xl text-sm outline-none cursor-pointer"
             style={base}>
@@ -166,12 +177,12 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
         <button onClick={handleSave} disabled={saving}
           className="flex-1 py-3 rounded-xl text-white text-sm font-black cursor-pointer"
           style={{ background: saving ? '#999' : '#BA7517', border: 'none', opacity: saving ? 0.7 : 1 }}>
-          {saving ? 'Enregistrement…' : initial ? '✓ Modifier' : '+ Ajouter le produit'}
+          {saving ? t('vendor.catalogues.saving') : initial ? t('vendor.catalogues.editProduct') : t('vendor.catalogues.addProduct')}
         </button>
         <button onClick={onCancel} disabled={saving}
           className="px-4 py-3 rounded-xl text-sm font-semibold cursor-pointer"
           style={{ background: 'var(--surface-alt)', color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}>
-          Annuler
+          {t('common.cancel')}
         </button>
       </div>
     </div>
@@ -181,6 +192,7 @@ function FormProduit({ initial, categories, onSave, onCancel }) {
 export default function CatalogueVendeur() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
+  const { t } = useLang()
   const isDark = resolved === 'dark'
   const [produits, setProduits] = useState([])
   const [categories, setCategories] = useState([])
@@ -263,7 +275,7 @@ export default function CatalogueVendeur() {
         <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="flex justify-center mb-3"><AlertTriangle size={40} style={{ color: '#E24B4A' }} /></div>
           <p className="font-bold text-sm" style={{ color: '#E24B4A' }}>{error}</p>
-          <button onClick={fetchData} className="mt-3 px-4 py-2 rounded-xl text-xs font-bold" style={{ background: '#BA7517', color: '#fff' }}>Réessayer</button>
+          <button onClick={fetchData} className="mt-3 px-4 py-2 rounded-xl text-xs font-bold" style={{ background: '#BA7517', color: '#fff' }}>{t('error.retry')}</button>
         </div>
       </div>
     )
@@ -283,8 +295,8 @@ export default function CatalogueVendeur() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Catalogue</div>
-            <div className="text-white/70 text-xs">{produits?.length ?? 0} produit(s)</div>
+            <div className="text-white font-black text-base leading-tight">{t('vendor.catalogues.title')}</div>
+            <div className="text-white/70 text-xs">{produits?.length ?? 0} {t('vendor.catalogues.productsCount')}</div>
           </div>
         </div>
       </div>
@@ -292,19 +304,19 @@ export default function CatalogueVendeur() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
-            <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Mon catalogue</div>
-            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{produits.length} produits</div>
+            <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{t('vendor.dashboard.myCatalog')}</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{produits.length} {t('vendor.catalogues.productsCountLabel')}</div>
           </div>
           <button onClick={() => setMode('add')}
             className="px-4 py-2 rounded-full text-sm font-black cursor-pointer flex-shrink-0"
             style={{ background: '#BA7517', color: '#fff', border: 'none' }}>
-            + Ajouter
+            {t('vendor.catalogues.add')}
           </button>
         </div>
         <div className="flex items-center gap-2 px-4 py-3 rounded-2xl"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <Search size={16} style={{ color: 'var(--text-muted)' }} />
-          <input type="text" placeholder="Rechercher un produit…"
+          <input type="text" placeholder={t('vendor.catalogues.searchPlaceholder')}
             value={search} onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
             className="flex-1 bg-transparent outline-none text-sm font-medium"
             style={{ color: 'var(--text-primary)' }} />
@@ -325,7 +337,7 @@ export default function CatalogueVendeur() {
                 color: filtreCategorie === c ? '#fff' : 'var(--text-muted)',
                 border: `1.5px solid ${filtreCategorie === c ? '#BA7517' : 'var(--border)'}`,
               }}>
-              {c}
+              {c === 'Toutes' ? t('vendor.catalogues.allCategories') : c}
             </button>
           ))}
         </div>
@@ -339,7 +351,7 @@ export default function CatalogueVendeur() {
         <div className="text-center py-12">
           <div className="flex justify-center mb-3"><Package size={48} style={{ color: 'var(--text-muted)' }} /></div>
           <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
-            {search ? `Aucun produit pour "${search}"` : 'Aucun produit. Ajoutez-en un !'}
+            {search ? t('vendor.catalogues.noProductsFor', { search }) : t('vendor.catalogues.noProductsAddOne')}
           </p>
         </div>
       ) : (
@@ -382,7 +394,7 @@ export default function CatalogueVendeur() {
                           background: p.stock <= 2 ? '#FAEEDA' : '#E1F5EE',
                           color: p.stock <= 2 ? '#854F0B' : '#0F6E56',
                         }}>
-                        {p.stock <= 2 && <AlertTriangle size={10} />} Stock: {p.stock}
+                        {p.stock <= 2 && <AlertTriangle size={10} />} {t('vendor.catalogues.stockLabel')} {p.stock}
                       </span>
                     </div>
                   </div>
@@ -402,16 +414,16 @@ export default function CatalogueVendeur() {
               <div className="rounded-2xl p-4 mt-1"
                 style={{ background: '#FAECE7', border: '1.5px solid #F5C4B3' }}>
                 <p className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#993C1D' }}>
-                  <Trash2 size={14} /> Supprimer "{p.nom}" ? Action irréversible.
+                  <Trash2 size={14} /> {t('vendor.catalogues.deleteConfirm', { name: p.nom })}
                 </p>
                 <div className="flex gap-2">
                   <button onClick={() => supprimer(p.id)}
                     className="flex-1 py-2.5 rounded-xl text-white text-sm font-black cursor-pointer"
-                    style={{ background: '#D85A30', border: 'none' }}>Supprimer</button>
+                    style={{ background: '#D85A30', border: 'none' }}>{t('common.delete')}</button>
                   <button onClick={() => setConfirmSup(null)}
                     className="flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer"
                     style={{ background: 'var(--surface)', color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}>
-                    Annuler
+                    {t('common.cancel')}
                   </button>
                 </div>
               </div>
@@ -424,7 +436,7 @@ export default function CatalogueVendeur() {
         <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
           className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-          <ChevronDown size={14} /> Charger plus ({filtres.length - visibleCount} restant{filtres.length - visibleCount > 1 ? 's' : ''})
+          <ChevronDown size={14} /> {t('common.loadMore')} ({filtres.length - visibleCount} {filtres.length - visibleCount > 1 ? t('common.remainingPlural') : t('common.remaining')})
         </button>
       )}
 

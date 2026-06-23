@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { api } from '../../services/api'
 import { ArrowLeft, User, Star, Truck, Package, MapPin, Mail, Shield, Loader2, ShoppingCart, Store } from 'lucide-react'
 
@@ -9,6 +10,7 @@ export default function UserDetail() {
   const { userId } = useParams()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
 
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -50,7 +52,7 @@ export default function UserDetail() {
           <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-black/5 transition-colors cursor-pointer">
             <ArrowLeft size={20} style={{ color: 'var(--text-primary)' }} />
           </button>
-          <h1 className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>Profil</h1>
+          <h1 className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>{t('userDetail.title')}</h1>
         </div>
 
         {/* Avatar + Name */}
@@ -79,7 +81,7 @@ export default function UserDetail() {
       <div className="px-4 mt-4 space-y-4">
         {/* Info Card */}
         <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Informations</h3>
+          <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('userDetail.informations')}</h3>
           <div className="space-y-3">
             {user.email && (
               <div className="flex items-center gap-3">
@@ -95,22 +97,22 @@ export default function UserDetail() {
           <>
             {/* Vendor Stats */}
             <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-              <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Stats Vendeur</h3>
+              <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('userDetail.vendorStats')}</h3>
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center p-2 rounded-xl" style={{ background: isDark ? 'rgba(186,117,23,0.1)' : '#FEF3C7' }}>
                   <Star size={16} className="mx-auto mb-1 text-amber-500" />
                   <p className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>{roleData.score_reputation?.toFixed(1) || '—'}</p>
-                  <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>Note</p>
+                  <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{t('userDetail.rating')}</p>
                 </div>
                 <div className="text-center p-2 rounded-xl" style={{ background: isDark ? 'rgba(186,117,23,0.1)' : '#FEF3C7' }}>
                   <Package size={16} className="mx-auto mb-1 text-amber-500" />
                   <p className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>{roleData.productCount || 0}</p>
-                  <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>Produits</p>
+                  <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{t('userDetail.products')}</p>
                 </div>
                 <div className="text-center p-2 rounded-xl" style={{ background: isDark ? 'rgba(186,117,23,0.1)' : '#FEF3C7' }}>
                   <MapPin size={16} className="mx-auto mb-1 text-amber-500" />
                   <p className="font-extrabold text-[11px] truncate" style={{ color: 'var(--text-primary)' }}>{roleData.marche?.nom || '—'}</p>
-                  <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>Marché</p>
+                  <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{t('userDetail.market')}</p>
                 </div>
               </div>
             </div>
@@ -118,7 +120,7 @@ export default function UserDetail() {
             {/* Products */}
             {roleData.products?.length > 0 && (
               <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Catalogue ({roleData.productCount})</h3>
+                <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('userDetail.catalogue', { count: roleData.productCount })}</h3>
                 <div className="space-y-2">
                   {roleData.products.map(p => (
                     <div key={p.id_produit} className="flex items-center gap-3 py-2 border-b last:border-b-0" style={{ borderColor: 'var(--border-light)' }}>
@@ -135,7 +137,7 @@ export default function UserDetail() {
                 {roleData.vendorId && (
                   <button onClick={() => navigate(`/client/catalogue/${roleData.vendorId}`)}
                     className="mt-3 w-full py-2 rounded-xl text-xs font-bold text-white cursor-pointer transition-colors" style={{ background: cfg.color }}>
-                    Voir tout le catalogue
+                    {t('userDetail.viewCatalogue')}
                   </button>
                 )}
               </div>
@@ -144,7 +146,7 @@ export default function UserDetail() {
             {/* Vendor Feedback */}
             {roleData.feedbacks?.length > 0 && (
               <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Avis clients</h3>
+                <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('userDetail.customerReviews')}</h3>
                 <div className="space-y-3">
                   {roleData.feedbacks.slice(0, 5).map(f => (
                     <div key={f.id_feedback} className="pb-3 border-b last:border-b-0" style={{ borderColor: 'var(--border-light)' }}>
@@ -171,38 +173,38 @@ export default function UserDetail() {
           <>
             {/* Driver Stats */}
             <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-              <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Stats Livreur</h3>
+              <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('userDetail.driverStats')}</h3>
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center p-2 rounded-xl" style={{ background: isDark ? 'rgba(216,90,48,0.1)' : '#FEE2E2' }}>
                   <Star size={16} className="mx-auto mb-1 text-red-400" />
                   <p className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>{roleData.score_reputation?.toFixed(1) || '—'}</p>
-                  <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>Note</p>
+                  <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{t('userDetail.rating')}</p>
                 </div>
                 <div className="text-center p-2 rounded-xl" style={{ background: isDark ? 'rgba(216,90,48,0.1)' : '#FEE2E2' }}>
                   <Truck size={16} className="mx-auto mb-1 text-red-400" />
                   <p className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>{roleData.livraisonCount || 0}</p>
-                  <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>Livraisons</p>
+                  <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{t('userDetail.deliveries')}</p>
                 </div>
                 <div className="text-center p-2 rounded-xl" style={{ background: isDark ? 'rgba(216,90,48,0.1)' : '#FEE2E2' }}>
                   <Shield size={16} className="mx-auto mb-1 text-red-400" />
                   <p className="font-extrabold text-[11px]" style={{ color: roleData.est_disponible ? '#16A34A' : '#DC2626' }}>
-                    {roleData.est_disponible ? 'Disponible' : 'Occupé'}
+                    {roleData.est_disponible ? t('userDetail.available') : t('userDetail.busy')}
                   </p>
-                  <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>Statut</p>
+                  <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{t('userDetail.status')}</p>
                 </div>
               </div>
             </div>
 
             {/* Vehicle Info */}
             <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-              <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Véhicule</h3>
+              <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('userDetail.vehicle')}</h3>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Type</span>
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('userDetail.vehicleType')}</span>
                   <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{roleData.type_vehicule || '—'}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Immatriculation</span>
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('userDetail.plateNumber')}</span>
                   <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{roleData.immatriculation || '—'}</span>
                 </div>
               </div>
@@ -211,7 +213,7 @@ export default function UserDetail() {
             {/* Driver Feedback */}
             {roleData.feedbacks?.length > 0 && (
               <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Avis clients</h3>
+                <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('userDetail.customerReviews')}</h3>
                 <div className="space-y-3">
                   {roleData.feedbacks.slice(0, 5).map(f => (
                     <div key={f.id_feedback} className="pb-3 border-b last:border-b-0" style={{ borderColor: 'var(--border-light)' }}>
@@ -236,17 +238,17 @@ export default function UserDetail() {
 
         {role === 'client' && roleData && (
           <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-            <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Stats Client</h3>
+            <h3 className="font-bold text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('userDetail.clientStats')}</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="text-center p-2 rounded-xl" style={{ background: isDark ? 'rgba(29,158,117,0.1)' : '#D1FAE5' }}>
                 <ShoppingCart size={16} className="mx-auto mb-1 text-emerald-500" />
                 <p className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>{roleData.orderCount || 0}</p>
-                <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>Commandes</p>
+                <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{t('userDetail.orders')}</p>
               </div>
               <div className="text-center p-2 rounded-xl" style={{ background: isDark ? 'rgba(29,158,117,0.1)' : '#D1FAE5' }}>
                 <MapPin size={16} className="mx-auto mb-1 text-emerald-500" />
                 <p className="font-extrabold text-[11px] truncate" style={{ color: 'var(--text-primary)' }}>{roleData.adresse_livraison || '—'}</p>
-                <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>Adresse</p>
+                <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{t('userDetail.address')}</p>
               </div>
             </div>
           </div>

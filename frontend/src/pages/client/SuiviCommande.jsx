@@ -2,15 +2,16 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { Loader2, CheckCircle, Motorbike, Package, Search, PartyPopper, ShieldCheck, Home, Smartphone, QrCode, XCircle, Ban, AlertTriangle, Clock, Store } from 'lucide-react'
 
 const STATUT_STEPS = [
-  { key: 'En attente', icon: Loader2, titre: 'En attente', desc: 'En attente de validation' },
-  { key: 'Validee', icon: Package, titre: 'Validée', desc: 'Commande validée par le vendeur' },
-  { key: 'En collecte', icon: Package, titre: 'Collecte', desc: 'Articles en cours de collecte' },
-  { key: 'En transit', icon: Motorbike, titre: 'En transit', desc: 'En route vers vous' },
-  { key: 'Inspectee', icon: Search, titre: 'Inspection', desc: 'Inspectez vos articles' },
-  { key: 'Livree', icon: PartyPopper, titre: 'Livrée', desc: 'Livraison terminée !' },
+  { key: 'En attente', icon: Loader2, titleKey: 'suivi.step.pending', descKey: 'suivi.step.pendingDesc' },
+  { key: 'Validee', icon: Package, titleKey: 'suivi.step.validated', descKey: 'suivi.step.validatedDesc' },
+  { key: 'En collecte', icon: Package, titleKey: 'suivi.step.collecting', descKey: 'suivi.step.collectingDesc' },
+  { key: 'En transit', icon: Motorbike, titleKey: 'suivi.step.inTransit', descKey: 'suivi.step.inTransitDesc' },
+  { key: 'Inspectee', icon: Search, titleKey: 'suivi.step.inspected', descKey: 'suivi.step.inspectedDesc' },
+  { key: 'Livree', icon: PartyPopper, titleKey: 'suivi.step.delivered', descKey: 'suivi.step.deliveredDesc' },
 ]
 
 export default function SuiviCommande() {
@@ -18,6 +19,7 @@ export default function SuiviCommande() {
   const location = useLocation()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
 
   const { id_commande, code_verification } = location.state || {}
   const [order, setOrder] = useState(null)
@@ -94,7 +96,7 @@ export default function SuiviCommande() {
   const livreur = order?.livraison?.livreur
   const livreurNom = livreur
     ? `${livreur.utilisateur?.prenom} ${livreur.utilisateur?.nom}`
-    : 'Votre livreur'
+    : t('suivi.yourDriver')
 
   const currentStepIndex = STATUT_STEPS.findIndex(s => s.key === statut)
   const verificationCode = code_verification || order?.code_verification
@@ -102,7 +104,7 @@ export default function SuiviCommande() {
   const [cancelling, setCancelling] = useState(false)
 
   async function handleCancel() {
-    if (!confirm('Annuler cette commande ?')) return
+    if (!confirm(t('suivi.cancelConfirm'))) return
     setCancelling(true)
     try {
       await api.post(`/client/orders/${id_commande}/cancel`)
@@ -114,7 +116,7 @@ export default function SuiviCommande() {
   if (loading) {
     return (
       <div className="w-full min-h-screen font-sans flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-        <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div>
+        <div className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</div>
       </div>
     )
   }
@@ -133,8 +135,8 @@ export default function SuiviCommande() {
             <span className="text-white text-lg">←</span>
           </button>
           <div>
-            <div className="text-white font-black text-base">Suivi de commande</div>
-            <div className="text-white/70 text-xs">Commande #{id_commande} · Mise à jour toutes les 10s</div>
+            <div className="text-white font-black text-base">{t('suivi.title')}</div>
+            <div className="text-white/70 text-xs">{t('suivi.subtitle', { id: id_commande })}</div>
           </div>
         </div>
       </div>
@@ -146,10 +148,10 @@ export default function SuiviCommande() {
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="text-4xl mb-2">{(() => { const step = STATUT_STEPS[Math.max(0, currentStepIndex)]; return step ? (step.key === 'En attente' ? <Loader2 size={36} className="animate-spin" /> : <step.icon size={36} />) : <Loader2 size={36} className="animate-spin" />; })()}</div>
           <div className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>
-            {STATUT_STEPS[Math.max(0, currentStepIndex)]?.titre || statut}
+            {STATUT_STEPS[Math.max(0, currentStepIndex)] ? t(STATUT_STEPS[Math.max(0, currentStepIndex)].titleKey) : statut}
           </div>
           <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-            {STATUT_STEPS[Math.max(0, currentStepIndex)]?.desc || ''}
+            {STATUT_STEPS[Math.max(0, currentStepIndex)] ? t(STATUT_STEPS[Math.max(0, currentStepIndex)].descKey) : ''}
           </div>
           <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
             {livreurNom}
@@ -161,19 +163,19 @@ export default function SuiviCommande() {
           <div className="rounded-2xl p-5 text-center"
             style={{ background: 'var(--surface)', border: '2px solid var(--accent)', boxShadow: isDark ? '0 4px 20px rgba(45,196,145,0.1)' : '0 4px 20px rgba(29,158,117,0.15)' }}>
             <div className="text-[11px] font-extrabold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
-              <ShieldCheck size={14} className="inline" /> Code de vérification
+              <ShieldCheck size={14} className="inline" /> {t('suivi.codeVerification')}
             </div>
             <div className="text-3xl font-black tracking-[8px] font-mono" style={{ color: 'var(--accent)' }}>
               {verificationCode}
             </div>
             <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-              Communiquez ce code au livreur lors de la collecte (RG06).
+              {t('suivi.codeInstruction')}
             </div>
             {['En attente', 'Validee', 'En collecte'].includes(statut) && (
               <button onClick={() => setShowQR(true)}
                 className="mt-3 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5 mx-auto"
                 style={{ background: isDark ? 'rgba(45,196,145,0.12)' : '#E1F5EE', color: isDark ? '#2DC491' : '#0F6E56', border: 'none' }}>
-                <QrCode size={14} /> Afficher le QR code
+                <QrCode size={14} /> {t('suivi.showQR')}
               </button>
             )}
           </div>
@@ -186,7 +188,7 @@ export default function SuiviCommande() {
             <div className="rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: 'var(--surface)' }}
               onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-center mb-4">
-                <div className="font-black text-base" style={{ color: 'var(--text-primary)' }}>QR Code</div>
+                <div className="font-black text-base" style={{ color: 'var(--text-primary)' }}>{t('suivi.qrTitle')}</div>
                 <button onClick={() => setShowQR(false)} className="cursor-pointer" style={{ background: 'none', border: 'none' }}>
                   <XCircle size={20} style={{ color: 'var(--text-muted)' }} />
                 </button>
@@ -198,7 +200,7 @@ export default function SuiviCommande() {
                     {verificationCode}
                   </div>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    Montrez ce QR code au livreur lors de la collecte (RG06)
+                    {t('suivi.qrShowToDriver')}
                   </div>
                 </>
               ) : (
@@ -215,7 +217,7 @@ export default function SuiviCommande() {
             <div className="rounded-3xl p-6 max-w-sm w-full text-center" style={{ background: 'var(--surface)' }}
               onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-center mb-4">
-                <div className="font-black text-base" style={{ color: 'var(--text-primary)' }}>QR de finalisation</div>
+                <div className="font-black text-base" style={{ color: 'var(--text-primary)' }}>{t('suivi.finalizeQRTitle')}</div>
                 <button onClick={() => { setShowFinalizeQR(false); setFinalizeQR(null); setFinalizeScanStatus(null) }} className="cursor-pointer" style={{ background: 'none', border: 'none' }}>
                   <XCircle size={20} style={{ color: 'var(--text-muted)' }} />
                 </button>
@@ -224,13 +226,13 @@ export default function SuiviCommande() {
                 <div className="rounded-2xl p-4 mb-4" style={{ background: isDark ? 'rgba(226,75,74,0.12)' : '#FEE2E2', border: '1.5px solid rgba(226,75,74,0.3)' }}>
                   <div className="flex items-center gap-2 mb-1">
                     <AlertTriangle size={16} style={{ color: '#E24B4A' }} />
-                    <span className="text-xs font-black" style={{ color: '#E24B4A' }}>Échec de la vérification</span>
+                    <span className="text-xs font-black" style={{ color: '#E24B4A' }}>{t('suivi.verifyFailed')}</span>
                   </div>
                   <div className="text-xs" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
-                    {finalizeScanStatus.scan_message || 'Le code QR n\'a pas été reconnu.'}
+                    {finalizeScanStatus.scan_message || t('suivi.qrNotRecognized')}
                   </div>
                   <div className="text-[10px] mt-2" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
-                    Le livreur peut réessayer en ouvrant à nouveau la caméra.
+                    {t('suivi.driverCanRetry')}
                   </div>
                 </div>
               )}
@@ -238,10 +240,10 @@ export default function SuiviCommande() {
                 <>
                   <img src={finalizeQR.qrcode} alt="QR Finalisation" className="mx-auto rounded-2xl mb-3" style={{ maxWidth: 250 }} />
                   <div className="text-xs font-bold mb-1" style={{ color: 'var(--accent)' }}>
-                    Le livreur scanne ce QR pour finaliser
+                    {t('suivi.driverScansQR')}
                   </div>
                   <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    Ce QR est sécurisé et signé avec la collecte du vendeur. Expire dans 1 heure.
+                    {t('suivi.qrSecured')}
                   </div>
                 </>
               ) : (
@@ -255,7 +257,7 @@ export default function SuiviCommande() {
         <div className="rounded-2xl p-4"
           style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
           <div className="text-[11px] font-extrabold uppercase tracking-widest mb-4" style={{ color: 'var(--text-muted)' }}>
-            Progression
+            {t('suivi.progression')}
           </div>
           <div className="flex flex-col gap-0">
             {STATUT_STEPS.map((step, i) => {
@@ -279,9 +281,9 @@ export default function SuiviCommande() {
                   </div>
                   <div className="pt-1">
                     <div className="text-xs font-bold" style={{ color: isActive ? 'var(--accent)' : isPast ? '#1D9E75' : 'var(--text-muted)' }}>
-                      {step.titre}
+                      {t(step.titleKey)}
                     </div>
-                    <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{step.desc}</div>
+                    <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t(step.descKey)}</div>
                   </div>
                 </div>
               )
@@ -294,7 +296,7 @@ export default function SuiviCommande() {
           <div className="rounded-2xl p-4"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
             <div className="text-[11px] font-extrabold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
-              <Store size={12} className="inline" /> Collecte par vendeur ({vendorStatus.collected_count}/{vendorStatus.total_vendors})
+              <Store size={12} className="inline" /> {t('suivi.vendorCollection', { collected: vendorStatus.collected_count, total: vendorStatus.total_vendors })}
             </div>
             <div className="w-full h-2 rounded-full mb-3" style={{ background: 'var(--surface-alt)' }}>
               <div className="h-full rounded-full transition-all"
@@ -314,7 +316,7 @@ export default function SuiviCommande() {
                     {v.nom_etablissement && <div className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{v.nom}</div>}
                   </div>
                   <div className="text-[10px] font-bold flex-shrink-0" style={{ color: v.statut_collecte === 'collectee' ? '#1D9E75' : 'var(--text-muted)' }}>
-                    {v.statut_collecte === 'collectee' ? 'Collecté' : v.statut_collecte === 'validee' ? 'Validé' : 'En attente'}
+                    {v.statut_collecte === 'collectee' ? t('suivi.collected') : v.statut_collecte === 'validee' ? t('suivi.validatedStatus') : t('suivi.pendingStatus')}
                   </div>
                 </div>
               ))}
@@ -328,14 +330,14 @@ export default function SuiviCommande() {
             <button onClick={() => { setShowFinalizeQR(true); setFinalizeQR(null); setFinalizeScanStatus(null) }}
               className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer"
               style={{ background: '#1D9E75', border: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.3)' }}>
-               <QrCode size={16} className="inline" /> Afficher le QR de finalisation
+               <QrCode size={16} className="inline" /> {t('suivi.showFinalizeQR')}
             </button>
           )}
           {statut === 'Inspectee' && (
             <button onClick={() => navigate('/client/inspection', { state: { id_commande } })}
               className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer"
               style={{ background: '#D85A30', border: 'none', boxShadow: '0 4px 16px rgba(216,90,48,0.3)' }}>
-               <Search size={16} className="inline" /> Inspecter les articles
+               <Search size={16} className="inline" /> {t('suivi.inspectItems')}
             </button>
           )}
           {statut === 'Livree' && order?.mode_paiement_status !== 'paye' && (
@@ -346,20 +348,20 @@ export default function SuiviCommande() {
             }}
               className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer"
               style={{ background: '#1D9E75', border: 'none', boxShadow: '0 4px 16px rgba(29,158,117,0.3)' }}>
-               <Smartphone size={16} className="inline" /> Payer maintenant
+               <Smartphone size={16} className="inline" /> {t('suivi.payNow')}
             </button>
           )}
           {canCancel && (
             <button onClick={handleCancel} disabled={cancelling}
               className="w-full py-3.5 rounded-2xl font-black text-sm cursor-pointer"
               style={{ background: 'var(--surface)', color: '#D85A30', border: '1.5px solid #D85A30', opacity: cancelling ? 0.6 : 1 }}>
-               <Ban size={16} className="inline" /> {cancelling ? 'Annulation…' : 'Annuler la commande'}
+               <Ban size={16} className="inline" /> {cancelling ? t('suivi.cancelling') : t('suivi.cancelOrder')}
             </button>
           )}
           <button onClick={() => navigate('/client/accueil')}
             className="w-full py-3.5 rounded-2xl font-black text-sm cursor-pointer"
             style={{ background: 'var(--surface-alt)', color: 'var(--text-primary)', border: '1.5px solid var(--border)' }}>
-             <Home size={16} className="inline" /> Retour à l'accueil
+             <Home size={16} className="inline" /> {t('suivi.backHome')}
           </button>
         </div>
       </div>

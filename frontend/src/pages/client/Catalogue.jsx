@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { api } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
 import { Package, Leaf, Flame, Droplets, Fish, Drumstick, Wheat, Apple, Citrus, CircleDot, UtensilsCrossed, Loader2, XCircle, Search, ShoppingCart, Store, MapPin, Star, Home, AlertTriangle, ChevronDown } from 'lucide-react'
+import { useLang } from '../../context/LangContext'
 
 const CATEGORY_EMOJI = {
   'Légumes': <Leaf size={14} />,
@@ -39,6 +40,7 @@ export default function Catalogue() {
   const { vendeurId } = useParams()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
 
   // If navigated from a market, we can go back to it
   const fromMarket = location.state?.fromMarket
@@ -101,7 +103,7 @@ export default function Catalogue() {
     try {
       await api.post('/client/cart/item', { id_produit: prod.id_produit, quantite: newQte })
       setCartItems(prev => ({ ...prev, [prod.id_produit]: newQte }))
-      setToast(`${prod.nom} ajouté au panier`)
+      setToast(t('catalogue.addedToCart', { name: prod.nom }))
     } catch (err) {
       setToast(`${err.message}`)
     }
@@ -144,7 +146,7 @@ export default function Catalogue() {
       <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
           <div className="text-4xl mb-3"><Loader2 size={32} className="animate-spin" /></div>
-          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>Chargement…</div>
+          <div className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>{t('catalogue.loading')}</div>
         </div>
       </div>
     )
@@ -155,9 +157,9 @@ export default function Catalogue() {
       <div className="w-full min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
           <div className="text-4xl mb-3"><XCircle size={32} /></div>
-          <div className="font-bold text-sm mb-4" style={{ color: 'var(--text-muted)' }}>Étal introuvable</div>
+          <div className="font-bold text-sm mb-4" style={{ color: 'var(--text-muted)' }}>{t('catalogue.notFound')}</div>
           <button onClick={() => navigate('/client/accueil')} className="text-sm font-bold cursor-pointer" style={{ color: '#1D9E75', background: 'none', border: 'none' }}>
-            ← Retour à l'accueil
+            {t('catalogue.backToHome')}
           </button>
         </div>
       </div>
@@ -186,7 +188,7 @@ export default function Catalogue() {
             <div className="text-white font-black text-base leading-tight">{vendor.nom_etablissement}</div>
             <div className="text-white/70 text-xs">
               {fromMarket && <span><Store size={12} className="inline" /> {marketName} · </span>}
-              <MapPin size={12} className="inline" /> {vendor.localisation_marche} · <Store size={12} className="inline" /> {vendor._count.produits} produit{vendor._count.produits !== 1 ? 's' : ''} · <Star size={12} className="inline" /> {vendor.score_reputation.toFixed(1)}
+              <MapPin size={12} className="inline" /> {vendor.localisation_marche} · <Store size={12} className="inline" /> {t('catalogue.products', { count: vendor._count.produits })} · <Star size={12} className="inline" /> {vendor.score_reputation.toFixed(1)}
             </div>
           </div>
           <button
@@ -214,7 +216,7 @@ export default function Catalogue() {
           <Search size={16} className="text-gray-300" />
           <input
             type="text"
-            placeholder="Chercher un produit…"
+            placeholder={t('catalogue.search.placeholder')}
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
             className="flex-1 bg-transparent outline-none text-sm font-medium"
@@ -241,7 +243,7 @@ export default function Catalogue() {
                   border: `1.5px solid ${categorie === cat ? '#1D9E75' : 'var(--border)'}`,
                 }}
               >
-                {cat === 'Tout' ? <><Home size={12} className="inline" /> Tous</> : <>{CATEGORY_EMOJI[cat] || <Package size={12} />} {cat}</>}
+                {cat === 'Tout' ? <><Home size={12} className="inline" /> {t('catalogue.all')}</> : <>{CATEGORY_EMOJI[cat] || <Package size={12} />} {cat}</>}
               </button>
             ))}
           </div>
@@ -254,7 +256,7 @@ export default function Catalogue() {
           <div className="text-center py-12">
             <div className="text-5xl mb-3"><Search size={40} /></div>
             <p className="font-bold text-sm" style={{ color: 'var(--text-muted)' }}>
-              Aucun produit trouvé{recherche ? ` pour "${recherche}"` : ''}
+              {recherche ? t('catalogue.noProductsFor', { query: recherche }) : t('catalogue.noProducts')}
             </p>
           </div>
         ) : (
@@ -301,7 +303,7 @@ export default function Catalogue() {
                   {stockFaible && (
                     <div className="text-center mb-1">
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: isDark ? 'rgba(243,168,59,0.12)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' }}>
-                        <AlertTriangle size={12} /> {prod.stock_disponible} restant{prod.stock_disponible !== 1 ? 's' : ''}
+                        <AlertTriangle size={12} /> {t('catalogue.lowStock', { count: prod.stock_disponible })}
                       </span>
                     </div>
                   )}
@@ -313,7 +315,7 @@ export default function Catalogue() {
                       className="w-full py-2 rounded-xl text-white text-xs font-black cursor-pointer mt-auto"
                       style={{ background: '#1D9E75', border: 'none' }}
                     >
-                      + Ajouter
+                      {t('catalogue.addToCart')}
                     </button>
                   ) : (
                     <div className="flex items-center justify-between mt-auto rounded-xl overflow-hidden" style={{ border: '1.5px solid #1D9E75' }}>
@@ -345,7 +347,7 @@ export default function Catalogue() {
             <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
               className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5 mt-3"
               style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-              <ChevronDown size={14} /> Charger plus ({productsFiltered.length - visibleCount} restant{productsFiltered.length - visibleCount > 1 ? 's' : ''})
+              <ChevronDown size={14} /> {t('common.loadMore')} ({productsFiltered.length - visibleCount} {t('common.remaining')}{productsFiltered.length - visibleCount > 1 ? 's' : ''})
             </button>
           )}
           </>
@@ -370,7 +372,7 @@ export default function Catalogue() {
             >
               {panierCount}
             </div>
-            <span className="text-white font-black text-sm">Voir mon panier</span>
+            <span className="text-white font-black text-sm">{t('catalogue.viewCart')}</span>
             <span className="text-white font-black text-sm">
               {panierTotal.toLocaleString()} F →
             </span>
