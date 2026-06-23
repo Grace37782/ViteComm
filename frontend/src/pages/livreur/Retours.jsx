@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { api } from '../../services/api'
 import { Undo2, Package, Truck, Store, Rocket, CheckCircle, ChevronDown, Search, XCircle } from 'lucide-react'
 
@@ -10,6 +11,7 @@ export default function RetourLivreur() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
   const [retours, setRetours] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -33,15 +35,15 @@ export default function RetourLivreur() {
     try {
       await api.put(`/livreur/returns/${id_litige}`, { statut_retour: next })
       setRetours(prev => prev.map(r => r.id_litige === id_litige ? { ...r, statut_retour: next } : r))
-      showToast(next === 'recupere' ? 'Retour terminé' : 'Statut mis à jour')
+      showToast(next === 'recupere' ? t('livreur.retours.recoveryComplete') : t('livreur.retours.statusUpdated'))
     } catch (e) { showToast(e.message) }
   }
 
   function statutStyle(statut) {
     const map = {
-      a_recuperer: { label: 'À récupérer', bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
-      en_cours: { label: 'En cours', bg: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5' },
-      recupere: { label: 'Récupéré', bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
+      a_recuperer: { label: t('livreur.retours.aRecuperer'), bg: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' },
+      en_cours: { label: t('livreur.retours.enCours'), bg: isDark ? 'rgba(59,130,246,0.15)' : '#E6F1FB', color: isDark ? '#60A5FA' : '#185FA5' },
+      recupere: { label: t('livreur.retours.recupere'), bg: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE', color: isDark ? '#34D399' : '#0F6E56' },
     }
     return map[statut] || map.a_recuperer
   }
@@ -69,8 +71,8 @@ export default function RetourLivreur() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Retours</div>
-            <div className="text-white/70 text-xs">{retours?.length ?? 0} retour(s)</div>
+            <div className="text-white font-black text-base leading-tight">{t('nav.retours')}</div>
+            <div className="text-white/70 text-xs">{retours?.length ?? 0} {t('livreur.retours.count')}</div>
           </div>
         </div>
       </div>
@@ -84,14 +86,14 @@ export default function RetourLivreur() {
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Total', value: stats?.total ?? 0, icon: <Undo2 size={20} />,
+          { key: 'total', label: t('livreur.retours.total'), value: stats?.total ?? 0, icon: <Undo2 size={20} />,
             bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3', color: isDark ? '#E87D55' : '#993C1D' },
-          { label: 'À récupérer', value: stats?.a_recuperer ?? 0, icon: <Package size={20} />,
+          { key: 'a_recuperer', label: t('livreur.retours.aRecuperer'), value: stats?.a_recuperer ?? 0, icon: <Package size={20} />,
             bg: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', border: isDark ? '#BA7517' : '#FAC775', color: isDark ? '#F3A83B' : '#854F0B' },
-          { label: 'En cours', value: stats?.en_cours ?? 0, icon: <Truck size={20} />,
+          { key: 'en_cours', label: t('livreur.retours.enCours'), value: stats?.en_cours ?? 0, icon: <Truck size={20} />,
             bg: isDark ? 'rgba(29,158,117,0.12)' : '#E1F5EE', border: isDark ? '#2DC491' : '#9FE1CB', color: isDark ? '#34D399' : '#0F6E56' },
         ].map(s => (
-          <div key={s.label} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
+          <div key={s.key} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
             style={{ background: s.bg, border: `1.5px solid ${s.border}` }}>
             <div className="mb-1">{s.icon}</div>
             <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
@@ -103,10 +105,10 @@ export default function RetourLivreur() {
       {/* FILTERS */}
       <div className="flex gap-2 overflow-x-auto scrollbar-none">
         {[
-          { id: 'all', label: 'Tous' },
-          { id: 'a_recuperer', label: 'À récupérer' },
-          { id: 'en_cours', label: 'En cours' },
-          { id: 'recupere', label: 'Récupérés' },
+          { id: 'all', labelKey: 'common.all' },
+          { id: 'a_recuperer', labelKey: 'livreur.retours.aRecuperer' },
+          { id: 'en_cours', labelKey: 'livreur.retours.enCours' },
+          { id: 'recupere', labelKey: 'livreur.retours.recuperes' },
         ].map(f => (
           <button key={f.id} onClick={() => { setFilter(f.id); setVisibleCount(PAGE_SIZE) }}
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer whitespace-nowrap transition-all active:scale-95"
@@ -115,7 +117,7 @@ export default function RetourLivreur() {
               color: filter === f.id ? '#fff' : 'var(--text-secondary)',
               border: `1.5px solid ${filter === f.id ? '#D85A30' : 'var(--border)'}`,
             }}>
-            {f.label}
+            {t(f.labelKey)}
           </button>
         ))}
       </div>
@@ -127,7 +129,7 @@ export default function RetourLivreur() {
           <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <input
             type="text"
-            placeholder="Rechercher par client, n° commande..."
+            placeholder={t('livreur.retours.searchPlaceholder')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
             className="flex-1 bg-transparent outline-none text-sm font-medium"
@@ -157,19 +159,19 @@ export default function RetourLivreur() {
         if (filteredList.length === 0 && retours.length === 0) {
           return (
             <div className="text-center text-sm py-10 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-muted)' }}>
-              Aucun retour à récupérer.
+              {t('livreur.retours.empty')}
             </div>
           )
         }
         if (filteredList.length === 0 && retours.length > 0) {
           return (
             <div className="text-center text-sm py-10 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-muted)' }}>
-              {search.trim() ? `Aucun résultat pour "${search}"` : 'Aucun retour dans cette catégorie.'}
+              {search.trim() ? t('livreur.retours.noResultsFor', { search }) : t('livreur.retours.noReturnsCategory')}
               {search.trim() && (
                 <button onClick={() => setSearch('')}
                   className="mt-3 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
                   style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
-                  Effacer la recherche
+                  {t('common.clearSearch')}
                 </button>
               )}
             </div>
@@ -184,8 +186,8 @@ export default function RetourLivreur() {
                   style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <div>
-                      <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Retour #{retour.id_litige}</div>
-                      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Commande #{retour.id_commande} · {retour.client}</div>
+                      <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{t('livreur.retours.returnLabel')}{retour.id_litige}</div>
+                      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('livreur.retours.orderLabel')}{retour.id_commande} · {retour.client}</div>
                     </div>
                     <span className="rounded-2xl px-3 py-1 text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>
                       {st.label}
@@ -193,29 +195,29 @@ export default function RetourLivreur() {
                   </div>
 
                   <div className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
-                    <Store size={12} className="inline align-middle" /> Vendeur : {retour.vendeur}
+                    <Store size={12} className="inline align-middle" /> {t('livreur.retours.vendor')} {retour.vendeur}
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
                     <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                      <div className="font-semibold">Articles</div>
+                      <div className="font-semibold">{t('livreur.retours.articles')}</div>
                       {retour.articles?.map((a, i) => (
                         <div key={i}>{a.nom} × {a.quantite}</div>
-                      )) || <div>{retour.qte} article(s)</div>}
+                      )) || <div>{t('livreur.retours.articleCount', { count: retour.qte })}</div>}
                     </div>
                     <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                      <div className="font-semibold">Montant</div>
+                      <div className="font-semibold">{t('livreur.retours.amount')}</div>
                       <div>{retour.montant?.toLocaleString()} F</div>
                     </div>
                   </div>
 
-                  <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Motif : {retour.motif}</div>
+                  <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('livreur.retours.reason')} {retour.motif}</div>
 
                   {retour.statut_retour !== 'recupere' && (
                     <button onClick={() => changerStatut(retour.id_litige, retour.statut_retour)}
                       className="w-full rounded-2xl py-3 font-black text-white cursor-pointer transition-all active:scale-98"
                       style={{ background: '#D85A30', border: 'none' }}>
-                      {retour.statut_retour === 'a_recuperer' ? <><Rocket size={14} className="inline align-middle" /> Commencer la récupération</> : <><CheckCircle size={14} className="inline align-middle" /> Marquer comme récupéré</>}
+                      {retour.statut_retour === 'a_recuperer' ? <><Rocket size={14} className="inline align-middle" /> {t('livreur.retours.startRecovery')}</> : <><CheckCircle size={14} className="inline align-middle" /> {t('livreur.retours.markAsRecovered')}</>}
                     </button>
                   )}
                 </div>
@@ -226,7 +228,7 @@ export default function RetourLivreur() {
               <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
                 className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-                <ChevronDown size={14} /> Charger plus ({filteredList.length - visibleCount} restant{filteredList.length - visibleCount > 1 ? 's' : ''})
+                <ChevronDown size={14} /> {t('common.loadMore')} ({filteredList.length - visibleCount} {filteredList.length - visibleCount > 1 ? t('common.remainingPlural') : t('common.remainingSingular')})
               </button>
             )}
           </>

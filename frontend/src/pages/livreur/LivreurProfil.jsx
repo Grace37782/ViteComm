@@ -1,21 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { User, Star, Lock, Clock, MessageCircle, Shield, Bike, Hash, Mail, CheckCircle, Pencil, Camera, Save, KeyRound, LogOut, X, Loader2 } from 'lucide-react'
-
-const MOTIFS_REPUTATION = [
-  { label: 'Ponctualité', icon: <Clock size={20} />, description: 'Respect des horaires de livraison' },
-  { label: 'Fiabilité', icon: <Shield size={20} />, description: 'Conformité de la collecte et de la livraison' },
-  { label: 'Communication', icon: <MessageCircle size={20} />, description: 'Réactivité et courtoisie' },
-  { label: 'Sécurité', icon: <Shield size={20} />, description: 'Prise en charge des marchandises' },
-]
 
 export default function LivreurProfil() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
   const { user: ctxUser, login: updateCtx, logout: ctxLogout } = useAuth()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -27,6 +22,13 @@ export default function LivreurProfil() {
   const [toast, setToast] = useState(null)
   const [showLogout, setShowLogout] = useState(false)
   const [tab, setTab] = useState('profil')
+
+  const MOTIFS_REPUTATION = [
+    { labelKey: 'livreur.profil.reputation.punctuality', Icon: Clock, descKey: 'livreur.profil.reputation.punctualityDesc' },
+    { labelKey: 'livreur.profil.reputation.reliability', Icon: Shield, descKey: 'livreur.profil.reputation.reliabilityDesc' },
+    { labelKey: 'livreur.profil.reputation.communication', Icon: MessageCircle, descKey: 'livreur.profil.reputation.communicationDesc' },
+    { labelKey: 'livreur.profil.reputation.security', Icon: Shield, descKey: 'livreur.profil.reputation.securityDesc' },
+  ]
 
   useEffect(() => {
     api.get('/livreur/profil')
@@ -57,7 +59,7 @@ export default function LivreurProfil() {
 
   async function handleSave(e) {
     e.preventDefault()
-    if (!form.nom || !form.prenom || !form.email) return showToast('Nom, prénom et email requis.')
+    if (!form.nom || !form.prenom || !form.email) return showToast(t('toast.profileRequired'))
     setSaving(true)
     try {
       const body = new FormData()
@@ -69,7 +71,7 @@ export default function LivreurProfil() {
       if (photoFile) body.set('photo', photoFile)
       const res = await api.put('/livreur/profil', body)
       setProfile(p => ({ ...p, ...res }))
-      showToast('Profil mis à jour !')
+      showToast(t('toast.profileUpdated'))
       setEditing(false)
       setPhotoFile(null)
       setPhotoPreview('')
@@ -109,8 +111,8 @@ export default function LivreurProfil() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Mon profil</div>
-            <div className="text-white/70 text-xs">Livreur ViteComm</div>
+            <div className="text-white font-black text-base leading-tight">{t('profil.header')}</div>
+            <div className="text-white/70 text-xs">{t('livreur.profil.subtitle')}</div>
           </div>
         </div>
       </div>
@@ -127,9 +129,9 @@ export default function LivreurProfil() {
       {/* TABS */}
       <div className="flex gap-2">
         {[
-          { id: 'profil', label: <><User size={12} className="inline align-middle" /> Mon profil</> },
-          { id: 'reputation', label: <><Star size={12} className="inline align-middle" /> Réputation</> },
-          { id: 'securite', label: <><Lock size={12} className="inline align-middle" /> Sécurité</> },
+          { id: 'profil', label: <><User size={12} className="inline align-middle" /> {t('profil.infoTab')}</> },
+          { id: 'reputation', label: <><Star size={12} className="inline align-middle" /> {t('livreur.profil.reputationTab')}</> },
+          { id: 'securite', label: <><Lock size={12} className="inline align-middle" /> {t('profil.securityTab')}</> },
         ].map(o => (
           <button key={o.id} onClick={() => setTab(o.id)}
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all active:scale-95"
@@ -161,19 +163,19 @@ export default function LivreurProfil() {
               </div>
               <div className="text-center mb-5">
                 <h2 className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>{profile?.prenom} {profile?.nom}</h2>
-                <p className="text-sm font-semibold mt-1" style={{ color: isDark ? '#E87D55' : '#D85A30' }}><Bike size={16} className="inline align-middle" /> Livreur ViteComm</p>
+                <p className="text-sm font-semibold mt-1" style={{ color: isDark ? '#E87D55' : '#D85A30' }}><Bike size={16} className="inline align-middle" /> {t('livreur.profil.subtitle')}</p>
               </div>
               <div className="flex flex-col gap-3 mb-5">
-                <InfoRow label="Véhicule" value={profile?.type_vehicule || '—'} icon={<Bike size={14} />} />
-                <InfoRow label="Immatriculation" value={profile?.immatriculation || '—'} icon={<Hash size={14} />} />
-                <InfoRow label="Email" value={profile?.email || '—'} icon={<Mail size={14} />} />
-                <InfoRow label="Réputation" value={`${score.toFixed(1)}/5 (${profile?.nb_avis || 0} avis)`} icon={<Star size={14} />} />
-                <InfoRow label="Statut" value={profile?.statut_compte || '—'} icon={profile?.statut_compte === 'Actif' ? <CheckCircle size={14} /> : <Lock size={14} />} />
+                <InfoRow label={t('livreur.dashboard.vehicle')} value={profile?.type_vehicule || '—'} icon={<Bike size={14} />} />
+                <InfoRow label={t('livreur.dashboard.plateNumber')} value={profile?.immatriculation || '—'} icon={<Hash size={14} />} />
+                <InfoRow label={t('auth.email')} value={profile?.email || '—'} icon={<Mail size={14} />} />
+                <InfoRow label={t('livreur.profil.reputationTab')} value={`${score.toFixed(1)}/5 (${profile?.nb_avis || 0} ${t('livreur.dashboard.avis')})`} icon={<Star size={14} />} />
+                <InfoRow label={t('livreur.profil.statut')} value={profile?.statut_compte || '—'} icon={profile?.statut_compte === 'Actif' ? <CheckCircle size={14} /> : <Lock size={14} />} />
               </div>
               <button onClick={() => setEditing(true)}
                 className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:shadow-md active:scale-95"
                 style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
-                <Pencil size={14} className="inline align-middle" /> Modifier mon profil
+                <Pencil size={14} className="inline align-middle" /> {t('profil.editProfile')}
               </button>
             </div>
           ) : (
@@ -183,7 +185,7 @@ export default function LivreurProfil() {
                   <label className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-dashed cursor-pointer flex items-center justify-center transition-all hover:scale-105"
                     style={{ background: photoPreview ? 'transparent' : 'var(--surface-alt)', borderColor: photoPreview ? '#D85A30' : 'var(--border)' }}>
                     {photoPreview ? (
-                      <img src={photoPreview} alt="Aperçu" className="w-full h-full object-cover" />
+                      <img src={photoPreview} alt={t('profil.photoPreview')} className="w-full h-full object-cover" />
                     ) : profile?.photo_url ? (
                       <img src={profile.photo_url} alt="" className="w-full h-full object-cover" />
                     ) : (
@@ -197,22 +199,22 @@ export default function LivreurProfil() {
                   </label>
                 </div>
 
-                <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Informations véhicule</div>
-                <Field label={<><Bike size={12} className="inline align-middle" /> Type de véhicule</>} value={form.type_vehicule} onChange={v => setForm(p => ({ ...p, type_vehicule: v }))} isDark={isDark} />
-                <Field label={<><Hash size={12} className="inline align-middle" /> Immatriculation</>} value={form.immatriculation} onChange={v => setForm(p => ({ ...p, immatriculation: v }))} isDark={isDark} />
+                <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('livreur.profil.vehicleInfo')}</div>
+                <Field label={<><Bike size={12} className="inline align-middle" /> {t('livreur.profil.vehicleType')}</>} value={form.type_vehicule} onChange={v => setForm(p => ({ ...p, type_vehicule: v }))} isDark={isDark} />
+                <Field label={<><Hash size={12} className="inline align-middle" /> {t('livreur.dashboard.plateNumber')}</>} value={form.immatriculation} onChange={v => setForm(p => ({ ...p, immatriculation: v }))} isDark={isDark} />
 
-                <div className="text-xs font-bold uppercase tracking-wider mt-2" style={{ color: 'var(--text-muted)' }}>Informations personnelles</div>
+                <div className="text-xs font-bold uppercase tracking-wider mt-2" style={{ color: 'var(--text-muted)' }}>{t('livreur.profil.personalInfo')}</div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Nom" value={form.nom} onChange={v => setForm(p => ({ ...p, nom: v }))} isDark={isDark} />
-                  <Field label="Prénom" value={form.prenom} onChange={v => setForm(p => ({ ...p, prenom: v }))} isDark={isDark} />
+                  <Field label={t('auth.name')} value={form.nom} onChange={v => setForm(p => ({ ...p, nom: v }))} isDark={isDark} />
+                  <Field label={t('auth.firstName')} value={form.prenom} onChange={v => setForm(p => ({ ...p, prenom: v }))} isDark={isDark} />
                 </div>
-                <Field label={<><Mail size={12} className="inline align-middle" /> Email</>} type="email" value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} isDark={isDark} />
+                <Field label={<><Mail size={12} className="inline align-middle" /> {t('auth.email')}</>} type="email" value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} isDark={isDark} />
 
                 <div className="flex gap-3 mt-2">
                   <button type="submit" disabled={saving}
                     className="flex-1 rounded-2xl py-3 text-sm font-black cursor-pointer transition-all active:scale-95"
                     style={{ background: '#D85A30', color: '#fff', border: 'none', opacity: saving ? 0.7 : 1 }}>
-                    {saving ? <Loader2 size={14} className="animate-spin inline" /> : <><Save size={14} className="inline align-middle" /> Enregistrer</>}
+                    {saving ? <Loader2 size={14} className="animate-spin inline" /> : <><Save size={14} className="inline align-middle" /> {t('common.save')}</>}
                   </button>
                   <button type="button" onClick={() => {
                     setEditing(false); setPhotoFile(null); setPhotoPreview('')
@@ -224,7 +226,7 @@ export default function LivreurProfil() {
                   }}
                     className="rounded-2xl py-3 px-5 text-sm font-black cursor-pointer transition-all active:scale-95"
                     style={{ background: 'var(--surface-alt)', color: 'var(--text-muted)', border: 'none' }}>
-                    Annuler
+                    {t('common.cancel')}
                   </button>
                 </div>
               </form>
@@ -240,28 +242,28 @@ export default function LivreurProfil() {
             style={{ background: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: `1.5px solid ${isDark ? '#D85A30' : '#F5C4B3'}` }}>
             <div className="mb-3 flex justify-center"><Star size={40} /></div>
             <div className="text-4xl font-black" style={{ color: isDark ? '#E87D55' : '#993C1D' }}>{Math.round(score)}/5</div>
-            <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Score de réputation ({profile?.nb_avis || 0} avis)</div>
+            <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{t('livreur.profil.reputationScore')} ({profile?.nb_avis || 0} {t('livreur.dashboard.avis')})</div>
             <div className="flex justify-center gap-1 mt-3">
               {[1,2,3,4,5].map(s => <span key={s} style={{ opacity: s <= Math.round(score) ? 1 : 0.3 }}><Star size={24} /></span>)}
             </div>
           </div>
           {MOTIFS_REPUTATION.map(m => (
-            <div key={m.label} className="rounded-2xl p-4 transition-all hover:shadow-sm"
+            <div key={m.labelKey} className="rounded-2xl p-4 transition-all hover:shadow-sm"
               style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                   style={{ background: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7' }}>
-                  {m.icon}
+                  <m.Icon size={20} />
                 </div>
                 <div>
-                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{m.label}</div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{m.description}</div>
+                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{t(m.labelKey)}</div>
+                  <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t(m.descKey)}</div>
                 </div>
               </div>
             </div>
           ))}
           <div className="text-center text-xs py-2" style={{ color: 'var(--text-muted)' }}>
-            Votre score est calculé automatiquement à partir des retours clients.
+            {t('livreur.profil.reputationExplanation')}
           </div>
         </div>
       )}
@@ -275,23 +277,23 @@ export default function LivreurProfil() {
                 <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(66,133,244,0.12)' }}>
                   <KeyRound size={20} style={{ color: '#4285F4' }} />
                 </div>
-                <p className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Compte Google</p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Votre compte est lié à Google. Le mot de passe est géré par votre compte Google.</p>
+                <p className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{t('profil.googleAccount')}</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('profile.googleLinked')}</p>
               </div>
             ) : (
               <>
-                <h3 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}><KeyRound size={14} className="inline align-middle" /> Changer le mot de passe</h3>
+                <h3 className="text-sm font-black mb-4" style={{ color: 'var(--text-primary)' }}><KeyRound size={14} className="inline align-middle" /> {t('profile.changePassword')}</h3>
                 <PasswordChangeForm isDark={isDark} />
               </>
             )}
           </div>
           <div className="rounded-2xl p-6" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
-            <h3 className="text-sm font-black mb-2" style={{ color: 'var(--text-primary)' }}><LogOut size={14} className="inline align-middle" /> Session</h3>
-            <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Déconnectez-vous de votre compte sur cet appareil.</p>
+            <h3 className="text-sm font-black mb-2" style={{ color: 'var(--text-primary)' }}><LogOut size={14} className="inline align-middle" /> {t('profil.session')}</h3>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>{t('profil.sessionDesc')}</p>
             <button onClick={() => setShowLogout(true)}
               className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer transition-all hover:shadow-md active:scale-95"
               style={{ background: isDark ? 'rgba(239,68,68,0.12)' : '#FEE2E2', color: isDark ? '#F87171' : '#D85A30', border: 'none' }}>
-              <LogOut size={14} className="inline align-middle" /> Se déconnecter
+              <LogOut size={14} className="inline align-middle" /> {t('connect.logout')}
             </button>
           </div>
         </div>
@@ -305,19 +307,19 @@ export default function LivreurProfil() {
             onClick={e => e.stopPropagation()}>
             <div className="text-center mb-5">
               <div className="mb-3 flex justify-center"><LogOut size={40} /></div>
-              <h3 className="text-lg font-black" style={{ color: 'var(--text-primary)' }}>Se déconnecter ?</h3>
-              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Vous devrez vous reconnecter pour accéder à votre espace livreur.</p>
+              <h3 className="text-lg font-black" style={{ color: 'var(--text-primary)' }}>{t('profil.logoutConfirm')}</h3>
+              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>{t('livreur.profil.logoutDesc')}</p>
             </div>
             <div className="flex flex-col gap-3">
               <button onClick={handleLogout}
                 className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer transition-all active:scale-95"
                 style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
-                Oui, me déconnecter
+                {t('profil.logoutYes')}
               </button>
               <button onClick={() => setShowLogout(false)}
                 className="w-full rounded-2xl py-3 text-sm font-bold cursor-pointer transition-all active:scale-95"
                 style={{ background: 'var(--surface-alt)', color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}>
-                Annuler
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -329,6 +331,7 @@ export default function LivreurProfil() {
 }
 
 function PasswordChangeForm({ isDark }) {
+  const { t } = useLang()
   const [mdp, setMdp] = useState('')
   const [confirm, setConfirm] = useState('')
   const [saving, setSaving] = useState(false)
@@ -339,16 +342,16 @@ function PasswordChangeForm({ isDark }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!mdp) { setMsg('Entrez un nouveau mot de passe.'); setMsgType('error'); return }
-    if (mdp.length < 6) { setMsg('Au moins 6 caractères.'); setMsgType('error'); return }
-    if (mdp !== confirm) { setMsg('Les mots de passe ne correspondent pas.'); setMsgType('error'); return }
+    if (!mdp) { setMsg(t('profil.enterNewPassword')); setMsgType('error'); return }
+    if (mdp.length < 6) { setMsg(t('profil.min6Chars')); setMsgType('error'); return }
+    if (mdp !== confirm) { setMsg(t('profil.passwordsMismatch')); setMsgType('error'); return }
     setSaving(true); setMsg('')
     try {
       await api.put('/livreur/profil', {
         mot_de_passe: mdp,
         mot_de_passe_confirmation: confirm
       })
-      setMsg('Mot de passe mis à jour.'); setMsgType('ok')
+      setMsg(t('profile.passwordUpdated')); setMsgType('ok')
       setMdp(''); setConfirm('')
     } catch (e) { setMsg(e.message); setMsgType('error') }
     finally { setSaving(false) }
@@ -362,12 +365,12 @@ function PasswordChangeForm({ isDark }) {
           {msg}
         </div>
       )}
-      <Field label="Nouveau mot de passe" type="password" value={mdp} onChange={setMdp} isDark={isDark} />
-      <Field label="Confirmer" type="password" value={confirm} onChange={setConfirm} isDark={isDark} />
+      <Field label={t('profile.newPassword')} type="password" value={mdp} onChange={setMdp} isDark={isDark} />
+      <Field label={t('profile.confirmPassword')} type="password" value={confirm} onChange={setConfirm} isDark={isDark} />
       <button type="submit" disabled={saving}
         className="w-full rounded-2xl py-3 text-sm font-black cursor-pointer mt-1 transition-all active:scale-95"
         style={{ background: saving ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30', color: '#fff', border: 'none' }}>
-        {saving ? <Loader2 size={14} className="animate-spin inline" /> : <><KeyRound size={14} className="inline align-middle" /> Mettre à jour</>}
+        {saving ? <Loader2 size={14} className="animate-spin inline" /> : <><KeyRound size={14} className="inline align-middle" /> {t('profil.updatePassword')}</>}
       </button>
     </form>
   )

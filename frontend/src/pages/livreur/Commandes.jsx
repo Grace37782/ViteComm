@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { api } from '../../services/api'
 import { XCircle, CheckCircle, Loader2, Package, Truck, ClipboardList, Rocket, User, MapPin, Lock, ChevronDown, QrCode, Search, AlertTriangle, Hourglass, Map } from 'lucide-react'
 import { Html5Qrcode } from 'html5-qrcode'
@@ -49,6 +50,7 @@ export default function CommandesLivreur() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
   const [available, setAvailable] = useState([])
   const [deliveries, setDeliveries] = useState([])
   const [loading, setLoading] = useState(true)
@@ -93,13 +95,13 @@ export default function CommandesLivreur() {
   useEffect(() => { loadDataFn(); const interval = setInterval(() => loadDataFn(true), 10000); return () => clearInterval(interval) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function accepterCourse(id_commande) {
-    if (!acceptCode.trim()) return showToast('Entrez le code de vérification du client')
+    if (!acceptCode.trim()) return showToast(t('toast.codeRequired'))
     try {
       setSubmitting(true)
       await api.post(`/livreur/deliveries/${id_commande}/accept`, {
         code_verification: acceptCode.trim().toUpperCase()
       })
-      showToast('Course acceptée !')
+      showToast(t('toast.courseAccepted'))
       setAcceptModal(null); setAcceptCode('')
       loadDataFn()
     } catch (e) { showToast(e.message) }
@@ -155,7 +157,7 @@ export default function CommandesLivreur() {
         () => {}
       )
     } catch (err) {
-      showToast('Caméra impossible: ' + (err.message || err))
+      showToast(t('toast.cameraError') + ': ' + (err.message || err))
       cleanupScanner()
     }
   }, [cleanupScanner])
@@ -172,7 +174,7 @@ export default function CommandesLivreur() {
       setCollectVerified(true)
       setCollectScanData(scannedData)
       setCollectPhase('confirmed')
-      showToast('QR code validé !')
+      showToast(t('toast.qrValidated'))
     } catch (e) {
       setCollectError(e.message)
       setCollectScanData(null)
@@ -190,7 +192,7 @@ export default function CommandesLivreur() {
       await api.post(`/livreur/deliveries/${collectOpen.commande.id_commande}/collect-vendor/${vendor.id_collecte}`, {
         scanned_qr_data: collectScanData
       })
-      showToast(`Collecte ${vendor.nom_etablissement || vendor.nom} confirmée !`)
+      showToast(`${t('livreur.commandes.collectedLabel')} ${vendor.nom_etablissement || vendor.nom} ${t('livreur.commandes.confirming')}`)
       cleanupScanner()
       setCollectScanData(null)
       setCollectVerified(false)
@@ -220,7 +222,7 @@ export default function CommandesLivreur() {
       await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/verify-finalize`, { scanned_qr_data: scannedData })
       setFinalizeVerified(true)
       setFinalizeScanResult(scannedData)
-      showToast('QR code de finalisation validé !')
+      showToast(t('toast.qrFinalization'))
     } catch (e) {
       setFinalizeError(e.message)
       setFinalizeScanResult(null)
@@ -233,7 +235,7 @@ export default function CommandesLivreur() {
     setSubmitting(true)
     try {
       await api.post(`/livreur/deliveries/${finalizeOpen.commande.id_commande}/finalize`, { scanned_qr_data: finalizeScanResult })
-      showToast('Livraison finalisée !')
+      showToast(t('toast.deliveryFinalized'))
       setFinalizeOpen(null); setFinalizeScanResult(null); setFinalizeVerified(false)
       cleanupScanner()
       loadDataFn()
@@ -250,7 +252,7 @@ export default function CommandesLivreur() {
   async function marquerEnRoute(id_commande) {
     try {
       await api.post(`/livreur/deliveries/${id_commande}/depart`)
-      showToast('Départ enregistré !')
+      showToast(t('toast.departureRegistered'))
       loadDataFn()
     } catch (e) { showToast(e.message) }
   }
@@ -299,15 +301,15 @@ export default function CommandesLivreur() {
       const total = collectes.length || 1
       if (!d.commande?.validee_par_vendeur) {
         return {
-          label: <><Hourglass size={14} className="inline align-middle animate-pulse" /> En attente de {validated}/{total} vendeur{total > 1 ? 's' : ''}</>,
+          label: <><Hourglass size={14} className="inline align-middle animate-pulse" /> {t('livreur.commandes.vendorsWaiting', { validated, total })}</>,
           disabled: true,
           fn: () => {}
         }
       }
-      return { label: <><Package size={14} className="inline align-middle" /> Scanner le QR du vendeur</>, fn: () => openCollect(d) }
+      return { label: <><Package size={14} className="inline align-middle" /> {t('livreur.commandes.nextScanVendor')}</>, fn: () => openCollect(d) }
     }
-    if (s === 'Collectee') return { label: <><Truck size={14} className="inline align-middle" /> Partir en livraison</>, fn: () => marquerEnRoute(d.commande.id_commande) }
-    if (s === 'En cours de livraison') return { label: <><CheckCircle size={14} className="inline align-middle" /> Finaliser la livraison</>, fn: () => openFinalize(d) }
+    if (s === 'Collectee') return { label: <><Truck size={14} className="inline align-middle" /> {t('livreur.commandes.nextDeparture')}</>, fn: () => marquerEnRoute(d.commande.id_commande) }
+    if (s === 'En cours de livraison') return { label: <><CheckCircle size={14} className="inline align-middle" /> {t('livreur.commandes.nextFinalize')}</>, fn: () => openFinalize(d) }
     return null
   }
 
@@ -368,8 +370,8 @@ export default function CommandesLivreur() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Commandes</div>
-            <div className="text-white/70 text-xs">{deliveries?.length ?? 0} livraison(s) active(s) + {available?.length ?? 0} disponible(s)</div>
+            <div className="text-white font-black text-base leading-tight">{t('livreur.commandes.title')}</div>
+            <div className="text-white/70 text-xs">{t('livreur.commandes.headerCount', { active: deliveries?.length ?? 0, available: available?.length ?? 0 })}</div>
           </div>
         </div>
       </div>
@@ -389,7 +391,7 @@ export default function CommandesLivreur() {
             <div className="flex items-center gap-2">
               <Map size={16} style={{ color: '#D85A30' }} />
               <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
-                {showMap ? 'Masquer la carte' : 'Afficher la carte'}
+                {showMap ? t('livreur.commandes.hideMap') : t('livreur.commandes.showMap')}
               </span>
             </div>
             <ChevronDown size={16} style={{ color: 'var(--text-muted)', transform: showMap ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
@@ -427,11 +429,11 @@ export default function CommandesLivreur() {
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Actives', value: activeDeliveries.length, icon: <Truck size={20} />,
+          { label: t('livreur.commandes.actives'), value: activeDeliveries.length, icon: <Truck size={20} />,
             bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3', color: isDark ? '#E87D55' : '#993C1D' },
-          { label: 'Disponibles', value: available.length, icon: <Package size={20} />,
+          { label: t('livreur.commandes.available'), value: available.length, icon: <Package size={20} />,
             bg: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', border: isDark ? '#BA7517' : '#FAC775', color: isDark ? '#F3A83B' : '#854F0B' },
-          { label: 'Historique', value: historyDeliveries.length, icon: <ClipboardList size={20} />,
+          { label: t('livreur.commandes.history'), value: historyDeliveries.length, icon: <ClipboardList size={20} />,
             bg: isDark ? 'rgba(29,158,117,0.12)' : '#E1F5EE', border: isDark ? '#2DC491' : '#9FE1CB', color: isDark ? '#34D399' : '#0F6E56' },
         ].map(s => (
           <div key={s.label} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
@@ -446,18 +448,18 @@ export default function CommandesLivreur() {
       {/* TABS */}
       <div className="flex gap-2">
         {[
-          { id: 'actives', label: <><Truck size={12} className="inline align-middle" /> Actives</> },
-          { id: 'disponibles', label: <><Package size={12} className="inline align-middle" /> Disponibles</> },
-          { id: 'historique', label: <><ClipboardList size={12} className="inline align-middle" /> Historique</> },
-        ].map(t => (
-          <button key={t.id} onClick={() => { setActiveTab(t.id); setVisibleCount(PAGE_SIZE) }}
+          { id: 'actives', label: <><Truck size={12} className="inline align-middle" /> {t('livreur.commandes.actives')}</> },
+          { id: 'disponibles', label: <><Package size={12} className="inline align-middle" /> {t('livreur.commandes.available')}</> },
+          { id: 'historique', label: <><ClipboardList size={12} className="inline align-middle" /> {t('livreur.commandes.history')}</> },
+        ].map(tab => (
+          <button key={tab.id} onClick={() => { setActiveTab(tab.id); setVisibleCount(PAGE_SIZE) }}
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all active:scale-95"
             style={{
-              background: activeTab === t.id ? '#D85A30' : 'var(--surface)',
-              color: activeTab === t.id ? '#fff' : 'var(--text-secondary)',
-              border: `1.5px solid ${activeTab === t.id ? '#D85A30' : 'var(--border)'}`,
+              background: activeTab === tab.id ? '#D85A30' : 'var(--surface)',
+              color: activeTab === tab.id ? '#fff' : 'var(--text-secondary)',
+              border: `1.5px solid ${activeTab === tab.id ? '#D85A30' : 'var(--border)'}`,
             }}>
-            {t.label}
+            {tab.label}
           </button>
         ))}
       </div>
@@ -469,7 +471,7 @@ export default function CommandesLivreur() {
           <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <input
             type="text"
-            placeholder="Rechercher par client, n° commande, produit..."
+            placeholder={t('livreur.commandes.searchPlaceholder')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
             className="flex-1 bg-transparent outline-none text-sm font-medium"
@@ -489,18 +491,18 @@ export default function CommandesLivreur() {
       <div className="flex flex-col gap-3">
         {showList.length === 0 && (
           <div className="text-center text-sm py-10 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-muted)' }}>
-            {search.trim() ? `Aucun résultat pour "${search}"` : (
+            {search.trim() ? t('livreur.noResultsFor', { query: search }) : (
               <>
-                {activeTab === 'actives' && 'Aucune course active.'}
-                {activeTab === 'disponibles' && 'Aucune course disponible.'}
-                {activeTab === 'historique' && 'Aucune livraison dans l\'historique.'}
+                {activeTab === 'actives' && t('livreur.commandes.noActiveTrips')}
+                {activeTab === 'disponibles' && t('livreur.commandes.noAvailableTrips')}
+                {activeTab === 'historique' && t('livreur.commandes.noHistory')}
               </>
             )}
             {search.trim() && (
               <button onClick={() => setSearch('')}
                 className="mt-3 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
                 style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
-                Effacer la recherche
+                {t('common.clearSearch')}
               </button>
             )}
           </div>
@@ -516,7 +518,7 @@ export default function CommandesLivreur() {
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
                <div className="flex items-start justify-between gap-3 mb-3">
               <div>
-                <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{c.id_commande}</div>
+                <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{t('livreur.commandeNumber')}{c.id_commande}</div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                   {c.date_creation ? new Date(c.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}
                   {' · '}
@@ -537,7 +539,7 @@ export default function CommandesLivreur() {
             {(() => {
               const byVendor = {}
               ;(c.detailsCommande || []).forEach(d => {
-                const vName = d.produit?.vendeur?.nom_etablissement || 'Autre vendeur'
+                const vName = d.produit?.vendeur?.nom_etablissement || t('livreur.commandes.otherVendor')
                 const vMarket = d.produit?.vendeur?.localisation_marche || ''
                 if (!byVendor[vName]) byVendor[vName] = { market: vMarket, items: [] }
                 byVendor[vName].items.push(d)
@@ -545,21 +547,21 @@ export default function CommandesLivreur() {
               return Object.entries(byVendor).map(([vName, { market, items }]) => (
                 <div key={vName} className="rounded-xl px-3 py-2 mb-1.5" style={{ background: 'var(--surface-alt)', border: '1px solid var(--border)' }}>
                   <div className="text-[11px] font-bold" style={{ color: 'var(--text-primary)' }}>{vName}</div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{market} · {items.length} article{items.length > 1 ? 's' : ''}</div>
+                  <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{market} · {items.length} {t('livreur.commandes.articlesLabel')}{items.length > 1 ? 's' : ''}</div>
                 </div>
               ))
             })()}
             <div className="text-[11px] mb-3 font-bold" style={{ color: c.validee_par_vendeur ? '#1D9E75' : '#BA7517' }}>
               {c.validee_par_vendeur
-                ? <>✓ {totalCount} vendeur{totalCount > 1 ? 's' : ''} validé{totalCount > 1 ? 's' : ''}</>
-                : <>En attente de {validatedCount}/{totalCount} vendeur{totalCount > 1 ? 's' : ''}</>
+                ? <>{t('livreur.commandes.vendorsValidated', { count: totalCount })}</>
+                : <>{t('livreur.commandes.vendorsWaiting', { validated: validatedCount, total: totalCount })}</>
               }
             </div>
             <button onClick={() => { setAcceptModal(c); setAcceptCode('') }}
               disabled={!c.validee_par_vendeur}
               className="w-full rounded-2xl py-3 font-black text-white cursor-pointer transition-all active:scale-98"
               style={{ background: !c.validee_par_vendeur ? 'var(--border)' : '#D85A30', color: !c.validee_par_vendeur ? 'var(--text-muted)' : '#fff', border: 'none', cursor: !c.validee_par_vendeur ? 'not-allowed' : 'pointer' }}>
-              <Rocket size={14} className="inline align-middle" /> {c.validee_par_vendeur ? 'Accepter cette course' : 'En attente des vendeurs'}
+              <Rocket size={14} className="inline align-middle" /> {c.validee_par_vendeur ? t('livreur.commandes.acceptTrip') : t('livreur.commandes.waitingVendors')}
             </button>
           </div>
           )
@@ -576,7 +578,7 @@ export default function CommandesLivreur() {
               style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{cmd?.id_commande}</div>
+                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{t('livreur.commandeNumber')}{cmd?.id_commande}</div>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                     {cmd?.date_creation ? new Date(cmd.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}
                     {' · '}
@@ -592,19 +594,19 @@ export default function CommandesLivreur() {
               <div className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}><MapPin size={12} className="inline align-middle" /> {cmd?.client?.adresse_livraison || '—'}</div>
               {vc.total > 0 && (
                 <div className="text-[11px] mb-2 font-bold" style={{ color: 'var(--text-muted)' }}>
-                  <Package size={11} className="inline align-middle" /> {vc.total} vendeur{vc.total > 1 ? 's' : ''} · {vc.validated}/{vc.total} validé{vc.validated > 1 ? 's' : ''} · {vc.collected}/{vc.total} collecté{vc.collected > 1 ? 's' : ''}
+                  <Package size={11} className="inline align-middle" /> {t('livreur.commandes.vendorStatus', { total: vc.total, validated: vc.validated, collected: vc.collected })}
                 </div>
               )}
               <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
                 <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                  <div className="font-semibold">Montant total</div>
+                  <div className="font-semibold">{t('livreur.commandes.totalAmount')}</div>
                   <div className="font-black" style={{ color: 'var(--text-primary)' }}>{((cmd?.total_marchandises || 0) + (cmd?.frais_livraison || 0)).toLocaleString()} F</div>
-                  <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Marchandises {cmd?.total_marchandises?.toLocaleString() || 0} F + Livraison {cmd?.frais_livraison?.toLocaleString() || 0} F</div>
+                  <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{t('livreur.commandes.amountBreakdown', { merchandise: cmd?.total_marchandises?.toLocaleString() || 0, delivery: cmd?.frais_livraison?.toLocaleString() || 0 })}</div>
                 </div>
                 <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                  <div className="font-semibold">Articles</div>
-                  <div className="font-black" style={{ color: 'var(--text-primary)' }}>{cmd?.detailsCommande?.reduce((sum, d) => sum + (d.quantite_commandee || 0), 0) || 0} article(s)</div>
-                  <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{cmd?.detailsCommande?.length || 0} produit(s) différent(s)</div>
+                  <div className="font-semibold">{t('livreur.commandes.articlesTitle')}</div>
+                  <div className="font-black" style={{ color: 'var(--text-primary)' }}>{t('livreur.commandes.articlesItem', { count: cmd?.detailsCommande?.reduce((sum, d) => sum + (d.quantite_commandee || 0), 0) || 0 })}</div>
+                  <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{t('livreur.commandes.differentProducts', { count: cmd?.detailsCommande?.length || 0 })}</div>
                 </div>
               </div>
               {action && (
@@ -635,18 +637,18 @@ export default function CommandesLivreur() {
             <div key={d.id_livraison} className="rounded-2xl p-4"
               style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
               <div className="flex items-center justify-between mb-2">
-                <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{cmd?.id_commande}</div>
+                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{t('livreur.commandeNumber')}{cmd?.id_commande}</div>
                 <span className="rounded-2xl px-3 py-1 text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>
-                  {isLivree ? <><CheckCircle size={12} className="inline align-middle" /> Livrée</> : <><XCircle size={12} className="inline align-middle" /> Échec</>}
+                  {isLivree ? <><CheckCircle size={12} className="inline align-middle" /> {t('livreur.statusDelivered')}</> : <><XCircle size={12} className="inline align-middle" /> {t('livreur.statusFailed')}</>}
                 </span>
               </div>
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {cmd?.client?.utilisateur?.prenom} {cmd?.client?.utilisateur?.nom} · {((cmd?.total_marchandises || 0) + (cmd?.frais_livraison || 0)).toLocaleString()} F ({cmd?.detailsCommande?.reduce((sum, d) => sum + (d.quantite_commandee || 0), 0) || 0} articles)
+                {cmd?.client?.utilisateur?.prenom} {cmd?.client?.utilisateur?.nom} · {((cmd?.total_marchandises || 0) + (cmd?.frais_livraison || 0)).toLocaleString()} F ({cmd?.detailsCommande?.reduce((sum, d) => sum + (d.quantite_commandee || 0), 0) || 0} {t('livreur.commandes.articlesLabel')})
               </div>
               <div className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                Passée le {cmd?.date_creation ? new Date(cmd.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
+                {t('livreur.commandes.placedOn')} {cmd?.date_creation ? new Date(cmd.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
                 {' · '}
-                Livrée {d.date_fin_reelle ? new Date(d.date_fin_reelle).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
+                {t('livreur.commandes.deliveredOnLabel')} {d.date_fin_reelle ? new Date(d.date_fin_reelle).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
               </div>
             </div>
           )
@@ -656,7 +658,7 @@ export default function CommandesLivreur() {
           <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
             className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-            <ChevronDown size={14} /> Charger plus ({showList.length - visibleCount} restant{showList.length - visibleCount > 1 ? 's' : ''})
+            <ChevronDown size={14} /> {t('common.loadMore')} ({showList.length - visibleCount} {t('common.remaining')}{showList.length - visibleCount > 1 ? 's' : ''})
           </button>
         )}
       </div>
@@ -671,22 +673,22 @@ export default function CommandesLivreur() {
               <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
             </div>
             <div className="px-5 pb-8 pt-3">
-              <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Accepter la course</h2>
+              <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>{t('livreur.commandes.acceptTripModal')}</h2>
               <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-                Commande #{acceptModal.id_commande}
-                {acceptModal.date_creation && ` · Créée le ${new Date(acceptModal.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
-                {' — '} Demandez le code de vérification au client
+                {t('livreur.commandeNumber')}{acceptModal.id_commande}
+                {acceptModal.date_creation && ` · ${t('livreur.createdOn')} ${new Date(acceptModal.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+                {' — '} {t('livreur.commandes.askClientCode')}
               </p>
 
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="text-xs font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>
-                  <Lock size={12} className="inline align-middle" /> Code de vérification du client
+                  <Lock size={12} className="inline align-middle" /> {t('livreur.commandes.clientVerificationCode')}
                 </div>
                 <div className="text-[11px] mb-3" style={{ color: 'var(--text-muted)' }}>
-                  Le client vous a communiqué un code. Saisissez-le pour confirmer que vous avez bien le bon client.
+                  {t('livreur.commandes.codeInstruction')}
                 </div>
                 <input type="text" value={acceptCode} onChange={e => setAcceptCode(e.target.value.toUpperCase())}
-                  placeholder="Ex: K7-4X"
+                  placeholder={t('livreur.commandes.codePlaceholder')}
                   maxLength={6}
                   className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none text-center tracking-[0.3em]"
                   style={{ background: 'var(--surface)', border: '2px solid var(--border)', color: 'var(--text-primary)' }} />
@@ -699,7 +701,7 @@ export default function CommandesLivreur() {
                   background: (!acceptCode.trim() || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
                   border: 'none', opacity: submitting ? 0.7 : 1,
                 }}>
-                {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Vérification…</> : <><Rocket size={14} className="inline align-middle" /> Accepter la course</>}
+                {submitting ? <><Loader2 size={14} className="animate-spin inline" /> {t('livreur.commandes.verifying')}</> : <><Rocket size={14} className="inline align-middle" /> {t('livreur.commandes.acceptTripModal')}</>}
               </button>
             </div>
           </div>
@@ -716,28 +718,28 @@ export default function CommandesLivreur() {
               <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
             </div>
             <div className="px-5 pb-8 pt-3">
-              <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Finaliser la livraison</h2>
+              <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>{t('livreur.commandes.finalizeDelivery')}</h2>
               <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-                Commande #{finalizeOpen.commande?.id_commande}
-                {finalizeOpen.commande?.date_creation && ` · Créée le ${new Date(finalizeOpen.commande.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+                {t('livreur.commandeNumber')}{finalizeOpen.commande?.id_commande}
+                {finalizeOpen.commande?.date_creation && ` · ${t('livreur.createdOn')} ${new Date(finalizeOpen.commande.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
               </p>
 
               <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                 <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
-                  <QrCode size={12} /> Scanner le QR code de finalisation
+                  <QrCode size={12} /> {t('livreur.commandes.scanFinalizeQR')}
                 </div>
                 <div className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
-                  Demandez au client d'afficher son QR de finalisation. Scannez-le pour confirmer la livraison.
+                  {t('livreur.commandes.finalizeQRInstruction')}
                 </div>
                 {finalizeVerified ? (
                   <div className="rounded-xl p-4 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
                     <CheckCircle size={22} className="mx-auto mb-1" style={{ color: '#1D9E75' }} />
-                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>QR code de finalisation validé !</div>
+                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>{t('livreur.commandes.finalizeQRValidated')}</div>
                   </div>
                 ) : submitting ? (
                   <div className="rounded-xl p-4 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
                     <Loader2 size={20} className="mx-auto mb-1 animate-spin" style={{ color: '#1D9E75' }} />
-                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>Vérification du QR code en cours…</div>
+                    <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>{t('livreur.commandes.qrVerifying')}</div>
                   </div>
                 ) : !finalizeError ? (
                   <div id="qr-finalize-reader" className="rounded-xl overflow-hidden" style={{ minHeight: 200 }} />
@@ -746,14 +748,14 @@ export default function CommandesLivreur() {
                   <button onClick={() => startCamera('qr-finalize-reader', verifyFinalizeScan)}
                     className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
                     style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
-                    <QrCode size={14} className="inline align-middle" /> Activer l'appareil photo
+                    <QrCode size={14} className="inline align-middle" /> {t('livreur.commandes.activateCamera')}
                   </button>
                 )}
                 {finalizeError && (
                   <button onClick={() => { setFinalizeError(null); setFinalizeScanResult(null); setFinalizeVerified(false) }}
                     className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
                     style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
-                    <QrCode size={14} className="inline align-middle" /> Réessayer le scan
+                    <QrCode size={14} className="inline align-middle" /> {t('livreur.commandes.retryScan')}
                   </button>
                 )}
               </div>
@@ -762,13 +764,13 @@ export default function CommandesLivreur() {
                 <div className="rounded-2xl p-4 mb-4" style={{ background: isDark ? 'rgba(226,75,74,0.12)' : '#FEE2E2', border: '1.5px solid rgba(226,75,74,0.3)' }}>
                   <div className="flex items-center gap-2 mb-1">
                     <AlertTriangle size={16} style={{ color: '#E24B4A' }} />
-                    <span className="text-xs font-black" style={{ color: '#E24B4A' }}>Échec de la vérification</span>
+                    <span className="text-xs font-black" style={{ color: '#E24B4A' }}>{t('livreur.commandes.verificationFailed')}</span>
                   </div>
                   <div className="text-xs" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
                     {finalizeError}
                   </div>
                   <div className="text-[10px] mt-2" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
-                    Vérifiez que vous scannez le QR code de la bonne commande.
+                    {t('livreur.commandes.verifyCorrectOrder')}
                   </div>
                 </div>
               )}
@@ -779,7 +781,7 @@ export default function CommandesLivreur() {
                   background: (!finalizeVerified || submitting) ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
                   border: 'none', opacity: submitting ? 0.7 : 1,
                 }}>
-                {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Envoi…</> : <><CheckCircle size={14} className="inline align-middle" /> Finaliser la livraison</>}
+                {submitting ? <><Loader2 size={14} className="animate-spin inline" /> {t('livreur.commandes.sending')}</> : <><CheckCircle size={14} className="inline align-middle" /> {t('livreur.commandes.finalizeDelivery')}</>}
               </button>
             </div>
           </div>
@@ -796,9 +798,9 @@ export default function CommandesLivreur() {
               <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
             </div>
             <div className="px-5 pb-8 pt-3">
-              <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Commande #{collectOpen.commande?.id_commande} — Collecte</h2>
+              <h2 className="font-black text-lg mb-1" style={{ color: 'var(--text-primary)' }}>{t('livreur.commandeNumber')}{collectOpen.commande?.id_commande} — {t('livreur.commandes.collectTitle')}</h2>
               <p className="text-xs mb-5" style={{ color: 'var(--text-muted)' }}>
-                {collectOpen.commande?.date_creation && `Créée le ${new Date(collectOpen.commande.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+                {collectOpen.commande?.date_creation && `${t('livreur.createdOn')} ${new Date(collectOpen.commande.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
               </p>
 
               {/* Vendor Stepper */}

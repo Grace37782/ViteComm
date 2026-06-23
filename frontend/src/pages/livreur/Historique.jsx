@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { api } from '../../services/api'
 import { CheckCircle, Truck, XCircle, Undo2, ChevronDown, Search } from 'lucide-react'
 
@@ -10,6 +11,7 @@ export default function Historique() {
   const navigate = useNavigate()
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
   const [deliveries, setDeliveries] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -77,21 +79,20 @@ export default function Historique() {
             <span className="text-white text-lg">←</span>
           </button>
           <div className="flex-1">
-            <div className="text-white font-black text-base leading-tight">Historique</div>
-            <div className="text-white/70 text-xs">{deliveries?.length ?? 0} livraison(s)</div>
+            <div className="text-white font-black text-base leading-tight">{t('livreur.historique.title')}</div>
+            <div className="text-white/70 text-xs">{t('livreur.historique.deliveriesCount', { count: deliveries?.length ?? 0 })}</div>
           </div>
         </div>
       </div>
 
       {/* STATS */}
-      {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Terminées', value: stats?.terminees ?? 0, icon: <CheckCircle size={20} />,
+          { label: t('livreur.historique.completed'), value: stats?.terminees ?? 0, icon: <CheckCircle size={20} />,
             bg: isDark ? 'rgba(29,158,117,0.12)' : '#E1F5EE', border: isDark ? '#2DC491' : '#9FE1CB', color: isDark ? '#34D399' : '#0F6E56' },
-          { label: 'En cours', value: stats?.en_cours ?? 0, icon: <Truck size={20} />,
+          { label: t('livreur.historique.inProgress'), value: stats?.en_cours ?? 0, icon: <Truck size={20} />,
             bg: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', border: isDark ? '#BA7517' : '#FAC775', color: isDark ? '#F3A83B' : '#854F0B' },
-          { label: 'Échecs', value: stats?.echecs ?? 0, icon: <XCircle size={20} />,
+          { label: t('livreur.historique.failures'), value: stats?.echecs ?? 0, icon: <XCircle size={20} />,
             bg: isDark ? 'rgba(239,68,68,0.12)' : '#FEE2E2', border: isDark ? '#EF4444' : '#FECACA', color: isDark ? '#F87171' : '#B91C1C' },
         ].map(s => (
           <div key={s.label} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
@@ -106,10 +107,10 @@ export default function Historique() {
       {/* FILTERS */}
       <div className="flex gap-2 overflow-x-auto scrollbar-none">
         {[
-          { id: 'all', label: 'Tout' },
-          { id: 'Livree', label: <><CheckCircle size={12} className="inline align-middle" /> Livrées</> },
-          { id: 'En cours de livraison', label: <><Truck size={12} className="inline align-middle" /> En cours</> },
-          { id: 'Echec', label: <><XCircle size={12} className="inline align-middle" /> Échecs</> },
+          { id: 'all', label: t('livreur.historique.filterAll') },
+          { id: 'Livree', label: <><CheckCircle size={12} className="inline align-middle" /> {t('livreur.historique.delivered')}</> },
+          { id: 'En cours de livraison', label: <><Truck size={12} className="inline align-middle" /> {t('livreur.historique.filterInProgress')}</> },
+          { id: 'Echec', label: <><XCircle size={12} className="inline align-middle" /> {t('livreur.historique.filterFailures')}</> },
         ].map(f => (
           <button key={f.id} onClick={() => { setFilter(f.id); setVisibleCount(PAGE_SIZE) }}
             className="px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer whitespace-nowrap transition-all active:scale-95"
@@ -130,7 +131,7 @@ export default function Historique() {
           <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <input
             type="text"
-            placeholder="Rechercher par client, n° commande, produit, marché..."
+            placeholder={t('livreur.historique.searchPlaceholder')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE) }}
             className="flex-1 bg-transparent outline-none text-sm font-medium"
@@ -150,12 +151,12 @@ export default function Historique() {
       <div className="flex flex-col gap-3">
         {filtered.length === 0 && (
           <div className="text-center text-sm py-10 rounded-2xl" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-muted)' }}>
-            {search.trim() ? `Aucun résultat pour "${search}"` : 'Aucune livraison trouvée.'}
+            {search.trim() ? t('livreur.noResultsFor', { query: search }) : t('livreur.historique.noDeliveries')}
             {search.trim() && (
               <button onClick={() => setSearch('')}
                 className="mt-3 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
                 style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
-                Effacer la recherche
+                {t('common.clearSearch')}
               </button>
             )}
           </div>
@@ -171,36 +172,36 @@ export default function Historique() {
               style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
-                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>Commande #{cmd?.id_commande}</div>
+                  <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{t('livreur.commandeNumber')}{cmd?.id_commande}</div>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                     {clientName}
-                    {cmd?.date_creation && ` · Créée le ${new Date(cmd.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+                    {cmd?.date_creation && ` · ${t('livreur.createdOn')} ${new Date(cmd.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
                   </div>
                 </div>
                 <span className="rounded-2xl px-3 py-1 text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>
-                  {d.statut_livraison === 'Livree' ? 'Livrée' : d.statut_livraison === 'Echec' ? 'Échec' : d.statut_livraison}
+                  {d.statut_livraison === 'Livree' ? t('livreur.statusDelivered') : d.statut_livraison === 'Echec' ? t('livreur.statusFailed') : d.statut_livraison}
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-3 text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
                 <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                  <div className="font-semibold">Destination</div>
+                  <div className="font-semibold">{t('livreur.historique.destination')}</div>
                   <div>{cmd?.client?.adresse_livraison || '—'}</div>
                 </div>
                 <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-                  <div className="font-semibold">Montant</div>
+                  <div className="font-semibold">{t('livreur.historique.amount')}</div>
                   <div className="font-black" style={{ color: 'var(--text-primary)' }}>{((cmd?.total_marchandises || 0) + (cmd?.frais_livraison || 0)).toLocaleString()} F</div>
-                  <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{cmd?.detailsCommande?.reduce((sum, d) => sum + (d.quantite_commandee || 0), 0) || 0} article(s)</div>
+                  <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{cmd?.detailsCommande?.reduce((sum, d) => sum + (d.quantite_commandee || 0), 0) || 0} {t('livreur.articlesCount')}</div>
                 </div>
               </div>
               {d.frais_retour_calcules > 0 && (
                 <div className="rounded-xl px-4 py-2 text-xs mb-2"
                   style={{ background: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' }}>
-                  <Undo2 size={12} className="inline align-middle" /> Frais retour : {d.frais_retour_calcules.toLocaleString()} F
+                  <Undo2 size={12} className="inline align-middle" /> {t('livreur.historique.returnFee')} {d.frais_retour_calcules.toLocaleString()} F
                 </div>
               )}
               <div className="flex items-center justify-between text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                <span>Prise en charge : {d.date_prise_en_charge ? new Date(d.date_prise_en_charge).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
-                <span>Fin : {d.date_fin_reelle ? new Date(d.date_fin_reelle).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                <span>{t('livreur.historique.pickedUp')} {d.date_prise_en_charge ? new Date(d.date_prise_en_charge).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                <span>{t('livreur.historique.ended')} {d.date_fin_reelle ? new Date(d.date_fin_reelle).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
               </div>
             </div>
           )
@@ -210,7 +211,7 @@ export default function Historique() {
           <button onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
             className="w-full py-3 rounded-2xl text-xs font-bold cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-1.5"
             style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', color: 'var(--text-secondary)' }}>
-            <ChevronDown size={14} /> Charger plus ({filtered.length - visibleCount} restant{filtered.length - visibleCount > 1 ? 's' : ''})
+            <ChevronDown size={14} /> {t('common.loadMore')} ({filtered.length - visibleCount} {t('common.remaining')}{filtered.length - visibleCount > 1 ? 's' : ''})
           </button>
         )}
       </div>

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../../context/ThemeContext'
+import { useLang } from '../../context/LangContext'
 import { api } from '../../services/api'
 import { AlertTriangle, Bike, Star, Wallet, Truck, Undo2, Loader2, Save } from 'lucide-react'
 
 export default function Livreur() {
   const { resolved } = useTheme()
   const isDark = resolved === 'dark'
+  const { t } = useLang()
   const [dash, setDash] = useState(null)
   const [loading, setLoading] = useState(true)
   const [dispo, setDispo] = useState(true)
@@ -41,7 +43,7 @@ export default function Livreur() {
         est_disponible: newVal, distance_marche: distanceAction,
         heure_debut_dispo: horaireDebut, heure_fin_dispo: horaireFin,
       })
-      showToast(newVal ? 'Vous êtes en ligne' : 'Hors ligne')
+      showToast(newVal ? t('toast.online') : t('toast.offline'))
     } catch (e) { setDispo(!newVal); showToast(e.message) }
     finally { setSavingDispo(false) }
   }
@@ -53,7 +55,7 @@ export default function Livreur() {
         est_disponible: dispo, distance_marche: distanceAction,
         heure_debut_dispo: horaireDebut, heure_fin_dispo: horaireFin,
       })
-      showToast('Disponibilité mise à jour')
+      showToast(t('toast.availabilityUpdated'))
     } catch (e) { showToast(e.message) }
     finally { setSavingDispo(false) }
   }
@@ -76,12 +78,12 @@ export default function Livreur() {
     return (
       <div className="px-4 py-8 flex flex-col items-center gap-3">
         <div className="flex justify-center"><AlertTriangle size={40} /></div>
-        <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Impossible de charger le tableau de bord</div>
+        <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{t('livreur.dashboard.loadError')}</div>
         <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>{error}</div>
         <button onClick={() => window.location.reload()}
           className="mt-2 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
           style={{ background: '#D85A30', color: '#fff' }}>
-          Réessayer
+          {t('common.retry')}
         </button>
       </div>
     )
@@ -116,7 +118,7 @@ export default function Livreur() {
               <span className="font-black text-lg" style={{ color: '#D85A30' }}>{score.toFixed(1)}</span>
               <Star size={16} />
             </div>
-            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{dash?.nb_avis || 0} avis</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{dash?.nb_avis || 0} {t('livreur.dashboard.avis')}</div>
           </div>
         </div>
       </div>
@@ -124,14 +126,14 @@ export default function Livreur() {
       {/* STATS */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Gains', value: `${(dash?.total_gains || 0).toLocaleString()} F`, icon: <Wallet size={20} />,
+          { key: 'gains', label: t('livreur.dashboard.gains'), value: `${(dash?.total_gains || 0).toLocaleString()} F`, icon: <Wallet size={20} />,
             bg: isDark ? 'rgba(216,90,48,0.12)' : '#FAECE7', border: isDark ? '#D85A30' : '#F5C4B3', color: isDark ? '#E87D55' : '#993C1D' },
-          { label: 'Actives', value: dash?.courses_actives || 0, icon: <Truck size={20} />,
+          { key: 'actives', label: t('livreur.dashboard.actives'), value: dash?.courses_actives || 0, icon: <Truck size={20} />,
             bg: isDark ? 'rgba(186,117,23,0.12)' : '#FAEEDA', border: isDark ? '#BA7517' : '#FAC775', color: isDark ? '#F3A83B' : '#854F0B' },
-          { label: 'Retours', value: dash?.retours_en_attente || 0, icon: <Undo2 size={20} />,
+          { key: 'retours', label: t('nav.retours'), value: dash?.retours_en_attente || 0, icon: <Undo2 size={20} />,
             bg: isDark ? 'rgba(239,68,68,0.12)' : '#FEE2E2', border: isDark ? '#EF4444' : '#FECACA', color: isDark ? '#F87171' : '#B91C1C' },
         ].map(card => (
-          <div key={card.label} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
+          <div key={card.key} className="rounded-2xl p-4 transition-all hover:shadow-md active:scale-98"
             style={{ background: card.bg, border: `1.5px solid ${card.border}` }}>
             <div className="mb-1">{card.icon}</div>
             <div className="text-[10px] uppercase tracking-wider font-semibold mb-0.5" style={{ color: 'var(--text-muted)' }}>{card.label}</div>
@@ -144,8 +146,8 @@ export default function Livreur() {
       <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-3">
           <div>
-            <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Disponibilité</div>
-            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Horaires et rayon d'action</div>
+            <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>{t('livreur.dashboard.availability')}</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('livreur.dashboard.availabilityDesc')}</div>
           </div>
           <button onClick={toggleDispo} disabled={savingDispo}
             className="rounded-2xl px-5 py-2 font-black text-sm cursor-pointer transition-all active:scale-95"
@@ -155,31 +157,31 @@ export default function Livreur() {
               border: `1.5px solid ${dispo ? '#D85A30' : 'var(--border)'}`,
               opacity: savingDispo ? 0.6 : 1,
             }}>
-            {dispo ? 'En ligne' : 'Hors ligne'}
+            {dispo ? t('livreur.dashboard.online') : t('livreur.dashboard.offline')}
           </button>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <label className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-            <div className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Début</div>
+            <div className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>{t('livreur.dashboard.debut')}</div>
             <input type="time" value={horaireDebut} onChange={e => setHoraireDebut(e.target.value)}
               className="mt-1 w-full bg-transparent outline-none text-sm font-black" style={{ color: 'var(--text-primary)' }} />
           </label>
           <label className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-            <div className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Fin</div>
+            <div className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>{t('livreur.dashboard.fin')}</div>
             <input type="time" value={horaireFin} onChange={e => setHoraireFin(e.target.value)}
               className="mt-1 w-full bg-transparent outline-none text-sm font-black" style={{ color: 'var(--text-primary)' }} />
           </label>
           <label className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
-            <div className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Rayon</div>
+            <div className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>{t('livreur.dashboard.rayon')}</div>
             <input type="number" min="1" value={distanceAction} onChange={e => setDistanceAction(Number(e.target.value))}
               className="mt-1 w-full bg-transparent outline-none text-sm font-black" style={{ color: 'var(--text-primary)' }} />
-            <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>km</div>
+            <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('livreur.dashboard.km')}</div>
           </label>
         </div>
         <button onClick={saveDispo} disabled={savingDispo}
           className="mt-3 w-full rounded-2xl py-2.5 text-xs font-bold cursor-pointer transition-all active:scale-98"
           style={{ background: 'var(--surface-alt)', color: 'var(--accent)', border: '1.5px solid var(--border)' }}>
-          {savingDispo ? <><Loader2 size={14} className="animate-spin inline" /> Enregistrement…</> : <><Save size={14} className="inline align-middle" /> Enregistrer les paramètres</>}
+          {savingDispo ? <><Loader2 size={14} className="animate-spin inline" /> {t('livreur.dashboard.saving')}</> : <><Save size={14} className="inline align-middle" /> {t('livreur.dashboard.saveSettings')}</>}
         </button>
       </div>
 
@@ -187,8 +189,8 @@ export default function Livreur() {
       <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1.5px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-3">
           <div>
-            <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Mon véhicule</div>
-            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Type et immatriculation</div>
+            <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>{t('livreur.dashboard.myVehicle')}</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('livreur.dashboard.vehicleDesc')}</div>
           </div>
           <div className="text-xs font-bold px-2.5 py-1 rounded-full"
             style={{ background: isDark ? 'rgba(186,117,23,0.15)' : '#FAEEDA', color: isDark ? '#F3A83B' : '#854F0B' }}>
@@ -198,11 +200,11 @@ export default function Livreur() {
         <div className="rounded-xl p-3" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>Véhicule</div>
+              <div className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{t('livreur.dashboard.vehicle')}</div>
               <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{dash?.vehicule?.type_vehicule || '—'}</div>
             </div>
             <div>
-              <div className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>Immatriculation</div>
+              <div className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{t('livreur.dashboard.plateNumber')}</div>
               <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>{dash?.vehicule?.immatriculation || '—'}</div>
             </div>
           </div>

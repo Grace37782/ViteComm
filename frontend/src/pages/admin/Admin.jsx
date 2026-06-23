@@ -1,37 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useLang } from '../../context/LangContext'
 import { api } from '../../services/api'
 import MobileDrawer from '../../components/MobileDrawer'
 import NotificationBell from '../../components/NotificationBell'
 import Notifications from '../Notifications'
 import { LayoutDashboard, Users, Package, MapPin, Flag, Scale, User, DollarSign, TrendingUp, Store, Motorbike, ShoppingCart, Shield, Mail, Lock, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Building, ChevronDown, LogOut, Star, ArrowRight, Bell } from 'lucide-react'
 
-const TABS = [
-  { id: 'dashboard', label: 'Tableau de bord', icon: <LayoutDashboard size={14} /> },
-  { id: 'users', label: 'Utilisateurs', icon: <Users size={14} /> },
-  { id: 'products', label: 'Produits', icon: <Package size={14} /> },
-  { id: 'marchés', label: 'Marchés', icon: <MapPin size={14} /> },
-  { id: 'signalements', label: 'Signalements', icon: <Flag size={14} /> },
-  { id: 'litiges', label: 'Litiges', icon: <Scale size={14} /> },
-  { id: 'notifications', label: 'Notifications', icon: <Bell size={14} /> },
-  { id: 'profil', label: 'Mon Profil', icon: <User size={14} /> },
-]
-
-const ADMIN_NAV_TABS = [
-  { icon: LayoutDashboard, label: 'Tableau de bord', path: '__dashboard' },
-  { icon: Users, label: 'Utilisateurs', path: '__users' },
-  { icon: Package, label: 'Produits', path: '__products' },
-  { icon: MapPin, label: 'Marchés', path: '__marchés' },
-  { icon: Flag, label: 'Signalements', path: '__signalements' },
-  { icon: Scale, label: 'Litiges', path: '__litiges' },
-  { icon: Bell, label: 'Notifications', path: '__notifications' },
-  { icon: User, label: 'Mon Profil', path: '__profil' },
-]
-
 const STATUS_COLORS = { Actif: '#1D9E75', Suspendu: '#BA7517', Banni: '#D85A30' }
 
 export default function Admin() {
   const navigate = useNavigate()
+  const { t } = useLang()
   const [tab, setTab] = useState('dashboard')
   const [tabFilter, setTabFilter] = useState(null)
   const [leaderboardData, setLeaderboardData] = useState(null)
@@ -41,6 +21,28 @@ export default function Admin() {
     const user = stored ? JSON.parse(stored) : null
     return user?.est_admin ? user : null
   })
+
+  const tabs = [
+    { id: 'dashboard', label: t('admin.tabs.dashboard'), icon: <LayoutDashboard size={14} /> },
+    { id: 'users', label: t('admin.tabs.users'), icon: <Users size={14} /> },
+    { id: 'products', label: t('admin.tabs.products'), icon: <Package size={14} /> },
+    { id: 'marchés', label: t('admin.tabs.markets'), icon: <MapPin size={14} /> },
+    { id: 'signalements', label: t('admin.tabs.reports'), icon: <Flag size={14} /> },
+    { id: 'litiges', label: t('admin.tabs.disputes'), icon: <Scale size={14} /> },
+    { id: 'notifications', label: t('admin.tabs.notifications'), icon: <Bell size={14} /> },
+    { id: 'profil', label: t('admin.tabs.profile'), icon: <User size={14} /> },
+  ]
+
+  const adminNavTabs = [
+    { icon: LayoutDashboard, label: t('admin.tabs.dashboard'), path: '__dashboard' },
+    { icon: Users, label: t('admin.tabs.users'), path: '__users' },
+    { icon: Package, label: t('admin.tabs.products'), path: '__products' },
+    { icon: MapPin, label: t('admin.tabs.markets'), path: '__marchés' },
+    { icon: Flag, label: t('admin.tabs.reports'), path: '__signalements' },
+    { icon: Scale, label: t('admin.tabs.disputes'), path: '__litiges' },
+    { icon: Bell, label: t('admin.tabs.notifications'), path: '__notifications' },
+    { icon: User, label: t('admin.tabs.profile'), path: '__profil' },
+  ]
 
   useEffect(() => {
     if (!admin) navigate('/accueil')
@@ -55,25 +57,25 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen font-sans" style={{ background: 'var(--bg)' }}>
-      <Header admin={admin} onLogout={() => { localStorage.clear(); navigate('/accueil') }} tab={tab} onTabChange={(t) => { setTabFilter(null); setTab(t) }} />
+      <Header admin={admin} onLogout={() => { localStorage.clear(); navigate('/accueil') }} tab={tab} onTabChange={(newTab) => { setTabFilter(null); setTab(newTab) }} tabs={tabs} adminNavTabs={adminNavTabs} />
       {tab === 'notifications' ? (
         <Notifications basePath="/admin/notifications" />
       ) : (
         <>
           {tab !== 'dashboard' && <AdminTabHeader title={
-            tab === 'users' ? 'Utilisateurs' :
-            tab === 'products' ? 'Produits' :
-            tab === 'marchés' ? 'Marchés' :
-            tab === 'signalements' ? 'Signalements' :
-            tab === 'litiges' ? 'Litiges' :
-            'Mon profil'
+            tab === 'users' ? t('admin.tabs.users') :
+            tab === 'products' ? t('admin.tabs.products') :
+            tab === 'marchés' ? t('admin.tabs.markets') :
+            tab === 'signalements' ? t('admin.tabs.reports') :
+            tab === 'litiges' ? t('admin.tabs.disputes') :
+            t('admin.tabs.profile')
           } subtitle={
-            tab === 'users' ? 'Utilisateurs de la plateforme' :
-            tab === 'products' ? 'Produits en catalogue' :
-            tab === 'marchés' ? 'Lieux de vente' :
-            tab === 'signalements' ? 'Signalements en attente' :
-            tab === 'litiges' ? 'Litiges à traiter' :
-            'Profil administrateur'
+            tab === 'users' ? t('admin.subtitle.users') :
+            tab === 'products' ? t('admin.subtitle.products') :
+            tab === 'marchés' ? t('admin.subtitle.markets') :
+            tab === 'signalements' ? t('admin.subtitle.reports') :
+            tab === 'litiges' ? t('admin.subtitle.disputes') :
+            t('admin.subtitle.profile')
           } onBack={() => navigateTo('dashboard')} />}
           <main className="max-w-7xl mx-auto px-4 py-6 pb-24">
             {tab === 'dashboard' && <DashboardTab onNavigate={navigateTo} onLeaderboardReady={setLeaderboardData} onProductRankingsReady={setProductRankings} />}
@@ -113,14 +115,10 @@ function AdminTabHeader({ title, subtitle, onBack }) {
   )
 }
 
-function Header({ admin, onLogout, tab, onTabChange }) {
+function Header({ admin, onLogout, tab, onTabChange, tabs, adminNavTabs }) {
   const initials = (admin.prenom?.[0] || '') + (admin.nom?.[0] || '')
   const accentColor = '#1D9E75'
-
-  const adminTabsWithHandlers = ADMIN_NAV_TABS.map(t => ({
-    ...t,
-    path: t.path,
-  }))
+  const { t } = useLang()
 
   return (
     <div className="sticky top-0 z-50" style={{ background: `linear-gradient(135deg, ${accentColor} 0%, #0F6E56 100%)` }}>
@@ -128,9 +126,9 @@ function Header({ admin, onLogout, tab, onTabChange }) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <MobileDrawer
-              navTabs={adminTabsWithHandlers}
+              navTabs={adminNavTabs}
               accentColor={accentColor}
-              brandLabel="Admin ViteComm"
+              brandLabel={t('admin.brand')}
               onLogout={onLogout}
               currentTab={`__${tab}`}
               onTabSelect={(path) => {
@@ -148,25 +146,25 @@ function Header({ admin, onLogout, tab, onTabChange }) {
               )}
             </button>
             <div>
-              <div className="text-white font-black text-sm">Console de Supervision Globale</div>
+              <div className="text-white font-black text-sm">{t('admin.supervision')}</div>
               <div className="text-white/60 text-xs">
-                {admin.prenom} {admin.nom} · Administrateur
+                {admin.prenom} {admin.nom} · {t('admin.administrator')}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <NotificationBell notificationsPath="__admin_notifications" onNavigate={(path) => { if (path === '__admin_notifications') onTabChange('notifications') }} />
             <button onClick={onLogout} className="hidden sm:block text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer" style={{ background: 'rgba(255,255,255,0.1)' }}>
-              Déconnexion
+              {t('admin.logout')}
             </button>
           </div>
         </div>
         {/* Desktop tab bar — hidden on mobile */}
         <div className="hidden md:flex gap-1 overflow-x-auto pb-1 scrollbar-none">
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => onTabChange(t.id)} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
-              style={{ background: tab === t.id ? 'rgba(255,255,255,0.2)' : 'transparent', color: tab === t.id ? '#fff' : 'rgba(255,255,255,0.7)' }}>
-              <span>{t.icon}</span> {t.label}
+          {tabs.map(tabItem => (
+            <button key={tabItem.id} onClick={() => onTabChange(tabItem.id)} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer"
+              style={{ background: tab === tabItem.id ? 'rgba(255,255,255,0.2)' : 'transparent', color: tab === tabItem.id ? '#fff' : 'rgba(255,255,255,0.7)' }}>
+              <span>{tabItem.icon}</span> {tabItem.label}
             </button>
           ))}
         </div>
@@ -192,6 +190,7 @@ function StatCard({ label, value, icon, color, onClick }) {
 function DashboardTab({ onNavigate, onLeaderboardReady, onProductRankingsReady }) {
   const [data, setData] = useState(null)
   const [err, setErr] = useState('')
+  const { t } = useLang()
 
   useEffect(() => {
     api.get('/admin/dashboard').then(d => {
@@ -202,44 +201,45 @@ function DashboardTab({ onNavigate, onLeaderboardReady, onProductRankingsReady }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (err) return <div className="text-center py-12 text-sm font-semibold" style={{ color: '#D85A30' }}><AlertTriangle size={14} className="inline align-middle mr-1" />{err}</div>
-  if (!data) return <div className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div>
+  if (!data) return <div className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</div>
 
   const { financier, compteur, alertes, produits_populaires, produits_refuses, classements } = data
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Ventes totales" value={`${(financier.total_ventes || 0).toLocaleString()} F`} icon={<DollarSign size={20} />} color="#1D9E75" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'ca_desc' })} />
-        <StatCard label="Commissions" value={`${(financier.total_commissions_plateforme || 0).toLocaleString()} F`} icon={<TrendingUp size={20} />} color="#0F6E56" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'ca_desc' })} />
-        <StatCard label="Litiges ouverts" value={alertes.litiges_ouverts} icon={<Scale size={20} />} color="#D85A30" onClick={() => onNavigate('litiges', { status: 'Ouvert' })} />
-        <StatCard label="Signalements en attente" value={alertes.signalements_en_attente} icon={<Flag size={20} />} color="#BA7517" onClick={() => onNavigate('signalements', { status: 'En attente' })} />
+        <StatCard label={t('admin.dashboard.totalSales')} value={`${(financier.total_ventes || 0).toLocaleString()} F`} icon={<DollarSign size={20} />} color="#1D9E75" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'ca_desc' })} />
+        <StatCard label={t('admin.dashboard.commissions')} value={`${(financier.total_commissions_plateforme || 0).toLocaleString()} F`} icon={<TrendingUp size={20} />} color="#0F6E56" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'ca_desc' })} />
+        <StatCard label={t('admin.dashboard.openDisputes')} value={alertes.litiges_ouverts} icon={<Scale size={20} />} color="#D85A30" onClick={() => onNavigate('litiges', { status: 'Ouvert' })} />
+        <StatCard label={t('admin.dashboard.pendingReports')} value={alertes.signalements_en_attente} icon={<Flag size={20} />} color="#BA7517" onClick={() => onNavigate('signalements', { status: 'En attente' })} />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Utilisateurs" value={compteur?.total_utilisateurs || 0} icon={<Users size={20} />} color="#1D9E75" onClick={() => onNavigate('users')} />
-        <StatCard label="Vendeurs" value={compteur?.total_vendeurs || 0} icon={<Store size={20} />} color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'ca_desc' })} />
-        <StatCard label="Livreurs" value={compteur?.total_livreurs || 0} icon={<Motorbike size={20} />} color="#D85A30" onClick={() => onNavigate('users', { role: 'livreur', sortBy: 'volume_desc' })} />
-        <StatCard label="Commandes actives" value={compteur?.commandes_actives || 0} icon={<ShoppingCart size={20} />} color="#0F6E56" onClick={() => onNavigate('users', { sortBy: 'orders_desc' })} />
+        <StatCard label={t('admin.dashboard.users')} value={compteur?.total_utilisateurs || 0} icon={<Users size={20} />} color="#1D9E75" onClick={() => onNavigate('users')} />
+        <StatCard label={t('admin.dashboard.vendors')} value={compteur?.total_vendeurs || 0} icon={<Store size={20} />} color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'ca_desc' })} />
+        <StatCard label={t('admin.dashboard.drivers')} value={compteur?.total_livreurs || 0} icon={<Motorbike size={20} />} color="#D85A30" onClick={() => onNavigate('users', { role: 'livreur', sortBy: 'volume_desc' })} />
+        <StatCard label={t('admin.dashboard.activeOrders')} value={compteur?.commandes_actives || 0} icon={<ShoppingCart size={20} />} color="#0F6E56" onClick={() => onNavigate('users', { sortBy: 'orders_desc' })} />
       </div>
 
       <LeaderboardSection data={classements} onNavigate={onNavigate} />
-      <ProductRanking title="Produits les plus populaires" items={produits_populaires} color="#1D9E75" onClick={() => onNavigate('products', { sortBy: 'popularite' })} />
-      <ProductRanking title="Produits les plus refusés" items={produits_refuses} color="#D85A30" onClick={() => onNavigate('products', { sortBy: 'refus' })} />
+      <ProductRanking title={t('admin.dashboard.mostPopularProducts')} items={produits_populaires} color="#1D9E75" onClick={() => onNavigate('products', { sortBy: 'popularite' })} />
+      <ProductRanking title={t('admin.dashboard.mostRefusedProducts')} items={produits_refuses} color="#D85A30" onClick={() => onNavigate('products', { sortBy: 'refus' })} />
     </div>
   )
 }
 
 function LeaderboardSection({ data, onNavigate }) {
+  const { t } = useLang()
   if (!data) return null
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Store size={14} /> Vendeurs (CA)</span>} items={data.vendeurs} valueKey="chiffre_affaires" unit="F" color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'ca_desc' })} />
-        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Motorbike size={14} /> Livreurs (Volume)</span>} items={data.livreurs} valueKey="volume_livre" unit="F" color="#D85A30" onClick={() => onNavigate('users', { role: 'livreur', sortBy: 'volume_desc' })} />
-        <LeaderboardCard title={<span className="flex items-center gap-1.5"><ShoppingCart size={14} /> Clients (Achats)</span>} items={data.clients} valueKey="volume_achat" unit="F" color="#1D9E75" onClick={() => onNavigate('users', { role: 'client', sortBy: 'depense_desc' })} />
+        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Store size={14} /> {t('admin.dashboard.topVendors')}</span>} items={data.vendeurs} valueKey="chiffre_affaires" unit="F" color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'ca_desc' })} />
+        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Motorbike size={14} /> {t('admin.dashboard.topDrivers')}</span>} items={data.livreurs} valueKey="volume_livre" unit="F" color="#D85A30" onClick={() => onNavigate('users', { role: 'livreur', sortBy: 'volume_desc' })} />
+        <LeaderboardCard title={<span className="flex items-center gap-1.5"><ShoppingCart size={14} /> {t('admin.dashboard.topClients')}</span>} items={data.clients} valueKey="volume_achat" unit="F" color="#1D9E75" onClick={() => onNavigate('users', { role: 'client', sortBy: 'depense_desc' })} />
       </div>
       {data.vendeurs_reputation && data.vendeurs_reputation.length > 0 && (
-        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Star size={14} /> Vendeurs (Réputation)</span>} items={data.vendeurs_reputation} valueKey="score_reputation" unit="/100" color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'reputation_desc' })} />
+        <LeaderboardCard title={<span className="flex items-center gap-1.5"><Star size={14} /> {t('admin.dashboard.topVendorsReputation')}</span>} items={data.vendeurs_reputation} valueKey="score_reputation" unit="/100" color="#BA7517" onClick={() => onNavigate('users', { role: 'vendeur', sortBy: 'reputation_desc' })} />
       )}
     </div>
   )
@@ -275,6 +275,7 @@ function LeaderboardCard({ title, items, valueKey, unit, color, onClick }) {
 }
 
 function ProductRanking({ title, items, color, onClick }) {
+  const { t } = useLang()
   if (!items || items.length === 0) return null
   return (
     <div onClick={onClick}
@@ -287,11 +288,11 @@ function ProductRanking({ title, items, color, onClick }) {
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead><tr className="text-left" style={{ color: 'var(--text-muted)' }}>
-            <th className="pb-2 pr-3 font-semibold">Produit</th>
-            <th className="pb-2 pr-3 font-semibold">Vendeur</th>
-            <th className="pb-2 pr-3 font-semibold">Marché</th>
-            <th className="pb-2 pr-3 font-semibold text-right">Qté</th>
-            <th className="pb-2 font-semibold text-right">Prix</th>
+            <th className="pb-2 pr-3 font-semibold">{t('admin.dashboard.table.product')}</th>
+            <th className="pb-2 pr-3 font-semibold">{t('admin.dashboard.table.vendor')}</th>
+            <th className="pb-2 pr-3 font-semibold">{t('admin.dashboard.table.market')}</th>
+            <th className="pb-2 pr-3 font-semibold text-right">{t('admin.dashboard.table.qty')}</th>
+            <th className="pb-2 font-semibold text-right">{t('admin.dashboard.table.price')}</th>
           </tr></thead>
           <tbody>
             {items.map(p => (
@@ -313,6 +314,7 @@ function ProductRanking({ title, items, color, onClick }) {
 const PAGE_SIZE = 10
 
 function UsersTab({ initialFilter, leaderboardData }) {
+  const { t } = useLang()
   const [users, setUsers] = useState([])
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('tous')
@@ -344,13 +346,13 @@ function UsersTab({ initialFilter, leaderboardData }) {
   const statuses = ['tous', 'Actif', 'Suspendu', 'Banni']
 
   const sortOptions = [
-    { value: 'name', label: 'Nom (A-Z)' },
-    { value: 'ca_desc', label: 'CA décroissant' },
-    { value: 'ca_asc', label: 'CA croissant' },
-    { value: 'reputation_desc', label: 'Réputation ↓' },
-    { value: 'volume_desc', label: 'Volume livré ↓' },
-    { value: 'depense_desc', label: 'Dépenses ↓' },
-    { value: 'orders_desc', label: 'Commandes ↓' },
+    { value: 'name', label: t('admin.users.sort.name') },
+    { value: 'ca_desc', label: t('admin.users.sort.caDesc') },
+    { value: 'ca_asc', label: t('admin.users.sort.caAsc') },
+    { value: 'reputation_desc', label: t('admin.users.sort.reputationDesc') },
+    { value: 'volume_desc', label: t('admin.users.sort.volumeDesc') },
+    { value: 'depense_desc', label: t('admin.users.sort.depenseDesc') },
+    { value: 'orders_desc', label: t('admin.users.sort.ordersDesc') },
   ]
 
   const filtered = users.filter(u => {
@@ -411,7 +413,7 @@ function UsersTab({ initialFilter, leaderboardData }) {
   }
 
   async function deleteUser(id, name) {
-    if (!confirm(`Supprimer ${name} ? Cette action est irréversible.`)) return
+    if (!confirm(t('admin.users.deleteConfirm', { name }))) return
     try {
       await api.delete(`/admin/users/${id}`)
       if (selected === id) { setSelected(null); setDetails(null) }
@@ -422,15 +424,15 @@ function UsersTab({ initialFilter, leaderboardData }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row gap-3">
-        <input type="text" placeholder="Rechercher un utilisateur..." value={search} onChange={e => setSearch(e.target.value)}
+        <input type="text" placeholder={t('admin.users.searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)}
           className="flex-1 rounded-2xl px-4 py-3 text-sm outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
         <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
           className="rounded-2xl px-4 py-3 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-          {roles.map(r => <option key={r} value={r}>{r === 'tous' ? 'Tous les rôles' : r}</option>)}
+          {roles.map(r => <option key={r} value={r}>{r === 'tous' ? t('admin.users.allRoles') : r}</option>)}
         </select>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="rounded-2xl px-4 py-3 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-          {statuses.map(s => <option key={s} value={s}>{s === 'tous' ? 'Tous les statuts' : s}</option>)}
+          {statuses.map(s => <option key={s} value={s}>{s === 'tous' ? t('admin.users.allStatuses') : s}</option>)}
         </select>
         <select value={sortBy} onChange={e => setSortBy(e.target.value)}
           className="rounded-2xl px-4 py-3 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
@@ -439,8 +441,8 @@ function UsersTab({ initialFilter, leaderboardData }) {
       </div>
 
       <div className="flex flex-col gap-2">
-        {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div> :
-         filtered.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun utilisateur trouvé</div> :
+        {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</div> :
+         filtered.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>{t('admin.users.noResults')}</div> :
          visibleItems.map(u => {
            const isSelected = selected === u.id_user
            const role = getRole(u)
@@ -460,7 +462,7 @@ function UsersTab({ initialFilter, leaderboardData }) {
                        <span className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{u.prenom} {u.nom}</span>
                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: `${STATUS_COLORS[u.statut_compte]}18`, color: STATUS_COLORS[u.statut_compte] }}>{u.statut_compte}</span>
                      </div>
-                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{u.email} · Rôle: {role}</div>
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{u.email} · {t('admin.users.role')}: {role}</div>
                   </div>
                 </div>
                 </button>
@@ -475,7 +477,7 @@ function UsersTab({ initialFilter, leaderboardData }) {
             <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
               className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
               style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-              <ChevronDown size={16} /> Charger plus ({sorted.length - visibleCount} restant(s))
+              <ChevronDown size={16} /> {t('admin.users.loadMore', { count: sorted.length - visibleCount })}
             </button>
           )}
        </div>
@@ -484,6 +486,7 @@ function UsersTab({ initialFilter, leaderboardData }) {
 }
 
 function UserDetailModal({ details, onClose, onUpdateStatus, onDelete }) {
+  const { t } = useLang()
   if (!details || !details.user) return null
   const { user, roleData, feedbacks } = details
   const role = user.client ? 'client' : user.vendeur ? 'vendeur' : user.livreur ? 'livreur' : 'admin'
@@ -499,7 +502,7 @@ function UserDetailModal({ details, onClose, onUpdateStatus, onDelete }) {
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b"
           style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <h3 className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Profil Utilisateur</h3>
+          <h3 className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>{t('admin.users.profileTitle')}</h3>
           <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
             style={{ border: 'none', background: 'var(--surface-alt)', color: 'var(--text-muted)' }}>
             <XCircle size={16} />
@@ -527,9 +530,9 @@ function UserDetailModal({ details, onClose, onUpdateStatus, onDelete }) {
 
           {/* Info rows */}
           <div className="flex flex-col gap-2 mb-5">
-            <InfoRow label="Email" value={user.email} icon={<Mail size={14} />} />
+              <InfoRow label={t('auth.email')} value={user.email} icon={<Mail size={14} />} />
             {user.date_inscription && (
-              <InfoRow label="Inscrit le" value={new Date(user.date_inscription).toLocaleDateString()} icon={<Flag size={14} />} />
+              <InfoRow label={t('admin.users.registeredOn')} value={new Date(user.date_inscription).toLocaleDateString()} icon={<Flag size={14} />} />
             )}
           </div>
 
@@ -539,49 +542,49 @@ function UserDetailModal({ details, onClose, onUpdateStatus, onDelete }) {
               {roleData.score_reputation !== undefined && (
                 <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
                   <div className="text-lg font-black" style={{ color: '#1D9E75' }}>{roleData.score_reputation.toFixed(1)}</div>
-                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Reputation</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{t('admin.users.reputation')}</div>
                 </div>
               )}
               {roleData.total_commandes !== undefined && (
                 <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
                   <div className="text-lg font-black" style={{ color: '#1D9E75' }}>{roleData.total_commandes}</div>
-                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Commandes</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{t('admin.users.orders')}</div>
                 </div>
               )}
               {roleData.total_depense !== undefined && (
                 <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
                   <div className="text-lg font-black" style={{ color: '#1D9E75' }}>{(roleData.total_depense || 0).toLocaleString()} F</div>
-                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Depenses</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{t('admin.users.expenses')}</div>
                 </div>
               )}
               {roleData.total_ventes !== undefined && (
                 <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
                   <div className="text-lg font-black" style={{ color: '#BA7517' }}>{roleData.total_ventes}</div>
-                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Ventes</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{t('admin.users.sales')}</div>
                 </div>
               )}
               {roleData.total_revenu !== undefined && (
                 <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
                   <div className="text-lg font-black" style={{ color: '#BA7517' }}>{(roleData.total_revenu || 0).toLocaleString()} F</div>
-                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Revenu</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{t('admin.users.revenue')}</div>
                 </div>
               )}
               {roleData.total_livraisons !== undefined && (
                 <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
                   <div className="text-lg font-black" style={{ color: '#D85A30' }}>{roleData.total_livraisons}</div>
-                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Livraisons</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{t('admin.users.deliveries')}</div>
                 </div>
               )}
               {roleData.volume_total !== undefined && (
                 <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
                   <div className="text-lg font-black" style={{ color: '#D85A30' }}>{(roleData.volume_total || 0).toLocaleString()} F</div>
-                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Volume</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{t('admin.users.volume')}</div>
                 </div>
               )}
               {roleData.est_disponible !== undefined && (
                 <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
-                  <div className="text-lg font-black" style={{ color: roleData.est_disponible ? '#1D9E75' : '#D85A30' }}>{roleData.est_disponible ? 'Disponible' : 'Indisponible'}</div>
-                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Statut livreur</div>
+                  <div className="text-lg font-black" style={{ color: roleData.est_disponible ? '#1D9E75' : '#D85A30' }}>{roleData.est_disponible ? t('admin.users.available') : t('admin.users.unavailable')}</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{t('admin.users.driverStatus')}</div>
                 </div>
               )}
             </div>
@@ -591,7 +594,7 @@ function UserDetailModal({ details, onClose, onUpdateStatus, onDelete }) {
           {roleData && roleData.type === 'vendeur' && roleData.products && roleData.products.length > 0 && (
             <div className="mb-5">
               <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: '#BA7517' }}>
-                <Package size={14} /> Catalogue ({roleData.products.length} produits)
+                <Package size={14} /> {t('admin.users.catalogue', { count: roleData.products.length })}
               </div>
               <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
                 {roleData.products.map(p => (
@@ -609,13 +612,13 @@ function UserDetailModal({ details, onClose, onUpdateStatus, onDelete }) {
           {roleData && roleData.deliveries && roleData.deliveries.length > 0 && (
             <div className="mb-5">
               <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: '#D85A30' }}>
-                <Motorbike size={14} /> Livraisons recentes ({roleData.deliveries.length})
+                <Motorbike size={14} /> {t('admin.users.recentDeliveries', { count: roleData.deliveries.length })}
               </div>
               <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
                 {roleData.deliveries.map(d => (
                   <div key={d.id_livraison} className="flex items-center justify-between rounded-xl px-3 py-2"
                     style={{ background: 'var(--surface-alt)' }}>
-                    <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Commande #{d.id_commande}</span>
+                    <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{t('admin.disputes.order')} #{d.id_commande}</span>
                     <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{d.statut_livraison}</span>
                   </div>
                 ))}
@@ -627,7 +630,7 @@ function UserDetailModal({ details, onClose, onUpdateStatus, onDelete }) {
           {roleData && roleData.orders && roleData.orders.length > 0 && (
             <div className="mb-5">
               <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: '#1D9E75' }}>
-                <ShoppingCart size={14} /> Commandes recentes ({roleData.orders.length})
+                <ShoppingCart size={14} /> {t('admin.users.recentOrders', { count: roleData.orders.length })}
               </div>
               <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
                 {roleData.orders.map(o => (
@@ -645,7 +648,7 @@ function UserDetailModal({ details, onClose, onUpdateStatus, onDelete }) {
           {feedbacks && feedbacks.length > 0 && (
             <div className="mb-5">
               <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
-                <Flag size={14} /> Avis recents ({feedbacks.length})
+                <Flag size={14} /> {t('admin.users.recentFeedbacks', { count: feedbacks.length })}
               </div>
               <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
                 {feedbacks.map(f => (
@@ -673,7 +676,7 @@ function UserDetailModal({ details, onClose, onUpdateStatus, onDelete }) {
             <button onClick={() => { onDelete(user.id_user, `${user.prenom} ${user.nom}`); onClose() }}
               className="text-[10px] font-bold px-3 py-1.5 rounded-full border cursor-pointer ml-auto"
               style={{ borderColor: '#D85A30', color: '#D85A30', background: 'transparent' }}>
-              <Trash2 size={10} className="inline align-middle mr-1" /> Supprimer
+              <Trash2 size={10} className="inline align-middle mr-1" /> {t('common.delete')}
             </button>
           </div>
         </div>
@@ -683,6 +686,7 @@ function UserDetailModal({ details, onClose, onUpdateStatus, onDelete }) {
 }
 
 function ProductsTab({ initialFilter, productRankings }) {
+  const { t } = useLang()
   const [products, setProducts] = useState([])
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('name')
@@ -735,22 +739,22 @@ function ProductsTab({ initialFilter, productRankings }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row gap-3">
-        <input type="text" placeholder="Rechercher un produit..." value={search} onChange={e => setSearch(e.target.value)}
+        <input type="text" placeholder={t('admin.products.searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)}
           className="flex-1 rounded-2xl px-4 py-3 text-sm outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
         <select value={sortBy} onChange={e => setSortBy(e.target.value)}
           className="rounded-2xl px-4 py-3 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-          <option value="name">Nom (A-Z)</option>
-          <option value="popularite">Popularité décroissante</option>
-          <option value="refus">Refus décroissant</option>
-          <option value="prix_desc">Prix décroissant</option>
-          <option value="prix_asc">Prix croissant</option>
-          <option value="stock_desc">Stock décroissant</option>
-          <option value="stock_asc">Stock croissant</option>
+          <option value="name">{t('admin.products.sort.name')}</option>
+          <option value="popularite">{t('admin.products.sort.popularite')}</option>
+          <option value="refus">{t('admin.products.sort.refus')}</option>
+          <option value="prix_desc">{t('admin.products.sort.prixDesc')}</option>
+          <option value="prix_asc">{t('admin.products.sort.prixAsc')}</option>
+          <option value="stock_desc">{t('admin.products.sort.stockDesc')}</option>
+          <option value="stock_asc">{t('admin.products.sort.stockAsc')}</option>
         </select>
       </div>
 
-      {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div> :
-       sorted.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun produit trouvé</div> :
+      {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</div> :
+       sorted.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>{t('admin.products.noResults')}</div> :
        <div className="flex flex-col gap-3">
          {visibleItems.map(p => (
            <div key={p.id_produit} className="rounded-2xl p-4 border flex items-center gap-4 cursor-pointer transition-all hover:shadow-sm"
@@ -773,7 +777,7 @@ function ProductsTab({ initialFilter, productRankings }) {
              {/* Price + stock */}
              <div className="text-right flex-shrink-0">
                <div className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>{p.prix_reference?.toLocaleString()} F</div>
-               <div className="text-[10px] font-semibold" style={{ color: p.stock_disponible > 0 ? '#1D9E75' : '#D85A30' }}>Stock: {p.stock_disponible}</div>
+                <div className="text-[10px] font-semibold" style={{ color: p.stock_disponible > 0 ? '#1D9E75' : '#D85A30' }}>{t('admin.products.stock')}: {p.stock_disponible}</div>
               </div>
             </div>
          ))}
@@ -784,7 +788,7 @@ function ProductsTab({ initialFilter, productRankings }) {
         <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
           className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
           style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-          <ChevronDown size={16} /> Charger plus ({filtered.length - visibleCount} restant(s))
+          <ChevronDown size={16} /> {t('admin.products.loadMore', { count: filtered.length - visibleCount })}
         </button>
       )}
 
@@ -820,6 +824,7 @@ function ProductsTab({ initialFilter, productRankings }) {
 }
 
 function ProductDetailModal({ product, onClose, onShowHistory }) {
+  const { t } = useLang()
   const p = product
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}
@@ -831,7 +836,7 @@ function ProductDetailModal({ product, onClose, onShowHistory }) {
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b"
           style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <h3 className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>Details du Produit</h3>
+          <h3 className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>{t('admin.productDetail.title')}</h3>
           <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
             style={{ border: 'none', background: 'var(--surface-alt)', color: 'var(--text-muted)' }}>
             <XCircle size={16} />
@@ -857,24 +862,24 @@ function ProductDetailModal({ product, onClose, onShowHistory }) {
           <div className="grid grid-cols-3 gap-2 mb-5">
             <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
               <div className="text-lg font-black" style={{ color: 'var(--text-primary)' }}>{p.prix_reference?.toLocaleString()} F</div>
-              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Prix</div>
+              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{t('admin.productDetail.price')}</div>
             </div>
             <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
               <div className="text-lg font-black" style={{ color: p.stock_disponible > 0 ? '#1D9E75' : '#D85A30' }}>{p.stock_disponible}</div>
-              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Stock</div>
+              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{t('admin.productDetail.stock')}</div>
             </div>
             <div className="rounded-xl p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
               <div className="text-lg font-black" style={{ color: 'var(--text-muted)' }}>{p.categorie?.nom || '—'}</div>
-              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Categorie</div>
+              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{t('admin.productDetail.category')}</div>
             </div>
           </div>
 
           {/* Info rows */}
           <div className="flex flex-col gap-2 mb-5">
-            <InfoRow label="Vendeur" value={p.vendeur?.nom_etablissement || '—'} icon={<Store size={14} />} />
-            <InfoRow label="Marche" value={p.vendeur?.localisation_marche || '—'} icon={<MapPin size={14} />} />
+            <InfoRow label={t('admin.productDetail.vendor')} value={p.vendeur?.nom_etablissement || '—'} icon={<Store size={14} />} />
+            <InfoRow label={t('admin.productDetail.market')} value={p.vendeur?.localisation_marche || '—'} icon={<MapPin size={14} />} />
             {p.historiques && p.historiques.length > 0 && (
-              <InfoRow label="Dernier prix enregistre" value={`${p.historiques[0]?.prix?.toLocaleString() || '—'} F`} icon={<DollarSign size={14} />} />
+              <InfoRow label={t('admin.productDetail.lastPrice')} value={`${p.historiques[0]?.prix?.toLocaleString() || '—'} F`} icon={<DollarSign size={14} />} />
             )}
           </div>
 
