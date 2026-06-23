@@ -887,7 +887,7 @@ function ProductDetailModal({ product, onClose, onShowHistory }) {
           <button onClick={() => { onClose(); onShowHistory(p.id_produit) }}
             className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
             style={{ background: 'var(--surface-alt)', borderColor: 'var(--border)', color: '#1D9E75' }}>
-            <TrendingUp size={14} /> Voir l'historique des prix
+            <TrendingUp size={14} /> {t('admin.products.viewHistory')}
           </button>
         </div>
       </div>
@@ -896,6 +896,7 @@ function ProductDetailModal({ product, onClose, onShowHistory }) {
 }
 
 function SignalementsTab({ initialFilter }) {
+  const { t } = useLang()
   const [signalements, setSignalements] = useState([])
   const [loading, setLoading] = useState(true)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
@@ -939,15 +940,15 @@ function SignalementsTab({ initialFilter }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col sm:flex-row gap-3">
-        <input type="text" placeholder="Rechercher un signalement..." value={search} onChange={e => setSearch(e.target.value)}
+        <input type="text" placeholder={t('admin.reports.searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)}
           className="flex-1 rounded-2xl px-4 py-2.5 text-sm outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="rounded-2xl px-4 py-2.5 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-          {['tous', 'En attente', 'Traite', 'Classe'].map(s => <option key={s} value={s}>{s === 'tous' ? 'Tous les statuts' : s}</option>)}
+          {['tous', 'En attente', 'Traite', 'Classe'].map(s => <option key={s} value={s}>{s === 'tous' ? t('admin.reports.allStatuses') : s}</option>)}
         </select>
       </div>
-      {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div> :
-       filtered.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun signalement</div> :
+      {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</div> :
+       filtered.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>{t('admin.reports.noResults')}</div> :
        visibleItems.map(s => (
          <div key={s.id_signalement} className="rounded-2xl p-4 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
            <div className="flex items-start justify-between mb-2">
@@ -959,8 +960,8 @@ function SignalementsTab({ initialFilter }) {
            </div>
            <p className="text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>{s.motif}</p>
            <div className="flex items-center gap-3 text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-             <span>De: {s.auteur?.prenom} {s.auteur?.nom}</span>
-             <span>Vers: {s.cible?.prenom} {s.cible?.nom}</span>
+              <span>{t('admin.reports.from')} {s.auteur?.prenom} {s.auteur?.nom}</span>
+              <span>{t('admin.reports.to')} {s.cible?.prenom} {s.cible?.nom}</span>
            </div>
            <div className="flex gap-2">
              {['En attente', 'Traite', 'Classe'].map(st => (
@@ -977,7 +978,7 @@ function SignalementsTab({ initialFilter }) {
              <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
                className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
                style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-                <ChevronDown size={16} /> Charger plus ({filtered.length - visibleCount} restant(s))
+                 <ChevronDown size={16} /> {t('admin.reports.loadMore', { count: filtered.length - visibleCount })}
              </button>
            )}
     </div>
@@ -1019,9 +1020,9 @@ function ProfilTab({ onLogout }) {
 
   async function handleSave(e) {
     e.preventDefault()
-    if (!form.nom || !form.prenom || !form.email) return show('Nom, prénom et email requis.', true)
-    if (form.mot_de_passe && form.mot_de_passe !== form.confirm) return show('Les mots de passe ne correspondent pas.', true)
-    if (form.mot_de_passe && form.mot_de_passe.length < 8) return show('Le mot de passe doit faire au moins 8 caractères.', true)
+    if (!form.nom || !form.prenom || !form.email) return show(t('admin.profile.nameRequired'), true)
+    if (form.mot_de_passe && form.mot_de_passe !== form.confirm) return show(t('admin.profile.passwordMismatch'), true)
+    if (form.mot_de_passe && form.mot_de_passe.length < 8) return show(t('admin.profile.passwordMinLength'), true)
     setSaving(true); setErr('')
     try {
       const body = new FormData()
@@ -1037,13 +1038,13 @@ function ProfilTab({ onLogout }) {
       setEdit(false)
       setPhotoFile(null)
       setPhotoPreview('')
-      show('Profil mis à jour.')
+      show(t('admin.profile.updated'))
     } catch (e) { show(e.message, true) }
     finally { setSaving(false) }
   }
 
   if (err) return <div className="text-center py-12 text-sm font-semibold" style={{ color: '#D85A30' }}><AlertTriangle size={14} className="inline align-middle mr-1" />{err}</div>
-  if (!profile) return <div className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div>
+  if (!profile) return <div className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</div>
 
   const initials = (profile.prenom?.[0] || '') + (profile.nom?.[0] || '')
 
@@ -1103,7 +1104,7 @@ function ProfilTab({ onLogout }) {
                    borderColor: photoPreview ? '#1D9E75' : 'var(--border)',
                 }}>
                 {photoPreview ? (
-                  <img src={photoPreview} alt="Aperçu" className="w-full h-full object-cover" />
+                  <img src={photoPreview} alt={t('profil.photoPreview')} className="w-full h-full object-cover" />
                 ) : profile.photo_url ? (
                   <img src={profile.photo_url} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -1179,6 +1180,7 @@ function Field({ label, value, onChange, type = 'text' }) {
 }
 
 function LitigesTab({ initialFilter }) {
+  const { t } = useLang()
   const [litiges, setLitiges] = useState([])
   const [resolving, setResolving] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -1223,15 +1225,15 @@ function LitigesTab({ initialFilter }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col sm:flex-row gap-3">
-        <input type="text" placeholder="Rechercher un litige..." value={search} onChange={e => setSearch(e.target.value)}
+        <input type="text" placeholder={t('admin.disputes.searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)}
           className="flex-1 rounded-2xl px-4 py-2.5 text-sm outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="rounded-2xl px-4 py-2.5 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-          {['tous', 'Ouvert', 'Resolu', 'Rejete'].map(s => <option key={s} value={s}>{s === 'tous' ? 'Tous les statuts' : s}</option>)}
+          {['tous', 'Ouvert', 'Resolu', 'Rejete'].map(s => <option key={s} value={s}>{s === 'tous' ? t('admin.disputes.allStatuses') : s}</option>)}
         </select>
       </div>
-      {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Chargement...</div> :
-       filteredLitiges.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Aucun litige</div> :
+      {loading ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</div> :
+       filteredLitiges.length === 0 ? <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>{t('admin.disputes.noResults')}</div> :
        visibleItems.map(l => (
          <div key={l.id_litige} className="rounded-2xl p-4 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
            <div className="flex items-start justify-between mb-2">
@@ -1249,8 +1251,8 @@ function LitigesTab({ initialFilter }) {
 
            {l.livraison && (
              <div className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
-               Commande #{l.livraison.id_commande} · Livreur: {l.livraison.livreur?.utilisateur?.prenom} {l.livraison.livreur?.utilisateur?.nom} ·
-               Client: {l.livraison.commande?.client?.utilisateur?.prenom} {l.livraison.commande?.client?.utilisateur?.nom}
+                {t('admin.disputes.order')} #{l.livraison.id_commande} · {t('admin.disputes.driver')}: {l.livraison.livreur?.utilisateur?.prenom} {l.livraison.livreur?.utilisateur?.nom} ·
+                {t('admin.disputes.client')}: {l.livraison.commande?.client?.utilisateur?.prenom} {l.livraison.commande?.client?.utilisateur?.nom}
              </div>
            )}
 
@@ -1265,7 +1267,7 @@ function LitigesTab({ initialFilter }) {
            )}
 
           {l.montant_rembourse > 0 && (
-              <div className="text-xs font-bold mb-2" style={{ color: '#D85A30' }}>Remboursement: {l.montant_rembourse.toLocaleString()} F</div>
+              <div className="text-xs font-bold mb-2" style={{ color: '#D85A30' }}>{t('admin.disputes.refund')}: {l.montant_rembourse.toLocaleString()} F</div>
             )}
 
             {l.statut === 'Ouvert' && (
@@ -1274,7 +1276,7 @@ function LitigesTab({ initialFilter }) {
               ) : (
                 <button onClick={() => setResolving(l.id_litige)} className="text-xs font-bold px-4 py-2 rounded-full cursor-pointer border"
                   style={{ borderColor: '#1D9E75', color: '#1D9E75', background: 'transparent' }}>
-                  Résoudre le litige
+                   {t('admin.disputes.resolve')}
                 </button>
               )
             )}
@@ -1284,7 +1286,7 @@ function LitigesTab({ initialFilter }) {
           <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
             className="w-full py-3 rounded-2xl text-sm font-bold border cursor-pointer flex items-center justify-center gap-2"
             style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-            <ChevronDown size={16} /> Charger plus ({filteredLitiges.length - visibleCount} restant(s))
+             <ChevronDown size={16} /> {t('admin.disputes.loadMore', { count: filteredLitiges.length - visibleCount })}
           </button>
         )}
     </div>
@@ -1292,6 +1294,7 @@ function LitigesTab({ initialFilter }) {
 }
 
 function ResolveForm({ litige, onResolve, onCancel }) {
+  const { t } = useLang()
   const [decision, setDecision] = useState('')
   const [montant, setMontant] = useState('0')
 
@@ -1299,21 +1302,21 @@ function ResolveForm({ litige, onResolve, onCancel }) {
     <div className="rounded-xl p-4 mt-2" style={{ background: 'var(--surface-alt)' }}>
       <select value={decision} onChange={e => setDecision(e.target.value)}
         className="w-full rounded-xl px-4 py-3 text-sm font-semibold outline-none border mb-2" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-        <option value="">Sélectionner une décision</option>
-        <option value="Remboursement total">Remboursement total</option>
-        <option value="Remboursement partiel">Remboursement partiel</option>
-        <option value="Rejet du litige">Rejet du litige</option>
-        <option value="Annulation commande">Annulation commande</option>
+        <option value="">{t('admin.disputes.selectDecision')}</option>
+        <option value="Remboursement total">{t('admin.disputes.decision.fullRefund')}</option>
+        <option value="Remboursement partiel">{t('admin.disputes.decision.partialRefund')}</option>
+        <option value="Rejet du litige">{t('admin.disputes.decision.reject')}</option>
+        <option value="Annulation commande">{t('admin.disputes.decision.cancelOrder')}</option>
       </select>
-      <input type="number" placeholder="Montant remboursé (F)" value={montant} onChange={e => setMontant(e.target.value)}
+      <input type="number" placeholder={t('admin.disputes.refundAmount')} value={montant} onChange={e => setMontant(e.target.value)}
         className="w-full rounded-xl px-4 py-3 text-sm outline-none border mb-2" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
       <div className="flex gap-2">
         <button onClick={() => onResolve(litige.id_litige, decision, montant)} disabled={!decision}
           className="flex-1 text-xs font-bold py-2.5 rounded-xl cursor-pointer border-none" style={{ background: !decision ? '#ccc' : '#1D9E75', color: '#fff' }}>
-          Confirmer
+          {t('common.confirm')}
         </button>
         <button onClick={onCancel} className="text-xs font-bold py-2.5 rounded-xl cursor-pointer" style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-          Annuler
+          {t('common.cancel')}
         </button>
       </div>
     </div>
@@ -1326,6 +1329,7 @@ function ResolveForm({ litige, onResolve, onCancel }) {
 const EMPTY_FORM = { nom: '', latitude: '', longitude: '', image_url: '', description: '' }
 
 function MarketsTab() {
+  const { t } = useLang()
   const [markets, setMarkets] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -1399,7 +1403,7 @@ function MarketsTab() {
 
   async function handleSave() {
     if (!form.nom || !form.latitude || !form.longitude) {
-      flash('Nom, latitude et longitude sont requis.', 'error')
+      flash(t('admin.markets.nameRequired'), 'error')
       return
     }
     setSaving(true)
@@ -1423,7 +1427,7 @@ function MarketsTab() {
           await api.post('/admin/markets', form)
         }
       }
-      flash(`Marché ${editId ? 'mis à jour' : 'créé avec succès'}.`, 'success')
+      flash(editId ? t('admin.markets.saveSuccess.updated') : t('admin.markets.saveSuccess.created'), 'success')
       setShowForm(false)
       fetchMarkets()
     } catch (e) {
@@ -1434,10 +1438,10 @@ function MarketsTab() {
   }
 
   async function handleDelete(m) {
-    if (!confirm(`Supprimer "${m.nom}" ? Les vendeurs de ce marché seront déliés.`)) return
+    if (!confirm(t('admin.markets.deleteConfirm', { name: m.nom }))) return
     try {
       await api.delete(`/admin/markets/${m.id_marche}`)
-      flash('Marché supprimé.', 'success')
+      flash(t('admin.markets.deleteSuccess'), 'success')
       fetchMarkets()
     } catch (e) {
       flash(e.message, 'error')
@@ -1466,9 +1470,9 @@ function MarketsTab() {
       {/* Header row */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-black" style={{ color: 'var(--text-primary)' }}>Gestion des Marchés</h2>
+          <h2 className="text-base font-black" style={{ color: 'var(--text-primary)' }}>{t('admin.markets.title')}</h2>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {markets.length} localmart{markets.length !== 1 ? 's' : ''} enregistré{markets.length !== 1 ? 's' : ''} sur la plateforme
+            {t('admin.markets.count', { count: markets.length })}
           </p>
         </div>
         <button
@@ -1476,7 +1480,7 @@ function MarketsTab() {
           className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-white text-sm font-black cursor-pointer transition-all hover:opacity-90"
           style={{ background: 'linear-gradient(135deg, #1D9E75, #0F6E56)' }}
         >
-          + Nouveau Marché
+          + {t('admin.markets.newMarket')}
         </button>
       </div>
 
@@ -1490,7 +1494,7 @@ function MarketsTab() {
 
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-black" style={{ color: 'var(--text-primary)' }}>
-                {editId ? <span className="flex items-center gap-1.5"><Edit size={14} /> Modifier le Marché</span> : <span className="flex items-center gap-1.5"><Building size={14} /> Nouveau Marché</span>}
+                {editId ? <span className="flex items-center gap-1.5"><Edit size={14} /> {t('admin.markets.editTitle')}</span> : <span className="flex items-center gap-1.5"><Building size={14} /> {t('admin.markets.newTitle')}</span>}
               </h3>
               <button onClick={() => setShowForm(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 cursor-pointer text-sm"
@@ -1499,10 +1503,10 @@ function MarketsTab() {
 
             <div className="flex flex-col gap-3">
               <div>
-                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Nom du Marché *</label>
+                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('admin.markets.nameLabel')}</label>
                 <input
                   type="text"
-                  placeholder="ex: Marché Dantokpa"
+                  placeholder={t('admin.markets.namePlaceholder')}
                   value={form.nom}
                   onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
                   className="w-full mt-1 px-4 py-3 rounded-xl text-sm outline-none border"
@@ -1512,7 +1516,7 @@ function MarketsTab() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Latitude *</label>
+                  <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('admin.markets.latitude')}</label>
                   <input
                     type="number"
                     step="0.0001"
@@ -1524,7 +1528,7 @@ function MarketsTab() {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Longitude *</label>
+                  <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('admin.markets.longitude')}</label>
                   <input
                     type="number"
                     step="0.0001"
@@ -1542,7 +1546,7 @@ function MarketsTab() {
                 <div className="rounded-xl overflow-hidden border text-center" style={{ borderColor: 'var(--border)', height: 120 }}>
                   <img
                     src={mapPreviewUrl(parseFloat(form.latitude), parseFloat(form.longitude))}
-                    alt="Aperçu carte"
+                    alt={t('admin.markets.mapPreview')}
                     className="w-full h-full object-cover"
                     onError={e => { e.target.style.display = 'none' }}
                   />
@@ -1550,14 +1554,14 @@ function MarketsTab() {
               )}
               {form.latitude && form.longitude && (
                 <p className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>
-                   <MapPin size={10} className="inline align-middle" /> Aperçu: ({parseFloat(form.latitude).toFixed(4)}, {parseFloat(form.longitude).toFixed(4)}) ·
+                   <MapPin size={10} className="inline align-middle" /> {t('admin.markets.mapPreview')}: ({parseFloat(form.latitude).toFixed(4)}, {parseFloat(form.longitude).toFixed(4)}) ·
                   <a href={`https://www.openstreetmap.org/?mlat=${form.latitude}&mlon=${form.longitude}#map=15/${form.latitude}/${form.longitude}`}
-                    target="_blank" rel="noreferrer" className="ml-1 underline" style={{ color: '#1D9E75' }}>Vérifier sur OSM</a>
+                    target="_blank" rel="noreferrer" className="ml-1 underline" style={{ color: '#1D9E75' }}>{t('admin.markets.checkOSM')}</a>
                 </p>
               )}
 
               <div>
-                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Image du marché</label>
+                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('admin.markets.imageLabel')}</label>
                 <div className="flex flex-col gap-2 mt-1">
                   {/* File upload */}
                   <label className="flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all hover:bg-gray-50"
@@ -1570,10 +1574,10 @@ function MarketsTab() {
                       <span className="text-lg"><Package size={18} style={{ color: 'var(--text-muted)' }} /></span>
                     )}
                     <span className="text-xs font-semibold flex-1" style={{ color: 'var(--text-muted)' }}>
-                      {imagePreview ? 'Image sélectionnée' : form.image_url ? 'URL définie' : 'Choisir une image depuis l\'appareil'}
+                      {imagePreview ? t('admin.markets.imageSelected') : form.image_url ? t('admin.markets.urlDefined') : t('admin.markets.chooseImage')}
                     </span>
                     <span className="text-[10px] font-bold px-2 py-1 rounded-lg" style={{ background: '#E1F5EE', color: '#0F6E56' }}>
-                      {imagePreview ? '1 fichier' : 'Parcourir'}
+                      {imagePreview ? t('admin.markets.fileCount') : t('admin.markets.browse')}
                     </span>
                     <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                     {(imagePreview || form.image_url) && (
@@ -1584,7 +1588,7 @@ function MarketsTab() {
 
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-                    <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>OU</span>
+                    <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{t('admin.markets.or')}</span>
                     <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
                   </div>
 
@@ -1600,10 +1604,10 @@ function MarketsTab() {
               </div>
 
               <div>
-                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Description</label>
+                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('admin.markets.descriptionLabel')}</label>
                 <textarea
                   rows={3}
-                  placeholder="Description du marché visible par les clients..."
+                  placeholder={t('admin.markets.descriptionPlaceholder')}
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   className="w-full mt-1 px-4 py-3 rounded-xl text-sm outline-none border resize-none"
@@ -1613,7 +1617,7 @@ function MarketsTab() {
 
               {/* Quick coordinate helper for common Benin cities */}
               <div>
-                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Coordonnées rapides (Bénin)</label>
+                <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('admin.markets.quickCoords')}</label>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {[
                     { label: 'Cotonou Centre', lat: 6.3654, lng: 2.4183 },
@@ -1641,7 +1645,7 @@ function MarketsTab() {
                 className="w-full py-3.5 rounded-2xl text-white font-black text-sm cursor-pointer transition-all mt-2"
                 style={{ background: saving ? '#ccc' : 'linear-gradient(135deg, #1D9E75, #0F6E56)', border: 'none' }}
               >
-                {saving ? 'Enregistrement...' : editId ? 'Mettre à jour' : 'Créer le Marché'}
+                {saving ? t('admin.markets.save') : editId ? t('admin.markets.update') : t('admin.markets.create')}
               </button>
             </div>
           </div>
@@ -1650,13 +1654,13 @@ function MarketsTab() {
 
       {/* Market Cards Grid */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <input type="text" placeholder="Rechercher un marché..." value={search} onChange={e => setSearch(e.target.value)}
+        <input type="text" placeholder={t('admin.markets.searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)}
           className="flex-1 rounded-2xl px-4 py-3 text-sm outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
         <select value={vendorFilter} onChange={e => setVendorFilter(e.target.value)}
           className="rounded-2xl px-4 py-3 text-sm font-semibold outline-none border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-          <option value="tous">Tous les marchés</option>
-          <option value="avec">Avec vendeurs</option>
-          <option value="sans">Sans vendeur</option>
+          <option value="tous">{t('admin.markets.allMarkets')}</option>
+          <option value="avec">{t('admin.markets.withVendors')}</option>
+          <option value="sans">{t('admin.markets.withoutVendors')}</option>
         </select>
       </div>
       {loading ? (
