@@ -160,7 +160,7 @@ export default function CommandesLivreur() {
       showToast(t('toast.cameraError') + ': ' + (err.message || err))
       cleanupScanner()
     }
-  }, [cleanupScanner])
+  }, [cleanupScanner, t])
 
   async function verifyVendorScan(scannedData) {
     if (!collectOpen || !vendorStatus[activeVendorIndex]) return
@@ -340,7 +340,7 @@ export default function CommandesLivreur() {
       ;(cmd?.detailsCommande || []).forEach(detail => {
         const v = detail.produit?.vendeur
         if (v?.latitude && v?.longitude) {
-          markers.push({ lat: parseFloat(v.latitude), lng: parseFloat(v.longitude), type: 'vendor', label: v.nom_etablissement || 'Vendeur' })
+          markers.push({ lat: parseFloat(v.latitude), lng: parseFloat(v.longitude), type: 'vendor', label: v.nom_etablissement || t('livreur.commandes.vendorLabel', { number: 0 }) })
         }
       })
     })
@@ -532,7 +532,7 @@ export default function CommandesLivreur() {
               </div>
               <div className="text-right">
                 <div className="text-sm font-black" style={{ color: isDark ? '#E87D55' : '#993C1D' }}>{((c.total_marchandises || 0) + (c.frais_livraison || 0)).toLocaleString()} F</div>
-                <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>dont {c.frais_livraison?.toLocaleString() || '0'} F livraison</div>
+                <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{t('livreur.commandes.deliveryFeeOf', { amount: c.frais_livraison?.toLocaleString() || '0' })}</div>
               </div>
             </div>
             {/* Group articles by vendor */}
@@ -835,7 +835,7 @@ export default function CommandesLivreur() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-bold truncate" style={{ color: 'var(--text-primary)' }}>
-                            {v.nom_etablissement || v.nom || `Vendeur ${i + 1}`}
+                            {v.nom_etablissement || v.nom || t('livreur.commandes.vendorLabel', { number: i + 1 })}
                           </div>
                           <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                             {v.localisation_marche || '—'}
@@ -843,8 +843,8 @@ export default function CommandesLivreur() {
                         </div>
                         <div className="text-[10px] font-bold flex-shrink-0" style={{ color: collected ? '#1D9E75' : isSelected ? '#3B82F6' : 'var(--text-muted)' }}>
                           {collected ? (
-                            <>Collecté{v.qr_scanne_at ? ` à ${new Date(v.qr_scanne_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : ''}</>
-                          ) : isSelected ? 'Scanner ici' : canScan ? 'Appuyez pour scanner' : 'En attente'}
+                            <>{t('livreur.commandes.collectedLabel')}{v.qr_scanne_at ? ` ${t('livreur.commandes.collectedAt', { time: new Date(v.qr_scanne_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) })}` : ''}</>
+                          ) : isSelected ? t('livreur.commandes.scanHere') : canScan ? t('livreur.commandes.tapToScan') : t('livreur.commandes.waitingLabel')}
                         </div>
                       </div>
                     </div>
@@ -856,7 +856,7 @@ export default function CommandesLivreur() {
               {vendorStatus.length > 0 && (
                 <div className="mb-5">
                   <div className="flex justify-between text-[11px] font-bold mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    <span>Progression</span>
+                    <span>{t('livreur.commandes.progress')}</span>
                     <span>{vendorStatus.filter(v => v.statut_collecte === 'collectee').length}/{vendorStatus.length}</span>
                   </div>
                   <div className="h-2 rounded-full overflow-hidden" style={{ background: isDark ? '#2A2B28' : '#E5E7EB' }}>
@@ -872,12 +872,12 @@ export default function CommandesLivreur() {
               {allCollected && (
                 <div className="rounded-2xl p-4 mb-4 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.12)' : '#E1F5EE', border: '1.5px solid rgba(29,158,117,0.3)' }}>
                   <CheckCircle size={28} className="mx-auto mb-2" style={{ color: '#1D9E75' }} />
-                  <div className="text-sm font-black mb-1" style={{ color: '#0F6E56' }}>Tous les vendeurs collectés !</div>
-                  <div className="text-xs mb-3" style={{ color: '#0F6E56' }}>Maintenant vous pouvez partir.</div>
+                  <div className="text-sm font-black mb-1" style={{ color: '#0F6E56' }}>{t('livreur.commandes.allCollected')}</div>
+                  <div className="text-xs mb-3" style={{ color: '#0F6E56' }}>{t('livreur.commandes.canDepart')}</div>
                   <button onClick={() => { marquerEnRoute(collectOpen.commande.id_commande); setCollectOpen(null) }}
                     className="w-full py-3 rounded-2xl text-white font-black text-sm cursor-pointer transition-all active:scale-98"
                     style={{ background: '#D85A30', border: 'none' }}>
-                    <Truck size={14} className="inline align-middle" /> Marquer le départ
+                    <Truck size={14} className="inline align-middle" /> {t('livreur.commandes.markDeparture')}
                   </button>
                 </div>
               )}
@@ -886,21 +886,21 @@ export default function CommandesLivreur() {
               {!allCollected && (
                 <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--surface-alt)', border: '1.5px solid var(--border)' }}>
                   <div className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
-                    <QrCode size={12} /> Scanner le QR du vendeur
+                    <QrCode size={12} /> {t('livreur.commandes.scanVendorQR')}
                   </div>
                   <div className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
-                    {vendorStatus[activeVendorIndex]?.nom_etablissement || 'Vendeur'} — {vendorStatus[activeVendorIndex]?.localisation_marche || ''}
+                    {vendorStatus[activeVendorIndex]?.nom_etablissement || t('livreur.commandes.vendorLabel', { number: 1 })} — {vendorStatus[activeVendorIndex]?.localisation_marche || ''}
                   </div>
 
                   {collectVerified ? (
                     <div className="rounded-xl p-4 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
                       <CheckCircle size={22} className="mx-auto mb-1" style={{ color: '#1D9E75' }} />
-                      <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>QR code validé !</div>
+                      <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>{t('livreur.commandes.qrValidated')}</div>
                     </div>
                   ) : submitting ? (
                     <div className="rounded-xl p-4 text-center" style={{ background: isDark ? 'rgba(29,158,117,0.15)' : '#E1F5EE' }}>
                       <Loader2 size={20} className="mx-auto mb-1 animate-spin" style={{ color: '#1D9E75' }} />
-                      <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>Vérification en cours…</div>
+                      <div className="text-xs font-bold" style={{ color: '#0F6E56' }}>{t('livreur.commandes.verifyingCollect')}</div>
                     </div>
                   ) : !collectError ? (
                     <div id="qr-collect-reader" className="rounded-xl overflow-hidden" style={{ minHeight: 200 }} />
@@ -910,7 +910,7 @@ export default function CommandesLivreur() {
                     <button onClick={() => startCamera('qr-collect-reader', verifyVendorScan)}
                       className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
                       style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
-                      <QrCode size={14} className="inline align-middle" /> Activer l'appareil photo
+                      <QrCode size={14} className="inline align-middle" /> {t('livreur.commandes.activateCamera')}
                     </button>
                   )}
 
@@ -918,7 +918,7 @@ export default function CommandesLivreur() {
                     <button onClick={() => { setCollectError(null); setCollectScanData(null); setCollectVerified(false); setCollectPhase('scanning') }}
                       className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
                       style={{ background: '#D85A30', color: '#fff', border: 'none' }}>
-                      <QrCode size={14} className="inline align-middle" /> Réessayer le scan
+                      <QrCode size={14} className="inline align-middle" /> {t('livreur.commandes.retryScan')}
                     </button>
                   )}
                 </div>
@@ -928,13 +928,13 @@ export default function CommandesLivreur() {
                 <div className="rounded-2xl p-4 mb-4" style={{ background: isDark ? 'rgba(226,75,74,0.12)' : '#FEE2E2', border: '1.5px solid rgba(226,75,74,0.3)' }}>
                   <div className="flex items-center gap-2 mb-1">
                     <AlertTriangle size={16} style={{ color: '#E24B4A' }} />
-                    <span className="text-xs font-black" style={{ color: '#E24B4A' }}>Échec de la vérification</span>
+                    <span className="text-xs font-black" style={{ color: '#E24B4A' }}>{t('livreur.commandes.verificationFailed')}</span>
                   </div>
                   <div className="text-xs" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
                     {collectError}
                   </div>
                   <div className="text-[10px] mt-2" style={{ color: isDark ? '#FCA5A5' : '#991B1B' }}>
-                    Vérifiez que vous scannez le QR code du bon vendeur.
+                    {t('livreur.commandes.verifyCorrectVendor')}
                   </div>
                 </div>
               )}
@@ -946,7 +946,7 @@ export default function CommandesLivreur() {
                     background: submitting ? (isDark ? '#3A3B38' : '#D3D1C7') : '#D85A30',
                     border: 'none', opacity: submitting ? 0.7 : 1,
                   }}>
-                  {submitting ? <><Loader2 size={14} className="animate-spin inline" /> Confirmation…</> : <><CheckCircle size={14} className="inline align-middle" /> Confirmer la collecte</>}
+                  {submitting ? <><Loader2 size={14} className="animate-spin inline" /> {t('livreur.commandes.confirming')}</> : <><CheckCircle size={14} className="inline align-middle" /> {t('livreur.commandes.confirmCollect')}</>}
                 </button>
               )}
             </div>
