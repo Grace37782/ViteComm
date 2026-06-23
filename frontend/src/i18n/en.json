@@ -68,6 +68,7 @@
   "common.clearSearch": "Clear search",
 
   "auth.login": "Login",
+  "auth.logout": "Logout",
   "auth.register": "Sign up",
   "auth.forgotPassword": "Forgot password",
   "auth.email": "Email",

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useLang } from '../context/LangContext'
 import { Menu, X, LogOut } from 'lucide-react'
 
 export default function MobileDrawer({ navTabs, accentColor, brandLabel, onLogout, onTabSelect, currentTab }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
+  const { t } = useLang()
   const [open, setOpen] = useState(false)
 
   const handleTabClick = (tabPath) => {
@@ -129,7 +131,7 @@ export default function MobileDrawer({ navTabs, accentColor, brandLabel, onLogou
             style={{ background: 'rgba(226,75,74,0.08)', color: '#E24B4A', border: 'none' }}
           >
             <LogOut size={18} />
-            Déconnexion
+            {t('auth.logout')}
           </button>
         </div>
       </div>

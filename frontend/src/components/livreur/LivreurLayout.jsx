@@ -1,19 +1,20 @@
 import { useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useLang } from '../../context/LangContext'
 import { BarChart3, ShoppingCart, Wallet, ClipboardList, Undo2, User, Bell } from 'lucide-react'
 import MobileDrawer from '../MobileDrawer'
 import NotificationBell from '../NotificationBell'
 import { subscribeToPush } from '../../services/push'
 
 const NAV_TABS = [
-  { icon: BarChart3, label: 'Accueil', path: '/livreur/dashboard' },
-  { icon: ShoppingCart, label: 'Commandes', path: '/livreur/commandes' },
-  { icon: Wallet, label: 'Gains', path: '/livreur/gains' },
-  { icon: ClipboardList, label: 'Historique', path: '/livreur/historique' },
-  { icon: Undo2, label: 'Retours', path: '/livreur/retours' },
-  { icon: Bell, label: 'Notifications', path: '/livreur/notifications' },
-  { icon: User, label: 'Profil', path: '/livreur/profil' },
+  { icon: BarChart3, labelKey: 'nav.dashboard', path: '/livreur/dashboard' },
+  { icon: ShoppingCart, labelKey: 'nav.commandes', path: '/livreur/commandes' },
+  { icon: Wallet, labelKey: 'nav.gains', path: '/livreur/gains' },
+  { icon: ClipboardList, labelKey: 'nav.historique', path: '/livreur/historique' },
+  { icon: Undo2, labelKey: 'nav.retours', path: '/livreur/retours' },
+  { icon: Bell, labelKey: 'notification.title', path: '/livreur/notifications' },
+  { icon: User, labelKey: 'nav.profil', path: '/livreur/profil' },
 ]
 
 const ACCENT = '#D85A30'
@@ -22,6 +23,7 @@ export default function LivreurLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
+  const { t } = useLang()
 
   useEffect(() => {
     if (!user) return navigate('/connect', { replace: true })
@@ -40,6 +42,7 @@ export default function LivreurLayout() {
   useEffect(() => { if (user) subscribeToPush().catch(() => {}) }, [user])
 
   const initials = ((user?.prenom?.[0] || '') + (user?.nom?.[0] || '')).toUpperCase() || '?'
+  const navTabs = NAV_TABS.map(tab => ({ ...tab, label: t(tab.labelKey) }))
 
   return (
     <div className="min-h-screen font-sans" style={{ background: 'var(--bg)' }}>
@@ -48,7 +51,7 @@ export default function LivreurLayout() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0 cursor-pointer" onClick={() => navigate('/livreur/profil')}>
               <MobileDrawer
-                navTabs={NAV_TABS}
+                navTabs={navTabs}
                 accentColor={ACCENT}
                 brandLabel="ViteComm · Livreur"
                 onLogout={() => { logout(); navigate('/connect') }}
@@ -72,13 +75,12 @@ export default function LivreurLayout() {
               <button onClick={() => { logout(); navigate('/connect') }}
                 className="hidden sm:block text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer flex-shrink-0"
                 style={{ background: 'rgba(255,255,255,0.1)' }}>
-                Déconnexion
+                {t('auth.logout')}
               </button>
             </div>
           </div>
-          {/* Desktop tab bar — hidden on mobile */}
           <div className="hidden md:flex gap-1 mt-2 overflow-x-auto scrollbar-none">
-            {NAV_TABS.map(tab => {
+            {navTabs.map(tab => {
               const active = location.pathname === tab.path || location.pathname.startsWith(tab.path + '/')
               return (
                 <button key={tab.path} onClick={() => navigate(tab.path)}

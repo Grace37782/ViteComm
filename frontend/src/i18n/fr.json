@@ -68,6 +68,7 @@
   "common.clearSearch": "Effacer la recherche",
 
   "auth.login": "Connexion",
+  "auth.logout": "Déconnexion",
   "auth.register": "Inscription",
   "auth.forgotPassword": "Mot de passe oublié",
   "auth.email": "Email",

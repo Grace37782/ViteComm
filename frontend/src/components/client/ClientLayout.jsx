@@ -1,18 +1,19 @@
 import { useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useLang } from '../../context/LangContext'
 import { Home, ClipboardList, Star, ShoppingCart, User, Bell } from 'lucide-react'
 import MobileDrawer from '../MobileDrawer'
 import NotificationBell from '../NotificationBell'
 import { subscribeToPush } from '../../services/push'
 
 const NAV_TABS = [
-  { icon: Home, label: 'Accueil', path: '/client/accueil' },
-  { icon: ClipboardList, label: 'Commandes', path: '/client/mes-commandes' },
-  { icon: Star, label: 'Évaluer', path: '/client/evaluation' },
-  { icon: Bell, label: 'Notifications', path: '/client/notifications' },
-  { icon: ShoppingCart, label: 'Panier', path: '/client/panier' },
-  { icon: User, label: 'Profil', path: '/client/profil' },
+  { icon: Home, labelKey: 'nav.accueil', path: '/client/accueil' },
+  { icon: ClipboardList, labelKey: 'nav.commandes', path: '/client/mes-commandes' },
+  { icon: Star, labelKey: 'nav.evaluer', path: '/client/evaluation' },
+  { icon: Bell, labelKey: 'notification.title', path: '/client/notifications' },
+  { icon: ShoppingCart, labelKey: 'nav.panier', path: '/client/panier' },
+  { icon: User, labelKey: 'nav.profil', path: '/client/profil' },
 ]
 
 const ACCENT = '#1D9E75'
@@ -21,6 +22,7 @@ export default function ClientLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
+  const { t } = useLang()
 
   useEffect(() => {
     if (!user) return navigate('/connect', { replace: true })
@@ -36,12 +38,12 @@ export default function ClientLayout() {
     return () => document.documentElement.classList.remove('role-client')
   }, [])
 
-  // Subscribe to push notifications
   useEffect(() => {
     if (user) subscribeToPush().catch(() => {})
   }, [user])
 
   const initials = ((user?.prenom?.[0] || '') + (user?.nom?.[0] || '')).toUpperCase() || '?'
+  const navTabs = NAV_TABS.map(tab => ({ ...tab, label: t(tab.labelKey) }))
 
   return (
     <div className="min-h-screen font-sans" style={{ background: 'var(--bg)' }}>
@@ -50,7 +52,7 @@ export default function ClientLayout() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
               <MobileDrawer
-                navTabs={NAV_TABS}
+                navTabs={navTabs}
                 accentColor={ACCENT}
                 brandLabel="ViteComm"
                 onLogout={() => { logout(); navigate('/connect') }}
@@ -74,13 +76,12 @@ export default function ClientLayout() {
               <button onClick={() => { logout(); navigate('/connect') }}
               className="hidden sm:block text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer flex-shrink-0"
               style={{ background: 'rgba(255,255,255,0.1)' }}>
-              Déconnexion
-            </button>
+              {t('auth.logout')}
+              </button>
             </div>
           </div>
-          {/* Desktop tab bar — hidden on mobile */}
           <div className="hidden md:flex gap-1 mt-2 overflow-x-auto scrollbar-none">
-            {NAV_TABS.map(tab => {
+            {navTabs.map(tab => {
               const active = location.pathname === tab.path || location.pathname.startsWith(tab.path + '/')
               return (
                 <button key={tab.path} onClick={() => navigate(tab.path)}

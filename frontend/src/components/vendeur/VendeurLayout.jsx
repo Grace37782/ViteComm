@@ -1,21 +1,22 @@
 import { useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useLang } from '../../context/LangContext'
 import { BarChart3, Package, ShoppingCart, Undo2, TrendingUp, Banknote, AlertTriangle, User, Bell } from 'lucide-react'
 import MobileDrawer from '../MobileDrawer'
 import NotificationBell from '../NotificationBell'
 import { subscribeToPush } from '../../services/push'
 
 const NAV_TABS = [
-  { icon: BarChart3, label: 'Accueil', path: '/vendeur/dashboard' },
-  { icon: Package, label: 'Catalogue', path: '/vendeur/catalogue' },
-  { icon: ShoppingCart, label: 'Commandes', path: '/vendeur/commandes' },
-  { icon: Undo2, label: 'Retours', path: '/vendeur/retours' },
-  { icon: TrendingUp, label: 'Stats', path: '/vendeur/statistiques' },
-  { icon: Banknote, label: 'Factures', path: '/vendeur/factures' },
-  { icon: Bell, label: 'Notifications', path: '/vendeur/notifications' },
-  { icon: AlertTriangle, label: 'Signaler', path: '/vendeur/signalement' },
-  { icon: User, label: 'Profil', path: '/vendeur/profil' },
+  { icon: BarChart3, labelKey: 'nav.dashboard', path: '/vendeur/dashboard' },
+  { icon: Package, labelKey: 'nav.catalogue', path: '/vendeur/catalogue' },
+  { icon: ShoppingCart, labelKey: 'nav.commandes', path: '/vendeur/commandes' },
+  { icon: Undo2, labelKey: 'nav.retours', path: '/vendeur/retours' },
+  { icon: TrendingUp, labelKey: 'nav.statistiques', path: '/vendeur/statistiques' },
+  { icon: Banknote, labelKey: 'nav.factures', path: '/vendeur/factures' },
+  { icon: Bell, labelKey: 'notification.title', path: '/vendeur/notifications' },
+  { icon: AlertTriangle, labelKey: 'nav.signaler', path: '/vendeur/signalement' },
+  { icon: User, labelKey: 'nav.profil', path: '/vendeur/profil' },
 ]
 
 const ACCENT = '#BA7517'
@@ -24,6 +25,7 @@ export default function VendeurLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
+  const { t } = useLang()
 
   useEffect(() => {
     if (!user) return navigate('/connect', { replace: true })
@@ -42,6 +44,7 @@ export default function VendeurLayout() {
   useEffect(() => { if (user) subscribeToPush().catch(() => {}) }, [user])
 
   const initials = ((user?.prenom?.[0] || '') + (user?.nom?.[0] || '')).toUpperCase() || '?'
+  const navTabs = NAV_TABS.map(tab => ({ ...tab, label: t(tab.labelKey) }))
 
   return (
     <div className="min-h-screen font-sans" style={{ background: 'var(--bg)' }}>
@@ -50,7 +53,7 @@ export default function VendeurLayout() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0 cursor-pointer" onClick={() => navigate('/vendeur/profil')}>
               <MobileDrawer
-                navTabs={NAV_TABS}
+                navTabs={navTabs}
                 accentColor={ACCENT}
                 brandLabel="ViteComm · Vendeur"
                 onLogout={() => { logout(); navigate('/connect') }}
@@ -74,13 +77,12 @@ export default function VendeurLayout() {
               <button onClick={() => { logout(); navigate('/connect') }}
                 className="hidden sm:block text-white/70 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 cursor-pointer flex-shrink-0"
                 style={{ background: 'rgba(255,255,255,0.1)' }}>
-                Déconnexion
+                {t('auth.logout')}
               </button>
             </div>
           </div>
-          {/* Desktop tab bar — hidden on mobile */}
           <div className="hidden md:flex gap-1 mt-2 overflow-x-auto scrollbar-none">
-            {NAV_TABS.map(tab => {
+            {navTabs.map(tab => {
               const active = location.pathname === tab.path || location.pathname.startsWith(tab.path + '/')
               return (
                 <button key={tab.path} onClick={() => navigate(tab.path)}
